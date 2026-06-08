@@ -1,6 +1,8 @@
 README.md
 plan_PRD.md
 Project_Requirements_Document.md
+plan_PAD.md
+Project_Architecture_Document.md
 mockup-static-1/index.html
 mockup-static-1/landing.css
 mockup-static-1/landing.js
