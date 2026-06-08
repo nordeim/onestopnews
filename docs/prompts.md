@@ -6,6 +6,12 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. based on your improved (re-imagined) PRD and PAD, please meticulously plan to create a detailed and comprehensive `MASTER_EXECUTION_PLAN.md` for completing the building of the project codebase in logical independent phases. Include in your `MASTER_EXECUTION_PLAN.md` a list of the files to create/modify, and for each file, describe its features and interfaces, also a checklist for each file. 
+- for building the codebase in logical and independent phases, with a detailed description and a file list with integrated checklist for each phase.
+- Include in your `MASTER_EXECUTION_PLAN.md` a list of the files to create/modify, and for each file, describe its features and interfaces, also a checklist for each file.
+
+---
+
 please meticulously review the list of project documents located in the current project folder to have a deep understanding of the WHAT, WHY and HOW of the project and its intended codebase design and architecture, then use the suitable skills available (see `/home/project/onestopnews/docs/available_pi_tools_skills.md`) to meticulously refine and improve on the aspirations of the project, then meticulously plan to create a comprehensive (detailed) re-imagined `Project_Architecture_Document.md`.
 
  - `/home/project/onestopnews/README.md` 
