@@ -129,13 +129,13 @@ flowchart LR
 sequenceDiagram
   participant S as Source (RSS/API)
   participant W as Worker
-  participant DB as PostgreSQL
   participant Q as Queue
+  participant DB as PostgreSQL
   participant A as API (Next.js)
   participant U as User
 
   rect rgb(245,245,245)
-    Note over W,Q: Ingestion
+    Note over W,DB: Ingestion
     W->>Q: Schedule ingest jobs
     Q-->>W: ingest(source)
     W->>S: Fetch latest items
@@ -145,7 +145,7 @@ sequenceDiagram
   end
 
   rect rgb(245,245,245)
-    Note over A,U: Browsing
+    Note over DB,U: Browsing
     U->>A: GET /topics/:category
     A->>DB: Query feed slice
     DB-->>A: Article list
