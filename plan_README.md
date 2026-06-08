@@ -463,3 +463,5 @@ Contact the maintainer if you want to discuss licensing or collaboration.
   - Tailor badges (CI status, coverage, package manager) to your actual CI/CD.
   - Add concrete links (demo URL, docs, PRD in `docs/prd.md`).
   - Tighten any sections to match your preferred tone (more brutalist / more editorial).
+
+# https://www.perplexity.ai/search/you-are-claw-code-my-elite-cod-HVESLPS6Qb6QdQ85nrgbgg
