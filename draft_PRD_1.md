@@ -366,4 +366,14 @@ For the PRD itself:
 
 If you’re aligned with this research‑backed architecture and the proposed PRD structure, the next step is for me to draft the full `Project Requirements Document` in markdown following this outline, tailored exactly to your tech stack and design philosophy.
 
-Would you like me to proceed with drafting the actual PRD markdown using this structure, or is there any major adjustment you want (especially around aesthetic direction or enterprise features) before we lock it in?
+---
+
+I’ve drafted the full `Project Requirements Document` for OneStopNews as a standalone Markdown report artifact. It covers:
+
+- Product vision, scope, and success metrics  
+- Detailed UX/IA and topic model  
+- Ingestion, summarization, search, and admin features  
+- Target architecture for Next.js 16, React 19, Tailwind v4, Shadcn UI, and PostgreSQL 17  
+- Data model, APIs, non‑functional requirements, observability, rollout phases, and risks  
+
+# 
