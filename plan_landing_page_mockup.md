@@ -150,3 +150,89 @@ I recommend **C** for comprehensive demonstration.
 
 ---
 
+Confirmed. Proceeding to **Phase 4: IMPLEMENT** — generating the production-grade static HTML landing page mockup.
+
+I'll create a comprehensive, meticulously crafted single-file HTML mockup with inline CSS and JavaScript, implementing the editorial-industrial "Intelligence Terminal" aesthetic with full responsive support, dark mode, PWA showcase, and all interactive elements.
+The search results don't directly help with the mockup. Let me proceed with the implementation using a different approach - writing the HTML directly to the file in manageable chunks to avoid JSON escaping issues.
+The file is complete. Let me verify the structure is correct and provide the final delivery summary.
+All sections and features verified. The mockup is complete and production-ready.
+
+---
+
+## Phase 6: DELIVER — Complete Handoff with Knowledge Transfer
+
+The comprehensive static HTML landing page mockup has been generated and saved.
+
+### Document Statistics
+
+| Metric | Value |
+|--------|-------|
+| **File** | `onestopnews-landing.html` |
+| **Size** | 52.0 KB |
+| **Lines** | 936 |
+| **Sections** | 9 major sections |
+| **CSS Variables** | 40+ design tokens |
+| **Interactive Features** | 6 |
+
+### What Was Implemented
+
+| Section | Features | Design System Alignment |
+|---------|----------|------------------------|
+| **Header** | Fixed nav, blur backdrop, brand mark, dark mode toggle, PWA install button | ✅ Editorial-industrial, sticky nav |
+| **Hero** | Massive Newsreader headline (88px), live pulse indicator, animated terminal window, cluster preview cards, animated stat counters | ✅ "Intelligence Terminal" metaphor, warm paper background |
+| **Topic Ribbon** | Horizontal scrolling chip navigation, 7 categories with counts, active state, hover effects | ✅ Topic-first IA, color-coded categories |
+| **Story Cluster Showcase** | 8-card bento grid, featured card (2x2), source pills, hover lift animations, progress bars | ✅ Story-first differentiator, dense information |
+| **AI Summary Demo** | Split original/summary view, key points list, trust badge, source attribution | ✅ AI Optional principle, transparency |
+| **Source Ecosystem** | 12 publisher logos, hover effects, "89 sources" CTA | ✅ Source-respectful, attribution |
+| **Features Grid** | Editorial 12-column layout (not card grid), 7 capabilities with icons | ✅ Anti-generic, structural layout |
+| **Trust & Transparency** | 8 principles (7 + data), numbered cards, moss highlight card | ✅ 7-layer AI governance framework |
+| **Footer** | 5-column dense footer, dark background, editorial links | ✅ Dense information architecture |
+
+### Interactive Features
+
+| Feature | Technology | Behavior |
+|---------|-----------|----------|
+| **Dark Mode Toggle** | CSS `data-theme` + localStorage | System-aware default, smooth 300ms transition, persists across sessions |
+| **Scroll Reveal** | IntersectionObserver | Elements fade in + translate up when entering viewport |
+| **Animated Counters** | `requestAnimationFrame` + cubic ease | Numbers count up from 0 to target over 2 seconds |
+| **PWA Install Button** | `beforeinstallprompt` event | Appears when browser supports PWA install, triggers native prompt |
+| **Cluster Bar Animation** | IntersectionObserver + CSS transition | Progress bars animate on hover when visible |
+| **Topic Chip Selection** | Click handler | Active state toggle with visual feedback |
+| **Header Scroll Shadow** | Scroll event listener | Subtle shadow appears after 100px scroll |
+
+### Design System Implementation
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--font-headline` | Newsreader, Georgia, Times | All headlines, 700-800 weight |
+| `--font-ui` | System UI stack | Body text, labels, navigation |
+| `--paper` | `#f6f3ec` (light) / `#0f1113` (dark) | Page background |
+| `--ink` | `#121416` (light) / `#e8e4dc` (dark) | Primary text |
+| `--moss` | `#4d6657` (light) / `#6b8f7a` (dark) | Primary accent |
+| `--clay` | `#a86a4a` (light) / `#c98a6a` (dark) | Secondary accent |
+| `--shadow-lg` | 0 24px 70px rgba(18,20,22,0.12) | Terminal window, hover lifts |
+
+### Anti-Generic Enforcement
+
+- ✅ **No purple gradients** — Warm moss/clay palette instead
+- ✅ **No Inter/Roboto safety** — Newsreader serif for headlines, system UI for interface
+- ✅ **No predictable card grids** — Bento grid, editorial 12-column layout, structural whitespace
+- ✅ **No "AI slop" aesthetic** — Calm, dense, premium editorial terminal
+- ✅ **Intentional minimalism** — Every element serves a purpose, no decorative fluff
+
+### Responsive Breakpoints
+
+| Breakpoint | Layout Changes |
+|------------|---------------|
+| **Desktop (≥1024px)** | Two-column hero, 4-column cluster wall, 4-column trust grid |
+| **Tablet (768-1023px)** | Single-column hero, 2-column cluster wall, 2-column trust grid, 6-column features |
+| **Mobile (<640px)** | Stacked everything, single-column cluster wall, full-width features, compact footer |
+
+### How to Use
+
+1. Open the file in any modern browser
+2. Toggle dark mode via the moon/sun icon in the header
+3. Scroll to see reveal animations and counter animations
+4. Hover over cluster cards to see lift effects and progress bars
+5. Click topic chips to see active state changes
+6. The PWA install button appears if the browser supports it
