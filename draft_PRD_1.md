@@ -376,4 +376,288 @@ I’ve drafted the full `Project Requirements Document` for OneStopNews as a sta
 - Target architecture for Next.js 16, React 19, Tailwind v4, Shadcn UI, and PostgreSQL 17  
 - Data model, APIs, non‑functional requirements, observability, rollout phases, and risks  
 
+---
+
+You’re broadly on the right track with the PRD, but it currently encodes “one obvious architecture” and doesn’t explore alternative shapes or trade‑offs. Below is a critical review, then three concrete implementation designs, followed by a comparison and a merged recommendation.
+
+***
+
+## Executive Summary
+
+- The existing PRD is solid as a **product spec** but under‑specifies **caching, ranking, and data volume assumptions**, and somewhat over‑commits to a single architectural style (monolithic Next.js with background workers) without naming alternatives. [systemdesignhandbook](https://www.systemdesignhandbook.com/guides/google-news-system-design/)
+- Three viable designs for OneStopNews (all staying in the Next.js + Node + Postgres universe) are:\n  - **Design A – Monolithic Next.js + In‑Process Jobs**: simplest, great for fast delivery, limited headroom.  \n  - **Design B – Modular Monolith with External Queue** (recommended): Next.js app for read paths, separate Node worker service for ingestion/summarization, shared Postgres, decoupled via SQS/RabbitMQ/Redis‑queue.  \n  - **Design C – Full Event‑Driven Microservices**: multiple services (ingestion, processing, ranking, API) communicating via Kafka; huge scalability/flexibility, large complexity overhead. [linkedin](https://www.linkedin.com/posts/punitkumar99_golang-microservices-rabbitmq-activity-7373634709454675969-7hMC)
+- The best practical endpoint for you now is **Design B**, borrowing a few ideas from C (event‑style ingestion + queues) while preserving the cohesiveness and simplicity of A. [blog.algomaster](https://blog.algomaster.io/p/designing-a-scalable-news-feed-system)
+
+***
+
+## Detailed Plan
+
+### 1. Critical review of the current PRD
+
+#### 1.1 Strengths
+
+- **Product framing is clear**: topic‑first, AI summaries on‑demand, always link to source; this matches both your MVP and established aggregator principles. [github](https://github.com/mishnit/awesome-system-design/blob/main/News%20aggregator.md)
+- **Good domain model**: Source, Article, Category, Summary, User, Preferences, IngestionJob, SourceHealth are well chosen and align with common “news aggregator / feed” designs. [prachub](https://prachub.com/interview-questions/design-a-news-aggregator-system)
+- **Non‑functional awareness**: mentions latency targets, availability, robots.txt compliance, AI safety, and observability rather than leaving them implicit. [hellointerview](https://www.hellointerview.com/community/questions/news-aggregator-feed/cm96lh25n0039ad08067audlg)
+- **UX is coherent**: lead + grid, sticky topic nav, status pills, dual‑pane detail view are consistent with content‑first UX patterns and your current MVP. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/44072005/d3d8c212-7bd3-4358-b16e-24d1533f55db/mockup_design.md?AWSAccessKeyId=ASIA2F3EMEYEWR5Z24TB&Signature=UpZWMLbzNLmyGdCEYx%2Bzd%2FTx4K0%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEOb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJGMEQCIBal9d13mvBvKAkzyc1b%2F5dE0p3Von0dhmexc3xqW%2FPKAiBO8YW5OVnQ7Y6tZcs82vl79N%2Fz3sYUHwZ3jxThNwT2PCr8BAiv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F8BEAEaDDY5OTc1MzMwOTcwNSIMPr9l2%2F4cBFt9o5jbKtAE%2Bxx8BQbW9B8fyYhbIQyewTxmTfKKupZo%2FAJGb%2BSE1e0PgzjRL8NhVwMrnGJ0XnUB2ch2sJaaM6wNIQtTQPQ7nznXafNW7%2Be8P0TwSnLqvWBbChf9piOwk1VJvVhgWqAllLtHfsXbI2GxbpGHgh8y6eG4f3Ije8sMZuICxar32%2FBT0iKy8myNX36Ot8s6pRD0EaBTVVkvOnpqvMFkGGptK4qfPwKc27v4R0YyDZtuoF0ayaACXbTZiBB3EDCQBEvlYgJN61uoGsi%2FD3T95eMoslLWBTG63Yyks3%2Bxwn1oVCA8bU6cltPrbJck8ZPA1Iey4%2BYKjGINlNQU7xiclFlhNcamTt0BxhjdgB0rsRW5WhiYkIaaC5%2Bj1c4sVx1zxCxZ%2BKgMzpx5RC6zgFKEHJ06KAozDj9c8BUB0WQISs7Lenf1a3h8tuebD6B8kAEGBatew9Onadjp0uHw2RCUGiM7tNWMbnqk356qBCAQwrPqvUKhSrceZsjIdM6YOwvUaAh61NwHOXWS2xLGv1kxGpOsa5QitIJzPZDXCflHdqSBd%2BhELjaqvliqq3PCDGI4ZKCRsvePSAmWDBdiBuG2TJgSVpssW3CvqJZEUBYjdDFnmMCYlCB%2BtvNSV7UIQ9qQ9WJ9MIW%2BhaNm63Ch7odItyaDStDOvUjQdApbx7GutjSuQTjKCJI9osjl7boTJQlIiw1MZMpSOlScHv3wxx81agzxTFvNn3RmEsw%2BXd%2B66o4lB6WZbLQhBh2tuwf1GBHVV74r%2F3S%2FsJqLLOVRtPSZB7m7JzC8sZnRBjqZAc6kv545tWNk%2F65HUKDsYE%2FF4lGVME7%2BeoYyo4wz3Zc6SVnyvY6HBO%2FWcJtcEMbmuxdxjHzmvQKf0KzL54LGIdpdwTJCD%2FnXIDVkF3m3V6jYuxc%2BrjZxQU2NtqBswLClpOuHXksfb%2FPZaOQzWDsFAURvNOLrsrbNkzHkb1caTxVlSahP0uHnZV4UT2B4sGjHI3clhQ2N70nrlw%3D%3D&Expires=1780901519)
+
+#### 1.2 Gaps / weaknesses
+
+1. **Traffic and volume assumptions are missing**  
+   - There are no explicit numbers for expected articles/day, active users, or QPS per endpoint. That makes it hard to reason about whether a monolith is enough or if you need queues and specialized storage. [0xkishan](https://www.0xkishan.com/blogs/designing-a-scalable-news-feed-architecture)
+
+2. **Caching & feed generation strategy is under‑specified**  
+   - The PRD doesn’t describe how feed responses are cached (Next.js cache, Redis, Postgres materialized views) or whether feeds are computed on‑read vs pre‑computed. [arno.surfacew](https://arno.surfacew.com/posts/nextjs-architecture)
+   - News/feed systems often need aggressive caching and pre‑computed timelines to handle spikes and to avoid hammering storage on every request. [0xkishan](https://www.0xkishan.com/blogs/designing-a-scalable-news-feed-architecture)
+
+3. **Ranking / “impact” is hand‑waved**  
+   - “Impact sort” is listed, but there is no definition of score inputs (recency, source weight, topic density, duplication cluster, social signals) or compute path (batch vs near‑real‑time). [systemdesignhandbook](https://www.systemdesignhandbook.com/guides/google-news-system-design/)
+
+4. **Next.js architecture is high‑level only**  
+   - It says “Next.js 16 + React 19 + server components” but does not choose a concrete front‑end architecture pattern (feature‑based, FSD, layered services/hooks) or define what runs in RSC vs client components vs Route Handlers. [dev](https://dev.to/addwebsolutionpvtltd/architecting-large-scale-nextjs-applications-folder-structure-patterns-best-practices-2dpj)
+   - There is no explicit caching layer plan (Next.js fetch cache, route cache, edge cache, Redis) even though those are central to large‑scale Next apps. [magicui](https://magicui.design/blog/next-js-project-structure)
+
+5. **Ingestion pipeline design is simplistic**  
+   - It describes a scheduled pull model but doesn’t consider event‑driven vs purely scheduled, or the use of queues for decoupling collection, processing, and storage. [redpanda](https://www.redpanda.com/blog/building-event-driven-pipelines-sqs-s3)
+   - Deduplication strategy (URL + hash) is mentioned, but not how to handle errors, retries, or out‑of‑order delivery beyond basic retry. [prachub](https://prachub.com/interview-questions/design-a-news-aggregator-system)
+
+6. **AI summarization governance could be stronger**  
+   - Good on labeling and caching, but doesn’t define quality evaluation loops, sampling for review, or structured feedback channels from analysts/admins to improve prompts/models. [cloud.google](https://cloud.google.com/use-cases/ai-summarization)
+
+7. **Scaling roadmap is linear, not architectural**  
+   - The PRD implies you can “scale up” but doesn’t make explicit whether that’s vertical scaling of a monolith, horizontal scaling behind a load balancer, or an eventual move towards more decoupled services. [blog.kubesimplify](https://blog.kubesimplify.com/event-driven-architecture-simplified-monolith-to-microservices)
+
+In short: the PRD is a very good **product requirements** document, but light on **architectural variability, caching strategy, and concrete scale assumptions**.
+
+***
+
+### 2. Three implementation designs
+
+All three assume: Next.js 16 App Router, React 19, Tailwind v4, Shadcn UI, PostgreSQL 17 (plus optional Redis/queue). They differ in how ingestion, summarization, and API responsibilities are carved up.
+
+#### Design A — Monolithic Next.js app with in‑process jobs
+
+**Concept:** A single Next.js app (monolith) handles web UI, API routes, ingestion tasks, and summarization jobs, all running in one deployable unit. This is essentially the “basic monolith” step many feed systems start from. [news.ycombinator](https://news.ycombinator.com/item?id=32000598)
+
+**Backend shape**
+
+- **One repo, one deployable**: Next.js app with:  
+  - `/app` for routes and layouts  
+  - `/app/api/*` route handlers as the only HTTP API  
+  - `/lib` for domain services (ingestion, summarization, ranking)  
+  - A small “job runner” layer (e.g., node‑cron or a lightweight scheduler) inside the same process.  
+- Ingestion jobs: scheduled code inside the monolith (e.g., cron‑like tasks) run in a long‑lived server instance, pulling feeds, normalizing, deduping, and writing to Postgres. [blog.algomaster](https://blog.algomaster.io/p/designing-a-scalable-news-feed-system)
+- Summarization: jobs triggered via internal function calls from API route handlers; longer jobs may run in background tasks within the same process (e.g., using worker pools or simple in‑process queue).  
+
+**Frontend shape**
+
+- Uses Next.js App Router with server components for feeds and detail pages, Route Handlers as BFF.  
+- Feature‑based folder structure, but all code in one project according to large‑scale Next guidelines. [dev](https://dev.to/addwebsolutionpvtltd/architecting-large-scale-nextjs-applications-folder-structure-patterns-best-practices-2dpj)
+
+**Caching & performance**
+
+- Use Next.js built‑in cache (fetch cache + route cache) plus HTTP caching on `/api/articles` to avoid repeated queries for the same topic/subcategory. [magicui](https://magicui.design/blog/next-js-project-structure)
+- Optional in‑memory or Redis cache for hot feeds (e.g., “Top Stories”) if needed.  
+
+**Pros**
+
+- Very fast to build and deploy; minimal infra footprint. [blog.bitsrc](https://blog.bitsrc.io/frontend-architecture-a-complete-guide-to-building-scalable-next-js-applications-d28b0000e2ee)
+- Simple mental model: one codebase, one CI/CD, one place to debug.  
+- Great alignment with current MVP and team size (likely small).  
+
+**Cons**
+
+- Background jobs and API compete for the same process resources; ingestion/summarization spikes can impact user‑facing latency. [0xkishan](https://www.0xkishan.com/blogs/designing-a-scalable-news-feed-architecture)
+- Harder to scale ingestion/summarization independently — you typically scale the whole app.  
+- Observability and failure isolation are weaker (e.g., memory leak in ingestion affects the web tier). [news.ycombinator](https://news.ycombinator.com/item?id=32000598)
+
+**When Design A is appropriate**
+
+- Modest traffic, low to mid ingestion volume, small team.  
+- Primary goal is speed to production and you’re okay with refactoring later. [blog.algomaster](https://blog.algomaster.io/p/designing-a-scalable-news-feed-system)
+
+***
+
+#### Design B — Modular monolith + external queue (recommended)
+
+**Concept:** Keep **one logical product** and one database, but split the system into two deployables: the **Next.js app** and a **Node worker service**. They share a Postgres DB and communicate asynchronously via a managed queue (e.g., SQS, RabbitMQ, or a Redis‑based queue like BullMQ). This mirrors many “scalable but not over‑microserviced” news aggregators. [automq](https://www.automq.com/blog/kafka-vs-sqs-messaging-streaming-platforms-comparison)
+
+**Backend shape**
+
+- **Services:**  
+  - **Web App** (Next.js): handles UI, public API endpoints, and lightweight write operations (preferences, triggers).  
+  - **Worker Service** (Node 24): runs ingestion jobs, summarization jobs, and heavy enrichment (dedupe, ranking computation).  
+- **Queue:**  
+  - Ingestion: `ingest-source` jobs per source; the scheduler (could be in worker or an external scheduler) enqueues jobs; workers consume and write to Postgres. [prefect](https://www.prefect.io/blog/event-driven-versus-scheduled-data-pipelines)
+  - Summarization: `summarize-article` jobs per article; API route `/api/summarize/[id]` enqueues a job and returns immediately; worker calls AI, writes summaries, and the UI polls or uses revalidation. [cio](https://www.cio.com/article/4130985/companies-are-using-summarize-with-ai-to-manipulate-enterprise-chatbots.html)
+- All services share **one Postgres** schema; no data duplication; the system is still a “modular monolith” at the data level. [arno.surfacew](https://arno.surfacew.com/posts/nextjs-architecture)
+
+**Frontend shape**
+
+- Same as A, but with clearer layering:  
+  - UI layer: Shadcn components and page layouts.  
+  - Hooks/services: data fetching hooks using `fetch`/SWR/TanStack Query that call Next.js Route Handlers. [blog.bitsrc](https://blog.bitsrc.io/frontend-architecture-a-complete-guide-to-building-scalable-next-js-applications-d28b0000e2ee)
+  - Route Handlers: thin HTTP layer calling domain services; domain services do not know if they are called from web or worker (helps testability). [arno.surfacew](https://arno.surfacew.com/posts/nextjs-architecture)
+
+**Caching & performance**
+
+- Introduce **explicit caching strategy**:  
+  - Use Next.js RSC fetch caching for feed queries, with time‑based revalidation per category (e.g., `revalidate=60` for Top/Finance, `300` for slower areas). [magicui](https://magicui.design/blog/next-js-project-structure)
+  - Optionally add Redis as a feed cache (pre‑computed feed slices keyed by topic/subtopic/sort) to avoid repeated expensive queries. [0xkishan](https://www.0xkishan.com/blogs/designing-a-scalable-news-feed-architecture)
+- Worker can pre‑compute ranked IDs for hot feeds periodically and store them in Postgres/Redis for fast retrieval.  
+
+**Pros**
+
+- Decouples ingestion and summarization from the web tier — a spike in ingestion doesn’t directly kill the UI. [linkedin](https://www.linkedin.com/posts/punitkumar99_golang-microservices-rabbitmq-activity-7373634709454675969-7hMC)
+- Keeps the system conceptually simple: one domain, one DB, minimal inter‑service contracts.  
+- Easy to scale workers separately (more summarization workers during the day, fewer at night).  
+- Queue provides retries, backoff, and dead‑letter handling for flaky sources and AI providers. [automq](https://www.automq.com/blog/kafka-vs-sqs-messaging-streaming-platforms-comparison)
+
+**Cons**
+
+- More infra pieces: queue, worker deploy, scheduler.  
+- Still not fully isolated; a bad migration or DB issue affects all components.  
+- Requires discipline to keep data and domain logic centralized, not duplicated across web and worker (enforce a domain layer).  
+
+**When Design B is appropriate**
+
+- Medium traffic and ingestion volume, where ingestion and summarization load is non‑trivial.  
+- Team wants more reliability and observability than a pure monolith, without going full microservices.  
+- This maps well to your stated “enterprise‑grade but pragmatic” goal. [blog.algomaster](https://blog.algomaster.io/p/designing-a-scalable-news-feed-system)
+
+***
+
+#### Design C — Full event‑driven microservices with Kafka
+
+**Concept:** Decompose into multiple services: **Source Collector**, **Processor/Enricher**, **Ranker**, **API/BFF**, plus optional **Search** & **Notification** services, all communicating via an event streaming platform (Kafka/Redpanda) and queues. Each service owns its own data and schema; Postgres may be split by bounded context. [blog.kubesimplify](https://blog.kubesimplify.com/event-driven-architecture-simplified-monolith-to-microservices)
+
+**Backend shape**
+
+- Services (examples):  
+  - Source Collector: fetches RSS/APIs, publishes `RawArticleFetched` events to Kafka.  
+  - Processor: consumes those events, normalizes, dedupes, categorizes, writes to an `articles` store, emits `ArticleUpdated` events. [linkedin](https://www.linkedin.com/posts/punitkumar99_golang-microservices-rabbitmq-activity-7373634709454675969-7hMC)
+  - Ranker: consumes article events, computes impact scores and feed ordering, writes to a `feeds` store.  
+  - Summarizer: consumes `SummarizeArticleRequested` events, calls AI, publishes `SummaryGenerated`.  
+  - API/BFF: Next.js app that reads from `articles` + `feeds` stores and exposes HTTP/GraphQL interfaces.  
+- Storage:  
+  - Postgres for core data (possibly multiple logical DBs).  
+  - Optional Elasticsearch for search, Redis for caching. [linkedin](https://www.linkedin.com/posts/punitkumar99_golang-microservices-rabbitmq-activity-7373634709454675969-7hMC)
+
+**Frontend shape**
+
+- Essentially the same as B (Next.js RSC, Shadcn), but the API layer may call multiple backing services or an API gateway.  
+
+**Caching & performance**
+
+- Feeds are pre‑computed and stored as materialized views or separate feed tables keyed by user/topic; reads are extremely fast. [0xkishan](https://www.0xkishan.com/blogs/designing-a-scalable-news-feed-architecture)
+- Kafka enables event replay to recompute feeds or apply new ranking models over historical data. [automq](https://www.automq.com/blog/kafka-vs-sqs-messaging-streaming-platforms-comparison)
+
+**Pros**
+
+- Highly scalable and resilient; ingestion, processing, ranking, search, and UI can all scale independently. [blog.kubesimplify](https://blog.kubesimplify.com/event-driven-architecture-simplified-monolith-to-microservices)
+- Great for complex enterprise deployments with many teams and heterogeneous workloads.  
+- Event log provides excellent auditing and replay capabilities.  
+
+**Cons**
+
+- Very high complexity for your current stage; significant operational overhead (Kafka clusters, multiple services, cross‑service debugging). [news.ycombinator](https://news.ycombinator.com/item?id=32000598)
+- Requires strong discipline in schema evolution, versioning events, and distributed tracing.  
+- Overkill unless you have truly large scale (tens of millions of articles, many teams).  
+
+**When Design C is appropriate**
+
+- Very high article volumes and strict low‑latency requirements across multiple tenants/regions.  
+- Large engineering org with dedicated platform team.  
+
+***
+
+## Implementation (Conceptual): Comparison & Evaluation
+
+### 3.1 Comparison table
+
+| Dimension              | Design A – Monolith                        | Design B – Modular + Queue                         | Design C – Event‑Driven Microservices               |
+|------------------------|--------------------------------------------|---------------------------------------------------|-----------------------------------------------------|
+| Complexity             | Low                                        | Medium                                            | High                                                |
+| Time‑to‑market         | Fastest                                   | Fast                                              | Slowest                                             |
+| Operational overhead   | Lowest (1 app)                            | Moderate (app + worker + queue)                  | Highest (many services + Kafka + search)           |
+| Scalability headroom   | Limited                                   | Good for mid–high                                | Very high                                          |
+| Failure isolation      | Weak                                      | Moderate                                         | Strong                                              |
+| Fit for current MVP    | High                                      | Very high                                        | Low                                                 |
+| Future enterprise fit  | OK (requires refactors later)             | Strong (good long‑term compromise)               | Strong but over‑engineered now                     |
+| Alignment w/ Next best practices | OK but can be messy if jobs mix with web | Strong (clean layering, services, RSC)         | Depends heavily on gateway design                  |
+| AI summarization load handling | Limited (same process)             | Good (workers scale separately)                  | Excellent (dedicated summarizer service)           |
+
+Sources on monolith vs modular vs microservices and evolution patterns. [blog.bitsrc](https://blog.bitsrc.io/frontend-architecture-a-complete-guide-to-building-scalable-next-js-applications-d28b0000e2ee)
+
+### 3.2 Critical evaluation
+
+- **Design A** is exactly what many guides recommend as the starting point: a monolithic app with a relational DB, especially for feed systems. [news.ycombinator](https://news.ycombinator.com/item?id=32000598)
+  - However, you already know this domain, and your MVP exists; the PRD’s goal is “enterprise‑grade”. A pure monolith under‑delivers on operational isolation and robustness for ingestion and AI workloads.  
+
+- **Design C** is what you’d see at the scale of Google News or an enterprise media monitoring platform with multiple teams. [systemdesignhandbook](https://www.systemdesignhandbook.com/guides/google-news-system-design/)
+  - It offers beautiful separation and resilience, but at the cost of a lot of infra and cognitive overhead. For the current scope and team size, it’s unjustified.  
+
+- **Design B** is the pragmatic middle: queues and separate workers give you most of the reliability benefits of C, while keeping code in a small number of deployables like A. [blog.kubesimplify](https://blog.kubesimplify.com/event-driven-architecture-simplified-monolith-to-microservices)
+  - It’s also very compatible with modern Next.js architecture advice: feature‑based, layered, with a clear domain layer shared between web and workers. [dev](https://dev.to/addwebsolutionpvtltd/architecting-large-scale-nextjs-applications-folder-structure-patterns-best-practices-2dpj)
+
+***
+
+## Validation: Merged “Best of All Three” Design
+
+Here’s a synthesized architecture that merges the best aspects of all three, and that the PRD should evolve toward:
+
+### 4.1 Backend architecture (merged)
+
+- **Core shape:** Design B (modular monolith + queue) as default.  
+- **Event‑flavored pipeline:** Borrow from C by modeling key transitions as events internally (e.g., `ArticleIngested`, `ArticleRankUpdated`, `SummaryGenerated`), even if they’re implemented as messages on SQS/Redis‑queue rather than Kafka initially. [prefect](https://www.prefect.io/blog/event-driven-versus-scheduled-data-pipelines)
+- **Domain‑centric modules:** Adopt a layered architecture inside the repo:  
+  - `domain/` — Source, Article, Summary, Ranking services (pure, testable). [arno.surfacew](https://arno.surfacew.com/posts/nextjs-architecture)
+  - `infra/` — Postgres access (Prisma/SQL), queue clients, AI client.  
+  - `apps/web/` — Next.js UI and API route handlers.  
+  - `apps/worker/` — Worker service that imports the same domain layer.  
+
+This keeps Design A’s simplicity and C’s “events as first‑class concepts” without introducing full microservice bloat.
+
+### 4.2 Frontend architecture (merged)
+
+- **Use Next.js App Router and server components heavily** for feed pages, with Route Handlers providing a clean internal API. [magicui](https://magicui.design/blog/next-js-project-structure)
+- **Feature‑based organization** (FSD‑inspired): slices like `topics`, `article-detail`, `admin`, each with UI, hooks, and service layer. [dev](https://dev.to/addwebsolutionpvtltd/architecting-large-scale-nextjs-applications-folder-structure-patterns-best-practices-2dpj)
+- **Client islands** only where needed (search input, sort/select, summarize button, topic nav interactions); everything else SSR/RSC to minimize JS and improve performance. [magicui](https://magicui.design/blog/next-js-project-structure)
+
+### 4.3 Caching & feed strategy (merged)
+
+- Take the monolithic “simple queries” baseline from A and harden it with B and C ideas:  
+  - **Short‑TTL RSC fetch caching** for feeds with `revalidate` tuned per category freshness needs. [arno.surfacew](https://arno.surfacew.com/posts/nextjs-architecture)
+  - Optional **feed materialization**: workers periodically compute ranked ID lists for hot feeds and store them in a `feed_slices` table or Redis, so `/api/articles` becomes a quick lookup. [blog.algomaster](https://blog.algomaster.io/p/designing-a-scalable-news-feed-system)
+  - Introduce **per‑source freshness metrics** and use them both for status pills and for caching TTL hints. [hellointerview](https://www.hellointerview.com/community/questions/news-aggregator-feed/cm96lh25n0039ad08067audlg)
+
+### 4.4 Ingestion and summarization (merged)
+
+- **Ingestion**  
+  - Scheduled (cron‑style) jobs in the worker service enqueue source‑level ingest jobs; you can switch to event‑driven triggers later if a provider offers webhooks. [redpanda](https://www.redpanda.com/blog/building-event-driven-pipelines-sqs-s3)
+  - Deduplicate and categorize using shared domain logic; emit events into the queue for downstream ranking or enrichment if needed.  
+
+- **Summarization**  
+  - `/api/summarize/[id]` only enqueues; worker does all AI calls, with backoff and dead‑lettering. [cloud.google](https://cloud.google.com/use-cases/ai-summarization)
+  - Summaries are versioned and can be flagged “needs_review”; admin UI for sampling and QA.  
+
+### 4.5 PRD adjustments implied by this merged design
+
+You don’t need a brand‑new PRD, but you should refine the existing one in a few places:
+
+1. **Add explicit scale assumptions** (articles/day, expected peak QPS) and map them to why you’re choosing “modular monolith + queue” rather than pure monolith or microservices. [prachub](https://prachub.com/interview-questions/design-a-news-aggregator-system)
+2. **Clarify architecture variant**: explicitly state “two‑service architecture (web + worker) with shared Postgres and managed queue; designed to evolve into more event‑driven patterns if/when scale demands.” [automq](https://www.automq.com/blog/kafka-vs-sqs-messaging-streaming-platforms-comparison)
+3. **Specify caching/feeding strategy**: Name the use of Next.js RSC fetch caching, optional Redis or materialized feed slices, and when you’d move to pre‑computed feeds. [0xkishan](https://www.0xkishan.com/blogs/designing-a-scalable-news-feed-architecture)
+4. **Tighten the ranking section**: Describe a first‑cut impact score formula and where it runs (worker vs DB vs API), and note this as evolvable (weights, ML later). [systemdesignhandbook](https://www.systemdesignhandbook.com/guides/google-news-system-design/)
+5. **Deepen AI governance**: Add QA sampling, review workflow, and monitoring for AI summarization (false facts, bias, prompt injection). [readpartner](https://readpartner.com/blog/ai-news-summarization)
+
+***
+
+## Next Steps
+
+If you’d like, the next iteration can:
+
+- Update the existing PRD text to explicitly encode **Design B + event‑flavored internals**, including a short “Architectural Variants Considered” section documenting why A/C were rejected for now (which is useful for future reviewers).  
+- Then we can start a **concrete implementation roadmap**: repo structure, services layout, and initial migrations for Postgres that match this merged design.
+
 # 
