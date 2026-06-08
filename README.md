@@ -127,24 +127,43 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant U as User
-  participant A as API (Next.js)
-  participant Q as Queue
+  participant S as Source (RSS/API)
   participant W as Worker
   participant DB as PostgreSQL
+  participant Q as Queue
+  participant A as API (Next.js)
+  participant U as User
 
-  Note over U,A: User requests summary
-  U->>A: POST /api/summarize/:id
-  Note over A,Q: API queues request
-  A->>Q: enqueue summarize(articleId)
-  Note over Q,W: Worker processes queue
-  Q-->>W: summarize(articleId)
-  W->>DB: Read article + call LLM
-  W->>DB: Store summary
-  Note over A,U: User views summary
-  U->>A: GET /article/:id (refresh)
-  A->>DB: Article + summary
-  A-->>U: Show AI summary
+  rect rgb(245,245,245)
+    Note over W,Q: Ingestion
+    W->>Q: Schedule ingest jobs
+    Q-->>W: ingest(source)
+    W->>S: Fetch latest items
+    S-->>W: Feed data
+    W->>W: Normalize + deduplicate
+    W->>DB: Upsert articles + metrics
+  end
+
+  rect rgb(245,245,245)
+    Note over A,U: Browsing
+    U->>A: GET /topics/:category
+    A->>DB: Query feed slice
+    DB-->>A: Article list
+    A-->>U: Render lead + grid
+  end
+
+  rect rgb(245,245,245)
+    Note over W,U: Summarization
+    U->>A: POST /api/summarize/:id
+    A->>Q: enqueue summarize(articleId)
+    Q-->>W: summarize(articleId)
+    W->>DB: Read article
+    W->>W: Call LLM provider
+    W->>DB: Store summary
+    U->>A: GET /article/:id (refresh)
+    A->>DB: Article + summary
+    A-->>U: Show AI summary
+  end
 ```
 
 ---
