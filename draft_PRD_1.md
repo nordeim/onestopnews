@@ -368,7 +368,7 @@ If you’re aligned with this research‑backed architecture and the proposed PR
 
 ---
 
-I’ve drafted the full `Project Requirements Document` for OneStopNews as a standalone Markdown report artifact. It covers:
+I’ve drafted the full `Project_Requirements_Document_1.md` for OneStopNews as a standalone Markdown report artifact. It covers:
 
 - Product vision, scope, and success metrics  
 - Detailed UX/IA and topic model  
@@ -660,4 +660,25 @@ If you’d like, the next iteration can:
 - Update the existing PRD text to explicitly encode **Design B + event‑flavored internals**, including a short “Architectural Variants Considered” section documenting why A/C were rejected for now (which is useful for future reviewers).  
 - Then we can start a **concrete implementation roadmap**: repo structure, services layout, and initial migrations for Postgres that match this merged design.
 
-# 
+---
+
+I’ve created a fully updated / improved PRD as a new Markdown report artifact (`onestopnews-prd-updated-architecture.md`) based on the modular‑monolith + worker + queue design we discussed, aligned with modern large‑scale Next.js and feed‑system architecture practices. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/44072005/d3d8c212-7bd3-4358-b16e-24d1533f55db/mockup_design.md?AWSAccessKeyId=ASIA2F3EMEYEWYR7BXMK&Signature=NLX4pHE5ZwFYD5NJzxvSzlUAP00%3D&x-amz-security-token=IQoJb3JpZ2luX2VjEOb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIQC0U7oreTzZNI%2Bz%2Fs1ZRd8L0QyvOO%2BtKaAbiYiaxnz0FAIgcWc9O6impR2Plv6JMKEvpLF9H48NGTYih0NtV62wFUEq%2FAQIr%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw2OTk3NTMzMDk3MDUiDITJBt1nVARBg4pgDSrQBBQFbUiggxK9rpOCfadnQzCCiSmi0DnRa1FLnuYQloQKyaUygUobji47IXN89hiRoeLrZDlVQ6jR%2B8LVzpNnQPaHxzAQcNA6otDS%2FGyXqVGZW0VXd8154etmXqX4HypJSdGhcFb2OM5eu3tqYV4yPI4YRE3KlMs8nrHjJ94PIX953rA5RdbayOtiWrsGJHH%2FCbWRerscetB1JYIjpY84vK0yuKVHHQZl%2BxtbFW0TgOKvnD6wJewMsnHyjl%2F1Vez0IZosf9p5Xc%2FB4eoF1w%2FaG6hGK21oPTJEoAxiqIz5gIMMUYjx68w483mRHAZXMr6zFpTqb6KPIpSiNY%2F0SMMOJbIYjn%2BnYsylhV2ok69%2BYEDnNLUzSnQ2ouKK%2FIRorHtHQTluTSQDT4zxLLI%2BxhH5hKKq4z13ctjUAjtwM0rqHN9SnaE2goUSrRfhfuba2Z%2FmmzrTQofkqx442ESaU%2FaFhc6SHoOWkYpMMh7lENtZfa8Qrs8CepHhMuSILt5KRcjrkRSCj9fA70nR0VyQb7o0oO9QWh1ModKmlkeT3eBju9wB8vv0h3kAUSksaDs1FY3IODDAwTQ0i7y4H4FB%2F5oExJUj%2BA02qZEa0oPPjwYLctkY4%2BexsOAfxdPNsTJaSOG%2BzwLORAQ5cpQeNSGFWTB5FMsnOMK46yMswb%2BXtQreYUO3I%2B7ZUDkBDtbv%2FZHZ%2BaMx3LY2pPSUSRl65OYTTHRBICHXnk%2FjUthQKJ2V5Yly93hPPhy6%2FzGnFQmMgFcDCOrwtSShYgKRvNfN0IKCFvK4%2BSswq6yZ0QY6mAHNogHOVOPQbkeltI0EBbW580CLMQwApO9wcZVRQ0NQhKt68fd4LNucI43NGqIzQsF1he2O1cJ5FFYxcyMXCY8jV%2FxFhmXdS7U0rsGl7MkWHUiO23P8keB321TyY88B1aVFuIcsWUnY8JDgeqE9aX33s6YPkofC6bAY4VUiihwPiDVrRqHG6puBotUR4%2B2CllzapSOeKJo2Gw%3D%3D&Expires=1780900862)
+
+Key upgrades encoded in this new PRD:
+
+- **Explicit architecture choice:**  
+  - Web App (Next.js 16 + React 19) + separate Worker Service (Node 24+) + managed queue + shared PostgreSQL 17, rather than a single all‑in‑one process. [systemdesignhandbook](https://www.systemdesignhandbook.com/guides/google-news-system-design/)
+- **Feature‑based, layered Next.js structure:**  
+  - Clear separation of UI, hooks, domain services, and Route Handlers, following large‑scale Next.js guidance. [microsoft](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/tr-2007-02.pdf)
+- **Defined scale assumptions and feed strategy:**  
+  - Daily article volumes, user scale, and read‑heavy patterns are now explicit, with matching caching and feed‑slice strategy inspired by news/feed system design literature. [hellointerview](https://www.hellointerview.com/community/questions/news-aggregator-feed/cm96lh25n0039ad08067audlg)
+- **Queue‑backed ingestion & summarization:**  
+  - Ingestion and AI summarization flow through dedicated jobs with retries/backoff and isolation from the web tier. [learn.microsoft](https://learn.microsoft.com/en-us/answers/questions/722208/whats-the-best-way-to-create-a-news-aggregator-sit)
+- **Ranking and impact score:**  
+  - An initial scoring model (recency + source priority + cluster size) is defined, computed in workers, and tied to “Impact” sort semantics. [blog.stackademic](https://blog.stackademic.com/designing-a-scalable-news-aggregator-system-google-news-scale-a-deep-dive-with-full-explanation-fc39ee5ea13b)
+- **Stronger AI governance:**  
+  - Summaries labeled, versioned, sampled for QA, with admin workflows to flag/regenerate and guardrails around prompts/output. [cloud.google](https://cloud.google.com/use-cases/ai-summarization)
+
+You can open/download the `Project_Requirements_Document_2.md` Markdown report from the artifacts pane and drop it straight into your repo as the canonical PRD. If you’d like, the next step can be: translate this into a concrete repo layout + initial migrations and service scaffolding.
+
+# https://www.perplexity.ai/search/you-are-claw-code-my-elite-cod-HVESLPS6Qb6QdQ85nrgbgg 
