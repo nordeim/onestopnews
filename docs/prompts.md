@@ -14,6 +14,10 @@ yes, please meticulously proceed with your best recommendations as decisons
 
 ---
 
+please meticulously plan to create a complete updated/improved replacement for the original static HTML mockup of the dynamic landing page below.
+
+---
+
 please meticulously plan to create an awesome static landing page mockup HTML based on your improved PRD design. Use the below original static HTML mockup to re-imagine your awesome landing page static HTML mockup.
 
 ---
