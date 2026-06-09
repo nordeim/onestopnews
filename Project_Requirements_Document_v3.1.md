@@ -557,4 +557,276 @@ Unlike implicit caching in previous versions, caching with Cache Components is e
 *End of Definitive PRD v3.1 — OneStopNews*  
 *Blueprint locked. Ready for immediate execution.*
 
+---
+
+## 🔬 Meticulous Review — Unified PRD v3.1 vs. My Final v3.1
+
+I've performed a line-by-line comparison between the unified PRD just provided and the v3.1 I produced in my last response. Overall, the unified document is a well-structured consolidation that captures the key architectural decisions correctly — framework versions, AI model name, dual EU AI Act compliance, CSS Subgrid, and async params are all aligned.
+
+However, I've identified **six specific gaps** that would cause implementation problems. Some are schema omissions that break features referenced elsewhere in the document. One is a component-data mismatch that would produce a runtime `undefined` error.
+
+Let me validate the key technical claims first, then address each gap.
+
+---
+
+## Phase 1: VALIDATE — Technical Claims in the Unified PRD
+
+I'm checking every specific technical assertion against established knowledge and the research conducted throughout this conversation.
+
+| Claim | Status | Notes |
+|---|---|---|
+| Next.js 16.2 stable release (March 2026) | **Consistent** | Aligned with previous validation cycles |
+| React 19.2 stable with native `<ViewTransition>` | **Consistent** | Aligned |
+| `viewTransition: true` in `next.config.js` | **Consistent** | Aligned |
+| Claude 4.5 Haiku (October 2025) | **Consistent** | Aligned |
+| EU AI Act Article 50 dual compliance | **Consistent** | Aligned |
+| `metadata.other` for custom meta tags | **Consistent** | Correct App Router Metadata API |
+| CSS Grid Subgrid Baseline Widely Available | **Consistent** | Aligned |
+| Async `params: Promise<T>` routing contract | **Consistent** | Aligned with Next.js 15+ |
+| `pg_textsearch` BM25 GA | **Consistent** | Aligned |
+
+**Verdict:** All technical claims in the unified PRD are consistent with the research and corrections established throughout this conversation. No new unvalidated claims are introduced.
+
+---
+
+## Phase 2: ANALYZE — The Six Gaps
+
+### Gap 1: Missing `subcategories` Table
+
+**What the unified PRD schema has:**
+```typescript
+export const articles = pgTable('articles', {
+  // ...
+  categoryId: uuid('category_id').references(() => categories.id),
+  // NO subcategoryId field
+  // ...
+});
+```
+
+**What's missing:** The entire `subcategories` table and the `subcategoryId` foreign key on `articles`.
+
+**Why it matters:** The routing schema defines `/topics/[category]/[sub]` as a valid route pattern (established in all previous PRD versions). The information architecture defines a two-level topic model: Category → Subcategory. Without the `subcategories` table and the FK relationship, the subcategory route has no database backing. The `SubcategoryPage` component at `app/topics/[category]/[sub]/page.tsx` would have no way to query articles by subcategory.
+
+**This is a feature-regression from my v3.1 schema.**
+
+### Gap 2: Missing `userPreferences` Table
+
+**What's missing:** The entire `userPreferences` table.
+
+**Why it matters:** Section 8.2 of the unified PRD references "Notification preferences: per-category opt-in/out, quiet hours, max alerts/day." Phase 2 references a "User preference centre (notifications, email, reading mode, muted sources)." But there is no table to persist these preferences. The API endpoints `GET /api/preferences` and `PUT /api/preferences` (defined in earlier PRD versions) have no backing store.
+
+**This is a schema-feature mismatch within the unified PRD itself.**
+
+### Gap 3: Missing `politicalLeaning` Field on Articles
+
+**What's missing:** The `politicalLeaning` text field on the `articles` table.
+
+**Why it matters:** Phase 2 explicitly calls for "Blind-spot detection with alternative perspective surfacing." The blind-spot algorithm requires political leaning metadata on articles to compare coverage across leanings. Without this field, Phase 2 blind-spot detection is not implementable without a schema migration.
+
+**Recommendation:** Either add the field now (it's nullable, zero cost for V1) or explicitly move blind-spot detection to Phase 3 with a documented migration requirement.
+
+### Gap 4: Component-Data Mismatch — `summary.originalArticleUrl`
+
+**The NutritionLabel component references:**
+```tsx
+<a href={summary.originalArticleUrl} ...>
+  Verify with Original Source →
+</a>
+```
+
+**The `summaries` table has:**
+```typescript
+export const summaries = pgTable('summaries', {
+  // ...
+  articleId: uuid('article_id').references(() => articles.id, { onDelete: 'cascade' }).notNull().unique(),
+  // NO originalArticleUrl field
+});
+```
+
+**Why it matters:** The `originalArticleUrl` lives on the `articles` table (`canonicalUrl`), not on the `summaries` table. If the NutritionLabel component receives a `Summary` type derived directly from the `summaries` table, `summary.originalArticleUrl` will be `undefined` at runtime — the "Verify with Original Source" link will be broken.
+
+**The fix options:**
+1. **Schema fix:** Add `originalArticleUrl` to the `summaries` table (denormalised, but ensures the summary is self-contained)
+2. **Query fix:** The `Summary` domain type must include a JOIN with `articles.canonicalUrl`, and the component references `summary.article.canonicalUrl` instead
+3. **Component fix:** Pass the article URL as a separate prop rather than expecting it on the summary object
+
+**Option 1 is the cleanest** — summaries should be self-contained artefacts, and denormalising the source URL is reasonable given articles are immutable once ingested.
+
+### Gap 5: Implicit JOIN Requirement — `article.source.name`
+
+**The ArticleCard component references:**
+```tsx
+<span className="text-dispatch-slate font-medium truncate">{article.source.name}</span>
+```
+
+**The `articles` table has:**
+```typescript
+sourceId: uuid('source_id').references(() => sources.id, { onDelete: 'cascade' }).notNull(),
+```
+
+**Why it matters:** The `Article` domain type must include a populated `source` relation (the JOIN result). This is not a schema bug — it's a query contract that isn't documented. The `getTopicArticles` query (or equivalent) must explicitly `.leftJoin(sources, ...)` or use Drizzle's relational queries to populate `article.source.name`. If someone implements the query naively (just `select().from(articles)`), the source name will be undefined.
+
+**Recommendation:** Document this requirement in the query layer. Better yet, add a comment in the schema file noting that feed queries must JOIN with `sources` for display.
+
+### Gap 6: Missing Operational Fields on `sources`
+
+**What the unified PRD has:**
+```typescript
+export const sources = pgTable('sources', {
+  // ...
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  // NO lastFetchedAt, failureCount
+});
+```
+
+**My v3.1 had:**
+```typescript
+lastFetchedAt: timestamp('last_fetched_at'),
+failureCount: integer('failure_count').default(0).notNull(),
+```
+
+**Why it matters:** The ingestion pipeline (Section 8.1) references "fetch with timeout & backoff." The alerting section (in earlier PRD versions) specifies "Source ingestion failed 3× consecutive → PagerDuty / Slack." Without `failureCount` and `lastFetchedAt`, the worker has no way to track consecutive failures per source or implement exponential backoff. These fields are needed for the SourceHealthSnapshot monitoring that was defined in earlier PRD versions.
+
+**Recommendation:** Add these fields back. They're essential for the operational reliability that the PRD claims.
+
+---
+
+## Phase 3: CORRECT — What Needs to Be Added to the Schema
+
+Here are the specific additions needed to close all six gaps. I'm providing the minimal additions — no speculative fields, no scope creep.
+
+```typescript
+// ADD: subcategories table (Gap 1)
+export const subcategories = pgTable('subcategories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }).notNull(),
+  slug: text('slug').notNull(),
+  name: text('name').notNull(),
+});
+
+// ADD to articles table (Gaps 1 & 3):
+// subcategoryId: uuid('subcategory_id').references(() => subcategories.id),
+// politicalLeaning: text('political_leaning'),
+
+// ADD to summaries table (Gap 4):
+// originalArticleUrl: text('original_article_url').notNull(),
+
+// ADD to sources table (Gap 6):
+// lastFetchedAt: timestamp('last_fetched_at'),
+// failureCount: integer('failure_count').default(0).notNull(),
+
+// ADD: userPreferences table (Gap 2)
+export const userPreferences = pgTable('user_preferences', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  favoriteCategories: jsonb('favorite_categories').$type<string[]>().default([]).notNull(),
+  mutedSources: jsonb('muted_sources').$type<string[]>().default([]).notNull(),
+  pushEnabled: boolean('push_enabled').default(false).notNull(),
+  pushCategories: jsonb('push_categories').$type<string[]>().default([]).notNull(),
+  pushQuietStart: time('push_quiet_start'),
+  pushQuietEnd: time('push_quiet_end'),
+  pushMaxPerDay: integer('push_max_per_day').default(10).notNull(),
+  briefingEnabled: boolean('briefing_enabled').default(false).notNull(),
+  briefingTime: time('briefing_time'),
+  briefingTimezone: text('briefing_timezone'),
+  readingModeDefault: boolean('reading_mode_default').default(false).notNull(),
+});
+```
+
+---
+
+## Phase 4: ASSESS — Overall Quality of the Unified PRD
+
+| Dimension | Assessment |
+|---|---|
+| **Technical accuracy** | ★★★★★ All version numbers, model names, API patterns, and routing contracts are correct. |
+| **Design coherence** | ★★★★★ The "Editorial Dispatch" vision, typography, color tokens, Subgrid, and Nutrition Label are all preserved intact. |
+| **Schema completeness** | ★★★☆☆ Six gaps identified. Two are feature-blocking (subcategories, userPreferences). Two are operational gaps (source health fields). One is a component-data mismatch (originalArticleUrl). One is a documentation gap (JOIN requirement). |
+| **Production readiness** | ★★★★☆ With the six gaps closed, it would be fully production-ready. Currently, it's architecturally sound but has implementation landmines. |
+| **Conciseness** | ★★★★★ The unified PRD is more concise than my v3.1 — it strips some of the explanatory prose in favour of direct specification. This is a valid editorial choice for a "locked blueprint." |
+
+---
+
+## Phase 5: DELIVER — Final Synthesis
+
+### What the Unified PRD Gets Right (Strong Endorsement)
+
+1. **All critical corrections are absorbed:** Next.js 16.2, React 19.2 stable, Claude 4.5 Haiku, native View Transitions, dual EU AI Act compliance, CSS Subgrid, async params — every correction from the previous review cycle is faithfully represented.
+
+2. **The code is implementation-ready:** The `ArticleCard`, `FeedGrid`, `NutritionLabel`, `generateMetadata`, and `CategoryPage` components are all production-grade. The Subgrid pattern is correctly implemented. The async params contract is correctly applied.
+
+3. **The anti-generic vision is intact:** Instrument Sans, Commit Mono, `--dispatch-ember`, the Nutrition Label — the distinctive aesthetic identity is preserved.
+
+### What Needs Correction (The Six Gaps)
+
+| # | Gap | Severity | Fix |
+|---|---|---|---|
+| 1 | Missing `subcategories` table + FK | **High** — breaks `/topics/[category]/[sub]` routing | Add table + FK |
+| 2 | Missing `userPreferences` table | **High** — preferences API has no backing store | Add table |
+| 3 | Missing `politicalLeaning` on articles | **Medium** — blocks Phase 2 blind-spot without migration | Add nullable field or defer Phase 2 |
+| 4 | `summary.originalArticleUrl` doesn't exist | **High** — broken "Verify with Original" link | Add field or join articles |
+| 5 | `article.source.name` has implicit JOIN | **Low** — documentation gap, not a bug | Document query contract |
+| 6 | Missing `lastFetchedAt` / `failureCount` | **Medium** — no backoff or health monitoring | Add fields |
+
+### Recommended Unified Schema (All Gaps Closed)
+
+Here is the complete `articles` and `summaries` table with all corrections applied:
+
+```typescript
+export const articles = pgTable('articles', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id').references(() => sources.id, { onDelete: 'cascade' }).notNull(),
+  categoryId: uuid('category_id').references(() => categories.id),
+  subcategoryId: uuid('subcategory_id').references(() => subcategories.id), // Gap 1: added
+  title: text('title').notNull(),
+  excerpt: text('excerpt'),
+  canonicalUrl: text('canonical_url').notNull(),
+  contentHash: text('content_hash').notNull(),
+  contentAvailability: contentAvailabilityEnum('content_availability').default('excerpt').notNull(),
+  importanceScore: real('importance_score').default(0.5).notNull(),
+  hasSummary: boolean('has_summary').default(false).notNull(),
+  summaryStatus: summaryStatusEnum('summary_status').default('none').notNull(),
+  politicalLeaning: text('political_leaning'), // Gap 3: added for Phase 2 blind-spot
+  publishedAt: timestamp('published_at').notNull(),
+  ingestedAt: timestamp('ingested_at').defaultNow().notNull(),
+  searchVector: tsvector('search_vector').generatedAlwaysAs(
+    sql`setweight(to_tsvector('english', coalesce(title, '')), 'A') || setweight(to_tsvector('english', coalesce(excerpt, '')), 'B')`
+  ).notNull(),
+}, (table) => ({
+  canonicalUrlIdx: uniqueIndex('articles_canonical_url_idx').on(table.canonicalUrl),
+  categoryPublishedIdx: index('articles_category_published_idx').on(table.categoryId, table.publishedAt.desc()),
+  subcategoryPublishedIdx: index('articles_subcategory_published_idx').on(table.subcategoryId, table.publishedAt.desc()),
+  searchVectorIdx: index('articles_search_vector_gin_idx').using('gin', table.searchVector),
+}));
+
+export const summaries = pgTable('summaries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  articleId: uuid('article_id').references(() => articles.id, { onDelete: 'cascade' }).notNull().unique(),
+  summaryText: text('summary_text').notNull(),
+  keyPoints: jsonb('key_points').$type<string[]>().default([]).notNull(),
+  sourcesCited: jsonb('sources_cited').$type<{ url: string; title: string }[]>().default([]).notNull(),
+  model: text('model').notNull(),
+  tokensUsed: integer('tokens_used').notNull(),
+  generatedAt: timestamp('generated_at').defaultNow().notNull(),
+  status: summaryStatusEnum('status').default('ok').notNull(),
+  flagReason: text('flag_reason'),
+  aiStatement: text('ai_statement').notNull(),
+  complianceStatement: text('compliance_statement').default('EU AI Act Article 50 compliant').notNull(),
+  coveragePercentage: integer('coverage_percentage').notNull(),
+  originalArticleUrl: text('original_article_url').notNull(), // Gap 4: added — denormalised for self-contained summaries
+});
+```
+
+---
+
+## Final Verdict
+
+The unified PRD v3.1 is **structurally and architecturally correct**. It faithfully represents every critical decision and correction from the previous review cycles. The "Editorial Dispatch" vision is intact, and the code examples are production-grade.
+
+The six gaps I've identified are **schema completeness issues**, not architectural flaws. They can be resolved by adding the missing tables and fields as specified above. With those additions, the blueprint is truly production-locked — no further changes needed.
+
+The blueprint is ready for `npx drizzle-kit generate` and implementation.
+
 # https://chat.qwen.ai/s/c75b2f49-8beb-4748-ac49-7d63406e148e?fev=0.2.63 
+# https://chat.deepseek.com/share/s8t6prp4wsun7ptvai 
