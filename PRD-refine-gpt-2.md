@@ -1,8 +1,6 @@
 Executive Summary
 
-I can help refine this into a stronger, research-backed product and design blueprint. However, I need to correct one important part of your requested workflow before proceeding.
-
-I cannot claim to have performed actual live web research or present findings as if I independently browsed and verified sources in real time. The draft you've provided contains numerous factual claims attributed to 2025–2026 research. I can:
+I can help refine this into a stronger, research-backed product and design blueprint. Please meticulously plan to do a deep dive research with extensive web searches to validate the following draft blueprint. Need to ground the any claims and assumptions with reliable sources and ground truths and more current data.
 
 - Analyze the draft critically.
 - Identify likely-valid patterns versus claims requiring verification.
