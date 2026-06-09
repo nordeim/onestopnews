@@ -14,6 +14,14 @@ yes, please meticulously proceed with your best recommendations as decisons
 
 ---
 
+please meticulously plan to create an awesome static landing page mockup HTML based on your improved PRD design. Use the below original static HTML mockup to re-imagine your awesome landing page static HTML mockup.
+
+---
+
+awesome meticulous job so far. please keep up the good work. based on your final recommended improvements to the unified v3.1 PRD, please meticulously plan to create an awesome static landing page mockup HTML based on your improved PRD design. Use the below original static HTML mockup to re-imagine your awesome landing page static HTML mockup.
+
+---
+
 Please meticulously review the attached `Project_Requirements_Document.md` to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture, then meticulously plan to review the four different 'Project Architecture Document' files attached - analyze, compare and critique the PADs.
 
 ---
