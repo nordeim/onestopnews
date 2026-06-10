@@ -6,9 +6,9 @@ IMPORTANT: Read fresh for every conversation. This file encodes the institutiona
 
 **Topic-first news aggregation with source-cited AI summaries.**
 
-A Next.js 16 + React 19.2 application backed by PostgreSQL 17, BullMQ v5 on Redis, and a Node.js 24 LTS worker service. The "Editorial Dispatch" design system uses Newsreader + Instrument Sans + Commit Mono with CSS Subgrid for feed alignment. Every AI summary carries a 3-layer machine-readable provenance disclosure (JSON-LD + HTTP header + HTML meta tag) for EU AI Act Article 50 compliance.
+A Next.js 16 + React 19.2 application backed by PostgreSQL 17, BullMQ v5 on Redis, and a separate Node.js 24 LTS worker service. The "Editorial Dispatch" design system uses Newsreader + Instrument Sans + Commit Mono with CSS Subgrid for feed alignment. Every AI summary carries a 3-layer machine-readable provenance disclosure (JSON-LD + HTTP header + HTML meta tag) for EU AI Act Article 50 compliance.
 
-**Maintained by:** Senior Engineering, Tech Leads, DevOps  
+**Maintained by:** Senior Engineering, Tech Leads, DevOps
 **Authoritative Sources:** `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
 
 ---
@@ -66,37 +66,73 @@ function handle(input: unknown) {
 ```
 
 - **`strict: true`** — non-negotiable.
+- **`noUncheckedIndexedAccess: true`** — catches undefined array access at compile time. Without this flag, `arr[i]` returns `T` instead of `T | undefined`, hiding potential runtime errors. This is the single highest-value strictness improvement available.
 - **`interface` > `type`** for structural definitions. `type` for unions / intersections.
 - **Early returns** over deeply nested conditionals.
 - **Composition over inheritance** — no class hierarchies for business logic.
 - **Avoid explicit return types** unless the function is a public API boundary.
+- **No `enum` or `namespace`** — use string unions and ES modules instead. Enums compile to runtime IIFEs and violate `erasableSyntaxOnly`.
+- **`import type` for type‑only imports** — required when `verbatimModuleSyntax` is enabled.
 
 ### Next.js 16 App Router
 
 - **Server Components by default.** Use `'use client'` only for interactivity (state, effects, browser APIs).
 - **Async `params` / `searchParams`** are `Promise<T>`. Always `await` them. Synchronous access causes a runtime 500.
+- **`cookies()` is async** — always `await` before calling `.get()`. In Next.js 15/16, `cookies()` returns a `Promise<ReadonlyRequestCookies>`; failing to `await` produces `TS2339: Property 'get' does not exist on type 'Promise<...>'`.
 - **No data fetching in Layouts.** Layouts cause re-renders. Fetch in Pages.
 - **Route Handlers** (`app/api/.../route.ts`) for public HTTP endpoints. Server Actions for mutations.
-- **`proxy.ts`** (not `middleware.ts`) is the network boundary. Cookie check + redirect only. No DB calls.
+- **`proxy.ts`** (not `middleware.ts`) is the network boundary. Cookie check + redirect only. No DB calls. The proxy function runs on Node.js only — Edge runtime is not supported.
 
 #### Critical Configuration (verified positions — wrong placement = silent breakage)
 
 | Flag | Placement | What Breaks if Wrong |
 | :--- | :--- | :--- |
 | `cacheComponents: true` | **Top-level** | Every `"use cache"` silently ignored. Zero caching. |
-| `cacheLife: { ... }` | **Top-level** | `cacheLife('feed')` throws runtime — profile missing. |
+| `cacheLife: { stale, revalidate, expire }` | **Top-level** | `cacheLife('feed')` throws runtime — profile missing. All three fields (`stale`, `revalidate`, `expire`) are required; `expire` controls max stale duration before dynamic rendering. |
 | `turbopack: {}` | **Top-level** | Ignored or config warning. |
 | `experimental.viewTransition` | **Inside `experimental: {}`** | Transitions silently disabled. |
-| `experimental.ppr` | **DO NOT INCLUDE** | Build error in Next.js 16. |
+| `experimental.ppr` | **DO NOT INCLUDE** | Build error in Next.js 16 — removed; `cacheComponents` implements PPR as default. |
 | `experimental.dynamicIO` | **DO NOT INCLUDE** | Deprecated — replaced by `cacheComponents`. |
+
+#### `proxy.ts` Matcher
+
+The proxy file uses a broad matcher pattern to intercept all routes except static assets:
+
+```ts
+// src/proxy.ts
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+};
+```
 
 ### Drizzle ORM & Database
 
 - **Lazy Proxy Connection:** `lib/db/index.ts` defers connection until first query. Prevents build-time crashes.
 - **Migrations:** `drizzle-kit generate` + `migrate`. **Never `push`** in production.
-- **Additive-only deployments：** when removing a column, deploy code first (stop reading it), drop column in next release.
+- **Additive-only deployments:** when removing a column, deploy code first (stop reading it), drop column in next release.
 - **Connection Pool:** `max: 10` assumes **dedicated Node.js runtime** (Docker, Railway, ECS). For serverless (Vercel, Lambda), swap to a connection pooler (PgBouncer / Supavisor).
 - **All queries via `queries.ts`** in the relevant feature module. No raw Drizzle calls in components.
+- **Service Factory Pattern (Recommended):** Encapsulate database queries in factory functions. Never call `db` directly in pages or server actions.
+
+```ts
+// services/articles.service.ts
+import { db } from '@/lib/db';
+import { articles } from '@/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
+
+export function createArticlesService() {
+  return {
+    async getFeed(limit = 31) {
+      return db.select().from(articles).orderBy(desc(articles.publishedAt)).limit(limit);
+    },
+    async getById(id: string) {
+      return db.query.articles.findFirst({ where: eq(articles.id, id) });
+    },
+  };
+}
+```
+
+**Why factories:** Injectable, mockable, testable, consistent type conversion, single source of truth for query logic.
 
 ### Authentication & Authorization (Auth.js v5)
 
@@ -145,7 +181,7 @@ The visual identity is **architectural, not cosmetic.** Every element carries th
 
 **Explicit Rejections:** Inter, Roboto, Space Grotesk. Never use them.
 
-**Colour Contract:**
+**Color Contract:**
 - `ink-900 (#1a1a18)` — headings
 - `ink-600 (#3d3d3a)` — body text (WCAG AAA on `paper-50`)
 - `ink-300 (#8a8a83)` — muted / metadata
@@ -153,6 +189,8 @@ The visual identity is **architectural, not cosmetic.** Every element carries th
 - `paper-100 (#f2f2ee)` — card surface
 - `dispatch-ember (#c7513f)` — breaking news, AI badge, focus rings
 - `dispatch-slate (#5a6b7a)` — tech / neutral accent
+
+**Design Token Discipline:** Never use raw hex colors in Tailwind classes (e.g., `bg-[#1a1a2e]`). All colors must come from the design token system (`bg-ink-900`, `text-paper-50`, etc.). Raw hex values bypass the theme and break maintainability.
 
 **CSS Subgrid Feed:**
 ```css
@@ -164,6 +202,9 @@ The visual identity is **architectural, not cosmetic.** Every element carries th
 ### Worker & BullMQ
 
 - **Redis config:** `maxRetriesPerRequest: null`, `noeviction` policy. Without these, BullMQ loses jobs.
+- **Connection splitting (production best practice):**
+  - **Worker connection:** `maxRetriesPerRequest: null`, `enableOfflineQueue: true` — workers must persist during Redis outages.
+  - **Queue (producer) connection:** `enableOfflineQueue: false` — prevents memory leaks and stale job accumulation.
 - **Concurrency:** `ingest: 50` (I/O), `summarize: 5` (AI rate-limited), `score: 20` (CPU/DB), `feed-slice: 10` (Redis).
 - **Job scheduling:** `upsertJobScheduler()` for RSS polling. Idempotent — restart-safe.
 - **Flows:** `FlowProducer` for atomic DAG (ingest → score → feed-slice refresh). Parent runs only after all children complete.
@@ -192,6 +233,43 @@ ok → needs_review → ok          (approve / regenerate)
 - `flagReason` field is populated when admin flags a summary.
 - `needs_review` hides the `NutritionLabel` from users.
 - Disabled summaries show no UI; `flagReason` retained for audit.
+
+### React 19 Patterns (Optional)
+
+**Forms: Use `useActionState`**
+```tsx
+"use client";
+import { useActionState } from 'react';
+
+function Form() {
+  const [state, formAction, isPending] = useActionState(
+    async (prev: FormState, formData: FormData) => {
+      // Server action or async logic
+      return { success: true, errors: {} };
+    },
+    { success: false, errors: {} }
+  );
+  return <form action={formAction}>...</form>;
+}
+```
+
+**Instant UI: `useOptimistic` + `startTransition`**
+```tsx
+const [optimisticItems, addOptimistic] = useOptimistic(items, (state, newItem) => [
+  ...state,
+  { ...newItem, pending: true },
+]);
+
+function handleAdd(item: Item) {
+  startTransition(async () => {
+    addOptimistic(item);
+    await addItemToServer(item);
+  });
+}
+```
+
+- **`"use client"` must be first line** — appears before any imports.
+- **RSC: No browser APIs** — Server Components cannot access `window`, `document`, `localStorage`, etc.
 
 ---
 
@@ -264,7 +342,7 @@ Must pass before any PR is merged. No exceptions.
 ## Code Quality Standards
 
 - **Lint:** ESLint + Prettier, enforced in CI.
-- **Types:** `tsc --noEmit` with `strict: true`. Zero `any`.
+- **Types:** `tsc --noEmit` with `strict: true` and `noUncheckedIndexedAccess: true`. Zero `any`.
 - **Naming:**
   - Components: PascalCase (`ArticleCard.tsx`)
   - Utilities/hooks: camelCase (`useDebounce.ts`)
@@ -278,7 +356,7 @@ Must pass before any PR is merged. No exceptions.
 
 | Concern | Posture |
 | :--- | :--- |
-| Next.js version | Pinned to `≥16.2.6`. CVE-2025-55182 (React2Shell RCE) + 13-advisory DoS/SSRF fix. |
+| Next.js version | Pinned to `≥16.0.7`. CVE-2025-55182 (React2Shell RCE) + 13-advisory DoS/SSRF fix. |
 | Auth | Auth.js v5 beta, HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
 | AI Disclosure | 3-layer: JSON-LD + HTTP header + HTML meta. C2PA rejected. EU AI Act Art. 50 compliant. |
 | Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex. |
@@ -292,14 +370,19 @@ Must pass before any PR is merged. No exceptions.
 | Anti-Pattern | Why Forbidden | Replacement |
 | :--- | :--- | :--- |
 | `any` in TypeScript | Breaks strict mode contract and type inference. | `unknown` + type guards. |
+| `enum` / `namespace` | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly`. | String unions (`type Status = "ACTIVE" \| "DRAFT"`) and ES modules. |
 | Custom component over Shadcn | Violates Library Discipline. Wastes engineering time. | Shadcn UI / Radix primitive, wrapped for styling. |
 | `throw new Error()` in RSC auth | Triggers full-page error boundary. Bad UX. | `redirect('/sign-in')` from `next/navigation`. |
-| Eager DBobar DB connection | Crashes Next.js build in CI or static export. | Lazy Proxy pattern in `lib/db/index.ts`. |
+| Eager DB connection | Crashes Next.js build in CI or static export. | Lazy Proxy pattern in `lib/db/index.ts`. |
 | `drizzle-kit push` in production | Overwrites schema without migration history. Irreversible. | `generate` + `migrate` only. |
 | Caching without `cacheComponents: true` | `"use cache"` is silently inert. Zero caching occurs. | Ensure flag is top-level in `next.config.ts`. |
 | Summarising `title_only` / `excerpt` | AI hallucination risk — fabricating content from insufficient input. | `contentAvailabilityEnum` guard: only `partial_text` or `full_text`. |
 | Synchronous `params` access | Runtime 500 in Next.js 16 App Router. | Always `await params` (Promise). |
+| Synchronous `cookies()` access | `TS2339` error; runtime undefined. | `(await cookies()).get('key')`. |
 | Generic fonts (Inter, Roboto) | Violates "Editorial Dispatch" anti-generic mandate. | Newsreader, Instrument Sans, Commit Mono only. |
+| Raw hex colors in Tailwind | Bypasses design token system; breaks theming and maintainability. | Use design tokens (`bg-ink-900`, `text-paper-50`). |
+| Stale `.next/` cache after route deletion | `TS2307: Cannot find module` from old generated types. | `rm -rf .next/` + `tsc --noEmit`. |
+| Missing `noUncheckedIndexedAccess` | `arr[i]` returns `T` instead of `T \| undefined`, hiding runtime errors. | Enable in `tsconfig.json`. |
 
 ---
 
