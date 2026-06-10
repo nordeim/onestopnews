@@ -14,6 +14,10 @@ Awesome job on your meticulous analysis and research. Please keep up the good wo
 
 ---
 
+using the attached system prompt and frontend design skill as your guide to meticulously plan to create an awesome static landing page mockup HTML. use the attached sample landing page mockup HTMLs as your starting point to re-imagine a new landing page HTML mockup for the dynamic website based on the attached PRD v4.3 
+
+---
+
 Now, please meticulously plan to merge/unify the two versions of PRD below into a complete improved v4.1 PRD. Please meticulously use extensive web searches to research any doubts, claims and assumptions to ground the assertions in v4.1.
 
 ---
