@@ -1,429 +1,446 @@
-# OneStopNews · Topic‑First AI News Aggregator
+<div align="center">
 
-> Everything important, sorted by topic — with on‑demand AI summaries.
+# OneStopNews
 
-[![Tech Stack](https://img.shields.io/badge/Next.js-16%2B-black.svg)](#-tech-stack)
-[![React](https://img.shields.io/badge/React-19%2B-61dafb.svg)](#-tech-stack)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38b2ac.svg)](#-tech-stack)
-[![Database](https://img.shields.io/badge/PostgreSQL-17-blue.svg)](#-tech-stack)
-[![License](https://img.shields.io/badge/License-Private-red.svg)](#-license)
+**Topic-first news aggregation with source-cited AI summaries.**
 
----
+[![Next.js](https://img.shields.io/badge/Next.js-%E2%89%A516.2.6-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-red)](./LICENSE)
 
-## ✨ What is OneStopNews?
+*Every story, organized by what it's about — not who published it.*
 
-OneStopNews is a **topic‑first news aggregation platform** that groups stories by what they are about (Top, Local, Tech, Global, Finance, Politics, Gossip) instead of who published them.
-
-It is designed for:
-
-- **Daily readers** who want a calm, fast way to scan important stories by topic.
-- **Analysts and researchers** who need a structured, high‑signal view of news, plus **on‑demand AI summaries** for compression and triage.
-- **Developers** who want a reference‑grade Next.js + React + Tailwind + Shadcn architecture for a modern content app.
-
-At its core, OneStopNews is:
-
-- **Topic‑first**: curated categories and subcategories are the primary navigation axis.
-- **Source‑respectful**: always links to the original publisher; never republishes full copyrighted content.
-- **AI‑assisted, not AI‑controlled**: summaries are optional, clearly labeled, and easily compared against the original article.
+</div>
 
 ---
 
-## 🔍 Key Features
+## Overview
 
-### Reader Experience
+OneStopNews is a topic-first news aggregation and AI summarisation platform that reorganises public news content around subjects rather than sources. It collects article metadata from 50–200+ diverse RSS/Atom/JSON feeds, normalises and categorises stories into a two-level topic hierarchy, and presents them in a calm, editorially-informed interface built on the **"Editorial Dispatch"** design system. Every AI-generated summary carries a machine-readable **3-layer provenance disclosure** (JSON-LD + HTTP header + HTML meta tag) achieving full EU AI Act Article 50 compliance — no C2PA, no ambiguity.
 
-- **Topic‑first browsing**
-  - Top‑level categories (Top, Local, Tech, Global, Finance, Politics, Gossip).
-  - Curated subcategories (e.g., “Apple & Devices”, “Singapore transport”, “US politics”).
-- **Scan‑optimized layout**
-  - Lead story card + dense grid of article cards.
-  - Sticky “Current view” header with story counts.
-- **Search & filters**
-  - Keyword search across titles/excerpts.
-  - Filter by category, subcategory, time, summary availability.
-  - Sort by latest, impact (importance score), or “summary ready”.
-- **AI summaries on demand**
-  - Per‑article summaries with bullet‑point key takeaways.
-  - Clear toggle between “AI Summary” and “Original Source”.
-  - Prominent external link to the publisher.
-
-### Operational / Enterprise Features
-
-- **Robust ingestion pipeline**
-  - RSS / Atom / JSON API based ingestion.
-  - Deduplication by canonical URL + content hash.
-  - Source health tracking and feed freshness metrics.
-- **Modular architecture**
-  - Next.js web app for UI + APIs.
-  - Separate worker service for ingestion, ranking, and summarization.
-  - Queue‑backed jobs for reliability and backpressure.
-- **AI governance**
-  - Summaries cached and versioned.
-  - Admin review tools for problematic outputs (roadmap).
-  - Clear user‑facing disclaimers.
+The platform targets three distinct personas: **daily scanners** who need a fast, calm mobile interface with AI-summarised push notifications; **enterprise analysts** who require trustworthy topic grouping, accurate source attribution, and citation-verified summaries; and **editors/admins** who manage ingestion pipelines, review flagged AI summaries, and monitor system health through a BullMQ dashboard.
 
 ---
 
-## 🧱 Tech Stack
+## Key Features
 
-| Layer            | Technology                                      |
-|------------------|-------------------------------------------------|
-| Framework        | Next.js 16+ (App Router, Route Handlers)       |
-| UI               | React 19+, Shadcn UI, Tailwind CSS v4          |
-| Language         | TypeScript (strict mode)                       |
-| Styling          | Tailwind CSS v4 + CSS variables for theming    |
-| Backend Runtime  | Node.js 24+                                    |
-| Database         | PostgreSQL 17 (primary), SQLite (dev/fallback) |
-| Caching (opt.)   | Redis (feed slices, hot data)                  |
-| Queue            | SQS / RabbitMQ / Redis‑backed queue            |
-| AI Summaries     | Pluggable LLM provider (HTTP API)              |
+| Feature | Description |
+| :--- | :--- |
+| 🗂️ **Topic-first feed** | Stories grouped by subject across all sources — not siloed by publisher. Two-level category/subcategory hierarchy. |
+| 🤖 **AI Nutrition Label** | Source-cited summaries with a human-readable transparency panel: model, temperature, coverage %, citations, compliance statement. |
+| 📡 **3-layer AI disclosure** | JSON-LD (`schema.org/CreativeWork`), `X-AI-Provenance` HTTP header, and `<meta name="ai-provenance">` — EU AI Act Art. 50 compliant. |
+| ⚡ **PPR + Cache Components** | Pre-rendered static shells served from CDN edge (TTFB < 50ms), dynamic content streamed into Suspense boundaries. Opt-in caching via `"use cache"`. |
+| 🏗️ **CSS Subgrid feed** | Headline / Excerpt / Metadata rows align across cards without fixed heights or JavaScript measurement. |
+| 🔄 **View Transitions** | Smooth topic-to-topic navigation via experimental `<PageTransition>` abstraction. Gracefully degrades on unsupported browsers. |
+| 🔔 **AI-summarised push** | Web Push notifications with 1-sentence AI summaries, quiet hours, and AES-256-GCM key encryption. |
+| 🔍 **Postgres-native search** | GIN-indexed `tsvector` generated columns + `pg_textsearch` BM25 relevance ranking. No Elasticsearch cluster. |
+| 📊 **BullMQ ingestion pipeline** | Scheduled RSS polling, prioritised summarisation jobs, atomic DAG flows (`ingest → score → refresh-feed-slice`). |
 
 ---
 
-## 🏗️ High‑Level Architecture
+## Architecture
 
-OneStopNews adopts a **modular monolith** architecture:
+### Tech Stack
 
-- **Web App** (Next.js + React) for UI and HTTP APIs.
-- **Worker Service** (Node.js) for ingestion/summarization/ranking.
-- **Queue** for job orchestration.
-- **PostgreSQL** as the system of record.
+| Layer | Technology | Version | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Web Framework** | Next.js | ≥16.2.6 | App Router, PPR, Cache Components, `proxy.ts` |
+| **UI Runtime** | React | 19.2 (stable) | View Transitions, `<Activity>` for zero-shift summary loading |
+| **Language** | TypeScript | 5.x (Strict) | Zero `any`. Type inference preferred. |
+| **Styling** | Tailwind CSS | v4 | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment. |
+| **Components** | Shadcn UI + Radix | Latest | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds. |
+| **ORM** | Drizzle ORM | Latest | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
+| **Validation** | Zod | 3.x | Schema-first, composable. Enforces AI output constraints. |
+| **Auth** | Auth.js | 5.0.0-beta.x | HttpOnly session cookies, Drizzle adapter. Pinned exact beta. |
+| **Database** | PostgreSQL | 17 | Primary datastore. GIN FTS + `pg_textsearch` BM25. |
+| **Search** | `tsvector` + `pg_textsearch` | Built-in / 1.0.0 | Full-text search + BM25 ranking inside Postgres. |
+| **Job Queue** | BullMQ | 5.x | Job graphs (Flows), priorities, built-in monitoring dashboard. |
+| **Queue Backend** | Redis (Upstash) | 7.x | AOF persistence, `noeviction`, `maxRetriesPerRequest: null`. |
+| **Worker Runtime** | Node.js | 24 LTS ("Krypton") | BullMQ-native. LTS through April 2028. |
+| **AI (Primary)** | Claude 4.5 Haiku | `claude-haiku-4-5` | $1/$5 per M tokens. Best cost/quality for news summarisation. |
+| **AI (Fallback)** | GPT-5 Mini | `gpt-5-mini` | Validated cost/quality fallback model. |
+| **Bundler** | Turbopack | Next.js 16 default | 5–10× faster Fast Refresh. Stable since 16.0. |
+
+### System Topology
 
 ```mermaid
-flowchart LR
-  subgraph WebApp[Web App · Next.js]
-    UI[UI · React + Shadcn]
-    API[Route Handlers / API]
-  end
+flowchart TB
+    subgraph Public["Public Internet"]
+        Browser["Browser (React 19)"]
+        Admin["Admin User"]
+    end
 
-  subgraph Queue[Job Queue]
-    Q[(ingest, summarize, rank)]
-  end
+    subgraph CDN["CDN Edge Layer"]
+        PPR["PPR Static Shells<br/>TTFB < 50ms"]
+    end
 
-  subgraph Worker[Worker Service · Node.js]
-    ING[Ingestion Jobs]
-    RANK[Ranking Jobs]
-    SUM[Summarization Jobs]
-  end
+    subgraph WebApp["Next.js 16 Web App (Stateless)"]
+        Proxy["proxy.ts<br/>Cookie check + redirect"]
+        AppRouter["App Router<br/>RSC + PPR + Cache Components"]
+        API["Route Handlers<br/>/api/articles, /api/summarize"]
+        AppLayer["Application Layer<br/>Server Actions · Feature Queries · Domain Services"]
+        InfraLayer["Infrastructure Layer<br/>Drizzle ORM · Auth.js v5 · BullMQ Producer"]
+    end
 
-  DB[(PostgreSQL 17)]
+    subgraph Data["Data Layer"]
+        PG["PostgreSQL 17<br/>articles · summaries · sources<br/>GIN FTS + BM25"]
+        Redis["Redis (Upstash)<br/>BullMQ queues · Feed cache<br/>Session store · Rate limits"]
+    end
 
-  UI --> API
-  API --> DB
-  API --> Q
+    subgraph Worker["Worker Service (Node.js 24+)"]
+        Scheduler["Job Scheduler<br/>upsertJobScheduler()"]
+        Workers["Workers<br/>ingest (50) · summarize (5)<br/>score (20) · feed-slice (10)"]
+        FlowProd["FlowProducer<br/>ingest → score → refresh"]
+    end
 
-  Q --> ING
-  Q --> RANK
-  Q --> SUM
+    subgraph External["External Services"]
+        RSS["RSS/Atom Sources (50–200+)"]
+        Anthropic["Anthropic API"]
+        OpenAI["OpenAI API"]
+    end
 
-  ING --> DB
-  RANK --> DB
-  SUM --> DB
-
-  Worker --> DB
+    Browser --> CDN
+    Admin --> CDN
+    CDN -->|Cache miss| Proxy
+    Proxy --> AppRouter
+    Proxy --> API
+    AppRouter --> AppLayer
+    API --> AppLayer
+    AppLayer --> InfraLayer
+    InfraLayer --> PG
+    InfraLayer --> Redis
+    Redis --> Worker
+    Worker --> PG
+    Worker --> Anthropic
+    Worker --> OpenAI
+    Scheduler --> Workers
+    Workers --> FlowProd
+    RSS --> Worker
 ```
 
-### Data Flow: Ingestion → Feed → Summary
+### Request Flow (5-Layer Model)
 
-```mermaid
-sequenceDiagram
-  participant S as Source (RSS/API)
-  participant W as Worker
-  participant Q as Queue
-  participant DB as PostgreSQL
-  participant A as API (Next.js)
-  participant U as User
+Every request passes through exactly these layers. Deviating from this order creates security and consistency bugs.
 
-  rect rgb(245,245,245)
-    Note over W,DB: Ingestion
-    W->>Q: Schedule ingest jobs
-    Q-->>W: ingest(source)
-    W->>S: Fetch latest items
-    S-->>W: Feed data
-    W->>W: Normalize + deduplicate
-    W->>DB: Upsert articles + metrics
-  end
+| Layer | Component | Role | Rule |
+| :--- | :--- | :--- | :--- |
+| **0** | `proxy.ts` | Network boundary | Optimistic cookie check only. No DB calls. No business logic. Redirects only. |
+| **1** | App Router | Route structure, metadata, PPR, Suspense | Layouts must not fetch data. Pages are the data-fetching boundary. |
+| **2** | Feature Modules | UI composition, data binding, mutations | All data access through `queries.ts`. No direct DB calls. |
+| **3** | Domain Services | Pure business logic | No Next.js imports. No DB client imports. Pure TypeScript. |
+| **4** | Infrastructure | Side-effecting operations | All DB access via Drizzle. All queries parameterized. |
 
-  rect rgb(245,245,245)
-    Note over DB,U: Browsing
-    U->>A: GET /topics/:category
-    A->>DB: Query feed slice
-    DB-->>A: Article list
-    A-->>U: Render lead + grid
-  end
+---
 
-  rect rgb(245,245,245)
-    Note over W,U: Summarization
-    U->>A: POST /api/summarize/:id
-    A->>Q: enqueue summarize(articleId)
-    Q-->>W: summarize(articleId)
-    W->>DB: Read article
-    W->>W: Call LLM provider
-    W->>DB: Store summary
-    U->>A: GET /article/:id (refresh)
-    A->>DB: Article + summary
-    A-->>U: Show AI summary
-  end
+## File Hierarchy
+
+```
+onestopnews-web/
+├── 📄 proxy.ts                  ← Network boundary (Layer 0): cookie check + redirect only
+├── 📄 next.config.ts            ← Cache Components, cacheLife profiles, Turbopack, experimental flags
+├── 📄 drizzle.config.ts         ← Drizzle kit: schema path, migration output
+│
+├── 📂 app/                      ← Next.js App Router (Layer 1)
+│   ├── 📄 layout.tsx            ← Root layout: fonts, providers. No data fetching.
+│   ├── 📂 (public)/             ← Unauthenticated routes
+│   │   ├── 📄 page.tsx          ← / — Top Stories feed (PPR)
+│   │   ├── 📂 topics/[category]/← /topics/:category — PPR + Cache Component
+│   │   └── 📂 article/[id]/     ← /article/:id — Fully dynamic (summary status)
+│   ├── 📂 (admin)/              ← Protected admin routes
+│   │   ├── 📄 layout.tsx        ← Session verification via auth()
+│   │   └── 📂 sources/          ← /admin/sources — Source management
+│   └── 📂 api/                  ← Route Handlers: public HTTP API
+│       ├── 📂 articles/         ← GET /api/articles (feed + search)
+│       └── 📂 summarize/[id]/   ← POST /api/summarize/:id (enqueue only)
+│
+├── 📂 features/                 ← Feature modules (Layer 2)
+│   ├── 📂 feed/
+│   │   ├── 📂 components/       ← Feed.tsx, ArticleCard.tsx, TopicNav.tsx
+│   │   ├── 📄 queries.ts        ← Drizzle queries with explicit sources JOIN
+│   │   └── 📄 actions.ts        ← Server Actions: savePreference, setFavoriteCategory
+│   ├── 📂 summaries/
+│   │   ├── 📂 components/       ← NutritionLabel.tsx, SummaryPanel.tsx, DisclosureBadge.tsx
+│   │   └── 📄 actions.ts        ← Server Action: requestSummary
+│   └── 📂 search/
+│       ├── 📂 components/       ← SearchBar.tsx, SearchResults.tsx
+│       └── 📄 queries.ts        ← FTS query builder (tsvector + BM25)
+│
+├── 📂 domain/                   ← Pure domain logic (Layer 3)
+│   ├── 📂 articles/normalize.ts ← URL normalization, content hashing
+│   └── 📂 ranking/score.ts      ← Importance scoring formula
+│
+├── 📂 lib/                      ← Infrastructure integrations (Layer 4)
+│   ├── 📂 db/
+│   │   ├── 📄 index.ts          ← Lazy Proxy DB client (defers connection to first query)
+│   │   └── 📄 schema.ts         ← Complete Drizzle schema: users, articles, summaries, sources, etc.
+│   ├── 📂 queue/
+│   │   └── 📄 index.ts          ← BullMQ Queue instances (producer side)
+│   ├── 📂 ai/
+│   │   └── 📄 prompts.ts        ← Prompt templates with Zod response schemas
+│   └── 📂 auth/
+│       ├── 📄 index.ts          ← Auth.js v5 server instance
+│       └── 📄 dal.ts            ← Data Access Layer: verifySession(), getUser()
+│
+└── 📂 shared/
+    ├── 📂 components/           ← Shadcn UI wrapped for bespoke "Editorial Dispatch" aesthetic
+    └── 📂 hooks/
+        ├── 📄 useDebounce.ts    ← 300ms debounce for search input
+        └── 📄 useArticleActivity.ts ← React 19.2 Activity hook for summary panel
 ```
 
 ---
 
-## 📁 Project Structure
+## Design System — "Editorial Dispatch"
 
-The repo is organized as a small **multi‑app workspace**:
+The visual identity is not a skin or an afterthought — it is architectural. Every engineering decision points toward these tokens. **Explicit rejections: Inter, Roboto, Space Grotesk.**
 
-```text
-onestopnews/
-├─ apps/
-│  ├─ web/                # Next.js 16+ app (UI + HTTP APIs)
-│  └─ worker/             # Node.js worker service (ingest, summarize, rank)
-├─ packages/
-│  ├─ domain/             # Pure domain logic (articles, sources, summaries, ranking)
-│  ├─ db/                 # PostgreSQL access layer (ORM/SQL, migrations, seeds)
-│  ├─ ui/                 # Shadcn UI wrappers + design system primitives
-│  ├─ config/             # Shared config (env parsing, logging, queue clients)
-│  └─ utils/              # Shared utilities (date, formatting, etc.)
-├─ prisma/ or migrations/ # Database schema & migrations
-├─ docs/
-│  ├─ prd.md              # Project Requirements Document (PRD)
-│  └─ architecture.md     # Extended architecture notes (optional)
-├─ .github/
-│  ├─ workflows/          # CI/CD pipelines (lint, test, typecheck, build)
-├─ README.md
-└─ package.json           # Workspaces, scripts, tooling
-```
+### Typography
 
-### Repo Structure Diagram
+| Role | Typeface | Weight | Fallback |
+| :--- | :--- | :--- | :--- |
+| **Headlines** | Newsreader (variable) | 800 (display) | Georgia, serif |
+| **UI / Body** | Instrument Sans (variable) | 400–600 | system-ui, sans-serif |
+| **Metadata** | Commit Mono | 400 | Fira Code, monospace |
 
-```mermaid
-graph TD
-  root[onestopnews/]
+### Colour Tokens
 
-  subgraph apps[apps/]
-    web[web · Next.js app]
-    worker[worker · Node worker]
-  end
+| Token | Hex | Usage |
+| :--- | :--- | :--- |
+| `--color-ink-900` | `#1a1a18` | Letterpress black — headings |
+| `--color-ink-600` | `#3d3d3a` | Body text — WCAG AAA on `paper-50` |
+| `--color-ink-300` | `#8a8a83` | Muted / metadata — use sparingly |
+| `--color-ink-100` | `#e8e8e4` | Dividers / borders |
+| `--color-paper-50` | `#fafaf8` | Newsprint off-white — page background |
+| `--color-paper-100` | `#f2f2ee` | Card surface |
+| `--color-dispatch-ember` | `#c7513f` | Breaking news — coral-red accent |
+| `--color-dispatch-sage` | `#6b8f71` | Finance / positive accent |
+| `--color-dispatch-slate` | `#5a6b7a` | Tech / neutral accent |
+| `--color-dispatch-clay` | `#8b6d5a` | Local / politics accent |
+| `--color-dispatch-violet` | `#7a6b8f` | Culture / creative accent |
 
-  subgraph packages[packages/]
-    domain[domain · business logic]
-    db[db · persistence layer]
-    ui[ui · shared UI]
-    config[config · env/logging/queue]
-    utils[utils · helpers]
-  end
+### CSS Subgrid Feed Architecture
 
-  docs[docs/]
-  gh[.github/]
-
-  root --> apps
-  root --> packages
-  root --> docs
-  root --> gh
-
-  apps --> web
-  apps --> worker
-  packages --> domain
-  packages --> db
-  packages --> ui
-  packages --> config
-  packages --> utils
-```
+The feed grid uses `grid-rows-subgrid` to force Headline, Excerpt, and Metadata rows to align across every card in a visual row — no fixed heights, no JavaScript measurement. Parent defines columns with `gap-x` only; each `ArticleCard` spans 3 row tracks via `row-span-3`.
 
 ---
 
-## 🚀 Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 24+
-- pnpm / npm / yarn (pnpm recommended)
-- PostgreSQL 17 running locally or in the cloud
-- (Optional) Redis for caching, SQS/RabbitMQ or Redis‑queue for jobs
+- **Node.js** ≥24 LTS ("Krypton")
+- **PostgreSQL** ≥17
+- **Redis** ≥7.x (or Upstash managed instance)
+- **pnpm** ≥9.x (recommended package manager)
 
-### 1. Clone & Install
+### 1. Clone and install
 
 ```bash
-git clone https://github.com/<your-org>/onestopnews.git
-cd onestopnews
-
-# using pnpm
+git clone https://github.com/your-org/onestopnews-web.git
+cd onestopnews-web
 pnpm install
 ```
 
-### 2. Environment Configuration
-
-Create `.env` files for web and worker apps:
+### 2. Configure environment
 
 ```bash
-cp apps/web/.env.example apps/web/.env
-cp apps/worker/.env.example apps/worker/.env
+cp .env.example .env.local
 ```
 
-Set values such as:
+Edit `.env.local` — see [Environment Variables](#environment-variables) for required values.
 
-- `DATABASE_URL` (PostgreSQL connection string)
-- `REDIS_URL` (optional, for caching and queue)
-- `QUEUE_URL` / `QUEUE_TYPE`
-- `AI_PROVIDER_API_KEY`
-- Any auth / SSO configs (when enabled)
-
-### 3. Database Setup
-
-Run migrations:
+### 3. Set up the database
 
 ```bash
-# example with Prisma
-pnpm db:migrate
+# Generate migration files from Drizzle schema
+pnpm drizzle-kit generate
+
+# Apply migrations
+pnpm drizzle-kit migrate
+
+# (Optional) Seed with sample categories and sources
 pnpm db:seed
 ```
 
-### 4. Run in Development
+### 4. Start development servers
 
 ```bash
-# terminal 1: web app
-pnpm dev:web   # wraps next dev in apps/web
+# Terminal 1 — Next.js dev server (Turbopack)
+pnpm dev
 
-# terminal 2: worker service
-pnpm dev:worker   # runs the job worker in apps/worker
+# Terminal 2 — Worker service
+pnpm worker:dev
 ```
 
-Visit:
+### 5. Verify setup
 
-- Web app: `http://localhost:3000`
+| Check | Expected |
+| :--- | :--- |
+| `curl http://localhost:3000` | HTML response with PPR shell |
+| `curl http://localhost:3000/api/articles?category=tech` | JSON array of articles with `source` objects |
+| BullMQ dashboard at `http://localhost:3001` | Active queues: `ingest`, `summarize`, `score` |
+| `pnpm tsc --noEmit` | Zero type errors |
 
 ---
 
-## 🧬 Architecture Details
+## Environment Variables
 
-### Web App (apps/web)
+```bash
+# ── Database ──────────────────────────────────────────────
+DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews
+# Connection pooler URL for serverless (PgBouncer / Supavisor)
+# DATABASE_URL_UNPOOLED=postgresql://user:pass@localhost:5432/onestopnews
 
-- **Next.js 16+ App Router**
-  - Server Components for feed pages and layout.
-  - Route Handlers for HTTP APIs under `/api/*`.
-- **Feature‑based structure** (example):
+# ── Redis ─────────────────────────────────────────────────
+REDIS_URL=redis://localhost:6379
 
-```text
-apps/web/src/
-├─ app/
-│  ├─ (marketing)/
-│  ├─ (app)/
-│  │  ├─ topics/
-│  │  │  ├─ [category]/
-│  │  │  │  └─ [subcategory]/page.tsx
-│  │  ├─ article/
-│  │  │  └─ [id]/page.tsx
-│  │  └─ layout.tsx
-│  └─ api/
-│     ├─ articles/route.ts
-│     ├─ categories/route.ts
-│     ├─ source-health/route.ts
-│     ├─ ingest/route.ts
-│     └─ summarize/[id]/route.ts
-├─ features/
-│  ├─ topics/
-│  ├─ feed/
-│  ├─ article-detail/
-│  ├─ search/
-│  └─ admin/
-└─ shared/
-   ├─ components/
-   ├─ hooks/
-   └─ lib/
-```
+# ── Authentication (Auth.js v5) ───────────────────────────
+AUTH_SECRET=  # Generate with: openssl rand -base64 33
+AUTH_URL=http://localhost:3000  # Production: your canonical URL
 
-- **UI Layer**: Shadcn UI primitives wrapped in a `packages/ui` design system.
-- **Data Layer**: Typed fetchers calling Route Handlers; React Query or RSC `fetch` as appropriate.
+# ── AI Models ─────────────────────────────────────────────
+ANTHROPIC_API_KEY=             # Claude 4.5 Haiku (primary)
+OPENAI_API_KEY=                # GPT-5 Mini (fallback)
 
-### Worker Service (apps/worker)
+# ── Web Push (VAPID) ─────────────────────────────────────
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:admin@onestopnews.com
 
-- Long‑running Node.js process listening to queue events:
-  - `ingest-source`
-  - `rank-feeds`
-  - `summarize-article`
-- Uses `packages/domain` + `packages/db` to:
-  - Fetch and normalize sources.
-  - Deduplicate and persist articles.
-  - Compute importance scores and feed slices.
-  - Call AI provider for summaries.
-
----
-
-## 🧪 Quality, Testing & Tooling
-
-- **TypeScript strict mode** across all apps and packages.
-- **ESLint + Prettier** for consistent style.
-- **Jest / Vitest** (or similar) for:
-  - Domain logic unit tests (ranking, dedupe, classification).
-  - API route handler tests.
-- **Playwright / Cypress** for end‑to‑end flows (browsing topics, summarizing, admin actions).
-- **GitHub Actions** CI:
-  - `lint` → `typecheck` → `test` → `build`.
-
-Example scripts (root `package.json`):
-
-```jsonc
-{
-  "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:worker": "pnpm --filter worker dev",
-    "build": "pnpm build:web && pnpm build:worker",
-    "lint": "eslint .",
-    "typecheck": "tsc -b",
-    "test": "vitest run"
-  }
-}
+# ── Observability (Optional) ──────────────────────────────
+SENTRY_DSN=
+AXIOM_TOKEN=
 ```
 
 ---
 
-## 🤝 Contributing
+## API Reference
 
-Contributions are welcome — from UI polish to ingestion adapters.
-
-### How to Contribute
-
-1. **Fork** the repo.
-2. Create a feature branch: `feat/topic-nav-keyboard-access`.
-3. Keep changes **surgical**:
-   - Touch only what you need.
-   - Match existing style & patterns.
-4. Add or update tests.
-5. Run:
-   - `pnpm lint`
-   - `pnpm typecheck`
-   - `pnpm test`
-6. Open a PR with:
-   - Clear description.
-   - Screenshots / CLI output where helpful.
-   - Notes on trade‑offs or open questions.
-
-### Good First Issues
-
-- Add new subcategories and topic copy.
-- Improve accessibility (keyboard nav, ARIA).
-- Add new ingestion adapters for public RSS/API sources.
-- Improve AI summary prompts / formatting.
+| Endpoint | Method | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `/api/articles` | `GET` | Public | Feed articles with cursor pagination. Query: `?category=tech&cursor=2026-06-10T12:00:00Z` |
+| `/api/articles` | `GET` | Public | Full-text search. Query: `?q=AI+regulation&category=tech` |
+| `/api/summarize/[id]` | `POST` | Session | Enqueue summarisation job for article `id`. Returns `202` with job ID. |
+| `/admin/sources` | `GET` | Admin | Source management dashboard. |
+| `/admin/sources` | `POST` | Admin | Add new RSS/Atom/JSON feed source. |
 
 ---
 
-## 🗺️ Roadmap
+## Testing
 
-- **v1.0 – Productionized MVP**
-  - Modular monolith + worker + queue.
-  - Topic‑first browsing, search, on‑demand summaries.
-- **v1.1 – Personalization & Admin**
-  - Persistent user preferences and read‑later list.
-  - Admin dashboards for ingestion/summarization.
-- **v1.2 – Advanced Ranking & Feeds**
-  - Improved impact scoring.
-  - Pre‑computed feed slices and smarter caching.
-- **v2.0 – Enterprise Extensions**
-  - SSO / SAML / OIDC.
-  - Advanced topic modeling, alerts, and multi‑tenant support.
+```bash
+# Run all tests
+pnpm test
+
+# Run tests for a specific package
+pnpm test --filter=feed
+
+# Run with coverage (target: 80% lines)
+pnpm test:coverage
+
+# Type-check without emitting
+pnpm tsc --noEmit
+
+# Lint
+pnpm lint
+```
+
+**Test prerequisites:** PostgreSQL and Redis must be running. Tests use isolated schemas that are created and torn down per suite.
 
 ---
 
-## 📜 License
+## Security & Compliance
 
-This project is currently **private / all rights reserved**.  
-Contact the maintainer if you want to discuss licensing or collaboration.
+| Concern | Posture |
+| :--- | :--- |
+| **Next.js version** | Pinned to ≥16.2.6. Mitigates CVE-2025-55182 (React2Shell RCE) and 13-advisory DoS/SSRF bundle. |
+| **AI Disclosure** | 3-layer machine-readable: JSON-LD + HTTP header + HTML meta. C2PA explicitly rejected (no text standard exists). EU AI Act Art. 50 compliant. |
+| **Authentication** | Auth.js v5 with HttpOnly session cookies. No JWT tokens in localStorage. |
+| **Network boundary** | `proxy.ts` provides optimistic UX redirects. Real auth enforcement in `(admin)/layout.tsx`. |
+| **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. |
+| **Push key encryption** | VAPID keys encrypted at rest with AES-256-GCM. |
+| **Accessibility** | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely. |
+| **DB connections** | Lazy Proxy pattern prevents build-time crashes. `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
+
+---
+
+## Critical Configuration Invariants
+
+These flags have validated placements in `next.config.ts`. Wrong placement silently breaks features or causes build errors.
+
+| Flag | Placement | What breaks if wrong |
+| :--- | :--- | :--- |
+| `cacheComponents: true` | **Top-level** | Every `"use cache"` directive silently ignored. Zero caching occurs. |
+| `cacheLife: { ... }` | **Top-level** | `cacheLife('feed')` throws runtime error — profile not found. |
+| `turbopack: {}` | **Top-level** | Ignored or causes config warning (graduated from experimental). |
+| `reactCompiler: true` | **Top-level** | Ignored if placed in `experimental`. |
+| `experimental.viewTransition` | **Inside `experimental: {}`** | Transitions silently disabled. |
+| `experimental.clientSegmentCache` | **Inside `experimental: {}`** | Smart prefetching disabled. |
+| `experimental.ppr` | **DO NOT INCLUDE** | Build error in Next.js 16 — removed entirely. |
+| `experimental.dynamicIO` | **DO NOT INCLUDE** | Deprecated — replaced by `cacheComponents`. |
+
+---
+
+## Project Status
+
+| Phase | Status | Key Deliverables |
+| :--- | :--- | :--- |
+| **Phase 1** — Core Feed & AI Summaries | In Development | Topic feed, ArticleCard, NutritionLabel, ingestion pipeline, summarisation worker |
+| **Phase 2** — Search & Blind-Spot Detection | Planned | BM25 search, multi-source event clustering, political leaning analysis |
+| **Phase 3** — Push Notifications & Briefings | Planned | Web Push with AI summaries, daily briefing email, quiet hours |
+| **Phase 4** — Enterprise Features | Planned | API keys, rate limiting, bulk export, advanced analytics dashboard |
+
+---
+
+## Contributing
+
+### Development conventions
+
+- **TypeScript strict mode** — no `any`, prefer `unknown`. Use type inference; avoid explicit return types unless necessary.
+- **`interface` over `type`** — use `interface` for structural definitions; `type` for unions/intersections only.
+- **Early returns** — avoid deeply nested conditionals. Guard clauses at the top.
+- **Composition over inheritance** — no class hierarchies for business logic.
+- **Library discipline** — if Shadcn UI / Radix provides a primitive, use it. Wrap for bespoke styling; never rebuild from scratch.
+- **All UI states** — every component must handle: loading, error, empty, success. Show loading only when no data exists.
+- **`queries.ts` boundary** — all DB access goes through feature-level `queries.ts` files. No raw Drizzle calls in components.
+
+### TDD flow
+
+```
+RED → Write a failing test that describes the desired behaviour
+GREEN → Write the minimum code to make the test pass
+REFACTOR → Clean up while keeping tests green
+```
+
+### Pre-commit hooks
+
+```bash
+pnpm lint          # ESLint + Prettier check
+pnpm tsc --noEmit  # Type-check
+pnpm test          # Run affected test suites
+```
+
+---
+
+## Architecture Decision Records
+
+Key ADRs are documented in the [Project Architecture Document (PAD) v4.5](./docs/Project_Architecture_Document_v4.5.md):
+
+| ADR | Decision | Core Rationale |
+| :--- | :--- | :--- |
+| ADR-001 | Next.js 16 App Router | Opt-in Cache Components eliminates v13/14 caching footguns. PPR + `proxy.ts` for edge prerendering. |
+| ADR-002 | BullMQ v5 on Redis | Job priorities, parent-child Flows, built-in monitoring dashboard. No SQS or pg-boss. |
+| ADR-003 | Drizzle ORM with Lazy Proxy | Zero runtime overhead. Lazy connection prevents Next.js build-time crashes. |
+| ADR-004 | Auth.js v5 (pinned beta) | Native App Router, HttpOnly cookies, Drizzle adapter. Strict PRD v4.3 alignment. |
+| ADR-005 | PostgreSQL FTS + `pg_textsearch` BM25 | Search inside Postgres. No Elasticsearch operational burden. |
+| ADR-006 | Modular Monolith + Separate Worker | AI summarisation (2–10s) must not block HTTP handling. No microservices complexity. |
+| ADR-007 | Turbopack as default bundler | 5–10× faster HMR. Fully compatible with all dependencies. |
+
+---
+
+## License
+
+Proprietary. All rights reserved. See [LICENSE](./LICENSE) for details.
