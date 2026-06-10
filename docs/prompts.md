@@ -32,6 +32,10 @@ Yes, please meticulously plan to generate a complete updated PAD replacement tha
 
 ---
 
+awesome meticulous job so far. please keep up the good work. now, please meticulously plan to validate your proposed changes with extensive web searches to ensure they are grounded in reality, then meticulously plan to create a complete replacement AGENTS.md that incorporates the validated improvements and corrections.
+
+---
+
 Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously review and analyze the proposed updated blueprint below and critically compare with yours. Remember to use extensive web searches to validate any findings and claims as well as assumptions.
 
 ---
