@@ -14,6 +14,10 @@ Awesome job on your meticulous analysis and research. Please keep up the good wo
 
 ---
 
+Now, please meticulously plan to merge/unify the two versions of PRD below into a complete improved v4.1 PRD. Please meticulously use extensive web searches to research any doubts, claims and assumptions to ground the assertions in v4.1.
+
+---
+
 Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously review and analyze the proposed updated blueprint below and critically compare with yours. Remember to use extensive web searches to validate any findings and claims as well as assumptions.
 
 ---
