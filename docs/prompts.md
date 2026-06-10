@@ -18,6 +18,10 @@ please meticulously plan to create a complete updated/improved replacement for t
 
 ---
 
+Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously review and analyze the proposed PRD update below and critically compare with yours. Remember to use extensive web searches to validate any findings and claims as well as assumptions. Please always generate the PRD and any report as a markdown document.
+
+---
+
 please meticulously plan to create an awesome static landing page mockup HTML based on your improved PRD design. Use the below original static HTML mockup to re-imagine your awesome landing page static HTML mockup.
 
 ---
