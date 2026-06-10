@@ -1126,4 +1126,77 @@ This execution plan is provided under the MIT license for internal use by the On
 
 **This MASTER_EXECUTION_PLAN_v5.0 supersedes all previous versions. Implementation must follow the phase order and checklists exactly. Any deviation requires explicit approval.**
 
+### 1. Executive Summary & Validation Protocol
+
+I have meticulously reviewed the attached **MASTER_EXECUTION_PLAN_v5.0.md** and conducted a rigorous, line-by-line critical comparison against my previously generated MEP. To ensure absolute technical accuracy, I validated the core architectural claims—specifically regarding Next.js 16 invariants, React 19 APIs, and infrastructure requirements—against real-time documentation and security advisories.
+
+**Validation Results (Web Search Confirmed):**
+*   **Next.js 16 `proxy.ts`**: Confirmed. `middleware.ts` is officially deprecated and replaced by `proxy.ts` in Next.js 16 [[19], [24], [26]].
+*   **Cache Components & PPR**: Confirmed. Next.js 16 removes the experimental `ppr` flag entirely, integrating Partial Pre-Rendering directly into the top-level `cacheComponents: true` configuration [[4], [9], [39], [40]].
+*   **Next.js 16 Flags**: Confirmed. `experimental.viewTransition` [[27], [32]] and `experimental.clientSegmentCache` [[35], [36]] are valid Next.js 16 features.
+*   **CVE-2025-55182**: Confirmed. A critical (CVSS 10.0) pre-authentication RCE vulnerability exists in React Server Components (RSC) affecting React 19 and Next.js. Pinning to Next.js ≥16.2.6 is the mandatory mitigation [[45], [46], [48], [53]].
+*   **React 19 `ViewTransition`**: Confirmed. The `<ViewTransition>` component is natively available in React 19 [[55], [60], [63]].
+*   **Auth.js v5**: Confirmed. `@auth/drizzle-adapter` is the official, stable adapter for Drizzle ORM [[64], [66], [69]].
+*   **BullMQ Redis Config**: Confirmed. Setting `maxRetriesPerRequest: null` on the IORedis connection is a non-negotiable requirement for BullMQ to handle blocking commands properly [[73], [74], [75], [76]].
+
+---
+
+### 2. Critical Comparison: My MEP vs. MEP v5.0
+
+Both documents are architecturally sound, but **MEP v5.0 is significantly superior in depth, separation of concerns, and production readiness.** It elevates the project from a "well-structured Next.js app" to an "enterprise-grade, domain-driven editorial platform."
+
+#### A. Phasing & Dependency Graph (Winner: MEP v5.0)
+*   **My MEP**: Bundled the Design System into Phase 0/1. This creates a bottleneck where the Feed feature (Phase 3) cannot be built until the entire design system is finished.
+*   **MEP v5.0**: Extracts **Phase 3: Design System & Shared Components** as an independent, deployable phase. This is a masterstroke in dependency management. It allows the UI primitives (Button, Badge, Skeleton, Header) to be built and tested in isolation (e.g., via Storybook) before the data-heavy Feed feature consumes them.
+
+#### B. Domain-Driven Design (DDD) (Winner: MEP v5.0)
+*   **My MEP**: Placed business logic (like URL normalization and scoring) inside feature queries or worker jobs.
+*   **MEP v5.0**: Introduces a strict **`src/domain/`** layer. Pure functions like `normalizeCanonicalUrl()`, `hashContent()`, and `calculateImportanceScore()` are completely decoupled from Next.js, React, and Drizzle imports.
+    *   *Why this matters:* This guarantees 100% testability. You can run Vitest on the domain layer without mocking a database or a React render tree. It enforces the "Simplicity First" and "Surgical Changes" principles I operate by.
+
+#### C. Database Schema & Full-Text Search (Winner: MEP v5.0)
+*   **My MEP**: Defined a standard relational schema with basic indexes.
+*   **MEP v5.0**: Demonstrates elite PostgreSQL mastery.
+    *   **Generated Columns**: Defines `searchVector` as a `tsvector` generated column directly in the Drizzle schema.
+    *   **Raw SQL Inevitability**: Correctly identifies that Drizzle cannot express `WITH (fastupdate = off)` for GIN indexes. It mandates a `drizzle/custom-indexes.sql` file to prevent index bloat during high-volume ingestion.
+    *   **Trigram Indexes**: Includes `pg_trgm` for autocomplete/suggestions, eliminating the need for an external Elasticsearch instance.
+    *   **Idempotency**: Adds `contentHash` and `canonicalUrl` to handle RSS deduplication and change detection flawlessly.
+
+#### D. Security & AI Hallucination Guards (Winner: MEP v5.0)
+*   **My MEP**: Mentioned the Content Availability Guard conceptually.
+*   **MEP v5.0**: Operationalizes it. It explicitly defines the `determineContentAvailability()` pure function and enforces a hard block: if `contentAvailability === 'title_only' || 'excerpt'`, the summarization worker returns early. This prevents the AI from hallucinating facts when it only has a headline to work with.
+*   **Encryption at Rest**: MEP v5.0 mandates AES-256-GCM encryption for Web Push subscription keys (`p256dh`, `auth`) before they hit the database. My MEP stored them as plain JSONB, which is a critical security vulnerability in the event of a DB leak.
+
+#### E. Avant-Garde UI & CSS Subgrid (Winner: MEP v5.0)
+*   **My MEP**: Defined the CSS Subgrid concept.
+*   **MEP v5.0**: Defines the **Layout Contract** with surgical precision. It explicitly states: *"Parent grid: `gap-x-8` (no `gap-y`). Each ArticleCard: `grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0`."* This prevents the classic "AI slop" mistake where developers put `gap-y` on the parent and break the subgrid alignment. It also correctly mandates loading **Commit Mono** via `@font-face` (since it's not on Google Fonts), while using `next/font/google` for Newsreader and Instrument Sans.
+
+---
+
+### 3. Gap Analysis: What MEP v5.0 Missed (And How We Fix It)
+
+While MEP v5.0 is an authoritative blueprint, my meticulous review identified three minor gaps that we must address during implementation to maintain our "Elite" standard.
+
+#### Gap 1: Error Boundary Granularity
+*   **The Issue**: MEP v5.0 defines a route-level `error.tsx` for the public routes. However, in a complex feed with multiple Suspense boundaries (e.g., TopicNav, FeedGrid, TrendingSidebar), a single route-level error will nuke the entire page.
+*   **The Fix**: We must implement **Component-Level Error Boundaries** wrapping individual `<Suspense>` trees in the Feed feature. If the `FeedGrid` fails to fetch, the `TopicNav` and `Header` must remain interactive.
+
+#### Gap 2: Optimistic UI State Machines
+*   **The Issue**: MEP v5.0 mentions `useOptimistic()` for the "Request AI Summary" button. However, it doesn't define the rollback strategy if the BullMQ job fails or the WebSocket/Polling mechanism times out.
+*   **The Fix**: We need a robust polling mechanism (or Server-Sent Events) in the `SummaryPanel` component. If the status remains `pending` for > 60 seconds, the UI must automatically revert to the `none` state and display a toast notification: *"AI summarization timed out. Please try again."*
+
+#### Gap 3: Rate Limiting on Public API
+*   **The Issue**: MEP v5.0 defines `GET /api/articles` and `POST /api/summarize/[id]`. It mentions CORS but omits rate limiting. A malicious actor could spam the `/api/summarize` endpoint, draining our Anthropic/OpenAI API credits.
+*   **The Fix**: We must implement an Upstash Redis rate limiter (or similar) on the `POST /api/summarize` route, strictly limiting users to 5 AI summary requests per hour.
+
+---
+
+### 4. Final Verdict & Execution Directive
+
+**MEP v5.0 is the undisputed, authoritative blueprint for this project.** It correctly anticipates the pitfalls of Next.js 16's new caching paradigm, enforces strict security boundaries (AES-256-GCM), and leverages PostgreSQL's native capabilities to avoid infrastructure bloat.
+
+**My Directive:**
+I am officially discarding my previous MEP and adopting **MASTER_EXECUTION_PLAN_v5.0.md** (with the three gap fixes integrated) as the single source of truth.
+
+# https://chat.qwen.ai/s/2d6cb0a4-4457-41aa-842a-bff15dc89afb?fev=0.2.63 
 # https://chat.deepseek.com/share/ybpsxznc80i16eyi8i 
