@@ -1,0 +1,125 @@
+diff --git a/MASTER_EXECUTION_PLAN_v5.0.md b/MASTER_EXECUTION_PLAN_v5.0.md
+index 72d2ff0..3f6548f 100644
+--- a/MASTER_EXECUTION_PLAN_v5.0.md
++++ b/MASTER_EXECUTION_PLAN_v5.0.md
+@@ -1141,21 +1141,21 @@ I have meticulously reviewed the attached **MASTER_EXECUTION_PLAN_v5.0.md** and
+ 
+ ---
+ 
+-### 2. Critical Comparison: My MEP vs. MEP v5.0
++### 2. Critical Comparison: My_MEP.md vs. MEP v5.0
+ 
+ Both documents are architecturally sound, but **MEP v5.0 is significantly superior in depth, separation of concerns, and production readiness.** It elevates the project from a "well-structured Next.js app" to an "enterprise-grade, domain-driven editorial platform."
+ 
+ #### A. Phasing & Dependency Graph (Winner: MEP v5.0)
+-*   **My MEP**: Bundled the Design System into Phase 0/1. This creates a bottleneck where the Feed feature (Phase 3) cannot be built until the entire design system is finished.
++*   **My_MEP.md**: Bundled the Design System into Phase 0/1. This creates a bottleneck where the Feed feature (Phase 3) cannot be built until the entire design system is finished.
+ *   **MEP v5.0**: Extracts **Phase 3: Design System & Shared Components** as an independent, deployable phase. This is a masterstroke in dependency management. It allows the UI primitives (Button, Badge, Skeleton, Header) to be built and tested in isolation (e.g., via Storybook) before the data-heavy Feed feature consumes them.
+ 
+ #### B. Domain-Driven Design (DDD) (Winner: MEP v5.0)
+-*   **My MEP**: Placed business logic (like URL normalization and scoring) inside feature queries or worker jobs.
++*   **My_MEP.md**: Placed business logic (like URL normalization and scoring) inside feature queries or worker jobs.
+ *   **MEP v5.0**: Introduces a strict **`src/domain/`** layer. Pure functions like `normalizeCanonicalUrl()`, `hashContent()`, and `calculateImportanceScore()` are completely decoupled from Next.js, React, and Drizzle imports.
+     *   *Why this matters:* This guarantees 100% testability. You can run Vitest on the domain layer without mocking a database or a React render tree. It enforces the "Simplicity First" and "Surgical Changes" principles I operate by.
+ 
+ #### C. Database Schema & Full-Text Search (Winner: MEP v5.0)
+-*   **My MEP**: Defined a standard relational schema with basic indexes.
++*   **My_MEP.md**: Defined a standard relational schema with basic indexes.
+ *   **MEP v5.0**: Demonstrates elite PostgreSQL mastery.
+     *   **Generated Columns**: Defines `searchVector` as a `tsvector` generated column directly in the Drizzle schema.
+     *   **Raw SQL Inevitability**: Correctly identifies that Drizzle cannot express `WITH (fastupdate = off)` for GIN indexes. It mandates a `drizzle/custom-indexes.sql` file to prevent index bloat during high-volume ingestion.
+@@ -1163,12 +1163,12 @@ Both documents are architecturally sound, but **MEP v5.0 is significantly superi
+     *   **Idempotency**: Adds `contentHash` and `canonicalUrl` to handle RSS deduplication and change detection flawlessly.
+ 
+ #### D. Security & AI Hallucination Guards (Winner: MEP v5.0)
+-*   **My MEP**: Mentioned the Content Availability Guard conceptually.
++*   **My_MEP.md**: Mentioned the Content Availability Guard conceptually.
+ *   **MEP v5.0**: Operationalizes it. It explicitly defines the `determineContentAvailability()` pure function and enforces a hard block: if `contentAvailability === 'title_only' || 'excerpt'`, the summarization worker returns early. This prevents the AI from hallucinating facts when it only has a headline to work with.
+-*   **Encryption at Rest**: MEP v5.0 mandates AES-256-GCM encryption for Web Push subscription keys (`p256dh`, `auth`) before they hit the database. My MEP stored them as plain JSONB, which is a critical security vulnerability in the event of a DB leak.
++*   **Encryption at Rest**: MEP v5.0 mandates AES-256-GCM encryption for Web Push subscription keys (`p256dh`, `auth`) before they hit the database. My_MEP.md stored them as plain JSONB, which is a critical security vulnerability in the event of a DB leak.
+ 
+ #### E. Avant-Garde UI & CSS Subgrid (Winner: MEP v5.0)
+-*   **My MEP**: Defined the CSS Subgrid concept.
++*   **My_MEP.md**: Defined the CSS Subgrid concept.
+ *   **MEP v5.0**: Defines the **Layout Contract** with surgical precision. It explicitly states: *"Parent grid: `gap-x-8` (no `gap-y`). Each ArticleCard: `grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0`."* This prevents the classic "AI slop" mistake where developers put `gap-y` on the parent and break the subgrid alignment. It also correctly mandates loading **Commit Mono** via `@font-face` (since it's not on Google Fonts), while using `next/font/google` for Newsreader and Instrument Sans.
+ 
+ ---
+@@ -1212,21 +1212,21 @@ Here is my meticulous critical comparison of **MEP v5.0** against my original ME
+ 
+ ---
+ 
+-## ✅ What MEP v5.0 Got RIGHT (Improvements Over My MEP)
++## ✅ What MEP v5.0 Got RIGHT (Improvements Over My_MEP.md)
+ 
+ | Area | Why v5.0 Is Superior |
+ |------|----------------------|
+ | **Phase structure (7 vs 10)** | Condensing to 7 phases reduces handoff friction. Bundling Auth into Phase 2 (Database + Infrastructure) is sound because the Drizzle adapter tables live in the schema. |
+-| **Domain-driven `src/domain/` layer** | My MEP scattered business logic across feature modules. v5.0 isolates pure functions (`normalizeCanonicalUrl`, `calculateImportanceScore`) in a zero-dependency layer — 100% testable without mocking React or Drizzle. |
+-| **Auth.js adapter tables** | v5.0 explicitly includes `accounts`, `sessions`, `verificationTokens` tables required by `@auth/drizzle-adapter`. My MEP omitted these, which would have caused runtime "table not found" errors. |
+-| **`SourceStatus` enum** | v5.0 adds `active | paused | error | disabled` status tracking for sources. My MEP only had `isActive: boolean`. The enum enables the auto-disable-on-5-failures pattern and source health dashboard. |
+-| **`cn()` utility + `cva` pattern** | v5.0 correctly identifies the Shadcn UI ecosystem's `cn()` (clsx + tailwind-merge) and `cva` (class-variance-authority) patterns. My MEP created bespoke `UiButton`, `UiCard` wrappers without using these standard Shadcn primitives. |
+-| **Header + Footer layout components** | v5.0 defines `Header.tsx` and `Footer.tsx` as layout primitives. My MEP omitted these entirely, leaving the root layout as a bare shell. |
+-| **Security headers in `next.config.ts`** | v5.0 includes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`. My MEP had zero security headers. |
+-| **`drizzle/custom-indexes.sql`** | v5.0 correctly identifies that Drizzle cannot express `WITH (fastupdate = off)` and creates a raw SQL migration file. My MEP only "documented" the need but provided no file. |
+-| **`⌘K`/`Ctrl+K` search shortcut** | v5.0 includes keyboard accessibility for the search bar. My MEP missed this entirely. |
+-| **`409 Conflict` on summarize endpoint** | v5.0 returns 409 if `summaryStatus !== 'none'`, preventing duplicate jobs. My MEP only checked content availability. |
+-| **`useOptimistic()` for summary request** | v5.0 uses React 19's `useOptimistic()` for instant UI feedback on summary requests. My MEP used basic loading state only. |
++| **Domain-driven `src/domain/` layer** | My_MEP.md scattered business logic across feature modules. v5.0 isolates pure functions (`normalizeCanonicalUrl`, `calculateImportanceScore`) in a zero-dependency layer — 100% testable without mocking React or Drizzle. |
++| **Auth.js adapter tables** | v5.0 explicitly includes `accounts`, `sessions`, `verificationTokens` tables required by `@auth/drizzle-adapter`. My_MEP.md omitted these, which would have caused runtime "table not found" errors. |
++| **`SourceStatus` enum** | v5.0 adds `active | paused | error | disabled` status tracking for sources. My_MEP.md only had `isActive: boolean`. The enum enables the auto-disable-on-5-failures pattern and source health dashboard. |
++| **`cn()` utility + `cva` pattern** | v5.0 correctly identifies the Shadcn UI ecosystem's `cn()` (clsx + tailwind-merge) and `cva` (class-variance-authority) patterns. My_MEP.md created bespoke `UiButton`, `UiCard` wrappers without using these standard Shadcn primitives. |
++| **Header + Footer layout components** | v5.0 defines `Header.tsx` and `Footer.tsx` as layout primitives. My_MEP.md omitted these entirely, leaving the root layout as a bare shell. |
++| **Security headers in `next.config.ts`** | v5.0 includes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`. My_MEP.md had zero security headers. |
++| **`drizzle/custom-indexes.sql`** | v5.0 correctly identifies that Drizzle cannot express `WITH (fastupdate = off)` and creates a raw SQL migration file. My_MEP.md only "documented" the need but provided no file. |
++| **`⌘K`/`Ctrl+K` search shortcut** | v5.0 includes keyboard accessibility for the search bar. My_MEP.md missed this entirely. |
++| **`409 Conflict` on summarize endpoint** | v5.0 returns 409 if `summaryStatus !== 'none'`, preventing duplicate jobs. My_MEP.md only checked content availability. |
++| **`useOptimistic()` for summary request** | v5.0 uses React 19's `useOptimistic()` for instant UI feedback on summary requests. My_MEP.md used basic loading state only. |
+ 
+ ---
+ 
+@@ -1259,7 +1259,7 @@ Uses pg_textsearch BM25: ORDER BY articles.search_vector <@> websearch_to_tsquer
+ - **Native PG FTS (no extension):** `WHERE search_vector @@ websearch_to_tsquery('english', $query) ORDER BY ts_rank_cd(search_vector, websearch_to_tsquery('english', $query)) DESC`
+ - **pg_textsearch BM25:** `ORDER BY content <@> 'search terms'` (raw text, requires the extension and a `bm25` index type)
+ 
+-**Fix:** Pick one approach. My MEP used the native FTS approach (ts_rank_cd), which is simpler and requires no extension. v5.0 should either:
++**Fix:** Pick one approach. My_MEP.md used the native FTS approach (ts_rank_cd), which is simpler and requires no extension. v5.0 should either:
+ 1. Drop `pg_textsearch` and use native `ts_rank_cd` + `websearch_to_tsquery` (my recommendation for V1)
+ 2. Or use `pg_textsearch` correctly with `<@>` + raw text input + `bm25` index type
+ 
+@@ -1351,7 +1351,7 @@ Including `push` even for dev creates muscle memory that could accidentally be u
+ 
+ ## 📊 Side-by-Side Comparison Matrix
+ 
+-| Dimension | My MEP (10-Phase) | MEP v5.0 (7-Phase) | Winner |
++| Dimension | My_MEP.md (10-Phase) | MEP v5.0 (7-Phase) | Winner |
+ |-----------|-------------------|---------------------|--------|
+ | Phase granularity | Fine-grained (10 phases) | Condensed (7 phases) | v5.0 (less handoff overhead) |
+ | Domain layer | Mixed into features | Dedicated `src/domain/` | v5.0 |
+@@ -1361,17 +1361,17 @@ Including `push` even for dev creates muscle memory that could accidentally be u
+ | Layout components (Header/Footer) | Missing | Included | v5.0 |
+ | `cn()` + `cva` patterns | Custom wrappers | Shadcn-standard patterns | v5.0 |
+ | CVE mitigation version | `≥16.2.6` (wrong) | `≥16.2.6` (wrong) | Tie — both wrong |
+-| Search query syntax | Native FTS (correct) | Mixed pg_textsearch (broken) | My MEP |
+-| `proxy.ts` matcher | PRD-aligned (broad) | Narrow (`/admin/:path*`) | My MEP |
++| Search query syntax | Native FTS (correct) | Mixed pg_textsearch (broken) | My_MEP.md |
++| `proxy.ts` matcher | PRD-aligned (broad) | Narrow (`/admin/:path*`) | My_MEP.md |
+ | BullMQ Redis config | Single connection (imprecise) | Single connection (imprecise) | Tie — both need split config |
+-| `cacheLife` profiles | PRD-exact (3 fields) | Simplified (missing `expire`) | My MEP |
+-| `importanceScore` type | Float 0.0–1.0 (matches schema) | Integer 0–100 (mismatches schema) | My MEP |
+-| `drizzle-kit push` | Forbidden everywhere | Listed in dev criteria | My MEP |
+-| Testing strategy | Dedicated Phase 10 with 22 files | §5 with less detail | My MEP |
+-| CI/CD pipeline | Full GitHub Actions workflows | Mentioned but not detailed | My MEP |
+-| Docker deployment | `Dockerfile.web` + `Dockerfile.worker` + `docker-compose.prod.yml` | Missing | My MEP |
+-| Risk register | 14-item with build mitigations | 14-item but less specific | My MEP |
+-| Performance budget | Listed per-endpoint (p95 ≤300ms) | General targets only | My MEP |
++| `cacheLife` profiles | PRD-exact (3 fields) | Simplified (missing `expire`) | My_MEP.md |
++| `importanceScore` type | Float 0.0–1.0 (matches schema) | Integer 0–100 (mismatches schema) | My_MEP.md |
++| `drizzle-kit push` | Forbidden everywhere | Listed in dev criteria | My_MEP.md |
++| Testing strategy | Dedicated Phase 10 with 22 files | §5 with less detail | My_MEP.md |
++| CI/CD pipeline | Full GitHub Actions workflows | Mentioned but not detailed | My_MEP.md |
++| Docker deployment | `Dockerfile.web` + `Dockerfile.worker` + `docker-compose.prod.yml` | Missing | My_MEP.md |
++| Risk register | 14-item with build mitigations | 14-item but less specific | My_MEP.md |
++| Performance budget | Listed per-endpoint (p95 ≤300ms) | General targets only | My_MEP.md |
+ 
+ ---
+ 
