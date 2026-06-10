@@ -534,15 +534,15 @@ export function PageTransition({ name, children }: PageTransitionProps) {
 
 ---
 
-## PRD v3.2 — Complete Merged & Production-Locked Blueprint
+## PRD v3.3 — Complete Merged & Production-Locked Blueprint
 
 ---
 
-# 📋 OneStopNews — Definitive Product Requirements Document v3.2
+# 📋 OneStopNews — Definitive Product Requirements Document v3.3
 
 > **Document Status:** Definitive, Production-Locked Blueprint
 > **Supersedes:** PRD v3.1 (Unified & Production-Locked)
-> **Key Revisions in v3.2:**
+> **Key Revisions in v3.3:**
 > - **[CRITICAL FIX]** `viewTransition` confirmed `experimental: {}` scoped, not top-level. `import { ViewTransition } from 'react'` confirmed clean (no prefix needed with Next.js App Router).
 > - **[CRITICAL FIX]** `cacheComponents: true` confirmed top-level (not in `experimental`). Simultaneously replaces `experimental.ppr` + `experimental.dynamicIO`. PPR is now implicit.
 > - **[CRITICAL FIX]** `experimental.ppr` flag explicitly removed — obsolete in Next.js 16.
@@ -567,9 +567,9 @@ export function PageTransition({ name, children }: PageTransitionProps) {
 
 OneStopNews is a **topic-first news aggregation and AI summarisation platform** that organises public news content by *what it is about* rather than *who published it*. It collects article metadata from diverse sources, normalises and categorises stories, and presents them in a calm, editorially-informed interface designed for both daily readers and enterprise analysts.
 
-This v3.2 blueprint is the definitive synthesis of avant-garde design ("Editorial Dispatch") and strict, production-grade engineering. It incorporates all validated Next.js 16.2 runtime contracts, legally compliant AI governance, structural CSS patterns, the `<PageTransition>` abstraction layer, all closed schema gaps, and the complete `next.config.ts` with verified flag placement.
+This v3.3 blueprint is the definitive synthesis of avant-garde design ("Editorial Dispatch") and strict, production-grade engineering. It incorporates all validated Next.js 16.2 runtime contracts, legally compliant AI governance, structural CSS patterns, the `<PageTransition>` abstraction layer, all closed schema gaps, and the complete `next.config.ts` with verified flag placement.
 
-### 1.1 Architectural Commitment (Definitive v3.2)
+### 1.1 Architectural Commitment (Definitive v3.3)
 
 | Concern | Choice | Rationale / Correction |
 |---|---|---|
@@ -853,7 +853,7 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
 
 - **Client:** React 19.2 + `<PageTransition>` (experimental View Transitions, progressive enhancement) + Web Push SW.
 - **Web App:** Next.js ≥16.2.6 (App Router, PPR via `cacheComponents: true`, `use cache`, `proxy.ts`).
-- **Database:** PostgreSQL 17 (Drizzle ORM, GIN FTS, BM25, all v3.2 schema additions).
+- **Database:** PostgreSQL 17 (Drizzle ORM, GIN FTS, BM25, all v3.3 schema additions).
 - **Cache/Queue:** Redis (Upstash) + BullMQ v5.
 - **Worker:** Node.js 24 LTS (Ingestion, Summarisation, Push Dispatch).
 
@@ -951,7 +951,7 @@ export default async function CategoryPage({
 }
 ```
 
-**`src/app/topics/[category]/[sub]/page.tsx`** *(v3.2 addition)*
+**`src/app/topics/[category]/[sub]/page.tsx`** *(v3.3 addition)*
 ```typescript
 import { Suspense } from 'react';
 import { PageTransition } from '@/components/primitives/PageTransition';
@@ -1101,7 +1101,7 @@ export default function FeedError({ error, reset }: ErrorProps) {
 
 ## 6. Data Model & Storage (Drizzle ORM — All Gaps Closed)
 
-**`src/lib/db/schema.ts`** — Complete v3.2 schema with all 14 gaps closed.
+**`src/lib/db/schema.ts`** — Complete v3.3 schema with all 14 gaps closed.
 
 ```typescript
 import {
@@ -1165,7 +1165,7 @@ export const categories = pgTable('categories', {
   description: text('description'),
 });
 
-// ─── v3.2 Addition: subcategories (Gap 1 + composite unique constraint Gap 7) ─
+// ─── v3.3 Addition: subcategories (Gap 1 + composite unique constraint Gap 7) ─
 export const subcategories = pgTable(
   'subcategories',
   {
@@ -1196,7 +1196,7 @@ export const sources = pgTable('sources', {
   priority: integer('priority').default(2).notNull(),
   pollIntervalMinutes: integer('poll_interval_minutes').default(15).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
-  // v3.2 Addition (Gap 6): Operational fields for backoff logic + health monitoring.
+  // v3.3 Addition (Gap 6): Operational fields for backoff logic + health monitoring.
   // lastFetchedAt: Used by ingestion worker to implement exponential backoff.
   // failureCount: Incremented on each consecutive failure. Reset to 0 on success.
   //   Alert threshold: failureCount >= 3 → Slack/PagerDuty alert (see Section 8.1).
@@ -1213,7 +1213,7 @@ export const articles = pgTable(
       .references(() => sources.id, { onDelete: 'cascade' })
       .notNull(),
     categoryId: uuid('category_id').references(() => categories.id),
-    // v3.2 Addition (Gap 1): Two-level topic hierarchy backing /topics/[cat]/[sub].
+    // v3.3 Addition (Gap 1): Two-level topic hierarchy backing /topics/[cat]/[sub].
     subcategoryId: uuid('subcategory_id').references(() => subcategories.id),
     title: text('title').notNull(),
     excerpt: text('excerpt'),
@@ -1227,7 +1227,7 @@ export const articles = pgTable(
     importanceScore: real('importance_score').default(0.5).notNull(),
     hasSummary: boolean('has_summary').default(false).notNull(),
     summaryStatus: summaryStatusEnum('summary_status').default('none').notNull(),
-    // v3.2 Addition (Gap 3): Nullable — populated by Phase 2 classification worker.
+    // v3.3 Addition (Gap 3): Nullable — populated by Phase 2 classification worker.
     // Required for blind-spot detection: surfacing stories covering the same event
     // from different political perspectives.
     politicalLeaning: text('political_leaning'),
@@ -1246,7 +1246,7 @@ export const articles = pgTable(
       table.categoryId,
       table.publishedAt.desc(),
     ),
-    // v3.2 Addition (Gap 1): Index for subcategory feed queries.
+    // v3.3 Addition (Gap 1): Index for subcategory feed queries.
     subcategoryPublishedIdx: index('articles_subcategory_published_idx').on(
       table.subcategoryId,
       table.publishedAt.desc(),
@@ -1282,7 +1282,7 @@ export const summaries = pgTable('summaries', {
     .default('EU AI Act Article 50 compliant')
     .notNull(),
   coveragePercentage: integer('coverage_percentage').notNull(),
-  // v3.2 Addition (Gap 4): Denormalised from articles.canonicalUrl.
+  // v3.3 Addition (Gap 4): Denormalised from articles.canonicalUrl.
   // Summaries are self-contained audit artefacts. Storing the source URL here
   // ensures NutritionLabel can render "Verify with Original Source" without a JOIN,
   // and that the link survives if the article row is ever modified or archived.
@@ -1302,7 +1302,7 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
   isActive: boolean('is_active').default(true).notNull(),
 });
 
-// ─── v3.2 Addition: userPreferences (Gap 2) ────────────────────────────────
+// ─── v3.3 Addition: userPreferences (Gap 2) ────────────────────────────────
 
 export const userPreferences = pgTable('user_preferences', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -1336,11 +1336,11 @@ export const userPreferences = pgTable('user_preferences', {
 
 ---
 
-## 7. AI Governance (Definitive EU AI Act Compliance — v3.2 Corrected)
+## 7. AI Governance (Definitive EU AI Act Compliance — v3.3 Corrected)
 
 ### 7.1 Dual Disclosure Requirement (C2PA Claim Removed)
 
-> **v3.2 Correction:** The v3.1 claim of "C2PA alignment" has been removed. C2PA (Coalition for Content Provenance and Authenticity) is a cryptographic standard for **media content** (images, video, audio) with no established specification for text content as of June 2026. A plain HTML `<meta>` tag does not constitute C2PA compliance. The machine-readable layer now uses JSON-LD + HTTP headers, which automated audit tools can actually parse.
+> **v3.3 Correction:** The v3.1 claim of "C2PA alignment" has been removed. C2PA (Coalition for Content Provenance and Authenticity) is a cryptographic standard for **media content** (images, video, audio) with no established specification for text content as of June 2026. A plain HTML `<meta>` tag does not constitute C2PA compliance. The machine-readable layer now uses JSON-LD + HTTP headers, which automated audit tools can actually parse.
 
 | Layer | Mechanism | Purpose |
 |---|---|---|
@@ -1410,7 +1410,7 @@ export const headers = {
 
 **Summarise job guard (critical):** Only enqueue the summarise job if `contentAvailability IN ('partial_text', 'full_text')`. Summarising `title_only` or `excerpt` content would require the AI to fabricate — this is both a quality issue and an EU AI Act accuracy obligation.
 
-### 7.3 Summary Review State Machine (v3.2 Addition)
+### 7.3 Summary Review State Machine (v3.3 Addition)
 
 ```
 none → pending → ok → needs_review → ok        (re-approved after review)
@@ -1460,7 +1460,7 @@ Steps per source fetch cycle:
 
 ### 8.2 Push Notifications
 
-**Quiet hours evaluation (v3.2 addition):**
+**Quiet hours evaluation (v3.3 addition):**
 
 Quiet hours are stored as time-of-day values (`pushQuietStart`, `pushQuietEnd`) paired with an IANA timezone string (`briefingTimezone`). The push dispatch worker MUST:
 
@@ -1499,7 +1499,7 @@ function isInQuietHours(
 }
 ```
 
-### 8.3 Feed Pagination (Cursor-Based — v3.2 Addition)
+### 8.3 Feed Pagination (Cursor-Based — v3.3 Addition)
 
 All feed queries use **cursor-based pagination** with `publishedAt` as the cursor. This is stable when new articles are ingested between page loads (unlike offset-based pagination which skips/duplicates items).
 
@@ -1517,7 +1517,7 @@ All feed queries use **cursor-based pagination** with `publishedAt` as the curso
 
 ---
 
-## 9. Caching, Performance & Scalability (v3.2 Corrected)
+## 9. Caching, Performance & Scalability (v3.3 Corrected)
 
 ### 9.1 Cache Components Model — Critical Prerequisites
 
@@ -1568,7 +1568,7 @@ const nextConfig: NextConfig = {
 ### Phase 1 — "Read & Trust" (V1 Launch)
 - Next.js ≥16.2.6 web app with App Router, `cacheComponents`, `use cache` (named profiles), `proxy.ts`, `<PageTransition>` (experimental, progressive enhancement).
 - Worker service with BullMQ v5 (ingest, summarise with content availability guard, compute-importance).
-- PostgreSQL 17 schema v3.2 (all 14 gaps closed, all indexes defined).
+- PostgreSQL 17 schema v3.3 (all 14 gaps closed, all indexes defined).
 - Core feed (CSS Subgrid, cursor-based pagination), topic navigation (two-level), article detail.
 - Source-cited AI summaries with Nutrition Label + JSON-LD + HTTP headers.
 - Web Push infrastructure + quiet hours with DST-aware evaluation (luxon).
@@ -1592,7 +1592,7 @@ const nextConfig: NextConfig = {
 
 ---
 
-## 11. Risk Register (v3.2 Final — All Entries Validated)
+## 11. Risk Register (v3.3 Final — All Entries Validated)
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
@@ -1613,7 +1613,7 @@ const nextConfig: NextConfig = {
 
 ---
 
-## Appendix A — Technology Stack Summary (v3.2 Final)
+## Appendix A — Technology Stack Summary (v3.3 Final)
 
 | Layer | Technology | Version | Notes |
 |---|---|---|---|
@@ -1623,7 +1623,7 @@ const nextConfig: NextConfig = {
 | Language | TypeScript | 5.x (strict) | `noImplicitAny`, `strict: true` |
 | Styling | Tailwind CSS v4 + CSS Subgrid | v4 | `grid-rows-subgrid` utility |
 | Component library | Shadcn UI (Radix) | Latest | Library-first mandate |
-| ORM | Drizzle ORM | Latest | v3.2 schema with all gaps closed |
+| ORM | Drizzle ORM | Latest | v3.3 schema with all gaps closed |
 | Database | PostgreSQL | 17 | |
 | FTS | `pg_textsearch` BM25 + tsvector GIN | 1.0 GA | |
 | Queue | BullMQ | v5.x | |
@@ -1648,7 +1648,7 @@ When React/Next.js stabilises the ViewTransition API (expected in a Next.js 16.x
 
 ---
 
-## Appendix C — Config & Schema Change Summary (v3.1 → v3.2)
+## Appendix C — Config & Schema Change Summary (v3.1 → v3.3)
 
 | File | Change | Reason |
 |---|---|---|
@@ -1670,7 +1670,7 @@ When React/Next.js stabilises the ViewTransition API (expected in a Next.js 16.x
 
 ---
 
-*End of Definitive PRD v3.2 — OneStopNews*
+*End of Definitive PRD v3.3 — OneStopNews*
 *Blueprint locked. Ready for `npx drizzle-kit generate` and immediate execution.*
 
 ---
@@ -1685,7 +1685,7 @@ When React/Next.js stabilises the ViewTransition API (expected in a Next.js 16.x
 
 2. **`src/components/primitives/PageTransition.tsx`** — Stable abstraction layer over React's experimental `ViewTransition`. Migration to stable API is a 1-line change in this single file. JSDoc explains the why, the browser support matrix, and the migration procedure.
 
-**PRD v3.2** — Complete merged document superseding v3.1 with all 14 schema gaps closed, 3 factual errors corrected, 8 risk register entries added, and every architectural claim validated against primary sources as of June 10, 2026.
+**PRD v3.3** — Complete merged document superseding v3.1 with all 14 schema gaps closed, 3 factual errors corrected, 8 risk register entries added, and every architectural claim validated against primary sources as of June 10, 2026.
 
 ### The Three Things That Would Have Broken Production in v3.1
 
@@ -1697,7 +1697,7 @@ When React/Next.js stabilises the ViewTransition API (expected in a Next.js 16.x
 
 # Phase 1: ANALYZE — Scope Mapping
 
-Before presenting the plan, I need to map every source of truth that feeds into v3.2. Let me catalogue the full inventory of changes across every dimension.Research complete. I now have definitive, source-locked answers on every remaining question. Let me catalogue the final critical findings before presenting the plan:
+Before presenting the plan, I need to map every source of truth that feeds into v3.3. Let me catalogue the full inventory of changes across every dimension.Research complete. I now have definitive, source-locked answers on every remaining question. Let me catalogue the final critical findings before presenting the plan:
 
 **New findings from this batch:**
 
@@ -1723,7 +1723,7 @@ Before presenting the plan, I need to map every source of truth that feeds into 
 
 ## Scope Inventory (Complete Change Register)
 
-Before the plan, here is the full, catalogued inventory of every change that will be merged into v3.2. This is the source of truth for what the document must contain.
+Before the plan, here is the full, catalogued inventory of every change that will be merged into v3.3. This is the source of truth for what the document must contain.
 
 ---
 
@@ -1796,12 +1796,12 @@ Before the plan, here is the full, catalogued inventory of every change that wil
 
 ---
 
-## Document Structure Plan (PRD v3.2)
+## Document Structure Plan (PRD v3.3)
 
 The complete PRD will be structured as follows. Each section is mapped to the change IDs it incorporates.
 
 ```
-PRD v3.2
+PRD v3.3
 │
 ├── Document Header (Revision block, all A/B/C/D change IDs summarised)
 │
@@ -1860,7 +1860,7 @@ PRD v3.2
 │
 ├── Appendix D  <PageTransition> Migration Guide     [A4, A5]
 │
-└── Appendix E  v3.1 → v3.2 Change Register         [all IDs]
+└── Appendix E  v3.1 → v3.3 Change Register         [all IDs]
 ```
 
 ---
@@ -1898,7 +1898,7 @@ Write ingestion pipeline with content availability logic, pagination strategy, p
 **Success criteria:** Every risk entry has a specific, actionable mitigation. Caching strategy maps every route to a named profile. `revalidateTag()` uses two-argument form throughout.
 
 ### Phase 7 — Rollout, Appendices, Change Register
-Write the rollout plan, Appendix A (tech stack), and Appendix E (complete v3.1 → v3.2 change register with every ID tracked).
+Write the rollout plan, Appendix A (tech stack), and Appendix E (complete v3.1 → v3.3 change register with every ID tracked).
 
 **Success criteria:** Change register maps every modification to its source (research finding, self-review, or critical analysis). Nothing undocumented.
 
@@ -1972,14 +1972,14 @@ All flags definitively resolved. The complete picture is now locked:
  `clientSegmentCache` remains in `experimental` in Next.js 16.
 This gives us the definitive, source-locked config topology. Now writing the three parts in sequence.
 
-📋 OneStopNews — PRD v3.2 (Production-Locked)
+📋 OneStopNews — PRD v3.3 (Production-Locked)
 PART 1 OF 3 — Header, Architecture & Configuration
 Covers: Document header, revision block, §1 Overview & Architectural Commitment, §2 Goals & Metrics, §3 Personas, §5.1 Topology, §5.2 Required Configuration, Appendix C (complete next.config.ts)
 
 text
 
 ╔══════════════════════════════════════════════════════════════════════╗
-║         OneStopNews — Product Requirements Document v3.2            ║
+║         OneStopNews — Product Requirements Document v3.3            ║
 ║         "Editorial Dispatch" — Production-Locked Blueprint          ║
 ╠══════════════════════════════════════════════════════════════════════╣
 ║  Document Status  │ DEFINITIVE — Supersedes all prior versions      ║
@@ -1987,7 +1987,7 @@ text
 ║  Validated        │ June 10, 2026 — All claims sourced              ║
 ║  Parts            │ 3 (this is Part 1 of 3)                         ║
 ╚══════════════════════════════════════════════════════════════════════╝
-Revision Block — What Changed from v3.1 to v3.2
+Revision Block — What Changed from v3.1 to v3.3
 Every change is tagged with its source: [RES] = validated by web research, [SR] = PRD self-review, [CA] = Critical Analysis.
 
 🔴 Critical Corrections (Production-Breaking if Wrong)
@@ -2031,9 +2031,9 @@ C12	RSC security note (React2Shell CVE-2025-55182) + version pinning.	[RES]
 §1 — Overview
 OneStopNews is a topic-first news aggregation and AI summarisation platform that organises public news content by what it is about rather than who published it. It collects article metadata from diverse sources, normalises and categorises stories, and presents them in a calm, editorially-informed interface designed for both daily readers and enterprise analysts.
 
-This v3.2 blueprint is the definitive, research-validated synthesis of the "Editorial Dispatch" design vision and production-grade engineering. Every claim is sourced. Every configuration flag is in its verified position. Every schema field exists for a documented reason.
+This v3.3 blueprint is the definitive, research-validated synthesis of the "Editorial Dispatch" design vision and production-grade engineering. Every claim is sourced. Every configuration flag is in its verified position. Every schema field exists for a documented reason.
 
-§1.1 — Architectural Commitment (v3.2 Definitive)
+§1.1 — Architectural Commitment (v3.3 Definitive)
 Concern	Choice	Rationale / Source
 Web framework	Next.js ≥16.2.6	Released October 21, 2025 [RES]. Pin to ≥16.2.6 — covers 13-advisory security bundle including high-severity DoS and SSRF.
 UI runtime	React 19.2 (stable)	Production-stable. <Activity>, useEffectEvent stable. App Router bundles correct React canary automatically — no react@canary install needed.
@@ -2113,7 +2113,7 @@ text
 │  PostgreSQL 17          │   │  Redis · BullMQ v5                     │
 │  GIN tsvector FTS       │   │  Job queues: ingest / summarise /      │
 │  BM25 pg_textsearch     │   │  compute-importance / push-dispatch    │
-│  All v3.2 schema        │   │  Dead-letter queue + retry policies    │
+│  All v3.3 schema        │   │  Dead-letter queue + retry policies    │
 └────────────────────────┘   └───────────┬────────────────────────────┘
                                          │ BullMQ
 ┌────────────────────────────────────────▼────────────────────────────┐
@@ -2994,7 +2994,7 @@ export default async function CategoryPage({
     </PageTransition>
   );
 }
-src/app/topics/[category]/[sub]/page.tsx (v3.2 — new subcategory route)
+src/app/topics/[category]/[sub]/page.tsx (v3.3 — new subcategory route)
 
 React
 
@@ -3628,7 +3628,7 @@ TypeScript
  * OneStopNews — PostgreSQL 17 Schema
  * Drizzle ORM — TypeScript strict mode
  *
- * v3.2 additions (all gaps from v3.1 self-review + Critical Analysis closed):
+ * v3.3 additions (all gaps from v3.1 self-review + Critical Analysis closed):
  *   - subcategories table with composite unique index (B1)
  *   - subcategoryId FK on articles + index (B2)
  *   - userPreferences table (B3)
@@ -3735,7 +3735,7 @@ export const categories = pgTable('categories', {
 
 /**
  * subcategories — Two-level topic hierarchy (Category → Subcategory).
- * v3.2 addition (B1). Backs the /topics/[category]/[sub] routing pattern.
+ * v3.3 addition (B1). Backs the /topics/[category]/[sub] routing pattern.
  *
  * Composite unique index on (categoryId, slug) is REQUIRED.
  * Without it, /topics/world/politics could match two subcategory rows,
@@ -3763,7 +3763,7 @@ export const subcategories = pgTable(
 /**
  * sources — RSS/Atom/JSON feed sources polled by the ingestion worker.
  *
- * v3.2 additions (B5):
+ * v3.3 additions (B5):
  *   lastFetchedAt — Updated on every fetch attempt (success or failure).
  *                   Used by the worker to implement exponential backoff.
  *   failureCount  — Incremented on each consecutive failure.
@@ -3780,7 +3780,7 @@ export const sources = pgTable('sources', {
   priority:            integer('priority').default(2).notNull(),
   pollIntervalMinutes: integer('poll_interval_minutes').default(15).notNull(),
   isActive:            boolean('is_active').default(true).notNull(),
-  // v3.2 (B5): Operational health fields
+  // v3.3 (B5): Operational health fields
   lastFetchedAt:       timestamp('last_fetched_at'),
   failureCount:        integer('failure_count').default(0).notNull(),
   createdAt:           timestamp('created_at').defaultNow().notNull(),
@@ -3789,7 +3789,7 @@ export const sources = pgTable('sources', {
 /**
  * articles — Normalised article metadata ingested from sources.
  *
- * v3.2 additions:
+ * v3.3 additions:
  *   subcategoryId    (B2) — FK to subcategories; nullable.
  *   politicalLeaning (B4) — nullable; populated by Phase 2 classification worker.
  *                           Required for blind-spot detection feature.
@@ -3813,7 +3813,7 @@ export const articles = pgTable(
                            .references(() => sources.id, { onDelete: 'cascade' })
                            .notNull(),
     categoryId:          uuid('category_id').references(() => categories.id),
-    // v3.2 (B2): subcategoryId FK — backs /topics/[category]/[sub]
+    // v3.3 (B2): subcategoryId FK — backs /topics/[category]/[sub]
     subcategoryId:       uuid('subcategory_id').references(() => subcategories.id),
     title:               text('title').notNull(),
     excerpt:             text('excerpt'),
@@ -3826,7 +3826,7 @@ export const articles = pgTable(
     importanceScore:     real('importance_score').default(0.5).notNull(),
     hasSummary:          boolean('has_summary').default(false).notNull(),
     summaryStatus:       summaryStatusEnum('summary_status').default('none').notNull(),
-    // v3.2 (B4): nullable — populated by Phase 2 classification worker.
+    // v3.3 (B4): nullable — populated by Phase 2 classification worker.
     // Values (not enumerated, stored as text for flexibility):
     //   'left' | 'centre-left' | 'centre' | 'centre-right' | 'right'
     // Used by Phase 2 blind-spot detection algorithm.
@@ -3848,7 +3848,7 @@ export const articles = pgTable(
     // Primary feed query: category + descending publishedAt.
     categoryPublishedIdx: index('articles_category_published_idx')
       .on(table.categoryId, table.publishedAt.desc()),
-    // v3.2 (B2): Subcategory feed query index.
+    // v3.3 (B2): Subcategory feed query index.
     subcategoryPublishedIdx: index('articles_subcategory_published_idx')
       .on(table.subcategoryId, table.publishedAt.desc()),
     // GIN index for full-text search — required for O(log n) tsvector queries.
@@ -3864,7 +3864,7 @@ export const articles = pgTable(
  * All fields necessary to render the NutritionLabel are on this table —
  * no runtime JOINs required for the disclosure UI.
  *
- * v3.2 additions:
+ * v3.3 additions:
  *   originalArticleUrl (B6) — Denormalised from articles.canonicalUrl.
  *     Stored here so NutritionLabel's "Verify with Original Source" link
  *     works without a JOIN and survives article archival.
@@ -3938,7 +3938,7 @@ export const pushSubscriptions = pgTable('push_subscriptions', {
 
 /**
  * userPreferences — Per-user preferences for notifications, briefing, and UI.
- * v3.2 addition (B3). Backs the preferences API (GET/PUT /api/preferences).
+ * v3.3 addition (B3). Backs the preferences API (GET/PUT /api/preferences).
  *
  * Push quiet hours design:
  *   pushQuietStart + pushQuietEnd are stored as time-of-day (no timezone).
@@ -4113,11 +4113,11 @@ export function PageTransition({ name, children }: PageTransitionProps) {
 End of Part 2 of 3. Part 3 covers: §7 AI Governance (corrected disclosure stack, state machine), §8 Functional Requirements (ingestion pipeline, push notifications with DST, pagination), §9 Caching strategy (complete route table, worker invalidation, multi-instance), §10 Rollout Plan, §11 Risk Register (all entries validated), Appendix A (tech stack), Appendix D (migration guide), Appendix E (complete change register).
 
 PART 3 OF 3 — AI Governance, Functional Requirements, Caching, Risks & Appendices
-Covers: §7 AI Governance, §8 Functional Requirements, §9 Caching & Performance, §10 Rollout Plan, §11 Risk Register, Appendix A (tech stack), Appendix D (<PageTransition> migration), Appendix E (complete v3.1 → v3.2 change register)
+Covers: §7 AI Governance, §8 Functional Requirements, §9 Caching & Performance, §10 Rollout Plan, §11 Risk Register, Appendix A (tech stack), Appendix D (<PageTransition> migration), Appendix E (complete v3.1 → v3.3 change register)
 
-§7 — AI Governance (Definitive EU AI Act Compliance — v3.2)
+§7 — AI Governance (Definitive EU AI Act Compliance — v3.3)
 §7.1 — Three-Layer Machine-Readable Disclosure
-v3.2 Correction [A13]: The v3.1 claim of "C2PA alignment" has been removed in full. The Coalition for Content Provenance and Authenticity (C2PA) is a cryptographic standard designed for media content (images, video, audio) and has no established specification for text content as of June 2026. A plain HTML <meta> tag does not constitute C2PA compliance, which requires cryptographically signed manifests.
+v3.3 Correction [A13]: The v3.1 claim of "C2PA alignment" has been removed in full. The Coalition for Content Provenance and Authenticity (C2PA) is a cryptographic standard designed for media content (images, video, audio) and has no established specification for text content as of June 2026. A plain HTML <meta> tag does not constitute C2PA compliance, which requires cryptographically signed manifests.
 
 The machine-readable disclosure layer now uses three concrete, parsable mechanisms that regulatory audit tools can actually process.
 
@@ -4320,7 +4320,7 @@ text
        summarised — AI would fabricate content. This violates both quality
        standards and EU AI Act accuracy obligations.
 §8.2 — Push Notifications
-Quiet hours — DST-safe implementation (v3.2 addition [C7]):
+Quiet hours — DST-safe implementation (v3.3 addition [C7]):
 
 Quiet hours are stored as time-of-day values without timezone. The briefingTimezone IANA string provides the user's local timezone context. The push dispatch worker must use luxon for all timezone comparisons — raw JavaScript Date arithmetic does not handle DST transitions correctly.
 
@@ -4503,7 +4503,7 @@ import { revalidateTag } from 'next/cache';
  * invalidateFeedCache — Called by the ingestion worker after persisting
  * new articles for a category.
  *
- * v3.2: revalidateTag now REQUIRES a second argument specifying the
+ * v3.3: revalidateTag now REQUIRES a second argument specifying the
  * cacheLife profile. Single-argument form is deprecated and produces
  * a TypeScript error in Next.js 16.
  *
@@ -4558,7 +4558,7 @@ Infrastructure:
 
 Next.js ≥16.2.6 web app (App Router, cacheComponents: true, named cacheLife profiles, proxy.ts)
 Node.js 24 LTS worker service (BullMQ v5)
-PostgreSQL 17 with complete v3.2 schema (all 14 gaps closed)
+PostgreSQL 17 with complete v3.3 schema (all 14 gaps closed)
 Redis (Upstash) for cache + job queue
 Auth.js v5 (pinned exact beta version) for admin route protection
 Features shipped:
@@ -4589,7 +4589,7 @@ ML-based politicalLeaning classification worker (populates the Phase 1 schema fi
 Enterprise SSO (Auth.js v5 SAML/OIDC)
 C2PA text provenance — if/when a text standard matures
 React Compiler enablement across codebase (once all components conform to Rules of React)
-§11 — Risk Register (v3.2 — All Entries Research-Validated)
+§11 — Risk Register (v3.3 — All Entries Research-Validated)
 Risk	Likelihood	Impact	Mitigation
 use cache silently inert without cacheComponents: true	Very High	Critical	cacheComponents: true at top-level in next.config.ts (not experimental). CI lint rule asserting presence. §9.1 checklist.
 ViewTransition API renamed before stabilisation	High	High	All usage routed through <PageTransition> abstraction. Migration is 1-file change. See Appendix D.
