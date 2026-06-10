@@ -6,6 +6,32 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+awesome meticulous job so far. please keep up the good work. based on your final recommended improvements to the unified v3.1 PRD, please meticulously plan to create an awesome static landing page mockup HTML based on your improved PRD design. Use the below original static HTML mockup to re-imagine your awesome landing page static HTML mockup.
+
+---
+
+Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously use extensive web searches to validate the following feedback.
+
+---
+
+Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously review and analyze the proposed updated blueprint below and critically compare with yours. Remember to use extensive web searches to validate any findings and claims as well as assumptions.
+
+---
+
+Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously review and analyze the proposed blueprint below and critically compare with yours. Remember to use extensive web searches to validate any findings and claims as well as assumptions.
+
+---
+
+Now, please meticulously plan to do an extensive web research to refine and re-imagine an improved design blueprint with the given draft below as a starting point.
+
+# OneStopNews Project Requirements Document (draft to research and refine to be more current and more popular)
+
+---
+
+Awesome job on your meticulous analysis and research. Please keep up the good work. Now, please meticulously plan to create a complete replacement updated and improved PRD v3.2 that merges your suggested improvements and corrections.
+
+---
+
 awesome meticulous job so far. please keep up the good work. now, please meticulously plan to research and then meticulously plan to create a comprehensive (detailed) 'Project Architecture Document' (PAD) based on your awesome improved (re-imagined) PRD.
 
 ---
