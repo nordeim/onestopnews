@@ -1,0 +1,320 @@
+---
+IMPORTANT: Read fresh for every conversation. This file encodes the institutional knowledge of the OneStopNews codebase. When in doubt, consult PAD v4.5 and PRD v4.3 as the authoritative sources.
+---
+
+# OneStopNews
+
+**Topic-first news aggregation with source-cited AI summaries.**
+
+A Next.js 16 + React 19.2 application backed by PostgreSQL 17, BullMQ v5 on Redis, and a Node.js 24 LTS worker service. The "Editorial Dispatch" design system uses Newsreader + Instrument Sans + Commit Mono with CSS Subgrid for feed alignment. Every AI summary carries a 3-layer machine-readable provenance disclosure (JSON-LD + HTTP header + HTML meta tag) for EU AI Act Article 50 compliance.
+
+**Maintained by:** Senior Engineering, Tech Leads, DevOps  
+**Authoritative Sources:** `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
+
+---
+
+## Foundational Principles
+
+### 1. The Meticulous Approach (Mandatory for All Tasks)
+
+Follow this six-phase workflow for every implementation:
+
+1. **ANALYZE** — Deep requirement mining. Identify explicit, implicit, and edge-case needs. Explore multiple approaches. Assess risks.
+2. **PLAN** — Structured execution roadmap. Present for explicit user confirmation before writing code.
+3. **VALIDATE** — Obtain user approval. Address concerns. Never proceed without alignment.
+4. **IMPLEMENT** — Modular, tested, documented builds. Use library components before custom ones.
+5. **VERIFY** — Rigorous QA against success criteria. Test edge cases, accessibility (WCAG AAA), and performance.
+6. **DELIVER** — Complete handoff with instructions, documentation, and next steps.
+
+### 2. OneStopNewsCAST-Specific Principles
+
+| Principle | Rationale |
+| :--- | :--- |
+| **Library Discipline** | If Shadcn UI / Radix provides the primitive, use it. Wrap for bespoke styling. Never rebuild from scratch. |
+| **Single Source of Truth** | The Drizzle schema is the only source of truth for database types. Types derive from schema, not hand-written. |
+| **Opt-In Caching** | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent. |
+| **Progressive Enhancement** | View Transitions are progressive. They silently degrade on Firefox / reduced-motion. Never rely on them for core functionality. |
+| **Zero `any`** | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only. |
+| **Auth at the DAL** | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()`. |
+| **Content Guard** | Never enqueue summarisation for `title_only` or `excerpt` articles. This prevents AI hallucination. |
+
+---
+
+## Implementation Standards
+
+### TypeScript
+
+```ts
+// Prefer interface for object shapes
+interface ArticleCardProps { title: string; }
+
+// Prefer type for unions / intersections
+type FeedType = 'rss' | 'atom' | 'json_api';
+
+// Use early returns (guard clauses)
+function processData(data: unknown) {
+  if (!data) return null;
+  if (typeof data !== 'object') throw new Error('Expected object');
+  // Happy path
+}
+
+// Never use `any`. Prefer `unknown` with type guards.
+function handle(input: unknown) {
+  if (typeof input === 'string') return input.toUpperCase();
+  return null;
+}
+```
+
+- **`strict: true`** — non-negotiable.
+- **`interface` > `type`** for structural definitions. `type` for unions / intersections.
+- **Early returns** over deeply nested conditionals.
+- **Composition over inheritance** — no class hierarchies for business logic.
+- **Avoid explicit return types** unless the function is a public API boundary.
+
+### Next.js 16 App Router
+
+- **Server Components by default.** Use `'use client'` only for interactivity (state, effects, browser APIs).
+- **Async `params` / `searchParams`** are `Promise<T>`. Always `await` them. Synchronous access causes a runtime 500.
+- **No data fetching in Layouts.** Layouts cause re-renders. Fetch in Pages.
+- **Route Handlers** (`app/api/.../route.ts`) for public HTTP endpoints. Server Actions for mutations.
+- **`proxy.ts`** (not `middleware.ts`) is the network boundary. Cookie check + redirect only. No DB calls.
+
+#### Critical Configuration (verified positions — wrong placement = silent breakage)
+
+| Flag | Placement | What Breaks if Wrong |
+| :--- | :--- | :--- |
+| `cacheComponents: true` | **Top-level** | Every `"use cache"` silently ignored. Zero caching. |
+| `cacheLife: { ... }` | **Top-level** | `cacheLife('feed')` throws runtime — profile missing. |
+| `turbopack: {}` | **Top-level** | Ignored or config warning. |
+| `experimental.viewTransition` | **Inside `experimental: {}`** | Transitions silently disabled. |
+| `experimental.ppr` | **DO NOT INCLUDE** | Build error in Next.js 16. |
+| `experimental.dynamicIO` | **DO NOT INCLUDE** | Deprecated — replaced by `cacheComponents`. |
+
+### Drizzle ORM & Database
+
+- **Lazy Proxy Connection:** `lib/db/index.ts` defers connection until first query. Prevents build-time crashes.
+- **Migrations:** `drizzle-kit generate` + `migrate`. **Never `push`** in production.
+- **Additive-only deployments：** when removing a column, deploy code first (stop reading it), drop column in next release.
+- **Connection Pool:** `max: 10` assumes **dedicated Node.js runtime** (Docker, Railway, ECS). For serverless (Vercel, Lambda), swap to a connection pooler (PgBouncer / Supavisor).
+- **All queries via `queries.ts`** in the relevant feature module. No raw Drizzle calls in components.
+
+### Authentication & Authorization (Auth.js v5)
+
+```ts
+// lib/auth/dal.ts — The only correct pattern
+import { cache } from 'react';
+import { redirect } from 'next/navigation';
+import { auth } from './index';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
+
+export const verifySession = cache(async () => {
+  const session = await auth();
+  if (!session?.user?.email) redirect('/sign-in');
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, session.user.email),
+    columns: { id: true, role: true, name: true },
+  });
+
+  if (!user) redirect('/sign-in');
+  return { user, sessionId: session.user.id };
+});
+
+export const verifyAdminSession = cache(async () => {
+  const { user } = await verifySession();
+  if (user.role !== 'admin') redirect('/');
+  return user;
+});
+```
+
+- **`redirect()` not `throw new Error()`** in Server Components. `throw` triggers full-page error boundaries; `redirect()` preserves invisible UX.
+- **`cache()` from `react`** memoizes per-request. Multiple components calling `verifySession()` in one render tree execute **one** validation.
+- **Beta pin:** Auth.js v5 is pinned to `5.0.0-beta.x`. Monitor `authjs.dev` for stable release.
+
+### Design System — "Editorial Dispatch"
+
+The visual identity is **architectural, not cosmetic.** Every element carries the weight of something worth reading.
+
+| Role | Typeface | Weight | Usage |
+| :--- | :--- | :--- | :--- |
+| Headlines | Newsreader (variable) | 800 | `font-editorial` — `leading-tight`, `tracking-[-0.02em]` |
+| UI / Body | Instrument Sans (variable) | 400–600 | `font-ui` — `leading-relaxed` |
+| Metadata | Commit Mono | 400 | `font-mono` — `uppercase`, `tracking-widest`, `text-[10px]` |
+
+**Explicit Rejections:** Inter, Roboto, Space Grotesk. Never use them.
+
+**Colour Contract:**
+- `ink-900 (#1a1a18)` — headings
+- `ink-600 (#3d3d3a)` — body text (WCAG AAA on `paper-50`)
+- `ink-300 (#8a8a83)` — muted / metadata
+- `paper-50 (#fafaf8)` — page background
+- `paper-100 (#f2f2ee)` — card surface
+- `dispatch-ember (#c7513f)` — breaking news, AI badge, focus rings
+- `dispatch-slate (#5a6b7a)` — tech / neutral accent
+
+**CSS Subgrid Feed:**
+```css
+/* Parent defines columns with gap-x only */  
+/* Each ArticleCard: grid grid-rows-subgrid row-span-3 */
+/* Last card in column: last:mb-0 */
+```
+
+### Worker & BullMQ
+
+- **Redis config:** `maxRetriesPerRequest: null`, `noeviction` policy. Without these, BullMQ loses jobs.
+- **Concurrency:** `ingest: 50` (I/O), `summarize: 5` (AI rate-limited), `score: 20` (CPU/DB), `feed-slice: 10` (Redis).
+- **Job scheduling:** `upsertJobScheduler()` for RSS polling. Idempotent — restart-safe.
+- **Flows:** `FlowProducer` for atomic DAG (ingest → score → feed-slice refresh). Parent runs only after all children complete.
+- **Graceful shutdown:** `SIGTERM` / `SIGINT` handlers close all workers before process exit.
+
+### AI Pipeline & 3-Layer Disclosure
+
+**Content Availability Guard (Anti-Hallucination):**
+- `title_only` → **DO NOT summarise**
+- `excerpt` → **DO NOT summarise**
+- `partial_text` → Summarise permitted (300–1500 chars)
+- `full_text` → Summarise preferred (>1500 chars)
+
+**3-Layer Machine-Readable Disclosure (`provenance.ts`):**
+1. **JSON-LD** — `schema.org/CreativeWork` embedded in page `<script>` tag.
+2. **HTTP Header** — `X-AI-Provenance` base64-encoded JSON.
+3. **HTML Meta Tag** — `<meta name="ai-provenance" content="...">`
+
+**C2PA is explicitly rejected.** It is a media (image/video/audio) cryptographic standard with no established text specification.
+
+**Summary Review Workflow:**
+```
+ok → needs_review → ok          (approve / regenerate)
+              → disabled      (permanent disable)
+```
+- `flagReason` field is populated when admin flags a summary.
+- `needs_review` hides the `NutritionLabel` from users.
+- Disabled summaries show no UI; `flagReason` retained for audit.
+
+---
+
+## Development Workflow
+
+### Prerequisites
+- **Node.js** ≥24 LTS ("Krypton")
+- **pnpm** ≥9.x
+- **PostgreSQL** ≥17
+- **Redis** ≥7.x (or Upstash managed)
+
+### Setup Commands
+
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Configure environment
+cp .env.example .env.local
+# Edit .env.local — see README.md §Environment Variables
+
+# 3. Generate and apply database migrations
+pnpm drizzle-kit generate
+pnpm drizzle-kit migrate
+
+# 4. Start development
+pnpm dev              # Next.js (Turbopack) on http://localhost:3000
+pnpm worker:dev       # Worker service (separate terminal)
+```
+
+### Build & Quality Commands
+
+| Command | Purpose |
+| :--- | :--- |
+| `pnpm dev` | Next.js dev server with Turbopack Fast Refresh |
+| `pnpm build` | Production build (Next.js) |
+| `pnpm start` | Production server (Next.js) |
+| `pnpm lint` | ESLint + Prettier |
+| `pnpm tsc --noEmit` | TypeScript strict check |
+| `pnpm test` | Run all test suites |
+| `pnpm drizzle-kit generate` | Generate migration SQL from schema |
+| `pnpm drizzle-kit migrate` | Apply pending migrations |
+| `pnpm worker:dev` | Worker service (BullMQ + Node.js) |
+
+### Pre-Commit Gate
+```bash
+pnpm lint && pnpm tsc --noEmit && pnpm test
+```
+Must pass before any PR is merged. No exceptions.
+
+---
+
+## Testing Strategy
+
+| Category | Tool | Scope | Target |
+| :--- | :--- | :--- | :--- |
+| Unit | Vitest | Domain logic, utilities, Zod parsing | 80%+ coverage |
+| Integration | Vitest + Docker | Drizzle queries, BullMQ job processing | CI gate |
+| E2E | Playwright | Critical user journeys (feed → article → summary) | Zero visual regressions |
+| Perf | k6 | `GET /api/articles`, search | `< 300ms` p95 |
+| A11y | axe-core + Playwright | Keyboard nav, screen reader labels | WCAG 2.1 AAA |
+
+**Test Infrastructure:**
+- PostgreSQL and Redis run in ephemeral Docker containers for integration tests.
+- No Prisma or Meilisearch in the test suite.
+- TypeScript strict mode enforced in test files.
+
+---
+
+## Code Quality Standards
+
+- **Lint:** ESLint + Prettier, enforced in CI.
+- **Types:** `tsc --noEmit` with `strict: true`. Zero `any`.
+- **Naming:**
+  - Components: PascalCase (`ArticleCard.tsx`)
+  - Utilities/hooks: camelCase (`useDebounce.ts`)
+  - Feature folders: kebab-case (`/features/feed/`)
+  - Database tables: snake_case in Drizzle, camelCase in TypeScript
+- **Comments:** Explain *why*, not *what*. Self-documenting code is the goal.
+
+---
+
+## Security & Compliance
+
+| Concern | Posture |
+| :--- | :--- |
+| Next.js version | Pinned to `≥16.2.6`. CVE-2025-55182 (React2Shell RCE) + 13-advisory DoS/SSRF fix. |
+| Auth | Auth.js v5 beta, HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
+| AI Disclosure | 3-layer: JSON-LD + HTTP header + HTML meta. C2PA rejected. EU AI Act Art. 50 compliant. |
+| Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex. |
+| DB connections | Lazy Proxy prevents build-time exposure. `max: 10` for dedicated runtimes only. |
+| Access control | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins. |
+
+---
+
+## Anti-Patterns to Avoid
+
+| Anti-Pattern | Why Forbidden | Replacement |
+| :--- | :--- | :--- |
+| `any` in TypeScript | Breaks strict mode contract and type inference. | `unknown` + type guards. |
+| Custom component over Shadcn | Violates Library Discipline. Wastes engineering time. | Shadcn UI / Radix primitive, wrapped for styling. |
+| `throw new Error()` in RSC auth | Triggers full-page error boundary. Bad UX. | `redirect('/sign-in')` from `next/navigation`. |
+| Eager DBobar DB connection | Crashes Next.js build in CI or static export. | Lazy Proxy pattern in `lib/db/index.ts`. |
+| `drizzle-kit push` in production | Overwrites schema without migration history. Irreversible. | `generate` + `migrate` only. |
+| Caching without `cacheComponents: true` | `"use cache"` is silently inert. Zero caching occurs. | Ensure flag is top-level in `next.config.ts`. |
+| Summarising `title_only` / `excerpt` | AI hallucination risk — fabricating content from insufficient input. | `contentAvailabilityEnum` guard: only `partial_text` or `full_text`. |
+| Synchronous `params` access | Runtime 500 in Next.js 16 App Router. | Always `await params` (Promise). |
+| Generic fonts (Inter, Roboto) | Violates "Editorial Dispatch" anti-generic mandate. | Newsreader, Instrument Sans, Commit Mono only. |
+
+---
+
+## Quick Reference: Layer Model
+
+```
+Layer 0: proxy.ts           — Cookie check, redirect. NO DB. NO logic.
+Layer 1: App Router           — Route structure, metadata, PPR, Suspense.
+Layer 2: Feature Modules     — UI composition, data binding, mutations.
+Layer 3: Domain Services      — Pure business logic. No framework imports.
+Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
+```
+
+**Golden Rule:** Deviation from this order creates security and consistency bugs.
+
+---
+
+*This CLAUDE.md mirrors the authoritative Project Architecture Document v4.5 and Project Requirements Document v4.3. When the instructions here and the PAD/PRD diverge, the PAD/PRD are the source of truth.*
