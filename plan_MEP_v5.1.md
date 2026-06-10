@@ -444,3 +444,131 @@ write /home/project/onestopnews/MASTER_EXECUTION_PLAN_v5.1.md
 ### Traceability Annotations  
   
 Every checklist now includes [PRD §x.y] or [PAD §a.b] references for direct cross-document verification. 
+Now I have a clear picture. The validation document identifies three issues with MEP v5.1:  
+  
+1. Auth.js version recommendation is INVALID — The validation doc's own web research found next-auth@5.0.0-beta.29 doesn't exist; betas stopped at beta.25. The project standard is next-auth@5.0.0-beta.x (ADR-004). MEP v5.1 already has 
+   5.0.0-beta.25. The validation's recommendation to update to beta.29 is invalid.  
+2. ts_rank_cd requires sql template — The Phase 6 search code uses ts_rank_cd(...) but doesn't document it must be in a sql template.  
+3. Rate limiting missing — The /api/summarize/[id]/route.ts endpoint has 202/400/404/409 but no 429 rate limiting.  
+  
+My plan:  
+1. Don't change the Auth.js version — validate that beta.25 is already correct per the project's ADR-004 standard.  
+2. Add the sql template note to Phase 6.  
+3. Add rate limiting (429) to Phase 5's summarize endpoint.  
+  
+These are 3 surgical edits. Very focused. I'll present the plan and ask for confirmation.  
+
+ANALYSIS: validation_MEP_v5,1.md against MASTER_EXECUTION_PLAN_v5.1.md  
+  
+### Findings Summary  
+  
+The validation document identifies 3 suggestions. My independent cross-reference against the MEP, PRD, PAD, and web data reveals the following:  
+  
+┌───┬──────────────────────────────────────────────────────┬────────────────────────────────────────────────────────────────────────────────┬────────────────────────────────────────────┐  
+│ # │ Suggestion                                           │ Valid?                                                                         │ Required Action                            │  
+├───┼──────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────┤  
+│ 1 │ Update next-auth from 5.0.0-beta.25 to 5.0.0-beta.29 │ ❌ INVALID — next-auth v5 betas stopped at beta.25. No version beta.29 exists. │ NO CHANGE — keep 5.0.0-beta.25 per ADR-004 │  
+├───┼──────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────┤  
+│ 2 │ Document ts_rank_cd requires Drizzle sql template    │ ✅ VALID — Drizzle ORM has no native ts_rank_cd builder                        │ ADD NOTE to Phase 6                        │  
+├───┼──────────────────────────────────────────────────────┼────────────────────────────────────────────────────────────────────────────────┼────────────────────────────────────────────┤  
+│ 3 │ Add 429 rate limiting to summarize endpoint          │ ✅ VALID — existing src/lib/rate-limit.ts (Phase 8) must be linked             │ ADD CHECKLIST ITEM to Phase 5              │  
+└───┴──────────────────────────────────────────────────────┴────────────────────────────────────────────────────────────────────────────────┴────────────────────────────────────────────┘  
+  
+────────────────────────────────────────────────────────────────────────────────  
+  
+### Detailed Assessment  
+  
+#### 1. Auth.js Version — MEP v5.1 is Correct, Validation Recommendation is Invalid  
+  
+The validation document's own web research discovered that next-auth@5.0.0-beta.29 does not exist on npm. The highest published next-auth v5 beta is 5.0.0-beta.25 (as listed in the MEP).  
+  
+Project Authority (ADR-004, PAD §3):  
+  
+│ Auth.js v5 (5.0.0-beta.x) — HttpOnly session cookies, Drizzle adapter. Pinned exact beta.  
+  
+Conclusion: MEP v5.1 is already correct at 5.0.0-beta.25. The validation's own research disproves its own recommendation. No change needed.  
+  
+#### 2. ts_rank_cd Requires Drizzle sql Template — Valid  
+  
+Phase 6 shows:  
+  
+```sql  
+  ORDER BY ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', search_vector, websearch_to_tsquery('english', $query)) DESC  
+```  
+  
+Drizzle ORM has no native ts_rank_cd method. This expression must be wrapped in sql...``. The MEP doesn't mention this, which could cause an implementation ambiguity.  
+  
+Fix: Add a sub-bullet to Phase 6.  
+  
+#### 3. Rate Limiting on Summarize Endpoint — Valid  
+  
+Phase 5 (src/app/api/summarize/[id]/route.ts) checks:  
+- 400 (invalid UUID)  
+- 404 (article not found)  
+- 409 (already summarised)  
+  
+But omits 429 (rate limited). The existing src/lib/rate-limit.ts (from Phase 8/My_MEP) should be applied to this resource-intensive endpoint.  
+  
+Fix: Add a checklist item to Phase 5.  
+  
+────────────────────────────────────────────────────────────────────────────────  
+  
+PLAN: Apply 2 Validated Edits to MEP v5.1  
+  
+┌──────┬───────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  
+│ Step │ Location                              │ Change                                                                                                                                                      │  
+├──────┼───────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 1    │ Phase 6, searchArticles()             │ Add sub-bullet: [ ] If using ts_rank_cd with custom weights, you must write the expression using Drizzle's sql template literal, e.g. sql\ts_rank_cd(...)`` │  
+├──────┼───────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 2    │ Phase 5, /api/summarize/[id]/route.ts │ Add checklist item: [ ] Rate limiting applied (e.g., max 5 requests per hour per user), returning 429 if exceeded. See src/lib/rate-limit.ts (Phase 8).     │  
+└──────┴───────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
+
+Both edits have been applied correctly. The MEP v5.1 is now finalized with all validation fixes incorporated. Let me provide a final summary.  
+
+✅ MASTER_EXECUTION_PLAN_v5.1.md — Finalised  
+  
+### Validation-Triggered Edits Applied (2 of 3)  
+  
+┌───┬────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────┬───────────┐  
+│ # │ Suggestion                             │ Action                                                                       │ Status    │  
+├───┼────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────┼───────────┤  
+│ 1 │ Update next-auth to beta.29            │ ❌ Rejected — beta.25 is the highest published next-auth v5 beta per ADR-004 │ No change │  
+├───┼────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────┼───────────┤  
+│ 2 │ Document ts_rank_cd needs sql template │ ✅ Accepted — Added sub-bullet to Phase 6                                    │ Applied   │  
+├───┼────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────┼───────────┤  
+│ 3 │ Add 429 rate limiting to summarize     │ ✅ Accepted — Added checklist item to Phase 5                                │ Applied   │  
+└───┴────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────┴───────────┘  
+  
+### Final Document Metrics  
+  
+┌────────────────────────────┬─────────────────────────────────────┐  
+│ Metric                     │ Value                               │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ Lines                      │ 1,294                               │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ Phases                     │ 8                                   │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ Critical fixes from v5.0   │ 4 (C1–C4)                           │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ Moderate fixes from v5.0   │ 3 (M1–M3)                           │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ Validation-triggered edits │ 2 (ts_rank_cd note, 429 rate limit) │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ PRD references             │ 25                                  │  
+├────────────────────────────┼─────────────────────────────────────┤  
+│ PAD references             │ 13                                  │  
+└────────────────────────────┴─────────────────────────────────────┘  
+  
+### What Was NOT Changed (and why)  
+  
+┌───────────────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐ 
+│ Suggestion                │ Reason                                                                                                                                                                                                     │ 
+├───────────────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤ 
+│ next-auth → 5.0.0-beta.29 │ Invalid — No such version exists on npm. beta.25 is the highest published v5 beta under next-auth. PAD §3 ADR-004 correctly pins to 5.0.0-beta.x. The validation's own web research disproves its own      │ 
+│                           │ recommendation.                                                                                                                                                                                            │ 
+└───────────────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘ 
+  
+────────────────────────────────────────────────────────────────────────────────  
+  
+MASTER_EXECUTION_PLAN_v5.1.md is now locked and ready for implementation. 
+

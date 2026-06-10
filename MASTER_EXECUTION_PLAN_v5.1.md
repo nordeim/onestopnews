@@ -648,6 +648,7 @@ Build complete AI summarisation system: content availability guard, Zod‑valida
 - [ ] 404 if article not found
 - [ ] 409 if `summaryStatus !== 'none'`
 - [ ] 400 if `contentAvailability` is `title_only` or `excerpt`
+- [ ] **Rate limiting** (e.g., max 5 requests/hour per user), returning **429** if exceeded. See `src/lib/rate-limit.ts` (Phase 8). [v5.1 VALIDATION FIX]
 - [ ] Enqueues job, returns 202 with `{ jobId }`
 - [ ] Requires valid session (user must be signed in)
 
@@ -672,6 +673,7 @@ Implement full‑text search with `pg_textsearch` BM25, admin source management 
 #### `src/features/search/queries.ts` — CREATE [PRD §6, PAD §3 ADR-005]
 **Checklist:**
 - [ ] Uses native PostgreSQL FTS: `WHERE search_vector @@ websearch_to_tsquery('english', $query) ORDER BY ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', search_vector, websearch_to_tsquery('english', $query)) DESC` [v5.1 FIX: dropped invalid `<@>` operator]
+- [ ] **Drizzle `ts_rank_cd` requires `sql` template literal** — Drizzle ORM has no native `ts_rank_cd` builder. Use: `sql\`ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ${articles.searchVector}, ${websearchToTsQuery})\`` [v5.1 VALIDATION FIX]
 - [ ] `searchArticles(params: { query, categorySlug?, cursor?, limit? })` – returns `SearchResult`
 - [ ] `getSearchSuggestions(partial: string)` – uses `similarity(title, $partial) > 0.3` via pg_trgm
 - [ ] LIMIT 31 pattern for pagination
