@@ -1657,3 +1657,38 @@ npx drizzle-kit generate
 - [ ] Production build deployed and `/api/health` returns 200
 ---
 *This plan supersedes all prior version notes. PRD v4.3 and PAD v4.5 remain the authoritative sources for any ambiguous decision not covered here.*
+
+Delivery Summary
+MASTER_EXECUTION_PLAN.md — Delivered ✅
+Vital Statistics:
+
+2,027 lines of authoritative engineering documentation
+538 integrated checklist items across all phases
+65 individual file specifications with interfaces, features, and per-file checklists
+7 logical, independently deployable phases
+What the Plan Contains
+Phase Structure
+Phase	Name	Files	Focus
+1	Foundation & Configuration	6	next.config.ts flag placement, env validation, package setup
+2	Database Schema & Infrastructure	9	Complete 10-table Drizzle schema, lazy DB client, Auth.js v5, BullMQ queues
+3	Design System & Shared Components	10	Editorial Dispatch tokens, fonts, shared UI primitives, PageTransition
+4	Core Feed Feature	13	FeedGrid subgrid, ArticleCard 3-row layout, topic pages, cursor pagination
+5	AI Summarisation Pipeline	8	Zod-validated prompts, NutritionLabel, 3-layer EU AI Act disclosure
+6	Search, Admin & Public API	8	BM25 search, admin source management, REST API
+7	Worker Service + Push	11	BullMQ workers, AES-256-GCM encryption, DST-safe quiet hours, scheduler
+Key Engineering Decisions Documented
+Every next.config.ts flag placed at its validated position with explanation of what silently breaks if misplaced
+Content Availability Guard — the anti-hallucination gate protecting against AI summarising title_only/excerpt articles
+5-Layer Request Model — proxy.ts → App Router → Feature Modules → Domain Services → Infrastructure
+CSS Subgrid contract — exact parent/child layout rules so no fixed heights, no JS measurement
+Auth at the DAL — proxy.ts is UX-only, real auth in verifySession() with React.cache() memoization
+14-item Risk Register — every identified risk with its evidence-backed mitigation
+Complete File Inventory — 57 files to create, 7 to modify, 3 to delete
+Anti-Generic Design Enforcement
+The plan explicitly documents and enforces:
+
+Zero Inter/Roboto — Newsreader + Instrument Sans + Commit Mono only
+CSS Subgrid over Bootstrap-style card grids
+paper-50 (#fafaf8) — newsprint warmth, not cold white
+dispatch-ember (#c7513f) — single bold accent for breaking news, AI badges, focus rings
+Commit Mono for ALL metadata (timestamps, source names, status indicators)
