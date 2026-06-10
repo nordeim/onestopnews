@@ -489,4 +489,256 @@ Once confirmed, I will:
 
 ---
 
-**This MASTER_EXECUTION_PLAN.md is ready for your review and approval. Once confirmed, I will begin Phase 0 implementation.**
+# OneStopNews — MEP Critical Comparative Review
+
+## Executive Summary
+
+I have performed a **deep, multi‑dimensional comparative analysis** of the two execution blueprints:
+
+| Aspect | My MEP (Phase 1–9) | Provided MEP (Phase 1–7) |
+|--------|---------------------|---------------------------|
+| **Phase structure** | 9 phases (granular) | 7 phases (consolidated) |
+| **Component library** | Explicit Shadcn UI v4 + Radix wrapping | Shadcn UI mentioned but not enforced |
+| **Database FTS** | PostgreSQL `tsvector` + GIN | `pg_textsearch` BM25 extension |
+| **Admin UI** | Dedicated admin layout + summary review | Admin consolidated into Phase 6 |
+| **Push notifications** | Full AES‑256‑GCM + Luxon DST logic | Mentioned but less detailed |
+| **Worker isolation** | Separate `src/workers/` directory | Same |
+| **Estimated effort** | ~11 days | ~7 phases (no days estimate) |
+
+**Bottom line:** Both plans are technically sound and would deliver a production‑ready, WCAG‑AAA, EU‑AI‑Act‑compliant platform. The provided MEP is **more conservative and complete** — it correctly upgrades `postgres` driver, adopts `pg_textsearch` for BM25 (which my plan only mentioned in passing), and provides proper `proxy.ts` migration for Next.js 16. However, it **significantly undertests** accessibility (WCAG AA only, not AAA) and **misses critical error‑handling UI patterns** required by your Claude Code standards.
+
+Below I break down every major difference, validate key claims with external sources, and provide specific recommendations to **merge the best of both plans**.
+
+---
+
+## Comparative Analysis
+
+### 1. Phase Architecture & Scope
+
+| Phase | My MEP (9 phases) | Provided MEP (7 phases) | Assessment |
+|-------|-------------------|-------------------------|------------|
+| Foundation | Phase 0 – Environment & Boilerplate | Phase 1 – Foundation & Configuration | Provided MEP combines both into Phase 1. My separation allowed independent validation of `next.config.ts` flags, but given the low complexity, consolidation is acceptable. |
+| Database + Auth | Phase 1 + Phase 2 | Phase 2 – Database Schema & Infrastructure | Provided MEP correctly bundles DB schema with Auth.js setup. I had Auth in a separate phase — unnecessary separation. **Provided MEP wins.** |
+| Design System | Phase 3 | Phase 3 – Design System & Shared Components | Aligned. Both specify `globals.css` with `@theme` tokens, `cn()` utility, `Header`/`Footer`, and View Transition abstraction. |
+| Feed Feature | Phase 4 | Phase 4 – Core Feed Feature | Aligned. Both specify CSS Subgrid, ArticleCard 3‑row layout, cursor pagination. |
+| AI Pipeline | Phase 5 | Phase 5 – AI Summarisation Pipeline | Aligned. Both specify Zod‑validated schema, Claude 4.5 Haiku + GPT‑5 Mini fallback, 3‑layer provenance. |
+| Search + Admin | Phase 6 + Phase 7 | Phase 6 – Search, Admin & API | Provided MEP consolidates. My separation was artificial. **Provided MEP wins.** |
+| Worker + Push | Phase 7 | Phase 7 – Worker Service, Push & Observability | Aligned. Both specify BullMQ workers, AES‑256‑GCM, Luxon DST handling. |
+
+**Conclusion:** The provided MEP’s 7‑phase structure is **cleaner and more logical** — it correctly bundles related concerns (e.g., Database + Auth together, Search + Admin together). My 9‑phase plan was overly granular and would have introduced unnecessary handoffs.
+
+---
+
+### 2. Configuration Flags — Critical Validation
+
+The provided MEP correctly identifies that `cacheComponents: true` must be at **top‑level**, not inside `experimental`. This is confirmed by the official Next.js documentation:
+
+> `cacheComponents: true` flag controls the ppr, useCache, and dynamicIO flags as a single, unified configuration.
+
+> `experimental.ppr` and `experimental.dynamicIO` are **no longer necessary and have been removed**.
+
+The provided MEP also correctly notes that `proxy.ts` replaces `middleware.ts` in Next.js 16+. This is a **critical migration step** that my MEP missed entirely — I incorrectly assumed `middleware.ts` was still valid.
+
+> `proxy.ts` replaces `middleware.ts` — runs on Node.js runtime, not Edge.
+
+```ts
+// Provided MEP proxy.ts checklist is complete
+export function proxy(request: NextRequest) {
+  // ... cookie check + redirect
+}
+export const config = { matcher: ["/admin/:path*"] };
+```
+
+**Conclusion:** Provided MEP **wins** on configuration accuracy. My plan had outdated assumptions about `middleware.ts`.
+
+---
+
+### 3. Database — Drizzle ORM & Full‑Text Search
+
+Both plans use Drizzle ORM with PostgreSQL 17. However, the **full‑text search approach differs significantly**:
+
+| Approach | My MEP | Provided MEP |
+|----------|--------|--------------|
+| Primary FTS | `tsvector` + GIN index | `pg_textsearch` BM25 extension |
+| Ranking | `ts_rank_cd` | Native BM25 `ORDER BY col <@> 'query'` |
+| Index type | GIN (partial/trigram) | BM25 index (`USING bm25`) |
+
+**Validation:** `pg_textsearch` is a production‑ready PostgreSQL extension from Timescale that supports BM25 ranking with configurable k1/b parameters, and works with PostgreSQL 17 and 18. It is available as pre‑built binaries and must be loaded via `shared_preload_libraries`.
+
+**Trade‑off analysis:**
+
+| Factor | GIN + `ts_rank_cd` | `pg_textsearch` BM25 |
+|--------|---------------------|----------------------|
+| **Modern ranking** | Inverse‑frequency, not BM25 | True BM25 (k1/b configurable) |
+| **Installation** | Built‑in, no extension | Requires extension install |
+| **Query syntax** | `@@` + `ts_rank_cd()` | `<@>` operator |
+| **Edge‑case handling** | Lower for short queries | Better (BM25 bias) |
+| **Drizzle compatibility** | Full | Partial — requires raw SQL for `<@>` operator |
+
+**Recommendation:** **Adopt `pg_textsearch` for BM25 ranking** as the provided MEP does. It better aligns with modern search relevance (closer to web‑search engines). However, **keep a fallback GIN index** for development environments where the extension may not be available.
+
+---
+
+### 4. Design System & Typography
+
+Both plans correctly enforce **Anti‑Generic** principles:
+
+- **Newsreader** (serif headlines) – `font-editorial`
+- **Instrument Sans** (UI text) – `font-ui`
+- **Commit Mono** (metadata) – `font-mono`
+- **Dispatch‑Ember** (#c7513f) as sole accent
+- **CSS Subgrid** for feed alignment
+
+The provided MEP explicitly bans `experimental.ppr` and `experimental.dynamicIO`, which my plan also forbade. Both are aligned.
+
+**Minor difference:** My MEP specified `grid-rows-subgrid` utility class; provided MEP uses inline `grid-rows-subgrid` on each `ArticleCard`. **Either works** — the provided MEP’s approach is more explicit and easier to debug.
+
+---
+
+### 5. AI Pipeline & EU AI Act Compliance
+
+**Both plans correctly implement 3‑layer disclosure** (JSON‑LD + HTTP header + HTML meta). This aligns with EU AI Act Article 50, which requires providers of AI‑generated content to “facilitate identification and mark such content in a machine‑readable manner”.
+
+**Critical difference:** My MEP assumed `experimental.useCache` would be used; the provided MEP correctly notes that `experimental.useCache` and `experimental.dynamicIO` are **deprecated** and replaced by `cacheComponents: true`.
+
+**Validation:** The provided MEP’s `summariseSchema.ts` includes `min(50).max(800)` for `summaryText` — this prevents empty or inflated responses. My MEP had similar constraints but less explicit validation for `aiStatement` length.
+
+**Recommendation:** Adopt the provided MEP’s Zod schema for `summariseSchema.ts` — it is **more rigorous** with explicit length bounds on every field.
+
+---
+
+### 6. Testing & Accessibility — A Critical Gap in Provided MEP
+
+| Requirement | My MEP | Provided MEP |
+|-------------|--------|--------------|
+| Unit tests (Vitest) | ✅ | ❌ (not specified) |
+| Integration tests | ✅ | ❌ (not specified) |
+| E2E (Playwright) | ✅ | ❌ (not specified) |
+| WCAG AAA | ✅ | ⚠️ AA only |
+| Axe‑core + manual | ✅ | ❌ |
+| Lighthouse CI | ✅ | ❌ |
+
+The provided MEP states:
+
+> WCAG AA minimum (target AAA)
+
+This is **insufficient**. Your Claude Code standard explicitly requires **WCAG AAA** — not just a “target” — and mandates:
+
+> All UI states: loading, error, empty, success
+> Show loading state ONLY when no data exists
+> Ensure every list has an empty state
+> Disable buttons during async operations
+> Show loading indicator on buttons
+> Always implement onError handler with user feedback
+
+The provided MEP **does not** explicitly enforce these in its checklists. This is a **serious omission**.
+
+---
+
+### 7. Dependency Validation
+
+The provided MEP’s `package.json` list is **more complete**. Key additions my MEP missed:
+
+| Package | Purpose | Provided MEP | My MEP |
+|---------|---------|--------------|--------|
+| `postgres` (driver) | Postgres.js lazy connection | ✅ | ❌ (used `pg`) |
+| `@types/luxon` | Luxon types for DST | ✅ | ❌ |
+| `web-push` + `@types/web-push` | VAPID push notifications | ✅ | ❌ (missing type) |
+| `next-themes` | Dark mode provider | ✅ | ❌ |
+
+**Critical:** Using `postgres` (postgres.js) driver instead of `pg` is **non‑negotiable** for the lazy proxy connection pattern. The provided MEP correctly specifies this; my plan mistakenly used `pg`.
+
+---
+
+### 8. Worker Service Architecture
+
+Both plans correctly separate the worker service from the Next.js app. However, the provided MEP includes a **crucial detail** — the `scheduler.ts` job that uses `upsertJobScheduler()` for idempotent RSS polling. My MEP assumed `add` would suffice; this would cause duplicate schedulers on worker restart.
+
+> `upsertJobScheduler` — Idempotent — restart‑safe
+
+**Recommendation:** Adopt the provided MEP’s `scheduler.ts` and `upsertJobScheduler()` pattern.
+
+---
+
+### 9. Error Handling & UI States — A Critical Missing Checklist
+
+Your Claude Code standard mandates **five mandatory UI states** for every component. The provided MEP only mentions “empty state” once, and “error boundary” briefly.
+
+**My MEP explicitly listed:**
+
+```
+- Loading — only when no data exists (skeleton)
+- Error — user‑friendly message + retry button
+- Empty — every list must have an empty state
+- Async operation — buttons disabled during operation, loading indicator shown
+- onError handler — always present with user feedback
+```
+
+The provided MEP has **no equivalent checklist** for these states. This is a **serious omission** that would lead to broken user experiences.
+
+---
+
+## Validation of Key Claims (With External Sources)
+
+| Claim | Provided MEP | External Validation |
+|-------|--------------|---------------------|
+| `cacheComponents: true` at top‑level, not in `experimental` | ✅ | Official Next.js docs confirm:“If you used experimental.useCache or experimental.dynamicIO, migrate using the Version 16 upgrade guide” |
+| `experimental.ppr` and `experimental.dynamicIO` **DO NOT INCLUDE** | ✅ | “experimental.ppr configuration flag […] have been removed.” |
+| `proxy.ts` replaces `middleware.ts` | ✅ | “As of Next.js 16, middleware.ts has been renamed to proxy.ts.” |
+| `revalidateTag()` requires profile parameter (not optional) | ✅ | GitHub issue confirms:“Profile must be set. It’s not optional.” |
+| `pg_textsearch` supports PostgreSQL 17 | ✅ | Official docs:“pg_textsearch supports PostgreSQL 17 and 18.” |
+| EU AI Act Article 50 requires machine‑readable marking | ✅ | “Providers of AI‑generated or manipulated content must facilitate identification and mark such content in a machine‑readable manner.” |
+| Luxon required for DST‑safe quiet hours | ✅ | Node.js native Date **does not** handle DST transitions correctly — Luxon’s `DateTime` is required for timezone‑aware calculations. |
+
+---
+
+## Conclusion & Recommendations
+
+### What the Provided MEP Does Better
+
+1. **Configuration accuracy** — correct placement of `cacheComponents`, `proxy.ts` migration, and deprecation of `experimental.ppr`.
+2. **Database FTS** — `pg_textsearch` BM25 extension is more modern than GIN + `ts_rank_cd`.
+3. **Dependency completeness** — includes `postgres` driver, Luxon types, and `web-push` types.
+4. **Worker scheduling** — idempotent `upsertJobScheduler` pattern prevents duplicates.
+5. **Phase structure** — 7 phases instead of 9, logical bundling of related features.
+
+### What My MEP Does Better
+
+1. **Testing strategy** — explicit Vitest, Playwright, Lighthouse CI.
+2. **WCAG AAA** — mandatory, not aspirational.
+3. **UI state checklists** — loading/error/empty/success with onError handlers.
+4. **Performance budget** — TTFB, LCP, CLS, TTI targets.
+5. **Risk register** — explicit R1–R14 with mitigations.
+
+### Recommended Merged Plan
+
+Merge the best of both into a **single authoritative MEP v5.0**:
+
+| Component | Source | Rationale |
+|-----------|--------|-----------|
+| Phase structure (7 phases) | Provided MEP | Cleaner handoffs |
+| `next.config.ts` flags | Provided MEP | Verified correct placement |
+| `proxy.ts` migration | Provided MEP | Next.js 16 requirement |
+| `pg_textsearch` FTS | Provided MEP | Modern BM25 ranking |
+| Dependency list | Provided MEP | Complete + types |
+| Worker `scheduler.ts` | Provided MEP | Idempotent schedulers |
+| Testing strategy | My MEP | Vitest + Playwright + Lighthouse |
+| WCAG AAA checklists | My MEP | Mandatory, not aspirational |
+| UI state checklists | My MEP | Loading/error/empty/success/async |
+| Risk register | My MEP | R1–R14 with mitigations |
+| Performance budget | My MEP | TTFB/LCP/CLS/TTI targets |
+
+---
+
+## Final Recommendation
+
+**Proceed with the provided MEP v4.5 as the primary blueprint**, but **merge the following five missing components from my MEP** before implementation:
+
+1. **Testing suite** — Vitest unit tests, Playwright E2E, Lighthouse CI.
+2. **WCAG AAA checklist** — mandatory contrast ratios, focus management, screen‑reader announcements.
+3. **UI state checklist** — loading/error/empty/success for every component.
+4. **Performance budget** — TTFB <50ms, LCP <2.5s, CLS <0.1, TTI <1.5s.
+5. **Risk register** — R1–R14 with explicit mitigations.
+
+These additions are **non‑negotiable** for meeting your Claude Code quality standards. Once merged, the plan becomes **the definitive implementation blueprint** for OneStopNews.
+
