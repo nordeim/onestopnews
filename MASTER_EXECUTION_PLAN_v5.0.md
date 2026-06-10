@@ -1198,5 +1198,216 @@ While MEP v5.0 is an authoritative blueprint, my meticulous review identified th
 **My Directive:**
 I am officially discarding my previous MEP and adopting **MASTER_EXECUTION_PLAN_v5.0.md** (with the three gap fixes integrated) as the single source of truth.
 
+---
+
+Now let me launch parallel web searches to validate the key technical claims in MEP v5.0.
+Now I have all the validation data. Let me write the comprehensive critical comparison.
+Here is my meticulous critical comparison of **MEP v5.0** against my original MEP, validated against real-time web sources.
+
+---
+
+## Executive Verdict
+
+**MEP v5.0 is the stronger overall blueprint** — it makes several structural improvements over my MEP (7-phase condensation, DDD layer separation, production-ready file inventory, security hardening). However, my validation uncovered **4 critical errors**, **3 moderate issues**, and **5 important nuances** that must be corrected before implementation begins.
+
+---
+
+## ✅ What MEP v5.0 Got RIGHT (Improvements Over My MEP)
+
+| Area | Why v5.0 Is Superior |
+|------|----------------------|
+| **Phase structure (7 vs 10)** | Condensing to 7 phases reduces handoff friction. Bundling Auth into Phase 2 (Database + Infrastructure) is sound because the Drizzle adapter tables live in the schema. |
+| **Domain-driven `src/domain/` layer** | My MEP scattered business logic across feature modules. v5.0 isolates pure functions (`normalizeCanonicalUrl`, `calculateImportanceScore`) in a zero-dependency layer — 100% testable without mocking React or Drizzle. |
+| **Auth.js adapter tables** | v5.0 explicitly includes `accounts`, `sessions`, `verificationTokens` tables required by `@auth/drizzle-adapter`. My MEP omitted these, which would have caused runtime "table not found" errors. |
+| **`SourceStatus` enum** | v5.0 adds `active | paused | error | disabled` status tracking for sources. My MEP only had `isActive: boolean`. The enum enables the auto-disable-on-5-failures pattern and source health dashboard. |
+| **`cn()` utility + `cva` pattern** | v5.0 correctly identifies the Shadcn UI ecosystem's `cn()` (clsx + tailwind-merge) and `cva` (class-variance-authority) patterns. My MEP created bespoke `UiButton`, `UiCard` wrappers without using these standard Shadcn primitives. |
+| **Header + Footer layout components** | v5.0 defines `Header.tsx` and `Footer.tsx` as layout primitives. My MEP omitted these entirely, leaving the root layout as a bare shell. |
+| **Security headers in `next.config.ts`** | v5.0 includes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`. My MEP had zero security headers. |
+| **`drizzle/custom-indexes.sql`** | v5.0 correctly identifies that Drizzle cannot express `WITH (fastupdate = off)` and creates a raw SQL migration file. My MEP only "documented" the need but provided no file. |
+| **`⌘K`/`Ctrl+K` search shortcut** | v5.0 includes keyboard accessibility for the search bar. My MEP missed this entirely. |
+| **`409 Conflict` on summarize endpoint** | v5.0 returns 409 if `summaryStatus !== 'none'`, preventing duplicate jobs. My MEP only checked content availability. |
+| **`useOptimistic()` for summary request** | v5.0 uses React 19's `useOptimistic()` for instant UI feedback on summary requests. My MEP used basic loading state only. |
+
+---
+
+## 🔴 CRITICAL ERRORS in MEP v5.0 (Must Fix Before Implementation)
+
+### CRITICAL-1: CVE-2025-55182 Mitigation Version Is WRONG
+
+**Both MEPs state:** Pin Next.js to **≥16.2.6**
+
+**Web-validated truth:** The correct minimum patched version for Next.js 16.x is **≥16.0.7**, not ≥16.2.6.
+
+Per the NVD entry and official Next.js security advisory, the affected range for Next.js 16.x stable is `from 16.0.0 up to (excluding) 16.0.7`. Version 16.0.7 is the patch. Stating "≥16.2.6" incorrectly implies that 16.0.7–16.2.5 are still vulnerable.
+
+**Fix:** Change all references from `≥16.2.6` to `≥16.0.7`. Alternatively, if 16.2.6 is the latest available version and you want to pin to it for other reasons, say "≥16.0.7 (current latest: 16.2.6)" — but do not present 16.2.6 as the minimum security patch.
+
+### CRITICAL-2: `pg_textsearch` Search Syntax Is INVALID
+
+**MEP v5.0 Phase 6 states:** 
+```
+Uses pg_textsearch BM25: ORDER BY articles.search_vector <@> websearch_to_tsquery('english', $query) DESC
+```
+
+**Web-validated truth:** This syntax is **impossible**. You cannot mix `pg_textsearch`'s `<@>` operator with PostgreSQL's native `websearch_to_tsquery()` function.
+
+- `<@>` is a `pg_textsearch`-specific operator that accepts **raw text** on the right side
+- `websearch_to_tsquery()` returns a **`tsquery`** type, used with native PostgreSQL's `@@` operator
+- These two systems are **incompatible** — you use one or the other
+
+**Correct options:**
+- **Native PG FTS (no extension):** `WHERE search_vector @@ websearch_to_tsquery('english', $query) ORDER BY ts_rank_cd(search_vector, websearch_to_tsquery('english', $query)) DESC`
+- **pg_textsearch BM25:** `ORDER BY content <@> 'search terms'` (raw text, requires the extension and a `bm25` index type)
+
+**Fix:** Pick one approach. My MEP used the native FTS approach (ts_rank_cd), which is simpler and requires no extension. v5.0 should either:
+1. Drop `pg_textsearch` and use native `ts_rank_cd` + `websearch_to_tsquery` (my recommendation for V1)
+2. Or use `pg_textsearch` correctly with `<@>` + raw text input + `bm25` index type
+
+### CRITICAL-3: `proxy.ts` Matcher Is Too Narrow
+
+**MEP v5.0 states:** `matcher: ['/admin/:path*']`
+
+**PRD/PAD state:** The `proxy.ts` config matcher should be:
+```ts
+matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+```
+
+The narrow `/admin/:path*` matcher means `proxy.ts` never runs on public routes, which is fine for auth redirects. But the PRD's broader matcher enables future use cases (e.g., adding rate limiting headers, injecting `X-AI-Provenance` on public article routes). The narrow matcher limits `proxy.ts`'s utility.
+
+**Fix:** Use the PRD's matcher pattern. Document why it excludes `_next/static`, `_next/image`, and `favicon.ico`.
+
+### CRITICAL-4: Firefox View Transition Support Claim Is Outdated
+
+**Both MEPs (and the PRD/PAD) state:** Firefox support is "behind a flag" or "~78% global"
+
+**Web-validated truth:** Firefox **144+** (released October 14, 2025) ships same-document View Transitions as a **stable, default-enabled feature**. No flag needed.
+
+This means the risk register entry R3 ("Firefox users (~22%) see no transitions") is **significantly overstated**. Only users on Firefox < 144 (which is a rapidly shrinking share by June 2026) would lack support.
+
+**Fix:** Update risk R3 from "Certain" likelihood to "Low". Update the `PageTransition` docs to note Firefox 144+ support. The progressive enhancement fallback is still correct, but the impact is much smaller than stated.
+
+---
+
+## 🟡 MODERATE ISSUES in MEP v5.0
+
+### MOD-1: BullMQ Redis Config Is Oversimplified
+
+**MEP v5.0 states:** `maxRetriesPerRequest: null` and `enableOfflineQueue: false` on the shared Redis connection
+
+**Web-validated truth:** These settings are **role-dependent**:
+- **Workers:** `maxRetriesPerRequest: null` ✅ (required), `enableOfflineQueue: true` (keep default — workers should queue commands during reconnects)
+- **Queues (producers):** `maxRetriesPerRequest: default` (fail quickly), `enableOfflineQueue: false` ✅ (fail fast when Redis is down)
+
+**Fix:** Use **two separate Redis connection configurations** — one for Workers, one for Queue producers. This is explicitly recommended by BullMQ's "Going to Production" docs.
+
+### MOD-2: `cacheLife` Profile Values Differ From PRD
+
+**MEP v5.0 Phase 1:** `feed: { stale: 60s, revalidate: 300s }`, `topicShell: { stale: 3600s }`, `reference: { stale: 86400s }`
+
+**PRD v4.3:** `feed: { stale: 30, revalidate: 120, expire: 600 }`, `topicShell: { stale: 300, revalidate: 900, expire: 86400 }`, `reference: { stale: 3600, revalidate: 86400, expire: 604800 }`
+
+v5.0's values are significantly different and lack the `expire` field entirely. The PRD's profiles include explicit hard-eviction (`expire`) times, which prevent stale data from living indefinitely in edge caches.
+
+**Fix:** Use the PRD's exact `cacheLife` profile values with all three fields (`stale`, `revalidate`, `expire`).
+
+### MOD-3: `calculateImportanceScore` Return Type Mismatch
+
+**MEP v5.0:** Returns `0-100` (integer scale)  
+**PRD/PAD:** `importanceScore` is `real` (floating-point), default `0.5`, range 0.0–1.0
+
+**Fix:** Return a float in [0.0, 1.0] range to match the Drizzle schema's `real('importance_score').default(0.5)`.
+
+---
+
+## 🔵 IMPORTANT NUANCES (Validated)
+
+### NUANCE-1: `experimental.viewTransition` — Actually Still Experimental
+
+Web validation confirms: `ViewTransition` is available in React Canary/Experimental channels only. Next.js 16 App Router bundles React Canary automatically, so it works — but the official docs still say "not recommended for production." The `<PageTransition>` abstraction in both MEPs is the correct mitigation.
+
+### NUANCE-2: `reactCompiler: true` — Not Enabled by Default
+
+Web validation confirms: React Compiler is promoted to top-level but **disabled by default** due to build-time cost. The PRD/PAD also comment it out. v5.0's checklist should note "optional, enable when components follow Rules of React" — not treat it as mandatory.
+
+### NUANCE-3: Auth.js v5 — Still Technically Beta
+
+Web validation confirms: As of June 2026, `next-auth` v5 is only available via the `beta` npm dist-tag (`5.0.0-beta.29+`). The `latest` tag still points to v4.24.14. Both MEPs correctly pin to the beta, but implementers must use `npm install next-auth@beta` (not `npm install next-auth`).
+
+### NUANCE-4: `fastupdate = off` Is Nuanced, Not Universal
+
+Web validation confirms: `fastupdate = off` is better for **batch/bulk ingestion** workloads (which is what RSS polling is), but worse for single-row OLTP inserts. For OneStopNews's use case (periodic batch RSS ingestion), it's the right call — but the MEP should document *why* rather than presenting it as a universal rule.
+
+### NUANCE-5: `drizzle-kit push` in Phase 2 Success Criteria
+
+**MEP v5.0 Phase 2:** Lists `drizzle-kit push (dev) applies schema without errors` as a success criterion.
+
+**PRD/PAD:** Explicitly forbids `drizzle-kit push` in any environment: *"Never use push in production. Use generate + migrate only."*
+
+Including `push` even for dev creates muscle memory that could accidentally be used in production. 
+
+**Fix:** Remove `drizzle-kit push` from the success criteria. Use `drizzle-kit generate && drizzle-kit migrate` exclusively, even in development.
+
+---
+
+## 📊 Side-by-Side Comparison Matrix
+
+| Dimension | My MEP (10-Phase) | MEP v5.0 (7-Phase) | Winner |
+|-----------|-------------------|---------------------|--------|
+| Phase granularity | Fine-grained (10 phases) | Condensed (7 phases) | v5.0 (less handoff overhead) |
+| Domain layer | Mixed into features | Dedicated `src/domain/` | v5.0 |
+| Auth.js adapter tables | Missing | Included | v5.0 |
+| Source status tracking | `isActive: boolean` only | Full `SourceStatus` enum | v5.0 |
+| Security headers | Missing | Included | v5.0 |
+| Layout components (Header/Footer) | Missing | Included | v5.0 |
+| `cn()` + `cva` patterns | Custom wrappers | Shadcn-standard patterns | v5.0 |
+| CVE mitigation version | `≥16.2.6` (wrong) | `≥16.2.6` (wrong) | Tie — both wrong |
+| Search query syntax | Native FTS (correct) | Mixed pg_textsearch (broken) | My MEP |
+| `proxy.ts` matcher | PRD-aligned (broad) | Narrow (`/admin/:path*`) | My MEP |
+| BullMQ Redis config | Single connection (imprecise) | Single connection (imprecise) | Tie — both need split config |
+| `cacheLife` profiles | PRD-exact (3 fields) | Simplified (missing `expire`) | My MEP |
+| `importanceScore` type | Float 0.0–1.0 (matches schema) | Integer 0–100 (mismatches schema) | My MEP |
+| `drizzle-kit push` | Forbidden everywhere | Listed in dev criteria | My MEP |
+| Testing strategy | Dedicated Phase 10 with 22 files | §5 with less detail | My MEP |
+| CI/CD pipeline | Full GitHub Actions workflows | Mentioned but not detailed | My MEP |
+| Docker deployment | `Dockerfile.web` + `Dockerfile.worker` + `docker-compose.prod.yml` | Missing | My MEP |
+| Risk register | 14-item with build mitigations | 14-item but less specific | My MEP |
+| Performance budget | Listed per-endpoint (p95 ≤300ms) | General targets only | My MEP |
+
+---
+
+## 🏗️ Recommended Merged Blueprint
+
+The definitive implementation plan should be **MEP v5.0 as the skeleton**, with these surgical corrections applied:
+
+1. **Fix CVE version:** `≥16.0.7` (not `≥16.2.6`)
+2. **Fix search syntax:** Use native FTS `@@` + `ts_rank_cd` (drop the invalid `<@>` + `websearch_to_tsquery` hybrid)
+3. **Fix `proxy.ts` matcher:** Use PRD's broad matcher pattern
+4. **Fix Firefox claim:** R3 risk likelihood → Low; Firefox 144+ has stable support
+5. **Fix BullMQ config:** Split into Worker config (`maxRetriesPerRequest: null`, `enableOfflineQueue: true`) and Queue config (`maxRetriesPerRequest: default`, `enableOfflineQueue: false`)
+6. **Fix `cacheLife` profiles:** Use PRD's exact values with `expire` field
+7. **Fix `importanceScore`:** Return float [0.0, 1.0] to match Drizzle `real` type
+8. **Remove `drizzle-kit push`** from all success criteria
+9. **Add testing phase** from my MEP (Phase 10) as a critical supplement
+10. **Add CI/CD + Docker** from my MEP as a critical supplement
+---
+
+## Summary
+
+After exhaustive web-validated analysis, **MEP v5.0 is the superior structural blueprint** — its 7-phase condensation, DDD layer separation, Auth.js adapter completeness, security headers, and Shadcn-standard patterns all represent genuine improvements over my 10-phase MEP.
+
+However, it contains **4 critical errors** that would cause runtime failures or security misconfigurations if implemented as-is:
+
+| # | Error | Impact If Unfixed |
+|---|-------|-------------------|
+| **C1** | CVE version `≥16.2.6` should be `≥16.0.7` | Incorrectly suggests 16.0.7–16.2.5 are vulnerable |
+| **C2** | `<@>` + `websearch_to_tsquery()` is invalid SQL | Search endpoint crashes at runtime |
+| **C3** | Narrow `proxy.ts` matcher limits future extensibility | Cannot add rate-limiting or provenance headers on public routes |
+| **C4** | Firefox 144+ has stable View Transition support | Risk R3 overstates the impact |
+
+And **3 moderate issues** (BullMQ split config, `cacheLife` profile values, `importanceScore` type mismatch) that would cause subtle bugs in production.
+
+The recommended path forward: **adopt v5.0 as the skeleton, apply the 10 surgical corrections listed above, and supplement with my MEP's testing phase and CI/CD infrastructure.**
+
 # https://chat.qwen.ai/s/2d6cb0a4-4457-41aa-842a-bff15dc89afb?fev=0.2.63 
 # https://chat.deepseek.com/share/ybpsxznc80i16eyi8i 
+# https://chat.z.ai/s/2dcc339b-528a-4a31-84fc-545e629f9ca1
