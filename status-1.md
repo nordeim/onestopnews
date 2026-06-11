@@ -113,3 +113,104 @@ Phase 1 Success Criteria Met:
 - ✅ Design tokens match PRD §4.2 color specifications
 All 11 tasks in the Phase 1 plan are complete. The project is ready for Phase 2 (Database Schema & Infrastructure).
 
+The actual project status is represented by:
+The TypeScript compilation status
+The todo list in the system
+The actual file contents on disk
+Let me focus on what matters: completing the Phase 2 tasks. Based on my earlier analysis:
+schema.ts - I was in the middle of fixing this. I successfully:
+✅ Added boolean and time to imports
+❌ The file got corrupted with duplicated content - need to fix this
+The verificationTokens table got deleted and replaced
+Boolean fields need fixing
+Time fields need fixing
+Inferred type exports need to be added
+auth/index.ts - Has as any but compiles
+auth route - Created successfully
+custom-indexes.sql - Created successfully
+queue/index.ts - Was being rewritten but the write failed with JSON parse error
+The key issue NOW is that I need to check the ACTUAL state of the files on disk and fix any corruption that may have occurred. The conversation dump shows that I was in the middle of multiple edits and some may have been corrupted.
+
+The generated SQL looks CORRECT:
+1. ✅ has맵_summary" boolean DEFAULT false NOT NULL — boolean, not integer
+2. ✅ is_active" boolean DEFAULT true NOT NULL — boolean, not integer
+3. ✅ push_quiet_start" time — time, not integer
+4. ✅ push_quiet_end" time — time, not integer
+5. ✅ briefing_time" time — time, not integer
+6. ✅ Proper composite unique index on accounts (I need to check the end)
+7. ✅ tsvector generated column correct
+8. ✅ All foreign key constraints present
+But wait, I don't see the composite unique index on accounts(provider, providerAccountId) or the indexes on articles and subcategories. Let me check the rest of the file...  Let me check the rest of the migration for indexes:
+# Check end of migration for indexes
+$ tail -40 /home/project/onestopnews/drizzle/0000_purple_blue_marvel.sql
+"push_quiet_start" time,
+	"push_quiet_end" time,
+	"push_max_per_day" integer DEFAULT 10 NOT NULL,
+	"briefing_enabled" boolean DEFAULT false NOT NULL,
+	"briefing_time" time,
+	"briefing_timezone" text,
+	"reading_mode_default" boolean DEFAULT false NOT NULL,
+	CONSTRAINT "user_preferences_user_id_unique" UNIQUE("user_id")
+);
+--> statement-breakpoint
+…
+Click to expand
+Migration looks great:
+1. ✅ Composite unique index on accounts(provider, providerAccountId)
+2. ✅ Articles canonical_url unique index
+3. ✅ Articles category_published index
+4. ✅ Articles subcategory_published index
+5. ✅ Articles search_vector GIN index
+6. ✅ Subcategories category_slug unique index
+Now let me apply the migration:  Migration SQL looks perfect. Let me apply it:
+# Apply Drizzle migration in .
+$ npx drizzle-kit migrate 2>&1
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/project/onestopnews/drizzle.config.ts'
+Using 'postgres' driver for database querying
+[⣷] applying migrations...[⣯] applying migrations...[⣟] applying migrations...[✓] migrations applied successfully!
+Migrations applied successfully! Now let me do the full validation (T2.9). Let me:
+1. Verify tables exist in PostgreSQL
+2. Run tsc --noEmit
+3. Run next build
+4. Test the auth route
+Let me check tables first.  Migrations applied! Let me do full validation:
+# Verify tables exist in PostgreSQL
+$ psql postgresql://onestopnews:onestopnews_dev_password@localhost:5432/onestopnews_dev -c "\dt" 2>&1
+List of relations
+ Schema |        Name         | Type  |    Owner    
+--------+---------------------+-------+-------------
+ public | accounts            | table | onestopnews
+ public | articles            | table | onestopnews
+ public | categories          | table | onestopnews
+ public | push_subscriptions  | table | onestopnews
+ public | sessions            | table | onestopnews
+ public | sources             | table | onestopnews
+ public | subcategories       | table | onestopnews
+…
+Click to expand
+# TypeScript strict check
+$ pnpm tsc --noEmit 2>&1
+(no output)
+- ✅ 11 tables confirmed in PostgreSQL (10 app tables + verification_tokens)
+- ✅ TypeScript zero errors tsc --noEmit passes
+Let me now run next build to verify everything compiles correctly, then update the todo list. I also need to run the custom indexes SQL.  All 11 tables confirmed in PostgreSQL. TypeScript passes. Let me apply custom indexes and run the build:
+# Apply custom indexes
+$ psql postgresql://onestopnews:onestopnews_dev_password@localhost:5432/onestopnews_dev -f /home/project/onestopnews/drizzle/custom-indexes.sql 2>&1
+psql:/home/project/onestopnews/drizzle/custom-indexes.sql:8: NOTICE:  extension "pg_trgm" already exists, skipping
+CREATE EXTENSION
+psql:/home/project/onestopnews/drizzle/custom-indexes.sql:27: ERROR:  functions in index predicate must be marked IMMUTABLE
+CREATE INDEX
+Build Next.js application
+$ pnpm build 2>&1
+> onestopnews@0.1.0 build /home/project/onestopnews
+> next build
+
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env.local, .env
+- Cache Components enabled
+- Experiments (use with caution):
+  ✓ viewTransition
+
+  Creating an optimized production build ...
+

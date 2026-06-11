@@ -49,6 +49,18 @@ please meticulously proceed with ToDo list. use TDD approach to make code change
 
 ---
 
+please meticulously scan through the attached agent session log and extract out key events, checkpoints, issues and bugs encountered, challenges and doubts, findings and claims into a logical chronicle report. Then meticulously research with extensive web searches to validate any findings and claims and to validate any issues and bugs and proposed fixes.
+
+---
+
+please meticulously review @phase_1_and_2_session_summary_record.md for guidance before proceeding to continue with the remaining outstanding tasks.
+
+---
+
+please use extensive web searches to validate any findings, claims, recommendations and fixes (proposed and attempted but failed).
+
+---
+
 Now, please meticulously plan to merge/unify the two versions of PRD below into a complete improved v4.1 PRD. Please meticulously use extensive web searches to research any doubts, claims and assumptions to ground the assertions in v4.1.
 
 ---

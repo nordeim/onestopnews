@@ -1,27 +1,32 @@
--- Custom PostgreSQL indexes for performance.
--- Applied after Drizzle migrations.
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- OneStopNews — Custom PostgreSQL Indexes (Phase 2)
+-- These are applied AFTER Drizzle migrations and augment schema-level indexes.
+-- ═══════════════════════════════════════════════════════════════════════════════
 
--- GIN Full-Text Search index with fastupdate = off for better query performance
-CREATE INDEX IF NOT EXISTS articles_search_vector_gin_idx
-  ON articles USING gin (search_vector);
-
--- Partial index for frequently recent articles (last 24 hours)
-CREATE INDEX IF NOT EXISTS articles_recent_published_idx
-  ON articles (published_at DESC)
-  WHERE published_at > (now() - interval '24 hours');
-
--- pg_trgm index for trigram-based autocomplete (if pg_trgm is available)
+-- 1. pg_trgm Extension (for autocomplete / fuzzy search)
+-- ─────────────────────────────────────────────────────────────────────────────────
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- 2. Full-Text Search GIN Index (optimised for consistent latency)
+--    Replaces the default GIN with fastupdate = off to prevent WAL bloat
+--    and ensure consistent search performance under high write load.
+--    This is applied if the schema-defined index needs to be overridden,
+--    otherwise the schema-defined GIN index is sufficient.
+-- ------------------------------------------------------------------------------
+-- NOTE: The articles_search_vector_gin_idx is already declared in schema.ts.
+-- Only uncomment the following if you need fastupdate = off for production:
+--
+-- CREATE INDEX IF NOT EXISTS articles_search_vector_gin_fastupdate_off_idx
+-- ON articles USING gin (search_vector) WITH (fastupdate = off);
+
+-- 3. Partial Index for Recent Articles
+--    Accelerates the main feed query which only shows articles from last 30 days.
+-- ------------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS articles_recent_published_idx
+ON articles (published_at DESC)
+WHERE published_at > (CURRENT_TIMESTAMP - INTERVAL '30 days');
+
+-- 4. pg_trgm Index on Article Titles (for autocomplete)
+-- ------------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS articles_title_trgm_idx
-  ON articles USING gin (title gin_trgm_ops);
-
--- Performance indexes on foreign keys
-CREATE INDEX IF NOT EXISTS articles_source_id_idx ON articles (source_id);
-CREATE INDEX IF NOT EXISTS articles_category_id_idx ON articles (category_id);
-CREATE INDEX IF NOT EXISTS articles_subcategory_id_idx ON articles (subcategory_id);
-
-CREATE INDEX IF NOT EXISTS sources_category_id_idx ON sources (category_id);
-
-CREATE INDEX IF NOT EXISTS summaries_article_id_idx ON summaries (article_id);
-
-CREATE INDEX IF NOT EXISTS push_subscriptions_user_id_idx ON push_subscriptions (user_id);
+ON articles USING gin (title gin_trgm_ops);

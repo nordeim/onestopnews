@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm";
 import {
+  boolean,
   customType,
   index,
   integer,
@@ -8,10 +8,12 @@ import {
   pgTable,
   real,
   text,
+  time,
   timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ─── Custom Types ─────────────────────────────────────────────────────────
 /**
@@ -92,7 +94,7 @@ export const sources = pgTable("sources", {
   categoryId: uuid("category_id").references(() => categories.id),
   priority: integer("priority").default(2).notNull(),
   pollIntervalMinutes: integer("poll_interval_minutes").default(15).notNull(),
-  isActive: integer("is_active").default(1).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
   lastFetchedAt: timestamp("last_fetched_at"),
   failureCount: integer("failure_count").default(0).notNull(),
   lastErrorMessage: text("last_error_message"),
@@ -116,7 +118,7 @@ export const articles = pgTable(
       .default("excerpt")
       .notNull(),
     importanceScore: real("importance_score").default(0.5).notNull(),
-    hasSummary: integer("has_summary").default(0).notNull(),
+    hasSummary: boolean("has_summary").default(false).notNull(),
     summaryStatus: summaryStatusEnum("summary_status").default("none").notNull(),
     politicalLeaning: text("political_leaning"),
     publishedAt: timestamp("published_at").notNull(),
@@ -179,7 +181,7 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   keys: jsonb("keys").$type<{ p256dh: string; auth: string }>().notNull(),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  isActive: integer("is_active").default(1).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
 });
 
 export const userPreferences = pgTable("user_preferences", {
@@ -190,32 +192,41 @@ export const userPreferences = pgTable("user_preferences", {
     .unique(),
   favoriteCategories: jsonb("favorite_categories").$type<string[]>().default([]).notNull(),
   mutedSources: jsonb("muted_sources").$type<string[]>().default([]).notNull(),
-  pushEnabled: integer("push_enabled").default(0).notNull(),
+  pushEnabled: boolean("push_enabled").default(false).notNull(),
   pushCategories: jsonb("push_categories").$type<string[]>().default([]).notNull(),
-  pushQuietStart: integer("push_quiet_start"),
-  pushQuietEnd: integer("push_quiet_end"),
+  pushQuietStart: time("push_quiet_start"),
+  pushQuietEnd: time("push_quiet_end"),
   pushMaxPerDay: integer("push_max_per_day").default(10).notNull(),
-  briefingEnabled: integer("briefing_enabled").default(0).notNull(),
-  briefingTime: integer("briefing_time"),
+  briefingEnabled: boolean("briefing_enabled").default(false).notNull(),
+  briefingTime: time("briefing_time"),
   briefingTimezone: text("briefing_timezone"),
-  readingModeDefault: integer("reading_mode_default").default(0).notNull(),
+  readingModeDefault: boolean("reading_mode_default").default(false).notNull(),
 });
 
 // ─── Auth.js Adapter Tables ──────────────────────────────────────────────
-export const accounts = pgTable("accounts", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull(),
-  type: text("type").notNull(),
-  provider: text("provider").notNull(),
-  providerAccountId: text("provider_account_id").notNull(),
-  refreshToken: text("refresh_token"),
-  accessToken: text("access_token"),
-  expiresAt: integer("expires_at"),
-  tokenType: text("token_type"),
-  scope: text("scope"),
-  idToken: text("id_token"),
-  sessionState: text("session_state"),
-});
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").notNull(),
+    type: text("type").notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("provider_account_id").notNull(),
+    refreshToken: text("refresh_token"),
+    accessToken: text("access_token"),
+    expiresAt: integer("expires_at"),
+    tokenType: text("token_type"),
+    scope: text("scope"),
+    idToken: text("id_token"),
+    sessionState: text("session_state"),
+  },
+  (table) => ({
+    providerAccountIdx: uniqueIndex("accounts_provider_account_idx").on(
+      table.provider,
+      table.providerAccountId
+    ),
+  })
+);
 
 export const sessions = pgTable("sessions", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -229,3 +240,20 @@ export const verificationTokens = pgTable("verification_tokens", {
   token: text("token").notNull().unique(),
   expires: timestamp("expires").notNull(),
 });
+
+// ─── Inferred Types ──────────────────────────────────────────────────────────
+// Re-export inferred types for each table — these are the single source of truth
+// for all derived domain types. All TypeScript types derive from the schema.
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Category = typeof categories.$inferSelect;
+export type Subcategory = typeof subcategories.$inferSelect;
+export type Source = typeof sources.$inferSelect;
+export type Article = typeof articles.$inferSelect;
+export type Summary = typeof summaries.$inferSelect;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type Account = typeof accounts.$inferSelect;
+export type Session = typeof sessions.$inferSelect;
+export type VerificationToken = typeof verificationTokens.$inferSelect;

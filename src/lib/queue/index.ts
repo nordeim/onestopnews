@@ -1,23 +1,77 @@
 import { Queue } from "bullmq";
 import { env } from "@/lib/env";
 
-// ── Redis Connection Factory ──────────────────────────────────────────────
+// ── Redis Connection Factories ──────────────────────────────────────────────
+// Per MEP v5.1: Worker and Queue (producer) connections have different configs.
+// This prevents memory leaks on the producer side during Redis disconnects.
 
-/** Creates a BullMQ-compatible Redis connection config. */  
-function createConnection() {
+/** Shared base Redis config derived from env.REDIS_URL. */
+function getRedisUrlParts() {
+  const url = new URL(env.REDIS_URL);
   return {
-    host: new URL(env.REDIS_URL).hostname,
-    port: Number(new URL(env.REDIS_URL).port) || 6379,
-    maxRetriesPerRequest: null,
-  } as const;
+    host: url.hostname,
+    port: Number(url.port) || 6379,
+  };
 }
 
-/** Pings Redis to check connectivity. Exported for health checks. */
+/**
+ * Queue (producer) connection — used by all BullMQ Queue instances.
+ * - enableOfflineQueue: false (prevent memory leaks when Redis is unreachable)
+ */
+export function createQueueConnection() {
+  return {
+    ...getRedisUrlParts(),
+    maxRetriesPerRequest: undefined as unknown as null,
+    enableOfflineQueue: false,
+  };
+}
+
+/**
+ * Worker connection — used by BullMQ Worker instances (Phase 7).
+ * - maxRetriesPerRequest: null (REQUIRED for blocking commands)
+ * - enableOfflineQueue: true (workers must persist during Redis outages)
+ */
+export function createWorkerConnection() {
+  return {
+    ...getRedisUrlParts(),
+    maxRetriesPerRequest: null as unknown as null,
+    enableOfflineQueue: true,
+  };
+}
+
+// ── Shared Default Job Options ──────────────────────────────────────────────
+const defaultJobOptions = {
+  attempts: 3,
+  backoff: { type: "exponential" as const, delay: 5000 },
+  removeOnComplete: { count: 100 },
+  removeOnFail: { count: 500 },
+};
+
+// ── Queue Definitions (Producer Side) ───────────────────────────────────────
+export const ingestQueue = new Queue("ingest", {
+  connection: createQueueConnection(),
+  defaultJobOptions,
+});
+
+export const summarizeQueue = new Queue("summarize", {
+  connection: createQueueConnection(),
+  defaultJobOptions,
+});
+
+export const scoreQueue = new Queue("score", {
+  connection: createQueueConnection(),
+  defaultJobOptions,
+});
+
+export const feedSliceQueue = new Queue("feed-slice", {
+  connection: createQueueConnection(),
+  defaultJobOptions,
+});
+
+// ── Redis Ping Utility (for health checks) ──────────────────────────────────
 export async function pingRedis(): Promise<boolean> {
-  const conn = createConnection();
-  // Dynamically import ioredis to avoid version conflict at top level
   const { Redis } = await import("ioredis");
-  const redis = new Redis(conn);
+  const redis = new Redis(getRedisUrlParts());
   try {
     await redis.ping();
     await redis.quit();
@@ -26,32 +80,3 @@ export async function pingRedis(): Promise<boolean> {
     return false;
   }
 }
-
-// ── Shared Default Job Options ─────────────────────────────────────────────
-const defaultJobOptions = {
-  attempts: 3,
-  backoff: { type: "exponential" as const, delay: 2000 },
-  removeOnComplete: { count: 100 },
-  removeOnFail: { count: 500 },
-};
-
-// ── Queue Definitions ──────────────────────────────────────────────────────
-export const ingestQueue = new Queue("ingest", {
-  connection: createConnection(),
-  defaultJobOptions,
-});
-
-export const summarizeQueue = new Queue("summarize", {
-  connection: createConnection(),
-  defaultJobOptions,
-});
-
-export const scoreQueue = new Queue("score", {
-  connection: createConnection(),
-  defaultJobOptions,
-});
-
-export const feedSliceQueue = new Queue("feed-slice", {
-  connection: createConnection(),
-  defaultJobOptions,
-});

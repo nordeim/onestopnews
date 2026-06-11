@@ -12,8 +12,8 @@ export const envSchema = z.object({
     .string()
     .min(1, "DATABASE_URL is required")
     .refine(
-      (val) => val.startsWith("postgres://"),
-      "DATABASE_URL must start with postgres://"
+      (val) => val.startsWith("postgres://") || val.startsWith("postgresql://"),
+      "DATABASE_URL must start with postgres:// or postgresql://"
     ),
 
   // ── Redis (BullMQ) ──────────────────────────────────────────────────────

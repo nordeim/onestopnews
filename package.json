@@ -31,7 +31,7 @@
     "ioredis": "latest",
     "luxon": "latest",
     "next": "^16.2.9",
-    "next-auth": "5.0.0-beta.25",
+    "next-auth": "5.0.0-beta.31",
     "openai": "latest",
     "postgres": "latest",
     "react": "^19.2.7",
@@ -41,6 +41,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@types/luxon": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
@@ -52,6 +53,7 @@
     "tailwindcss": "latest",
     "tsx": "latest",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.61.0",
     "vitest": "latest"
   },
   "engines": {
