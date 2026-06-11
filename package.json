@@ -1,0 +1,62 @@
+{
+  "name": "onestopnews",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "next build",
+    "check": "tsc --noEmit && pnpm lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "dev": "next dev --turbo",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "start": "next start",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:watch": "vitest",
+    "worker": "tsx src/workers/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@auth/drizzle-adapter": "^1.11.2",
+    "ai": "latest",
+    "bullmq": "latest",
+    "class-variance-authority": "latest",
+    "clsx": "latest",
+    "drizzle-orm": "latest",
+    "ioredis": "latest",
+    "luxon": "latest",
+    "next": "^16.2.9",
+    "next-auth": "5.0.0-beta.25",
+    "openai": "latest",
+    "postgres": "latest",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwind-merge": "latest",
+    "web-push": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/luxon": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/web-push": "latest",
+    "drizzle-kit": "latest",
+    "prettier": "latest",
+    "prettier-plugin-tailwindcss": "latest",
+    "tailwindcss": "latest",
+    "tsx": "latest",
+    "typescript": "^5.7.0",
+    "vitest": "latest"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

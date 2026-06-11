@@ -1,0 +1,231 @@
+import { sql } from "drizzle-orm";
+import {
+  customType,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  real,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+
+// ─── Custom Types ─────────────────────────────────────────────────────────
+/**
+ * Native PostgreSQL tsvector type — required for generated column FTS.
+ */
+export const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
+
+// ─── Enums ────────────────────────────────────────────────────────────────
+export const userRoleEnum = pgEnum("user_role", ["reader", "admin"]);
+export const feedFormatEnum = pgEnum("feed_format", ["rss", "atom", "json_api"]);
+
+/**
+ * contentAvailabilityEnum — Controls whether an article is eligible for AI summarisation.
+ * SUMMARISATION GUARD: Only enqueue summarise job when value is 'partial_text' or 'full_text'.
+ */
+export const contentAvailabilityEnum = pgEnum("content_availability", [
+  "title_only", // Title extracted only. DO NOT summarise.
+  "excerpt", // Title + short excerpt (≤300 chars). DO NOT summarise.
+  "partial_text", // Title + excerpt + partial body (300–1500 chars). Summarise permitted.
+  "full_text", // Title + excerpt + full body (>1500 chars). Summarise preferred.
+]);
+
+/**
+ * summaryStatusEnum — Controls what UI is shown on the article page.
+ */
+export const summaryStatusEnum = pgEnum("summary_status", [
+  "none",
+  "pending",
+  "ok",
+  "needs_review",
+  "disabled",
+]);
+
+// ─── Tables ───────────────────────────────────────────────────────────────
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  role: userRoleEnum("role").default("reader").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const categories = pgTable("categories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+});
+
+export const subcategories = pgTable(
+  "subcategories",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    categoryId: uuid("category_id")
+      .references(() => categories.id, { onDelete: "cascade" })
+      .notNull(),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+  },
+  (table) => ({
+    categorySlugIdx: uniqueIndex("subcategories_category_slug_idx").on(
+      table.categoryId,
+      table.slug
+    ),
+  })
+);
+
+export const sources = pgTable("sources", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  feedUrl: text("feed_url").notNull().unique(),
+  feedFormat: feedFormatEnum("feed_format").notNull(),
+  categoryId: uuid("category_id").references(() => categories.id),
+  priority: integer("priority").default(2).notNull(),
+  pollIntervalMinutes: integer("poll_interval_minutes").default(15).notNull(),
+  isActive: integer("is_active").default(1).notNull(),
+  lastFetchedAt: timestamp("last_fetched_at"),
+  failureCount: integer("failure_count").default(0).notNull(),
+  lastErrorMessage: text("last_error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const articles = pgTable(
+  "articles",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sourceId: uuid("source_id")
+      .references(() => sources.id, { onDelete: "cascade" })
+      .notNull(),
+    categoryId: uuid("category_id").references(() => categories.id),
+    subcategoryId: uuid("subcategory_id").references(() => subcategories.id),
+    title: text("title").notNull(),
+    excerpt: text("excerpt"),
+    canonicalUrl: text("canonical_url").notNull(),
+    contentHash: text("content_hash").notNull(),
+    contentAvailability: contentAvailabilityEnum("content_availability")
+      .default("excerpt")
+      .notNull(),
+    importanceScore: real("importance_score").default(0.5).notNull(),
+    hasSummary: integer("has_summary").default(0).notNull(),
+    summaryStatus: summaryStatusEnum("summary_status").default("none").notNull(),
+    politicalLeaning: text("political_leaning"),
+    publishedAt: timestamp("published_at").notNull(),
+    ingestedAt: timestamp("ingested_at").defaultNow().notNull(),
+    searchVector: tsvector("search_vector")
+      .generatedAlwaysAs(
+        sql`
+          setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+          setweight(to_tsvector('english', coalesce(excerpt, '')), 'B')
+        `
+      )
+      .notNull(),
+  },
+  (table) => ({
+    canonicalUrlIdx: uniqueIndex("articles_canonical_url_idx").on(table.canonicalUrl),
+    categoryPublishedIdx: index("articles_category_published_idx").on(
+      table.categoryId,
+      table.publishedAt
+    ),
+    subcategoryPublishedIdx: index("articles_subcategory_published_idx").on(
+      table.subcategoryId,
+      table.publishedAt
+    ),
+    searchVectorIdx: index("articles_search_vector_gin_idx").using(
+      "gin",
+      table.searchVector
+    ),
+  })
+);
+
+export const summaries = pgTable("summaries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  articleId: uuid("article_id")
+    .references(() => articles.id, { onDelete: "cascade" })
+    .notNull()
+    .unique(),
+  summaryText: text("summary_text").notNull(),
+  keyPoints: jsonb("key_points").$type<string[]>().default([]).notNull(),
+  sourcesCited: jsonb("sources_cited")
+    .$type<{ url: string; title: string }[]>()
+    .default([])
+    .notNull(),
+  model: text("model").notNull(),
+  tokensUsed: integer("tokens_used").notNull(),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+  status: summaryStatusEnum("status").default("ok").notNull(),
+  flagReason: text("flag_reason"),
+  aiStatement: text("ai_statement").notNull(),
+  complianceStatement: text("compliance_statement")
+    .default("EU AI Act Article 50 compliant")
+    .notNull(),
+  coveragePercentage: integer("coverage_percentage").notNull(),
+  originalArticleUrl: text("original_article_url").notNull(),
+});
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  keys: jsonb("keys").$type<{ p256dh: string; auth: string }>().notNull(),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: integer("is_active").default(1).notNull(),
+});
+
+export const userPreferences = pgTable("user_preferences", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => users.id, { onDelete: "cascade" })
+    .notNull()
+    .unique(),
+  favoriteCategories: jsonb("favorite_categories").$type<string[]>().default([]).notNull(),
+  mutedSources: jsonb("muted_sources").$type<string[]>().default([]).notNull(),
+  pushEnabled: integer("push_enabled").default(0).notNull(),
+  pushCategories: jsonb("push_categories").$type<string[]>().default([]).notNull(),
+  pushQuietStart: integer("push_quiet_start"),
+  pushQuietEnd: integer("push_quiet_end"),
+  pushMaxPerDay: integer("push_max_per_day").default(10).notNull(),
+  briefingEnabled: integer("briefing_enabled").default(0).notNull(),
+  briefingTime: integer("briefing_time"),
+  briefingTimezone: text("briefing_timezone"),
+  readingModeDefault: integer("reading_mode_default").default(0).notNull(),
+});
+
+// ─── Auth.js Adapter Tables ──────────────────────────────────────────────
+export const accounts = pgTable("accounts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull(),
+  type: text("type").notNull(),
+  provider: text("provider").notNull(),
+  providerAccountId: text("provider_account_id").notNull(),
+  refreshToken: text("refresh_token"),
+  accessToken: text("access_token"),
+  expiresAt: integer("expires_at"),
+  tokenType: text("token_type"),
+  scope: text("scope"),
+  idToken: text("id_token"),
+  sessionState: text("session_state"),
+});
+
+export const sessions = pgTable("sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionToken: text("session_token").notNull().unique(),
+  userId: uuid("user_id").notNull(),
+  expires: timestamp("expires").notNull(),
+});
+
+export const verificationTokens = pgTable("verification_tokens", {
+  identifier: text("identifier").notNull(),
+  token: text("token").notNull().unique(),
+  expires: timestamp("expires").notNull(),
+});

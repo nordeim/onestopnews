@@ -22,6 +22,33 @@ awesome meticulous job so far. please keep up the good work. now, please meticul
 
 ---
 
+please meticulously review @MASTER_EXECUTION_PLAN.md and then meticulously plan to create a comprehensive sub-plan for Phase 1 execution with a detailed ToDo list. then review and validate the Phase 1 sub-plan against @Project_Requirements_Document_v4.3.md , @Project_Architecture_Document_v4.5.md and @static_HTML_mockup_for_dynamic_landing_page.html to check for alignment before proceeding to execute the sub-plan meticulously. please note that database connection is via direct localhost port 5432. only the postgresql and redis servers are running in containers, the applications will run directly in the local host.
+
+$ docker ps | grep onestopnews
+6b6d2a0906cf   postgres:17-alpine                    "docker-entrypoint.s…"   18 minutes ago   Up 18 minutes (healthy)   127.0.0.1:5432->5432/tcp                      onestopnews-postgres-dev
+26bd0aa5ef26   redis:7-alpine                        "docker-entrypoint.s…"   18 minutes ago   Up 18 minutes (healthy)   127.0.0.1:6379->6379/tcp                      onestopnews-redis-dev
+(venv) pete@pop-os:/home/project/onestopnews
+$ grep -E 'postres|redis' .env docker-compose-dev.yml 
+.env:REDIS_URL=redis://localhost:6379
+docker-compose-dev.yml:  redis:
+docker-compose-dev.yml:    image: redis:7-alpine
+docker-compose-dev.yml:    container_name: onestopnews-redis-dev
+docker-compose-dev.yml:      redis-server
+docker-compose-dev.yml:      - redis_data:/data
+docker-compose-dev.yml:      test: ["CMD", "redis-cli", "ping"]
+docker-compose-dev.yml:      REDIS_URL: redis://redis:6379
+docker-compose-dev.yml:      redis:
+docker-compose-dev.yml:      REDIS_URL: redis://redis:6379
+docker-compose-dev.yml:      redis:
+docker-compose-dev.yml:  redis_data:
+
+
+---
+
+please meticulously proceed with ToDo list. use TDD approach to make code changes.
+
+---
+
 Now, please meticulously plan to merge/unify the two versions of PRD below into a complete improved v4.1 PRD. Please meticulously use extensive web searches to research any doubts, claims and assumptions to ground the assertions in v4.1.
 
 ---
