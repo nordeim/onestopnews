@@ -5,11 +5,11 @@ services:
     image: postgres:17-alpine
     container_name: onestopnews-postgres-dev
     environment:
-      POSTGRES_USER: onestopnews
-      POSTGRES_PASSWORD: onestopnews
-      POSTGRES_DB: onestopnews_dev
+      POSTGRES_USER: onestopnews_user
+      POSTGRES_PASSWORD: onestopnews_secret
+      POSTGRES_DB: onestopnews_dev_db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"   # bind only to loopback for local tooling
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/01-init-extensions.sql
@@ -25,7 +25,7 @@ services:
     container_name: onestopnews-redis-dev
     command: redis-server --save 60 1 --loglevel warning --maxmemory-policy noeviction
     ports:
-      - "6379:6379"
+      - "0.0.0.0:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:

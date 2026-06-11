@@ -80,9 +80,9 @@ services:
     image: postgres:17-alpine
     container_name: onestopnews-postgres-dev
     environment:
-      POSTGRES_USER: onestopnews
-      POSTGRES_PASSWORD: onestopnews
-      POSTGRES_DB: onestopnews_dev
+      POSTGRES_USER: onestopnews_user
+      POSTGRES_PASSWORD: onestopnews_secret
+      POSTGRES_DB: onestopnews_dev_db
     ports:
       - "5432:5432"
     volumes:
