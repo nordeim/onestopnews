@@ -401,7 +401,7 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 ---
 
 *This CLAUDE.md mirrors the authoritative Project Architecture Document v4.5 and Project Requirements Document v4.3. When the instructions here and the PAD/PRD diverge, the PAD/PRD are the source of truth.*
-<<<<<<< HEAD
+
 # Distilled Learnings & Tips — Next.js 16 + React 19 + Tailwind v4 + TypeScript + PostgreSQL + Drizzle
 
 > Extracted from battle-tested LuxeVerse documentation. Filtered for relevance to: Next.js 16, React 19, Tailwind CSS v4, TypeScript 5.9+, PostgreSQL (pg), Drizzle ORM.
@@ -1244,5 +1244,3 @@ Existing sections updated:
 - §12 — Added 3 new error rows (TS2307 stale cache, import breaks, route moves)
 - §13 — Added 2 new checklist items (route deletions, path aliases)
 
-=======
->>>>>>> 87e864730ab191ce95a225727ec07f199efd228a

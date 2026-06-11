@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: onestopnews-postgres-dev
+    environment:
+      POSTGRES_USER: onestopnews
+      POSTGRES_PASSWORD: onestopnews
+      POSTGRES_DB: onestopnews_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-extensions.sql:/docker-entrypoint-initdb.d/01-init-extensions.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onestopnews -d onestopnews_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: onestopnews-redis-dev
+    command: redis-server --save 60 1 --loglevel warning --maxmemory-policy noeviction
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: onestopnews-web-dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://onestopnews:onestopnews@postgres:5432/onestopnews_dev
+      - REDIS_URL=redis://redis:6379
+      - AUTH_SECRET=dev-secret-do-not-use-in-production
+      - AUTH_URL=http://localhost:3000
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=change_me
+      - VAPID_PRIVATE_KEY=change_me
+      - VAPID_SUBJECT=mailto:dev@onestopnews.com
+      - PUSH_KEY_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+      - ANTHROPIC_API_KEY=sk-ant-dummy
+      - OPENAI_API_KEY=sk-dummy
+    env_file:
+      - .env.docker
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules          # anonymous volume to keep node_modules from host
+      - pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    command: sh -c "pnpm install && pnpm dev -- --hostname 0.0.0.0"
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker.dev
+    container_name: onestopnews-worker-dev
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://onestopnews:onestopnews@postgres:5432/onestopnews_dev
+      - REDIS_URL=redis://redis:6379
+      - ANTHROPIC_API_KEY=sk-ant-dummy
+      - OPENAI_API_KEY=sk-dummy
+      - PUSH_KEY_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
+    env_file:
+      - .env.docker
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - pnpm_store:/root/.local/share/pnpm/store
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: sh -c "pnpm install && pnpm worker:dev"
+
+volumes:
+  postgres_data:
+  redis_data:
+  pnpm_store:

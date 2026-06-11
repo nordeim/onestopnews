@@ -1,0 +1,17 @@
+FROM node:24-alpine AS base
+
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml ./
+COPY packages/ ./packages/
+
+RUN pnpm install --frozen-lockfile
+
+ENV NODE_ENV=development
+
+# Install tsx globally for watch mode (or use pnpm exec)
+RUN pnpm add -g tsx
+
+CMD ["pnpm", "worker:dev"]
