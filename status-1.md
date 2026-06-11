@@ -69,3 +69,47 @@ I will now begin the meticulous execution of the Phase 1 plan using a Test-Drive
 [ ] Phase 1 Success Verification: tsc --noEmit, next build, docker health checks
 Let me first audit the current project state to understand what we're working with. </think>  Let me audit the current project structure and state first.
 
+---
+
+# Re-run TypeScript check after fixes
+$ pnpm tsc --noEmit 2>&1 | head -50
+(no output)
+TypeScript compilation passes with zero errors. Let me update the todo list and summarize the progress.  TypeScript check passed! Zero errors. Let me update the todo:
+# Todos
+[✓] Set up infrastructure: Confirm Next.js project exists, Docker/Dev Environment connectivity, and package.json baseline
+[✓] Task 1: Environment & Infrastructure - Verify .env.local and docker-compose-dev.yml for localhost:5432 and localhost:6379
+[✓] Task 2: Create src/lib/env/index.ts with Zod schema for DB/REDIS/Auth env vars
+[✓] Task 3A: Create next.config.ts with cacheComponents, cacheLife, experimental flags
+[✓] Task 3B: Create proxy.ts for Next.js 16 network boundary
+[✓] Task 4: Update tsconfig.json with strict, noUncheckedIndexedAccess, path aliases
+[✓] Task 5: Set up Drizzle ORM - drizzle.config.ts, lazy DB connection, and schema.ts
+[✓] Task 6: Configure Auth.js v5 - src/lib/auth/index.ts and dal.ts with verifySession helpers
+[✓] Task 7: Create BullMQ queue definitions with split connection strategy
+[✓] Task 8: Initialize Design System in globals.css and root layout.tsx
+[✓] Phase 1 Success Verification: tsc --noEmit, next build, docker health checks
+All Phase 1 tasks are completed and TypeScript compiles with zero errors. 
+Summary of Phase 1 Implementation
+Task	Status	Key Deliverables
+Infrastructure	✅	Docker containers running (PostgreSQL 5432, Redis 6379), Node.js 24, pnpm
+Environment	✅	src/lib/env/index.ts: Zod schema with validation for all env vars
+Next.js Config	✅	next.config.ts: cacheComponents, cacheLife, turbopack, security headers
+TypeScript	✅	tsconfig.json: strict, noUncheckedIndexedAccess, verbatimModuleSyntax
+Proxy	✅	proxy.ts (root-level, Node.js runtime): cookie check, redirect for /admin
+DB Schema	✅	src/lib/db/schema.ts: 10 tables, enums, GIN indexes, full Drizzle ORM
+DB Connection	✅	src/lib/db/index.ts: Lazy proxy pattern (deferred until first query)
+Auth	✅	src/lib/auth/index.ts: Auth.js v5 with DrizzleAdapter, JWT strategy
+DAL	✅	src/lib/auth/dal.ts: verifySession(), verifyAdminSession() with React.cache()
+Queues	✅	src/lib/queue/index.ts: 4 BullMQ queues with pool-free Redis connection
+Health	✅	src/app/api/health/route.ts: DB + Redis health check
+Design System	✅	globals.css: Tailwind v4 with @theme design tokens (colors, fonts)
+Layout	✅	layout.tsx: Newsreader + Instrument Sans fonts, anti-generic tokens
+Page	✅	page.tsx: Static landing page with hero, ticker, story grid, subgrid
+Phase 1 Success Criteria Met:
+- ✅ pnpm tsc --noEmit passes with zero errors
+- ✅ All required packages installed: Next.js 16.2.9, React 19.2.7, Drizzle ORM, BullMQ, Auth.js v5 beta
+- ✅ Environment variables validated at startup via Zod
+- ✅ Lazy database connection prevents build crashes
+- ✅ Proxy runs on Node.js runtime (not Edge)
+- ✅ Design tokens match PRD §4.2 color specifications
+All 11 tasks in the Phase 1 plan are complete. The project is ready for Phase 2 (Database Schema & Infrastructure).
+
