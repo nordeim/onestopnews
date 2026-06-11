@@ -316,9 +316,12 @@ pnpm worker:dev       # Worker service (separate terminal)
 
 ### Pre-Commit Gate
 ```bash
-pnpm lint && pnpm tsc --noEmit && pnpm test
+pnpm check          # Runs tsc --noEmit && pnpm lint
+pnpm test           # Run all test suites
 ```
 Must pass before any PR is merged. No exceptions.
+
+**Note**: `pnpm check` is a convenience script that runs `tsc --noEmit && pnpm lint`. This replaced separate commands to ensure TypeScript and ESLint are always checked together.
 
 ---
 
@@ -360,7 +363,7 @@ Must pass before any PR is merged. No exceptions.
 | Auth | Auth.js v5 beta, HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
 | AI Disclosure | 3-layer: JSON-LD + HTTP header + HTML meta. C2PA rejected. EU AI Act Art. 50 compliant. |
 | Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex. |
-| DB connections | Lazy Proxy prevents build-time exposure. `max: 10` for dedicated runtimes only. |
+| DB connections | Eager connection with graceful fallback when `DATABASE_URL` is missing at build time. `max: 10` for dedicated runtimes. Serverless: use PgBouncer/Supavisor or inject dummy URI at build time. |
 | Access control | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins. |
 
 ---
@@ -373,7 +376,7 @@ Must pass before any PR is merged. No exceptions.
 | `enum` / `namespace` | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly`. | String unions (`type Status = "ACTIVE" \| "DRAFT"`) and ES modules. |
 | Custom component over Shadcn | Violates Library Discipline. Wastes engineering time. | Shadcn UI / Radix primitive, wrapped for styling. |
 | `throw new Error()` in RSC auth | Triggers full-page error boundary. Bad UX. | `redirect('/sign-in')` from `next/navigation`. |
-| Eager DB connection | Crashes Next.js build in CI or static export. | Lazy Proxy pattern in `lib/db/index.ts`. |
+| Lazy proxy for DrizzleAdapter | Incompatible with `@auth/drizzle-adapter` build-time type checking. Use eager connection with graceful fallback when `DATABASE_URL` is missing. | Real DrizzlePgDatabase instance, handle missing env var. |
 | `drizzle-kit push` in production | Overwrites schema without migration history. Irreversible. | `generate` + `migrate` only. |
 | Caching without `cacheComponents: true` | `"use cache"` is silently inert. Zero caching occurs. | Ensure flag is top-level in `next.config.ts`. |
 | Summarising `title_only` / `excerpt` | AI hallucination risk — fabricating content from insufficient input. | `contentAvailabilityEnum` guard: only `partial_text` or `full_text`. |
@@ -383,6 +386,8 @@ Must pass before any PR is merged. No exceptions.
 | Raw hex colors in Tailwind | Bypasses design token system; breaks theming and maintainability. | Use design tokens (`bg-ink-900`, `text-paper-50`). |
 | Stale `.next/` cache after route deletion | `TS2307: Cannot find module` from old generated types. | `rm -rf .next/` + `tsc --noEmit`. |
 | Missing `noUncheckedIndexedAccess` | `arr[i]` returns `T` instead of `T \| undefined`, hiding runtime errors. | Enable in `tsconfig.json`. |
+| Mismatched `@auth/core` versions | `DrizzleAdapter` fails at build time with type errors. | Run `pnpm why @auth/core`. Upgrade `next-auth` to align. |
+| Beta adapter `as any` without eslint-disable | Triggers `--max-warnings 0` lint failures. | Add `eslint-disable-next-line @typescript-eslint/no-explicit-any` with justification. |
 
 ---
 

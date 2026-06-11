@@ -107,7 +107,8 @@ export const config = {
 
 ### Drizzle ORM & Database
 
-- **Lazy Proxy Connection:** `lib/db/index.ts` defers connection until first query. Prevents build-time crashes.
+- **Eager Connection (with Graceful Fallback):** `lib/db/index.ts` creates a real DrizzlePgDatabase instance at module load time when `DATABASE_URL` is available. Gracefully degrades to an empty object when the env var is missing (prevents build crashes in CI/serverless). Replaced the lazy proxy pattern which was incompatible with `DrizzleAdapter`'s build-time type checking.
+  - **Trade-off:** Eager connection reintroduces build-time database connection risks. For serverless (Vercel, Lambda), inject a dummy `DATABASE_URL` at build time or use a connection pooler.
 - **Migrations:** `drizzle-kit generate` + `migrate`. **Never `push`** in production.
 - **Additive-only deployments:** when removing a column, deploy code first (stop reading it), drop column in next release.
 - **Connection Pool:** `max: 10` assumes **dedicated Node.js runtime** (Docker, Railway, ECS). For serverless (Vercel, Lambda), swap to a connection pooler (PgBouncer / Supavisor).
@@ -316,9 +317,12 @@ pnpm worker:dev       # Worker service (separate terminal)
 
 ### Pre-Commit Gate
 ```bash
-pnpm lint && pnpm tsc --noEmit && pnpm test
+pnpm check          # Runs tsc --noEmit && pnpm lint
+pnpm test           # Run all test suites
 ```
 Must pass before any PR is merged. No exceptions.
+
+**Note**: `pnpm check` is a convenience script that runs `tsc --noEmit && pnpm lint`. This replaced separate commands to ensure TypeScript and ESLint are always checked together.
 
 ---
 
@@ -360,7 +364,7 @@ Must pass before any PR is merged. No exceptions.
 | Auth | Auth.js v5 beta, HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
 | AI Disclosure | 3-layer: JSON-LD + HTTP header + HTML meta. C2PA rejected. EU AI Act Art. 50 compliant. |
 | Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex. |
-| DB connections | Lazy Proxy prevents build-time exposure. `max: 10` for dedicated runtimes only. |
+| DB connections | Eager connection with graceful fallback when `DATABASE_URL` is missing. `max: 10` for dedicated runtimes. Serverless: use PgBouncer/Supavisor or inject dummy URI at build. |
 | Access control | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins. |
 
 ---
@@ -1188,6 +1192,10 @@ grep -rn '<a href="/' src/ --include="*.tsx"
 
 | Error / Symptom | Cause | Fix |
 |----------------|-------|-----|
+| `TS2322: Type 'Adapter' is not assignable to...` | Mismatched `@auth/core` versions between `next-auth` and `@auth/drizzle-adapter` | Run `pnpm why @auth/core`. Upgrade `next-auth` to align versions (e.g., `5.0.0-beta.31` with `@auth/core@0.41.2`). |
+| `"Unsupported database type (object)"` at build time | `DrizzleAdapter` evaluates DB at build time, incompatible with lazy proxy | Ensure `src/lib/db/index.ts` creates a real DrizzlePgDatabase instance (not a Proxy). Add fallback for missing `DATABASE_URL`. |
+| `next lint` not found / removed | Next.js 16 removed `next lint` CLI command | Use `eslint .` directly or project-specific npm scripts. Update to flat config (`eslint.config.mjs`). |
+| `Cannot find config "next/core-web-vitals"` | Next.js ESLint presets incompatible with ESLint 9 flat config | Use `typescript-eslint` directly instead. See `eslint.config.mjs` for working setup. |
 | `TS2339: Property 'X' does not exist` | Stale generated types | Regenerate: `drizzle-kit generate` + `tsc --noEmit` |
 | `TS2307: Cannot find module` (after route move) | Stale `.next/types/` cache | `rm -rf .next/` then `tsc --noEmit` |
 | `Property 'get' does not exist on type 'Promise<...>'` | Missing `await cookies()` | `(await cookies()).get("key")` |
@@ -1222,6 +1230,10 @@ Before submitting code, verify:
 - [ ] Schema changes followed by `drizzle-kit generate`
 - [ ] Route deletions followed by `rm -rf .next/`
 - [ ] Cross-module imports use path aliases (`@/...`)
+- [ ] `@auth/core` versions aligned between `next-auth` and `@auth/drizzle-adapter`
+- [ ] No lazy proxy for `DrizzleAdapter` (use real instance with fallback)
+- [ ] ESLint 9 flat config used (`eslint.config.mjs`), not `.eslintrc`
+- [ ] Beta adapter `as any` casts have `eslint-disable-next-line` with justification comment
 
 ---
 

@@ -54,7 +54,7 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 | **Components** | Shadcn UI + Radix | Latest | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds. |
 | **ORM** | Drizzle ORM | Latest | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
 | **Validation** | Zod | 3.x | Schema-first, composable. Enforces AI output constraints. |
-| **Auth** | Auth.js | 5.0.0-beta.x | HttpOnly session cookies, Drizzle adapter. Pinned exact beta. |
+| **Auth** | Auth.js | 5.0.0-beta.31 | HttpOnly session cookies, Drizzle adapter. Pinned exact beta. Next-auth aligns with `@auth/drizzle-adapter` on `@auth/core@0.41.2`. |
 | **Database** | PostgreSQL | 17 | Primary datastore. GIN FTS + `pg_textsearch` BM25. |
 | **Search** | `tsvector` + `pg_textsearch` | Built-in / 1.0.0 | Full-text search + BM25 ranking inside Postgres. |
 | **Job Queue** | BullMQ | 5.x | Job graphs (Flows), priorities, built-in monitoring dashboard. |
@@ -363,11 +363,163 @@ pnpm lint
 | **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. |
 | **Push key encryption** | VAPID keys encrypted at rest with AES-256-GCM. |
 | **Accessibility** | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely. |
-| **DB connections** | Lazy Proxy pattern prevents build-time crashes. `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
+| **DB connections** | Eager connection with graceful fallback when `DATABASE_URL` is unavailable at build time. `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
 
 ---
 
-## Critical Configuration Invariants
+## Known Issues & Lessons Learned
+
+### Phase 2: Authentication & Database Stabilisation
+
+#### 1. @auth/core Version Conflict (Resolved)
+
+**Issue**: `DrizzleAdapter` failed at build time with `TS2322: Type 'Adapter' is not assignable to type 'Adapter'` due to `next-auth@5.0.0-beta.25` depending on `@auth/core@0.37.2` while `@auth/drizzle-adapter@1.11.2` depended on `@auth/core@0.41.2`.
+
+**Root Cause**: Mismatched `@auth/core` versions caused incompatible `Adapter` type definitions.
+
+**Fix**: Upgraded `next-auth` to `5.0.0-beta.31` which depends on `@auth/core@0.41.2`, aligning both packages.
+
+```bash
+# Verification
+pnpm why @auth/core
+# Should show both next-auth and @auth/drizzle-adapter using the same version
+```
+
+#### 2. DrizzleAdapter + Database Connection (Resolved)
+
+**Issue**: `DrizzleAdapter` evaluated the database at build time, defeating the lazy proxy pattern and throwing `Unsupported database type (object)`.
+
+**Root Cause**: `@auth/drizzle-adapter` triggers database connection during module import, requiring `DATABASE_URL` to be available at build time.
+
+**Fix**: Replaced lazy proxy with eager connection that gracefully falls back when `DATABASE_URL` is unavailable. The connection is established at module load time if the env var is present.
+
+**Trade-off**: Eager connection reintroduces build-time database connection risks in serverless environments. For CI/builds without database access, consider build-time dummy URI injection (see recommendations below).
+
+#### 3. ESLint 9 Flat Config Migration (Resolved)
+
+**Issue**: `next lint` was removed in Next.js 16, and existing `.eslintrc.*` files are ignored by ESLint 9.
+
+**Root Cause**: ESLint 9 uses the flat config format (`eslint.config.mjs`), while the project's dependencies (`eslint-config-next`) were not yet compatible with flat config.
+
+**Fix**: Created `eslint.config.mjs` using `typescript-eslint` directly, with `@eslint/eslintrc` for backward compatibility. Key patterns:
+
+```javascript
+// eslint.config.mjs
+import tseslint from "typescript-eslint";
+
+export default [
+  { ignores: [".next/**", "node_modules/**", "drizzle/**", "dist/**"] },
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: { parser: tseslint.parser },
+    plugins: { "@typescript-eslint": tseslint.plugin },
+    rules: {
+      "@typescript-eslint/no-unused-vars": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+];
+```
+
+#### 4. Beta Adapter Type Incompatibilities (Documented)
+
+**Issue**: `DrizzleAdapter` table configuration requires `as any` casts for custom schema tables, triggering ESLint warnings.
+
+**Root Cause**: `@auth/drizzle-adapter` types don't fully align with Drizzle ORM v36+ schema types.
+
+**Fix**: Added targeted `eslint-disable-next-line` comments for known beta adapter workarounds. These are documented and tracked for removal once the adapter reaches stable release.
+
+```typescript
+// Example from src/lib/auth/index.ts
+adapter: DrizzleAdapter(db, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  usersTable: schema.users as any,
+  // ... other tables
+}),
+```
+
+#### 5. Environment Variable Configuration (Resolved)
+
+**Issue**: `.env.local` had duplicate `AUTH_SECRET` entries and was missing required variables.
+
+**Fix**: Consolidated and validated all environment variables against the Zod schema in `src/lib/env/index.ts`.
+
+**Current validated variables**:
+| Variable | Required | Validation |
+|----------|----------|------------|
+| `DATABASE_URL` | Yes | Must start with `postgres://` or `postgresql://` |
+| `REDIS_URL` | Yes | Must start with `redis://` |
+| `AUTH_SECRET` | Yes | ≥ 32 characters |
+| `AUTH_URL` | Yes | Valid URL |
+| `ANTHROPIC_API_KEY` | Yes | Must start with `sk-ant-` |
+| `OPENAI_API_KEY` | Yes | Must start with `sk-` |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Yes | Non-empty string |
+| `VAPID_PRIVATE_KEY` | Yes | Non-empty string |
+| `VAPID_SUBJECT` | Yes | Non-empty string |
+| `PUSH_KEY_ENCRYPTION_KEY` | Yes | Exactly 64 hex characters |
+
+---
+
+## Troubleshooting
+
+### Build fails with "Unsupported database type (object)"
+
+**Cause**: `@auth/drizzle-adapter` cannot accept a lazy proxy database object.
+
+**Fix**: Ensure `src/lib/db/index.ts` creates a real database instance (not a Proxy) when `DATABASE_URL` is available. If this error persists, run `pnpm install` to ensure all `@auth/core` versions are aligned.
+
+### TypeScript error: "Adapter types are incompatible"
+
+**Cause**: `next-auth` and `@auth/drizzle-adapter` depend on different `@auth/core` versions.
+
+**Fix**:
+```bash
+pnpm why @auth/core  # Check for version mismatch
+# If mismatch exists, upgrade next-auth to latest beta
+pnpm add next-auth@latest
+```
+
+### ESLint cannot find config "next/core-web-vitals"
+
+**Cause**: Next.js ESLint presets are not compatible with ESLint 9 flat config without `FlatCompat`.
+
+**Fix**: Use `typescript-eslint` directly and avoid `next/core-web-vitals` in flat config. See `eslint.config.mjs` for the working configuration.
+
+### Missing `types/next-auth.d.ts` augmentations
+
+**Symptom**: TypeScript errors like `Property 'role' does not exist on type 'User'`.
+
+**Fix**: Ensure `types/next-auth.d.ts` exists and properly imports `DefaultSession`:
+
+```typescript
+import { DefaultSession } from "next-auth";
+import "next-auth/jwt";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: "reader" | "admin";
+    } & DefaultSession["user"];
+  }
+}
+```
+
+---
+
+## Recommendations
+
+1. **Auth.js Stable Release**: Monitor `authjs.dev` for stable v5 release. Remove `as any` casts and eslint-disable comments when adapter types are fixed.
+
+2. **Serverless Build Strategy**: For Vercel/Cloudflare Pages builds, inject a dummy `DATABASE_URL` at build time (e.g., via `NEXT_PUBLIC_DATABASE_URL` or build environment variables) to prevent connection errors. Replace with real connection at runtime.
+
+3. **ESLint Config**: Consider migrating to `@next/eslint-plugin-next` directly once it supports flat config natively.
+
+4. **Dependency Monitoring**: Regularly run `pnpm outdated` and `pnpm why @auth/core` to catch version mismatches early.
+
+---
+
+## Project Status
 
 These flags have validated placements in `next.config.ts`. Wrong placement silently breaks features or causes build errors.
 
