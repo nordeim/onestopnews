@@ -10,9 +10,13 @@ import * as schema from "@/lib/db/schema";
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     usersTable: schema.users as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     accountsTable: schema.accounts as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sessionsTable: schema.sessions as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     verificationTokensTable: schema.verificationTokens as any,
   }),
   trustHost: !!env.AUTH_URL,
@@ -32,6 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.role = (user as any).role ?? "reader";
       }
       if (trigger === "update" && session?.name) {
@@ -41,7 +46,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     session({ session, token }) {
       if (token && session.user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).id = token.id as string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).role = token.role as string;
       }
       return session;
