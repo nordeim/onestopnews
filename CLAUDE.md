@@ -1229,11 +1229,13 @@ Before submitting code, verify:
 - [ ] All `"use client"` directives are first line of file
 - [ ] Schema changes followed by `drizzle-kit generate`
 - [ ] Route deletions followed by `rm -rf .next/`
-- [ ] Cross-module imports use path aliases (`@/...`)
-- [ ] `@auth/core` versions aligned between `next-auth` and `@auth/drizzle-adapter`
-- [ ] No lazy proxy for `DrizzleAdapter` (use real instance with fallback)
-- [ ] ESLint 9 flat config used (`eslint.config.mjs`), not `.eslintrc`
-- [ ] Beta adapter `as any` casts have `eslint-disable-next-line` with justification comment
+ - [ ] Cross-module imports use path aliases (`@/...`)
+ - [ ] `@auth/core` versions aligned between `next-auth` and `@auth/drizzle-adapter`
+ - [ ] Lazy proxy for DrizzleAdapter IS correct (see `src/lib/db/index.ts`)
+ - [ ] ESLint 9 flat config used (`eslint.config.mjs`), not `.eslintrc`
+ - [ ] Beta adapter `as any` casts have `eslint-disable-next-line` with justification comment
+ - [ ] `vitest.config.ts` exists at root with `@/` alias configured
+ - [ ] All components have test files (TDD discipline)
 
 ---
 

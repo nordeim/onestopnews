@@ -395,6 +395,14 @@ pnpm why @auth/core
 
 **Trade-off**: Eager connection reintroduces build-time database connection risks in serverless environments. For CI/builds without database access, consider build-time dummy URI injection (see recommendations below).
 
+#### 2b. Lazy Proxy Clarification (Phase 3)
+
+**Correction**: The "DrizzleAdapter + Database Connection" fix above (eager connection) was later **reverted** in favor of a corrected **lazy proxy** implementation. The original lazy proxy was missing a proper `Proxy<T>` that intercepts all property access. The corrected implementation in `src/lib/db/index.ts` uses a full `Proxy<T>` that forwards all property access to the real `db`, eliminating the "Unsupported database type (object)" error while preserving build-time safety.
+
+**Phase 3 Test Coverage**: `src/lib/db/index.test.ts` has 5 tests verifying the proxy behavior including missing `DATABASE_URL`, first-query execution, and repeated access returns same instance.
+
+**Lesson**: The lazy proxy pattern IS correct for DrizzleAdapter. The issue was an incomplete proxy implementation, not the pattern itself.
+
 #### 3. ESLint 9 Flat Config Migration (Resolved)
 
 **Issue**: `next lint` was removed in Next.js 16, and existing `.eslintrc.*` files are ignored by ESLint 9.
@@ -464,9 +472,9 @@ adapter: DrizzleAdapter(db, {
 
 ### Build fails with "Unsupported database type (object)"
 
-**Cause**: `@auth/drizzle-adapter` cannot accept a lazy proxy database object.
+**Cause**: In the original implementation, the lazy proxy database object was missing a full `Proxy<T>` wrapper, causing `@auth/drizzle-adapter` to fail at build time.
 
-**Fix**: Ensure `src/lib/db/index.ts` creates a real database instance (not a Proxy) when `DATABASE_URL` is available. If this error persists, run `pnpm install` to ensure all `@auth/core` versions are aligned.
+**Fix**: The corrected implementation in `src/lib/db/index.ts` uses a full `Proxy<T>` that intercepts all property access and forwards to the real `db`. This is the correct and working approach. If you see this error, ensure you are using the latest `src/lib/db/index.ts` which implements the lazy proxy correctly.
 
 ### TypeScript error: "Adapter types are incompatible"
 
@@ -536,14 +544,15 @@ These flags have validated placements in `next.config.ts`. Wrong placement silen
 
 ---
 
-## Project Status
+## ProjectVariantStatus
 
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |
 | **Phase 1** — Core Feed & AI Summaries | In Development | Topic feed, ArticleCard, NutritionLabel, ingestion pipeline, summarisation worker |
 | **Phase 2** — Search & Blind-Spot Detection | Planned | BM25 search, multi-source event clustering, political leaning analysis |
-| **Phase 3** — Push Notifications & Briefings | Planned | Web Push with AI summaries, daily briefing email, quiet hours |
-| **Phase 4** — Enterprise Features | Planned | API keys, rate limiting, bulk export, advanced analytics dashboard |
+| **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
+| **Phase 4** — Push Notifications & Briefings | Planned | Web Push with AI summaries, daily briefing email, quiet hours |
+| **Phase 5** — Enterprise Features | Planned | API keys, rate limiting, bulk export, advanced analytics dashboard |
 
 ---
 

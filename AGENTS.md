@@ -107,7 +107,9 @@ export const config = {
 
 ### Drizzle ORM & Database
 
-- **Lazy Proxy Connection:** `lib/db/index.ts` defers connection until first query. Prevents build-time crashes.
+ - **Lazy Proxy Connection:** `lib/db/index.ts` defers connection until first query. Prevents build-time crashes. See `src/lib/db/index.ts` for implementation.
+   - **CRITICAL PHASE 3 FIX**: The Lazy Proxy must NOT be confused with a plain object. A raw `return {}` causes `TypeError: Cannot read properties of undefined` at runtime when Drizzle methods are called. The `Proxy<T>` must intercept every property access and forward to the real `db`.
+   - **Tested**: `src/lib/db/index.test.ts` has 5 tests verifying the proxy behavior including missing `DATABASE_URL`, first-query execution, and repeated access returns same instance.
 - **Migrations:** `drizzle-kit generate` + `migrate`. **Never `push`** in production.
 - **Additive-only deployments:** when removing a column, deploy code first (stop reading it), drop column in next release.
 - **Connection Pool:** `max: 10` assumes **dedicated Node.js runtime** (Docker, Railway, ECS). For serverless (Vercel, Lambda), swap to a connection pooler (PgBouncer / Supavisor).
@@ -167,7 +169,8 @@ export const verifyAdminSession = cache(async () => {
 
 - **`redirect()` not `throw new Error()`** in Server Components. `throw` triggers full-page error boundaries; `redirect()` preserves invisible UX.
 - **`cache()` from `react`** memoizes per-request. Multiple components calling `verifySession()` in one render tree execute **one** validation.
-- **Beta pin:** Auth.js v5 is pinned to `5.0.0-beta.x`. Monitor `authjs.dev` for stable release.
+ - **Beta pin:** Auth.js v5 is pinned to `5.0.0-beta.31` with `@auth/core@0.41.2`. Monitor `authjs.dev` for stable release.
+   - **`verifyAdminSession` canonical location**: `src/lib/auth/dal.ts` is the single source of truth for admin verification. Any future admin checks must import from there. The duplicate in `src/app/api/admin/route.ts` was deleted in Phase 1-2 remediation.
 
 ### Design System — "Editorial Dispatch"
 
@@ -191,6 +194,15 @@ The visual identity is **architectural, not cosmetic.** Every element carries th
 - `dispatch-slate (#5a6b7a)` — tech / neutral accent
 
 **Design Token Discipline:** Never use raw hex colors in Tailwind classes (e.g., `bg-[#1a1a2e]`). All colors must come from the design token system (`bg-ink-900`, `text-paper-50`, etc.). Raw hex values bypass the theme and break maintainability.
+**Phase 3 Components Built:**
+- `src/shared/components/ui/Button.tsx` — cva + Radix Slot, 5 variants, loading spinner, disabled state
+- `src/shared/components/ui/Badge.tsx` — 6 colour variants, font-mono, accessible
+- `src/shared/components/ui/Skeleton.tsx` — reduced-motion aware, ArticleCard/Feed skeletons
+- `src/shared/components/layout/Header.tsx` — sticky, cat-nav, mobile dialog (Radix Dialog)
+- `src/shared/components/layout/Footer.tsx` — AI disclosure, role="contentinfo"
+- `src/shared/hooks/useDebounce.ts` — generic <T>, cleanup
+- `src/shared/hooks/useReducedMotion.ts` — MediaQueryList API, `prefers-reduced-motion: reduce`
+- `src/components/primitives/PageTransition.tsx` — `document.startViewTransition` with graceful degradation
 
 **CSS Subgrid Feed:**
 ```css
@@ -303,6 +315,109 @@ pnpm worker:dev       # Worker service (separate terminal)
 ### Build & Quality Commands
 
 | Command | Purpose |
+| `pnpm dev` | Next.js dev server with Turbopack Fast Refresh |
+| `pnpm build` | Production build (Next.js) |
+| `pnpm start` | Production server (Next.js) |
+| `pnpm lint` | ESLint + Prettier |
+| `pnpm tsc --noEmit` | TypeScript strict check |
+| `pnpm test` | Run all test suites |
+| `pnpm drizzle-kit generate` | Generate migration SQL from schema |
+| `pnpm drizzle-kit migrate` | Apply pending migrations |
+| `pnpm worker:dev` | Worker service (BullMQ + Node.js) |
+
+### Pre-Commit Gate
+```bash
+pnpm check          # Runs tsc --noEmit && pnpm lint
+pnpm test           # Run all test suites
+```
+Must pass before any PR is merged. No exceptions.
+
+**Note**: `pnpm check` is a convenience script that runs `tsc --noEmit && pnpm lint`. This replaced separate commands to ensure TypeScript and ESLint are always checked together.
+
+---
+
+## Testing Strategy
+
+| Category | Tool | Scope | Target |
+| :--- | :--- | :--- | :--- |
+| Unit | Vitest | Domain logic, utilities, Zod parsing | 80%+ coverage |
+| Integration | Vitest + Docker | Drizzle queries, BullMQ job processing | CI gate |
+| E2E | Playwright | Critical user journeys (feed → article → summary) | Zero visual regressions |
+| Perf | k6 | `GET /api/articles`, search | `< 300ms` p95 |
+| A11y | axe-core + Playwright | Keyboard nav, screen reader labels | WCAG 2.1 AAA |
+
+**Test Infrastructure:**
+- PostgreSQL and Redis run in ephemeral Docker containers for integration tests.
+- No Prisma or Meilisearch in the test suite.
+- TypeScript strict mode enforced in test files.
+- **vitest.config.ts** is at root, with `@/` path alias mapped to `src/`.
+
+---
+
+## Code Quality Standards
+
+ - **Lint:** ESLint + Prettier, enforced in CI.
+- **Types:** `tsc --noEmit` with `strict: true` and `noUncheckedIndexedAccess: true`. Zero `any`.
+- **Naming:**
+  - Components: PascalCase (`ArticleCard.tsx`)
+  - Utilities/hooks: camelCase (`useDebounce.ts`)
+  - Feature folders: kebab-case (`/features/feed/`)
+  - Database tables: snake_case in Drizzle, camelCase in TypeScript
+- **Comments:** Explain *why*, not *what*. Self-documenting code is the goal.
+
+---
+
+## Security & Compliance
+
+| Concern | Posture |
+| :--- | :--- |
+| Next.js version | Pinned to `>=16.0.7`. CVE-2025-55182 (React2Shell RCE) + 13-advisory DoS/SSRF fix. |
+| Auth | Auth.js v5 beta, HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
+| AI Disclosure | 3-layer: JSON-LD + HTTP header + HTML meta. C2PA rejected. EU AI Act Art. 50 compliant. |
+| Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex. |
+| DB connections | Eager connection with graceful fallback when `DATABASE_URL` is missing at build time. `max: 10` for dedicated runtimes. Serverless: use PgBouncer/Supavisor or inject dummy URI at build time. |
+| Access control | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins. |
+
+---
+
+## Anti-Patterns to Avoid
+
+| Anti-Pattern | Why Forbidden | Replacement |
+| :--- | :--- | :--- |
+| `any` in TypeScript | Breaks strict mode contract and type inference. | `unknown` + type guards. |
+| `enum` / `namespace` | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly`. | String unions (`type Status = "ACTIVE" \| "DRAFT"`) and ES modules. |
+| Custom component over Shadcn | Violates Library Discipline. Wastes engineering time. | Shadcn UI / Radix primitive, wrapped for styling. |
+| `throw new Error()` in RSC auth | Triggers full-page error boundary. Bad UX. | `redirect('/sign-in')` from `next/navigation`. |
+| Lazy proxy for DrizzleAdapter | Incorrectly documented. Lazy proxy IS correct for DrizzleAdapter. See src/lib/db/index.ts for implementation. |
+| `drizzle-kit push` in production | Overwrites schema without migration history. Irreversible. | `generate` + `migrate` only. |
+| Caching without `cacheComponents: true` | `"use cache"` is silently inert. Zero caching occurs. | Ensure flag is top-level in `next.config.ts`. |
+| Summarising `title_only` / `excerpt` | AI hallucination risk — fabricating content from insufficient input. | `contentAvailabilityEnum` guard: only `partial_text` or `full_text`. |
+| Synchronous `params` access | Runtime 500 in Next.js 16 App Router. | Always `await params` (Promise). |
+| Synchronous `cookies()` access | `TS2339` error; runtime undefined. | `(await cookies()).get('key')`. |
+| Generic fonts (Inter, Roboto) | Violates "Editorial Dispatch" anti-generic mandate. | Newsreader, Instrument Sans, Commit Mono only. |
+| Raw hex colors in Tailwind | Bypasses design token system; breaks theming and maintainability. | Use design tokens (`bg-ink-900`, `text-paper-50`). |
+| Stale `.next/` cache after route deletion | `TS2307: Cannot find module` from old generated types. | `rm -rf .next/` + `tsc --noEmit`. |
+| Missing `noUncheckedIndexedAccess` | `arr[i]` returns `T` instead of `T \| undefined`, hiding runtime errors. | Enable in `tsconfig.json`. |
+| Mismatched `@auth/core` versions | `DrizzleAdapter` fails at build time with type errors. | Run `pnpm why @auth/core`. Upgrade `next-auth` to align. |
+| Beta adapter `as any` without eslint-disable | Triggers `--max-warnings 0` lint failures. | Add `eslint-disable-next-line @typescript-eslint/no-explicit-any` with justification. |
+
+---
+
+## Quick Reference: Layer Model
+
+```
+Layer 0: proxy.ts           — Cookie check, redirect. NO DB. NO logic.
+Layer 1: App Router           — Route structure, metadata, PPR, Suspense.
+Layer 2: Feature Modules     — UI composition, data binding, mutations.
+Layer 3: Domain Services      — Pure business logic. No framework imports.
+Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
+```
+
+**Golden Rule:** Deviation from this order creates security and consistency bugs.
+
+---
+
+*This CLAUDE.md mirrors the authoritative Project Architecture Document v4.5 and Project Requirements Document v4.3. When the instructions here and the PAD/PRD diverge, the PAD/PRD are the source of truth.*
 | :--- | :--- |
 | `pnpm dev` | Next.js dev server with Turbopack Fast Refresh |
 | `pnpm build` | Production build (Next.js) |
@@ -376,7 +491,7 @@ Must pass before any PR is merged. No exceptions.
 | `enum` / `namespace` | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly`. | String unions (`type Status = "ACTIVE" \| "DRAFT"`) and ES modules. |
 | Custom component over Shadcn | Violates Library Discipline. Wastes engineering time. | Shadcn UI / Radix primitive, wrapped for styling. |
 | `throw new Error()` in RSC auth | Triggers full-page error boundary. Bad UX. | `redirect('/sign-in')` from `next/navigation`. |
-| Lazy proxy for DrizzleAdapter | Incompatible with `@auth/drizzle-adapter` build-time type checking. Use eager connection with graceful fallback when `DATABASE_URL` is missing. | Real DrizzlePgDatabase instance, handle missing env var. |
+| Lazy proxy for DrizzleAdapter | Incorrectly documented. Lazy proxy IS correct for DrizzleAdapter. See src/lib/db/index.ts for implementation. |
 | `drizzle-kit push` in production | Overwrites schema without migration history. Irreversible. | `generate` + `migrate` only. |
 | Caching without `cacheComponents: true` | `"use cache"` is silently inert. Zero caching occurs. | Ensure flag is top-level in `next.config.ts`. |
 | Summarising `title_only` / `excerpt` | AI hallucination risk — fabricating content from insufficient input. | `contentAvailabilityEnum` guard: only `partial_text` or `full_text`. |

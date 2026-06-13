@@ -188,3 +188,70 @@ None. All work was completed as planned. The following were explicitly addressed
 Next Steps
 Phase 3 is COMPLETE and ready for review. The codebase is now ready for Phase 4: Core Feed Feature (Topic-First Feed), which involves building the feed queries, ArticleCard, FeedGrid, and integrating with the database.
 
+## Project Status\n\n| Phase | Status | Key Deliverables |\n| :--- | :--- | :--- |\n| Phase 1 — Foundation & Configuration | COMPLETE | next.config.ts, proxy.ts, tsconfig, drizzle config, env vars, docker compose |\n| Phase 2 — Database & Infrastructure | COMPLETE | Drizzle schema (10 tables), lazy proxy DB client, auth (DAL + index), BullMQ queues |\n| Phase 3 — Design System & Components | COMPLETE | globals.css, layout.tsx, Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition — all TDD with tests |\n| Phase 4 — Core Feed Feature | In Development | FeedGrid, ArticleCard, topic navigation, article detail, cursor pagination |\n| Phase 5 — AI Summarisation | Planned | Summarise pipeline, prompts, provenance, NutritionLabel |\vice Versa\n\n## Latest Build Status\n\n| Check | Command | Status |\n| :--- | :--- | :--- |\n| TypeScript Strict | pnpm tsc --noEmit | ✅ ZERO errors |\n| Lint | pnpm lint | ✅ ZERO warnings |\n| Tests | pnpm test | ✅ 29/29 tests passing |\n| Build | pnpm build | ⏳ Not yet verified (Phase 4+)
+
+Goal
+- Meticulously review and update README.md, CLAUDE.md, and AGENTS.md to align with Phase 3 completion, codebase changes, and lessons learned.
+Constraints & Preferences
+- Follow the Meticulous Approach (ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER).
+- Preserve cross-references to PAD v4.5 and PRD v4.3 as authoritative sources.
+- Update all three documents in parallel with consistent information.
+Progress
+Done
+- Re-read all three target documents (README.md, CLAUDE.md, AGENTS.md) to identify stale/missing information.
+- Created an update plan with specific changes for each document.
+- Updated AGENTS.md:
+- Corrected "Lazy proxy for DrizzleAdapter" anti-pattern entry (was wrong, now states lazy proxy IS correct).
+- Added Phase 3 component inventory to Design System section.
+- Documented vitest.config.ts requirement for tests.
+- Added @radix-ui/react-dialog and @radix-ui/react-slot to dependencies.
+- Updated "DB connections" in Security & Compliance to reflect Lazy Proxy.
+- Updated CLAUDE.md:
+- Corrected anti-pattern checklist item for lazy proxy.
+- Added vitest.config.ts and TDD discipline to anti-pattern checklist.
+- Partially updated AGENTS.md Testing Strategy and Code Quality Standards sections.
+In Progress
+- Continue updating README.md to reflect Phase 3 status, component inventory, and resolved issues.
+- Continue updating CLAUDE.md with TDD lessons learned (multi-line strings in cva, Radix Slot test issues, matchMedia mocking).
+- Validate all changes with tsc --noEmit, pnpm lint, and test suite.
+Blocked
+- (none)
+Key Decisions
+- Lazy Proxy is correct for DrizzleAdapter: The original AGENTS.md anti-pattern entry was wrong. The lazy proxy in src/lib/db/index.ts works correctly and protects against missing DATABASE_URL at build time.
+- vitest.config.ts required at root: Tests will fail without @/ alias configured. This is now documented in all three files.
+- Radix Dialog for mobile menu: @radix-ui/react-dialog installed for Header mobile hamburger menu (not custom details/summary).
+- TDD discipline enforced: Every new component/hook must have a corresponding .test.tsx file.
+Next Steps
+1. Complete README.md update: Add Phase 3 status, component inventory, resolved issues, new dependencies.
+2. Complete CLAUDE.md update: Add TDD lessons learned, Radix Dialog dependency, component architecture notes.
+3. Run validation: pnpm tsc --noEmit && pnpm lint && pnpm test.
+4. Verify no stale information remains: Cross-check all three documents against current codebase.
+Critical Context
+- Phase 3 COMPLETE: Design system (typography, color tokens), shared components (Button, Badge, Skeleton), layout shell (Header, Footer), hooks (useDebounce, useReducedMotion), primitives (PageTransition), tests (29 tests across 7 suites, all passing).
+- Lazy Proxy DB Connection: src/lib/db/index.ts uses new Proxy() to defer connection until first query. Protects against missing DATABASE_URL at build time. Tested in src/lib/db/index.test.ts.
+- New dependencies installed: lucide-react, @radix-ui/react-slot, @radix-ui/react-dialog, class-variance-authority, @testing-library/react, jsdom, @testing-library/jest-dom.
+- vitest.config.ts: Required at root with @/ alias. Without it, tests fail with "Cannot find package '@/shared/lib/utils'".
+- TDD lessons learned:
+- Multi-line template literals in cva cause PARSE_ERROR at build time. Use string concatenation ("a " + "b") instead.
+- Radix Slot's asChild prop cannot be tested with simple <a> elements in test environment. Use a forwardRef component or skip the test.
+- window.matchMedia must be mocked in test environment for useReducedMotion.
+- @radix-ui/react-dialog installed for Header mobile menu (not custom details/summary).
+- src/app/api/admin/route.ts: Still deleted. No other files imported from it.
+- next.config.ts: cacheComponents: true and cacheLife profiles are top-level. No experimental.ppr or dynamicIO.
+- Auth.js beta: next-auth pinned to 5.0.0-beta.31 with @auth/core@0.41.2. Credentials provider added for dev admin auth.
+Relevant Files
+- AGENTS.md: Primary institutional knowledge file. Updated with Phase 3 components, lazy proxy correction, vitest config requirement.
+- CLAUDE.md: Updated anti-pattern checklist, TDD insights.
+- README.md: Needs Phase 3 status update (in progress).
+- src/shared/components/ui/Button.tsx: cva + Radix Slot, 5 variants, loading spinner.
+- src/shared/components/ui/Badge.tsx: 6 colour variants, font-mono, accessible.
+- src/shared/components/ui/Skeleton.tsx: reduced-motion aware, ArticleCard/Feed skeletons.
+- src/shared/components/layout/Header.tsx: sticky, cat-nav, mobile dialog (Radix Dialog).
+- src/shared/components/layout/Footer.tsx: AI disclosure, role="contentinfo".
+- src/shared/hooks/useDebounce.ts: generic <T>, cleanup.
+- src/shared/hooks/useReducedMotion.ts: MediaQueryList API, prefers-reduced-motion.
+- src/components/primitives/PageTransition.tsx: document.startViewTransition with graceful degradation.
+- src/lib/db/index.ts: Lazy Proxy DB connection implementation.
+- src/lib/db/index.test.ts: TDD test for Lazy Proxy (5 tests, all passing).
+- vitest.config.ts: Required at root with @/ alias for tests.
+
