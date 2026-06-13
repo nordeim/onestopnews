@@ -1,5 +1,8 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { z } from "zod";
+
 import { env } from "@/lib/env";
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
@@ -8,6 +11,47 @@ import * as schema from "@/lib/db/schema";
  * Auth.js v5 (beta) configuration using DrizzleAdapter.
  * Http-only session cookies, same-site, secure in production.
  */
+
+// ─── Credentials Provider (Admin Authentication) ──────────────────────────
+// Validates email/password, authenticates user, and returns user with role
+// ────────────────────────────────────────────────────────────────────────────
+const credentialsProvider = Credentials({
+  id: "credentials",
+  name: "Credentials",
+  credentials: {
+    email: { label: "Email", type: "email" },
+    password: { label: "Password", type: "password" },
+  },
+  async authorize(credentials) {
+    if (!credentials) return null;
+
+    // Parse and validate the incoming credentials
+    const parsed = z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(1),
+      })
+      .safeParse(credentials);
+
+    if (!parsed.success) return null;
+
+    const { email, password } = parsed.data;
+
+    // TODO: Replace with real user lookup from DB in Phase 2
+    // For now, use a basic in-memory check for development
+    if (email === "admin@onestopnews.com" && password === "admin") {
+      return {
+        id: "dev-admin-id",
+        email: "admin@onestopnews.com",
+        name: "Admin User",
+        role: "admin",
+      };
+    }
+
+    return null;
+  },
+});
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,7 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/sign-in",
     error: "/auth-error",
   },
-  providers: [],
+  providers: [credentialsProvider],
   callbacks: {
     jwt({ token, user, trigger, session }) {
       if (user) {

@@ -23,7 +23,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
     "@auth/drizzle-adapter": "^1.11.2",
+    "@types/bcryptjs": "^3.0.0",
     "ai": "latest",
+    "bcryptjs": "^3.0.3",
     "bullmq": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",

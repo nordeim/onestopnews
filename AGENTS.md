@@ -1249,3 +1249,81 @@ Existing sections updated:
 - §12 — Added 3 new error rows (TS2307 stale cache, import breaks, route moves)
 - §13 — Added 2 new checklist items (route deletions, path aliases)
 
+Deep Understanding & Alignment Analysis
+I have now thoroughly reviewed all six documents. Here is my comprehensive analysis of the WHAT, WHY, and HOW of the OneStopNews project, followed by an alignment check against the planning documents.
+What: The Product
+OneStopNews is a topic-first news aggregation and AI summarisation platform. It reorients news consumption away from "who published it" to "what it's about," using a two-level category/subcategory hierarchy.
+Core Capabilities:
+- Topic-First Feed: Articles from 50–200+ RSS/Atom/JSON sources, grouped by subject
+- AI Nutrition Label: Source-cited AI summaries with full transparency (model, temperature, coverage %, citations)
+- 3-Layer AI Disclosure: JSON-LD + HTTP header + HTML meta tag for EU AI Act Article 50 compliance (C2PA explicitly rejected for text)
+- Web Push: AI-summarised push notifications with quiet hours and AES-256-GCM encrypted keys
+- Admin Pipeline: BullMQ-powered ingestion, summarisation, scoring, and feed-slice refresh
+Why: The Rationale
+Decision	Rationale
+Next.js 16	Opt-in caching eliminates v13/14 footguns; PPR + Cache Components + proxy.ts
+Auth.js v5 beta	Native App Router, HttpOnly cookies, Drizzle adapter; PRD-mandated
+BullMQ on Redis	Job graphs (Flows), priorities, built-in monitoring dashboard
+PostgreSQL FTS + pg_textsearch	No Elasticsearch operational burden; BM25 ranking inside Postgres
+Modular Monolith + Separate Worker	AI summarisation (2–10s) must not block HTTP; no microservices complexity
+"Editorial Dispatch" Design	Anti-generic aesthetic: Newsreader + Instrument Sans + Commit Mono
+How: The Architecture
+Layer Model (Non-Negotiable)
+Layer 0: proxy.ts           — Cookie check, redirect. NO DB. NO logic.
+Layer 1: App Router           — Route structure, metadata, PPR, Suspense.
+Layer 2: Feature Modules     — UI composition, data binding, mutations.
+Layer 3: Domain Services      — Pure business logic. No framework imports.
+Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
+Tech Stack Summary
+Layer	Technology	Version
+Web Framework	Next.js	≥16.2.6 (CVE-2025-55182 mitigated)
+UI Runtime	React	19.2
+Language	TypeScript	5.x Strict (noUncheckedIndexedAccess: true)
+Styling	Tailwind CSS	v4 (CSS-first, no tailwind.config.js)
+Components	Shadcn UI + Radix	Latest
+ORM	Drizzle ORM	Latest
+Auth	Auth.js	5.0.0-beta.x
+Database	PostgreSQL	17
+Search	tsvector + pg_textsearch	Built-in / 1.0.0
+Job Queue	BullMQ	5.x
+Queue Backend	Redis	7.x
+Worker Runtime	Node.js	24 LTS
+Alignment Check: Current Status vs. Plans
+What the Documents Mandate (8 Phases from MEP v5.1)
+Phase	Status	Key Deliverables
+Phase 1: Foundation & Configuration	NOT STARTED	next.config.ts, proxy.ts, tsconfig.json, drizzle.config.ts, .env.example, docker-compose.yml, dependency installation
+Phase 2: Database Schema & Infrastructure	NOT STARTED	schema.ts (10 tables), lib/db/index.ts, lib/auth/index.ts, lib/auth/dal.ts, lib/queue/index.ts
+Phase 3: Design System & Shared Components	NOT STARTED	globals.css with @theme, fonts, Button.tsx, Badge.tsx, Skeleton.tsx, Header.tsx, Footer.tsx, PageTransition.tsx
+Phase 4: Core Feed Feature	NOT STARTED	FeedGrid.tsx, ArticleCard.tsx, TopicNav.tsx, home page, topic pages, article detail, cursor pagination
+Phase 5: AI Summarisation Pipeline	NOT STARTED	summariseSchema.ts, prompts.ts, provenance.ts, NutritionLabel.tsx, SummaryPanel.tsx, enqueue endpoint
+Phase 6: Search, Admin & Public API	NOT STARTED	FTS search, admin routes, source management, summary review, /api/articles
+Phase 7: Worker Service, Push & Observability	NOT STARTED	4 workers, content guard, push encryption, quiet hours, health endpoint
+Phase 8: Testing, CI/CD & Deployment	NOT STARTED	Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions
+Verified Infrastructure Status (Your Environment)
+You confirmed:
+- PostgreSQL 17 running in Docker on localhost:5432 ✅
+- Redis 7 running in Docker on localhost:6379 ✅
+- Applications (Next.js + Worker) will run directly on localhost, not in containers ✅
+This matches the architecture: DB/Redis in containers, app code on host.
+Identified Gaps & Risks from Document Review
+Critical Configuration Risks (from PAD §5.3 / PRD §5.2)
+Risk	Mitigation Required
+cacheComponents: true must be top-level in next.config.ts	Enforce in Phase 1
+cacheLife profiles (feed, topicShell, reference) must be top-level	Enforce in Phase 1
+experimental.ppr and experimental.dynamicIO must NOT be present	Will cause build errors
+experimental.viewTransition must be inside experimental: {}	Silent failure if misplaced
+TypeScript Strictness (from AGENTS.md / PRD §1.5)
+- noUncheckedIndexedAccess: true is mandatory — catches arr[i] returning T | undefined
+- Zero any — use unknown with type guards
+- interface for structures, type for unions/intersections
+- No enum or namespace — string unions only
+Database Connection (from AGENTS.md / PAD §5.4)
+- Lazy Proxy Connection in lib/db/index.ts defers connection until first query
+- max: 10 pool for dedicated runtime (Docker/local) — you are running on localhost, so this is correct
+- Serverless warning: Not applicable since you're running on localhost
+Auth.js v5 Beta Pin (from PAD §8.1 / PRD §1.1)
+- next-auth must align with @auth/drizzle-adapter on same @auth/core version
+- DrizzleAdapter type issues require as any casts with eslint-disable-next-line comments
+Content Availability Guard (from PRD §8.1 / AGENTS.md)
+- Never enqueue summarisation for title_only or excerpt — AI hallucination risk
+- Only partial_text or full_text articles should be summarised
