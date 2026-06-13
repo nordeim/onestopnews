@@ -28,9 +28,6 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${newsreader.variable} ${instrumentSans.variable}`} suppressHydrationWarning>
-      <head>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/commit-mono@5.0.0/index.css" />
-      </head>
       <body className="bg-paper-50 text-ink-600 font-ui antialiased">
         {children}
       </body>
