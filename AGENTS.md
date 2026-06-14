@@ -1406,10 +1406,10 @@ Worker Runtime	Node.js	24 LTS
 Alignment Check: Current Status vs. Plans
 What the Documents Mandate (8 Phases from MEP v5.1)
 Phase	Status	Key Deliverables
-Phase 1: Foundation & Configuration	NOT STARTED	next.config.ts, proxy.ts, tsconfig.json, drizzle.config.ts, .env.example, docker-compose.yml, dependency installation
-Phase 2: Database Schema & Infrastructure	NOT STARTED	schema.ts (10 tables), lib/db/index.ts, lib/auth/index.ts, lib/auth/dal.ts, lib/queue/index.ts
-Phase 3: Design System & Shared Components	NOT STARTED	globals.css with @theme, fonts, Button.tsx, Badge.tsx, Skeleton.tsx, Header.tsx, Footer.tsx, PageTransition.tsx
-Phase 4: Core Feed Feature	NOT STARTED	FeedGrid.tsx, ArticleCard.tsx, TopicNav.tsx, home page, topic pages, article detail, cursor pagination
+Phase 1: Foundation & Configuration	**COMPLETE**	next.config.ts, proxy.ts, tsconfig.json, drizzle.config.ts, .env.example, docker-compose.yml
+Phase 2: Database Schema & Infrastructure	**COMPLETE**	schema.ts (10 tables), lib/db/index.ts, lib/auth/index.ts, lib/auth/dal.ts, lib/queue/index.ts
+Phase 3: Design System & Shared Components	**COMPLETE**	globals.css with @theme, fonts, Button.tsx, Badge.tsx, Skeleton.tsx, Header.tsx, Footer.tsx, PageTransition.tsx
+Phase 4: Core Feed Feature	**COMPLETE**	FeedGrid.tsx, ArticleCard.tsx, TopicNav.tsx, home page, topic pages, article detail, cursor pagination (67 tests)
 Phase 5: AI Summarisation Pipeline	NOT STARTED	summariseSchema.ts, prompts.ts, provenance.ts, NutritionLabel.tsx, SummaryPanel.tsx, enqueue endpoint
 Phase 6: Search, Admin & Public API	NOT STARTED	FTS search, admin routes, source management, summary review, /api/articles
 Phase 7: Worker Service, Push & Observability	NOT STARTED	4 workers, content guard, push encryption, quiet hours, health endpoint

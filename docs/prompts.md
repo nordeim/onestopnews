@@ -26,6 +26,10 @@ please meticulously review @AGENTS.md , @CLAUDE.md and @README.md to have a deep
 
 ---
 
+please meticulously review  @MASTER_EXECUTION_PLAN.md , @Project_Architecture_Document_v4.5.md , @static_HTML_mockup_for_dynamic_landing_page.html and @Project_Requirements_Document_v4.3.md , then meticulously plan to create a comprehensive execution plan for Phase 4 with a detailed to do list. review and validate the Phase 4 execution plan against the codebase to check for alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
+
+---
+
 please meticulously review @MASTER_EXECUTION_PLAN.md and then meticulously plan to create a comprehensive sub-plan for Phase 3 execution with a detailed ToDo list. then review and validate the Phase 3 sub-plan against @Project_Requirements_Document_v4.3.md , @Project_Architecture_Document_v4.5.md and @static_HTML_mockup_for_dynamic_landing_page.html to check for alignment before proceeding to execute the sub-plan meticulously. please note that database connection is via direct localhost port 5432. only the postgresql and redis servers are running in containers, the applications will run directly in the local host.
 
 $ docker ps | grep onestopnews

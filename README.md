@@ -548,10 +548,13 @@ These flags have validated placements in `next.config.ts`. Wrong placement silen
 
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |
-| **Phase 1** — Core Feed & AI Summaries | In Development | Topic feed, ArticleCard, NutritionLabel, ingestion pipeline, summarisation worker |
-| **Phase 2** — Search & Blind-Spot Detection | Planned | BM25 search, multi-source event clustering, political leaning analysis |
+| **Phase 1** — Foundation & Configuration | **COMPLETE** | next.config.ts, proxy.ts, tsconfig.json, docker-compose |
+| **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (10 tables), lazy DB client, Auth.js v5, BullMQ queues |
 | **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
-| **Phase 4** — Push Notifications & Briefings | Planned | Web Push with AI summaries, daily briefing email, quiet hours |
+| **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
+| **Phase 5** — Push Notifications & Briefings | Planned | Web Push with AI summaries, daily briefing email, quiet hours |
+| **Phase 6** — Search & Blind-Spot Detection | Planned | BM25 search, multi-source event clustering, political leaning analysis |
+| **Phase 7** — Enterprise Features | Planned | API keys, rate limiting, bulk export, advanced analytics dashboard |
 | **Phase 5** — Enterprise Features | Planned | API keys, rate limiting, bulk export, advanced analytics dashboard |
 
 ---
