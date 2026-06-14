@@ -15,6 +15,18 @@ describe("useReducedMotion", () => {
     expect(result.current).toBe(false);
   });
 
+  it("returns true when prefers-reduced-motion is set to reduce", () => {
+    // Mock matchMedia for reduced motion preference
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: true,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    });
+
+    const { result } = renderHook(() => useReducedMotion());
+    expect(result.current).toBe(true);
+  });
+
   it("listens to media query changes", () => {
     const addListener = vi.fn();
     const removeListener = vi.fn();

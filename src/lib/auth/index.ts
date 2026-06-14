@@ -1,6 +1,7 @@
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { env } from "@/lib/env";
@@ -37,18 +38,33 @@ const credentialsProvider = Credentials({
 
     const { email, password } = parsed.data;
 
-    // TODO: Replace with real user lookup from DB in Phase 2
-    // For now, use a basic in-memory check for development
-    if (email === "admin@onestopnews.com" && password === "admin") {
-      return {
-        id: "dev-admin-id",
-        email: "admin@onestopnews.com",
-        name: "Admin User",
-        role: "admin",
-      };
-    }
+    // Query the database for the user by email
+    const user = await db
+      .select({
+        id: schema.users.id,
+        email: schema.users.email,
+        name: schema.users.name,
+        role: schema.users.role,
+        passwordHash: schema.users.passwordHash,
+      })
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .limit(1)
+      .then((rows) => rows[0] ?? null);
 
-    return null;
+    if (!user) return null;
+    if (!user.passwordHash) return null;
+
+    const bcrypt = await import("bcryptjs");
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isValid) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    };
   },
 });
 

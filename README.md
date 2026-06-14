@@ -544,7 +544,7 @@ These flags have validated placements in `next.config.ts`. Wrong placement silen
 
 ---
 
-## ProjectVariantStatus
+## Project Status
 
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |

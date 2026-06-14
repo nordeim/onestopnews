@@ -7,7 +7,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": "/home/project/onestopnews/src",
+      "@": new URL("./src", import.meta.url).pathname,
     },
   },
 });
