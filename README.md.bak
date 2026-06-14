@@ -604,27 +604,20 @@ declare module "next-auth" {
 
 ---
 
-## Outstanding Issues
+## Project Status
 
-### No Rate Limiting on Summarisation Endpoint (Known Gap)
+These flags have validated placements in `next.config.ts`. Wrong placement silently breaks features or causes build errors.
 
-**Impact**: Medium — The `POST /api/summarize/[id]` endpoint currently has no rate limiting. A malicious or buggy client could enqueue many summarisation jobs, consuming Redis memory and AI API quota.
-
-**Planned Fix**: Phase 6/8 will implement Redis-based rate limiting (e.g., max 5 requests/hour per user via `ioredis` token bucket).
-
-**Mitigation**: The endpoint requires authentication, and the content availability guard prevents summarisation of invalid articles. Monitor BullMQ queue depths and alert on anomalies.
-
-### Missing Summarisation Worker (Phase 7 Dependency)
-
-**Impact**: High — Phase 5 built the enqueue endpoint and UI, but the actual worker that calls Anthropic/OpenAI is not yet implemented.
-
-**Status**: The `summarizeQueue` is defined and jobs are enqueued correctly. The worker will be built in Phase 7 (Worker Service, Push & Observability). Until then, summaries remain in `pending` state indefinitely.
-
-### Test Flakiness Risk
-
-**Impact**: Low — `useOptimistic` tests may be timing-sensitive due to React's internal batching and transition scheduling.
-
-**Mitigation**: Tests already wrap `useOptimistic` calls in `act()` and await transitions. If flakiness appears, consider mocking `startTransition` or using `@testing-library/react`'s `waitFor` with longer timeout.
+| Flag | Placement | What breaks if wrong |
+| :--- | :--- | :--- |
+| `cacheComponents: true` | **Top-level** | Every `"use cache"` directive silently ignored. Zero caching occurs. |
+| `cacheLife: { ... }` | **Top-level** | `cacheLife('feed')` throws runtime error — profile not found. |
+| `turbopack: {}` | **Top-level** | Ignored or causes config warning (graduated from experimental). |
+| `reactCompiler: true` | **Top-level** | Ignored if placed in `experimental`. |
+| `experimental.viewTransition` | **Inside `experimental: {}`** | Transitions silently disabled. |
+| `experimental.clientSegmentCache` | **Inside `experimental: {}`** | Smart prefetching disabled. |
+| `experimental.ppr` | **DO NOT INCLUDE** | Build error in Next.js 16 — removed entirely. |
+| `experimental.dynamicIO` | **DO NOT INCLUDE** | Deprecated — replaced by `cacheComponents`. |
 
 ---
 

@@ -159,3 +159,71 @@ src/app/api/summarize/[id]/
 Next Steps
 Phase 5 is COMPLETE. The codebase is ready for Phase 6: Search, Admin & Public API or Phase 7: Worker Service, Push Notifications & Observability.
 
+- Complete Phase 5: AI Summarisation Pipeline with TDD execution, ensuring alignment with MEP v5.1, PRD v4.3, and PAD v4.5.
+Constraints & Preferences
+- Follow the Meticulous Approach (ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER).
+- TDD discipline: write failing test first, then implement, then verify.
+- Preserve cross-references to PAD v4.5 and PRD v4.3 as authoritative sources.
+- Use interface over type, early returns, composition over inheritance.
+- All new components/hooks must have corresponding .test.tsx files.
+Progress
+Done
+- ANALYZE: Reviewed MEP v5.1 Phase 5 requirements against codebase.
+- PLAN: Created comprehensive Phase 5 sub-plan with ToDo list.
+- VALIDATE: Presented sub-plan for user confirmation; user confirmed "yes, proceed meticulously."
+- Track A (Domain Layer): Created summariseSchema.ts with Zod validation (10/10 tests passing) and prompts.ts (pure functions).
+- Track B (Provenance): Created provenance.ts with 3-layer disclosure (JSON-LD, HTTP header, meta tag) — 4/4 tests passing.
+- Track C (UI Components): Created DisclosureBadge.tsx (6/6 tests), NutritionLabel.tsx (6/6 tests), SummaryPanel.tsx (6/6 tests).
+- Created directories: src/features/summaries/lib/, src/features/summaries/components/, src/lib/ai/, src/app/api/summarize/[id]/.
+In Progress
+- Track D (Server Actions & API): Created actions.ts and route.ts. Fixing TypeScript errors: summaryStatus type mismatch (no "error" state) and job.id type issues.
+Blocked
+- (none)
+Key Decisions
+- Summarisation Schema: summariseSchema.ts uses Zod with strict length constraints: summaryText (50-800 chars), keyPoints (1-5 items, 1-120 chars each), sourcesCited (min 1, URL validated), aiStatement (20-200 chars), coveragePercentage (0-100 integer).
+- Provenance 3-Layer: JSON-LD (schema.org/CreativeWork), HTTP header (base64-encoded JSON), HTML meta tag (semicolon-delimited). C2PA explicitly rejected per PRD §7.1.
+- Content Availability Guard (Anti-Hallucination): Only partial_text and full_text articles can be summarised. title_only and excerpt are rejected.
+- Summary Status Enum: Values are "none", "pending"", "ok", "needs_review", "disabled" — no "error" state exists in schema.
+- DisclosureBadge States: ok (green, "AI Brief"), pending (gray, "Processing"), needs_review (amber, "Under Review"), disabled/none (no badge).
+- SummaryPanel 5-State Machine: none → button, pending → status text, ok → <NutritionLabel>, needs_review → notice, disabled → null.
+- UI Components: DisclosureBadge and SummaryPanel are Client Components ("use client") for interactivity. NutritionLabel is a presentational component.
+- Server Actions: requestSummary() enqueues to BullMQ's summarizeQueue after content guard check. flagSummary() and disableSummary() require verifyAdminSession().
+- Route Handler: POST /api/summarize/[id] returns 202 (enqueued), 400 (invalid UUID/content guard), 401 (unauthenticated), 404 (not found), 409 (already exists).
+Next Steps
+1. Fix remaining TypeScript errors: actions.ts (job.id type), DisclosureBadge.tsx (SummaryStatus type).
+2. Run full validation suite: pnpm tsc --noEmit && pnpm lint && pnpm test — must all pass.
+3. Update documentation: README.md, AGENTS.md, CLAUDE.md with Phase 5 completion status.
+Critical Context
+- Phase 4 COMPLETE: 67 tests passing across 14 suites. Route pages moved to /(public) route group. formatTimeAgo() utility created with 15 tests.
+- Phase 5 IN PROGRESS: Domain layer (schema, prompts), provenance, and UI components complete with TDD. Server Actions and API route partially complete.
+- Test Count: 71+ tests passing (67 Phase 4 + new Phase 5 tests).
+- TypeScript Errors: 2 remaining — actions.ts line 85 (job.id possibly undefined), DisclosureBadge.tsx line 74 ( "error" not in SummaryStatus union).
+- BullMQ Integration: summarizeQueue defined in src/lib/queue/index.ts, enqueues jobs from actions.ts and route.ts.
+- Content Guard Enforced: Both actions.ts and route.ts check article.contentAvailability against "title_only" and "excerpt" before enqueuing.
+- Schema Enum: summaryStatusEnum values: ["none", "pending", "ok", "needs_review", "disabled"] — no "error" value.
+Relevant Files
+- src/features/summaries/lib/summariseSchema.ts: Zod schema for AI output validation.
+- src/features/summaries/lib/summariseSchema.test.ts: 10 TDD tests for schema validation.
+- src/lib/ai/prompts.ts: Pure functions for system/user prompt generation.
+- src/lib/ai/provenance.ts: 3-layer provenance disclosure (JSON-LD, HTTP header, meta tag).
+- src/lib/ai/provenance.test.ts: 4 TDD tests for provenance generation.
+- src/features/summaries/components/DisclosureBadge.tsx: Summary status indicator with accessible dot.
+- src/features/summaries/components/DisclosureBadge.test.tsx: 6 TDD tests for badge states.
+- src/features/summaries/components/NutritionLabel.tsx: Source-cited AI summary transparency panel.
+- src/features/summaries/components/NutritionLabel.test.tsx: 6 TDD tests for nutrition label.
+- src/features/summaries/components/SummaryPanel.tsx: 5-state state machine for summary UI.
+- src/features/summaries/components/SummaryPanel.test.tsx: 6 TDD tests for panel states.
+- src/features/summaries/actions.ts: Server Actions — requestSummary(), flagSummary(), disableSummary().
+- src/app/api/summarize/[id]/route.ts: Route Handler for POST /api/summarize/:id.
+- src/lib/db/schema.ts: summaryStatusEnum definition (5 values, no "error").
+- src/lib/queue/index.ts: BullMQ summarizeQueue definition.
+▣  Compaction · Kimi K2.6 · 58.8s
+Awesome meticulous review, analysis and planning. Please keep up the good work. now, please meticulously review and update @README.md , @CLAUDE.md and @AGENTS.md to align with the latest code changes, issues fixed, gotchas to look out for, troubleshooting tips, lessons learnt, outstanding issues and recommendations. 
+I'll begin by running a comprehensive analysis of the project to identify necessary updates and ensure all documentation is meticulously aligned with the latest changes.
+# Todos
+[•] ANALYZE: Review all three docs for stale info, gaps, and misalignments
+[ ] Update AGENTS.md with latest Phase 5 lessons, troubleshooting, and recommendations
+[ ] Update README.md with latest gotchas, troubleshooting, and recommendations
+[ ] Update CLAUDE.md to be canonical agent reference (deduplicate from AGENTS.md)
+[ ] Verify all three docs are consistent and cross-referenced
+[ ] Run validation checks (tsc, lint, test) to confirm no regressions
