@@ -30,7 +30,7 @@ please meticulously review  @MASTER_EXECUTION_PLAN.md , @Project_Architecture_Do
 
 ---
 
-please meticulously review @MASTER_EXECUTION_PLAN.md and then meticulously plan to create a comprehensive sub-plan for Phase 3 execution with a detailed ToDo list. then review and validate the Phase 3 sub-plan against @Project_Requirements_Document_v4.3.md , @Project_Architecture_Document_v4.5.md and @static_HTML_mockup_for_dynamic_landing_page.html to check for alignment before proceeding to execute the sub-plan meticulously. please note that database connection is via direct localhost port 5432. only the postgresql and redis servers are running in containers, the applications will run directly in the local host.
+please meticulously review @MASTER_EXECUTION_PLAN.md and then meticulously plan to create a comprehensive sub-plan for Phase 5 execution with a detailed ToDo list. then review and validate the Phase 5 sub-plan against @Project_Requirements_Document_v4.3.md , @Project_Architecture_Document_v4.5.md and @static_HTML_mockup_for_dynamic_landing_page.html to check for alignment before proceeding to execute the sub-plan meticulously. please note that database connection is via direct localhost port 5432. only the postgresql and redis servers are running in containers, the applications will run directly in the local host.
 
 $ docker ps | grep onestopnews
 6b6d2a0906cf   postgres:17-alpine                    "docker-entrypoint.s…"   18 minutes ago   Up 18 minutes (healthy)   127.0.0.1:5432->5432/tcp                      onestopnews-postgres-dev

@@ -1410,7 +1410,7 @@ Phase 1: Foundation & Configuration	**COMPLETE**	next.config.ts, proxy.ts, tscon
 Phase 2: Database Schema & Infrastructure	**COMPLETE**	schema.ts (10 tables), lib/db/index.ts, lib/auth/index.ts, lib/auth/dal.ts, lib/queue/index.ts
 Phase 3: Design System & Shared Components	**COMPLETE**	globals.css with @theme, fonts, Button.tsx, Badge.tsx, Skeleton.tsx, Header.tsx, Footer.tsx, PageTransition.tsx
 Phase 4: Core Feed Feature	**COMPLETE**	FeedGrid.tsx, ArticleCard.tsx, TopicNav.tsx, home page, topic pages, article detail, cursor pagination (67 tests)
-Phase 5: AI Summarisation Pipeline	NOT STARTED	summariseSchema.ts, prompts.ts, provenance.ts, NutritionLabel.tsx, SummaryPanel.tsx, enqueue endpoint
+Phase 5: AI Summarisation Pipeline	**COMPLETE**	Zod schema, prompts, provenance, NutritionLabel, SummaryPanel, DisclosureBadge, actions, API route (99+ tests)
 Phase 6: Search, Admin & Public API	NOT STARTED	FTS search, admin routes, source management, summary review, /api/articles
 Phase 7: Worker Service, Push & Observability	NOT STARTED	4 workers, content guard, push encryption, quiet hours, health endpoint
 Phase 8: Testing, CI/CD & Deployment	NOT STARTED	Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions
