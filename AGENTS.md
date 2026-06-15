@@ -663,6 +663,15 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `src/app/(admin)/sources/page.tsx` | 6 | Source management table with status badges |
 | `src/app/(admin)/sources/actions.ts` | 6 | CRUD Server Actions for sources |
 | `src/app/(admin)/summaries/page.tsx` | 6 | Summary review queue for `needs_review` |
+| `src/workers/index.ts` | 7 | Worker entry point (4 BullMQ workers, graceful shutdown) |
+| `src/workers/jobs/scheduler.ts` | 7 | Idempotent job scheduler via `upsertJobScheduler()` |
+| `src/workers/jobs/determineContentAvailability.ts` | 7 | Content guard (title_only → full_text classification) |
+| `src/workers/jobs/determineContentAvailability.test.ts` | 7 | 8 TDD tests covering all four content availability classes |
+| `src/lib/security/encrypt.ts` | 7 | AES-256-GCM push key encryption/decryption |
+| `src/lib/security/encrypt.test.ts` | 7 | 4 TDD tests (round-trip, IV randomness, invalid format) |
+| `src/workers/push/isWithinQuietHours.ts` | 7 | DST-safe quiet hours with luxon |
+| `src/workers/push/isWithinQuietHours.test.ts` | 7 | 6 TDD tests (overnight wrap, same-day, DST transitions) |
+| `src/app/api/push/subscribe/route.ts` | 7 | Zod-validated push subscription endpoint with encryption |
 
 ---
 
@@ -676,7 +685,7 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API route |
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search (`ts_rank_cd` BM25), admin routes, source CRUD, summary review, `/api/articles` (103+ tests) |
-| **Phase 7** — Worker Service, Push & Observability | **NOT STARTED** | 4 workers, content guard, push encryption, quiet hours, health endpoint |
+| **Phase 7** — Worker Service, Push & Observability | **IN PROGRESS** | Worker entry point, 4 BullMQ workers, scheduler, content guard, AES-256-GCM encryption, DST-safe quiet hours, push subscribe API (121+ tests) |
 | **Phase 8** — Testing, CI/CD & Deployment | **NOT STARTED** | Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions |
 
 ---
