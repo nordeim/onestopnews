@@ -213,6 +213,8 @@ pnpm test
 | Summarising `title_only` / `excerpt` | AI hallucination risk | Content availability guard |
 | Admin auth in `proxy.ts` | Layer 0 has no DB access | `verifyAdminSession()` in `(admin)/layout.tsx` |
 | `pg_textsearch` extension (PG 17) | Doesn't exist; `ts_rank_cd` is built-in | Use `ts_rank_cd` directly |
+| `revalidateTag` in workers | Next.js-only API, not available in Node.js | Use Redis pub/sub for cache invalidation |
+| `as any` with Drizzle `.with()` | Type inference broken for relational queries | Use explicit `.innerJoin()` instead |
 
 ---
 
@@ -240,8 +242,8 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API endpoint |
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`), 103+ tests |
-| **Phase 7** — Worker Service, Push & Observability | **NOT STARTED** | 4 workers, content guard, push encryption, quiet hours, health endpoint |
-| **Phase 8** — Testing, CI/CD & Deployment | **NOT STARTED** | Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions |
+| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API (124 tests, 24 suites) |
+| **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 
 ---
 
@@ -285,9 +287,72 @@ export default async function AdminLayout({ children }) {
 
 **Lesson**: `pg_trgm` is not enabled by default. Run `CREATE EXTENSION IF NOT EXISTS pg_trgm;` on database setup.
 
-### 6. CORS on Public API
+### 6. Cache Invalidation: Workers Cannot Use `revalidateTag()`
 
-**Lesson**: The `/api/articles` endpoint must include CORS headers (`Access-Control-Allow-Origin: *`) for external consumers. Always include an `OPTIONS` handler.
+**Issue**: `revalidateTag()` is a Next.js-only API. Workers run in a separate Node.js process and cannot call it. Attempting to do so throws `TypeError: revalidateTag is not a function`.
+
+**Fix**: Use Redis pub/sub for worker-to-web-app cache invalidation. Workers publish invalidation events to a Redis channel; the Next.js app subscribes and calls `revalidateTag()` locally.
+
+```typescript
+// src/workers/lib/cacheInvalidation.ts
+import { publisher } from '@/lib/queue';
+
+export async function publishCacheInvalidation(tag: string): Promise<boolean> {
+  try {
+    await publisher.publish(`cache:invalidate:${tag}`, '1');
+    return true;
+  } catch {
+    return false; // Best-effort: don't crash the worker
+  }
+}
+```
+
+### 7. Type Safety: `as any` Cast in Score Worker
+
+**Issue**: Using `db.query.articles.findFirst({ with: { source: true } })` does not properly narrow the `source` type, forcing an `as any` cast to access `source.priority`.
+
+**Fix**: Use explicit `innerJoin` for type-safe source data.
+
+```typescript
+// ❌ Before (type unsafe)
+const article = await db.query.articles.findFirst({
+  with: { source: true },
+});
+const priority = (article as any).source?.priority ?? 2; // Yuck
+
+// ✅ After (type safe)
+const rows = await db
+  .select({ article: articles, source: sources })
+  .from(articles)
+  .innerJoin(sources, eq(articles.sourceId, sources.id))
+  .where(eq(articles.id, articleId));
+const row = rows[0];
+if (!row) throw new Error('Article not found');
+const priority = row.source.priority; // Fully typed
+```
+
+### 8. GitHub Actions YAML Syntax Errors
+
+**Issue**: YAML files are extremely sensitive to indentation and special characters. A single bad quote or misplaced space can cause the entire workflow to fail silently or with cryptic errors.
+
+**Fix**: Always validate YAML syntax before pushing:
+```bash
+# Install actionlint for local validation
+brew install actionlint  # macOS
+actionlint .github/workflows/ci.yml
+```
+
+### 9. Docker Multi-Stage Build Context
+
+**Issue**: Docker build context includes the entire repo by default, which can be slow and include sensitive files.
+
+**Fix**: Use `.dockerignore` to exclude `node_modules`, `.git`, `.env*`, and other unnecessary files.
+
+### 10. Lighthouse CI Requires Production Build
+
+**Issue**: Lighthouse CI cannot run against the development server. It requires a production build (`next build`) and a running server (`next start`).
+
+**Fix**: The `lighthouserc.js` configuration uses `startServerCommand` to build and start the production server before auditing.
 
 ---
 
@@ -313,6 +378,19 @@ export default async function AdminLayout({ children }) {
 | Summary Components | `src/features/summaries/components/*.tsx` |
 | Next.js Config | `next.config.ts` |
 | Proxy | `proxy.ts` |
+| Worker Entry Point | `src/workers/index.ts` |
+| Job Scheduler | `src/workers/jobs/scheduler.ts` |
+| Content Guard | `src/workers/jobs/determineContentAvailability.ts` |
+| Push Encryption | `src/lib/security/encrypt.ts` |
+| Quiet Hours | `src/workers/push/isWithinQuietHours.ts` |
+| Cache Invalidation | `src/workers/lib/cacheInvalidation.ts` |
+| CI Pipeline | `.github/workflows/ci.yml` |
+| E2E Pipeline | `.github/workflows/e2e.yml` |
+| Web Dockerfile | `Dockerfile.web` |
+| Worker Dockerfile | `Dockerfile.worker` |
+| Production Compose | `docker-compose.prod.yml` |
+| Lighthouse Config | `lighthouserc.js` |
+| Deploy Script | `scripts/deploy.sh` |
 
 ---
 
@@ -321,4 +399,4 @@ export default async function AdminLayout({ children }) {
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
 - **Last Updated**: June 15, 2026
-- **Total Tests**: 103+ across 20 suites
+- **Total Tests**: 124+ across 24 suites

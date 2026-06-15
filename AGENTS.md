@@ -403,6 +403,147 @@ Must pass before any PR is merged. No exceptions.
 
 ---
 
+## Phase 7: Worker Service, Push & Observability — Lessons Learned
+
+### Phase 7 Gotchas Discovered
+
+#### 1. Cache Invalidation: Workers Cannot Use `revalidateTag()`
+
+**Issue**: `revalidateTag()` is a Next.js-only API. Workers run in a separate Node.js process and cannot call it. Attempting to do so throws `TypeError: revalidateTag is not a function`.
+
+**Fix**: Use Redis pub/sub for worker-to-web-app cache invalidation. Workers publish invalidation events to a Redis channel; the Next.js app subscribes and calls `revalidateTag()` locally.
+
+```typescript
+// src/workers/lib/cacheInvalidation.ts
+import { publisher } from '@/lib/queue';
+
+export async function publishCacheInvalidation(tag: string): Promise<boolean> {
+  try {
+    await publisher.publish(`cache:invalidate:${tag}`, '1');
+    return true;
+  } catch {
+    return false; // Best-effort: don't crash the worker
+  }
+}
+```
+
+**TDD**: 3 tests in `cacheInvalidation.test.ts` verify publish, error handling, and Redis integration.
+
+#### 2. Type Safety: `as any` Cast in Score Worker
+
+**Issue**: Using `db.query.articles.findFirst({ with: { source: true } })` does not properly narrow the `source` type, forcing an `as any` cast to access `source.priority`.
+
+**Fix**: Use explicit `innerJoin` for type-safe source data.
+
+```typescript
+// ❌ Before (type unsafe)
+const article = await db.query.articles.findFirst({
+  with: { source: true },
+});
+const priority = (article as any).source?.priority ?? 2; // Yuck
+
+// ✅ After (type safe)
+const rows = await db
+  .select({ article: articles, source: sources })
+  .from(articles)
+  .innerJoin(sources, eq(articles.sourceId, sources.id))
+  .where(eq(articles.id, articleId));
+const row = rows[0];
+if (!row) throw new Error('Article not found');
+const priority = row.source.priority; // Fully typed
+```
+
+**Lesson**: Prefer explicit `.innerJoin()` over relational `.with()` when type safety is critical. The `.with()` pattern has known TypeScript inference limitations.
+
+#### 3. Content Availability Guard — Double Enforcement
+
+**Issue**: The content guard must be enforced at **both** the Server Action layer AND the API Route layer. The API route is public; the Server Action is called from the UI. Both need validation.
+
+**Fix**:
+```typescript
+// In BOTH actions.ts AND route.ts
+if (['title_only', 'excerpt'].includes(article.contentAvailability)) {
+  return { error: "Cannot summarise articles with only title or excerpt" }; // 400
+}
+```
+
+#### 4. BullMQ `job.id` is `string | undefined`
+
+**Issue**: BullMQ's `Job` type has `id` as `string | undefined`, causing `TS2339` when accessing `job.id`.
+
+**Fix**: Assert presence before use:
+```typescript
+const job = await summarizeQueue.add(...);
+if (!job?.id) throw new Error("Job creation failed");
+// Now job.id is string
+```
+
+#### 5. `summaryStatus` Does NOT Have an `"error"` State
+
+**Critical**: The schema does not include `"error"` as a valid `summaryStatus`. When the summarisation worker fails, it should leave the status as `"none"` (allowing retry) or `"needs_review"` (for manual review). Do not use `"error"` — it will cause type errors.
+
+### Phase 7 Recommendations
+
+1. **Zod Schema Evolution**: Keep `summariseSchema.ts` version-controlled. When LLM capabilities improve, adjust constraints with new tests.
+2. **Provenance Audit Trail**: The `flagReason` field is populated when an admin flags a summary. Disabled summaries retain `flagReason` for audit but show no UI.
+3. **Rate Limiting Deferral**: Rate limiting for summarisation was deferred to Phase 6/8 (Redis-based). The API route currently has no rate limiting — document this in security reviews.
+4. **Worker Implementation**: Phase 7 built the worker infrastructure (entry point, scheduler, encryption, quiet hours). The actual summarisation worker (calling Anthropic/OpenAI) is Phase 9.
+5. **Test Monitoring**: Phase 7 added 21 tests (from 103 to 124). Monitor for test flakiness — `useOptimistic` tests may be timing-sensitive.
+
+---
+
+## Phase 8: Testing, CI/CD & Deployment — Lessons Learned
+
+### Phase 8 Gotchas Discovered
+
+#### 1. GitHub Actions YAML Syntax Errors
+
+**Issue**: YAML files are extremely sensitive to indentation and special characters. A single bad quote or misplaced space can cause the entire workflow to fail silently or with cryptic errors.
+
+**Fix**: Always validate YAML syntax before pushing:
+```bash
+# Install actionlint for local validation
+brew install actionlint  # macOS
+actionlint .github/workflows/ci.yml
+
+# Or use GitHub's web editor for syntax highlighting
+```
+
+#### 2. Docker Multi-Stage Build Context
+
+**Issue**: Docker build context includes the entire repo by default, which can be slow and include sensitive files.
+
+**Fix**: Use `.dockerignore` to exclude `node_modules`, `.git`, `.env*`, and other unnecessary files.
+
+#### 3. Lighthouse CI Requires Production Build
+
+**Issue**: Lighthouse CI cannot run against the development server. It requires a production build (`next build`) and a running server (`next start`).
+
+**Fix**: The `lighthouserc.js` configuration uses `startServerCommand` to build and start the production server before auditing.
+
+#### 4. Vitest Coverage Thresholds
+
+**Issue**: Setting coverage thresholds too high initially causes CI failures until the test suite matures.
+
+**Fix**: Start with moderate thresholds (80% lines, 70% branches) and increase as coverage improves. The current configuration is:
+```typescript
+thresholds: {
+  lines: 80,
+  functions: 80,
+  branches: 70,
+  statements: 80,
+}
+```
+
+### Phase 8 Recommendations
+
+1. **CI Pipeline Monitoring**: Monitor CI pipeline duration. If it exceeds 10 minutes, investigate slow steps (likely `npx playwright install --with-deps`).
+2. **Docker Image Size**: Monitor Docker image size. If the web image exceeds 500MB, investigate guy otening `node_modules` pruning or multi-stage build optimization.
+3. **Lighthouse CI Budgets**: Start with conservative budgets (Perf ≥ 90, A11y ≥ 95) and tighten as the app matures. PPR helps with performance but heavy AI components can slow LCP.
+4. **Deployment Automation**: The `scripts/deploy.sh` script supports tagged releases. Consider adding Slack/Discord notifications on deployment success/failure.
+
+---
+
 ## Quick Reference: Layer Model
 
 ```
@@ -672,6 +813,16 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `src/workers/push/isWithinQuietHours.ts` | 7 | DST-safe quiet hours with luxon |
 | `src/workers/push/isWithinQuietHours.test.ts` | 7 | 6 TDD tests (overnight wrap, same-day, DST transitions) |
 | `src/app/api/push/subscribe/route.ts` | 7 | Zod-validated push subscription endpoint with encryption |
+| `src/workers/lib/cacheInvalidation.ts` | 7 | Redis-based cache invalidation for worker-to-web-app communication |
+| `src/workers/lib/cacheInvalidation.test.ts` | 7 | 3 TDD tests for cache invalidation (publish, error handling, Redis integration) |
+| `.github/workflows/ci.yml` | 8 | GitHub Actions CI pipeline (TypeScript, lint, tests, build, schema validation) |
+| `.github/workflows/e2e.yml` | 8 | GitHub Actions E2E pipeline (Playwright on Chromium, Firefox, WebKit) |
+| `lighthouserc.js` | 8 | Lighthouse CI configuration with performance budgets (Perf ≥90, A11y ≥95) |
+| `Dockerfile.web` | 8 | Multi-stage production Dockerfile for Next.js 16 web app |
+| `Dockerfile.worker` | 8 | Production Dockerfile for Node.js 24 worker service |
+| `docker-compose.prod.yml` | 8 | Production Docker Compose (web + worker + PostgreSQL 17 + Redis 7) |
+| `scripts/deploy.sh` | 8 | Tagged release deployment script with rollback support |
+| `src/test/setup.ts` | 8 | Global Vitest test setup file |
 
 ---
 
@@ -685,8 +836,8 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API route |
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search (`ts_rank_cd` BM25), admin routes, source CRUD, summary review, `/api/articles` (103+ tests) |
-| **Phase 7** — Worker Service, Push & Observability | **IN PROGRESS** | Worker entry point, 4 BullMQ workers, scheduler, content guard, AES-256-GCM encryption, DST-safe quiet hours, push subscribe API (121+ tests) |
-| **Phase 8** — Testing, CI/CD & Deployment | **NOT STARTED** | Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions |
+| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | Worker entry point, 4 BullMQ workers, scheduler, content guard, AES-256-GCM encryption, DST-safe quiet hours, push subscribe API, cache invalidation (124 tests, 24 suites) |
+| **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 
 ---
 

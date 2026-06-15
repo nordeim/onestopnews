@@ -609,3 +609,62 @@ Coverage thresholds (80%)	MEP v5.1 §Phase 8	vitest.config.ts
 Tagged release flow	MEP v5.1 §Phase 8	scripts/deploy.sh
 All Phase 8 deliverables are complete and ready for final integration and documentation updates.
 
+Now I have a comprehensive understanding of all three documents. I need to systematically update them to reflect:
+1. Phase 7 completion (Worker Service, Push & Observability) — was "IN PROGRESS" / "NOT STARTED"
+2. Phase 8 completion (Testing, CI/CD & Deployment) — was "NOT STARTED"
+3. Key issues fixed and lessons learned (cache invalidation, type safety fix)
+4. New file inventory (CI/CD files, Dockerfiles, etc.)
+5. Updated test count (124+ tests, 24 suites)
+6. New gotchas and troubleshooting tips
+Let me create a todo list for this documentation update task, then execute it.
+# Todos
+[•] Update AGENTS.md — Phase 7 & 8 status, new files, lessons learned
+[ ] Update README.md — Phase 7 & 8 status, CI/CD section, Docker section
+[ ] Update CLAUDE.md — Phase 7 & 8 status, new patterns, file locations
+[ ] Final validation — Verify all three docs are consistent
+Now let me systematically update all three documents. I'll start with AGENTS.md, which is the most comprehensive institutional memory document, then update README.md and CLAUDE.md to match.
+AGENTS.md Updates
+I need to:
+1. Update the Phase Status Tracker (lines 678-689)
+2. Add Phase 7 Lessons Learned section
+3. Add Phase 8 Lessons Learned section
+4. Update the file inventory with new Phase 7/8 files
+5. Add new anti-patterns and gotchas discovered
+Let me start with the Phase Status Tracker in AGENTS.md.
+
+# Todos
+[✓] Update AGENTS.md — Phase 7 & 8 status, new files, lessons learned
+[✓] Update README.md — Phase 7 & 8 status, CI/CD section, Docker section
+[✓] Update CLAUDE.md — Phase 7 & 8 status, new patterns, file locations
+[✓] Final validation — Verify all three docs are consistent
+All documentation has been meticulously updated. Here's a comprehensive summary of all changes made across the three files:
+Documentation Update Summary
+AGENTS.md Updates
+Section	Changes
+Phase Status Tracker	Updated Phase 7 → COMPLETE (124 tests, 24 suites), Phase 8 → COMPLETE
+Phase 7 Lessons Learned	Added new section with 5 gotchas: cache invalidation, type safety, content guard, BullMQ job.id, summaryStatus
+Phase 8 Lessons Learned	Added new section with 4 gotchas: GitHub Actions YAML, Docker context, Lighthouse CI, Vitest thresholds
+File Inventory	Added 10 new files: cacheInvalidation, CI pipelines, Dockerfiles, docker-compose, lighthouserc, deploy script, test setup
+Anti-Patterns	Added 2 new anti-patterns: revalidateTag in workers, as any with Drizzle .with()
+README.md Updates
+Section	Changes
+Project Status	Updated Phase 7 & 8 to COMPLETE with full deliverables list
+Outstanding Issues	Updated to reflect Phase 9 future work (rate limiting, AI integration)
+Recommendations	Updated test count to 124+, added CI monitoring, Docker image size, Lighthouse budgets
+CI/CD & Deployment	NEW SECTION — GitHub Actions workflows, Docker commands, Lighthouse CI
+Testing	Added coverage command reference
+CLAUDE.md Updates
+Section	Changes
+Phase Status	Updated Phase 7 & 8 to COMPLETE
+Anti-Patterns	Added revalidateTag in workers and as any with Drizzle .with()
+File Locations	Added 11 new entries: Worker entry, scheduler, content guard, encryption, quiet hours, cache invalidation, CI pipelines, Dockerfiles, compose, Lighthouse, deploy script
+Lessons Learned	Added 5 new lessons: cache invalidation, type safety, YAML syntax, Docker context, Lighthouse requirements
+Test Count	Updated to 124+ across 24 suites
+Consistency Validation Results
+All three documents are now fully consistent:
+- Phase 7 & 8 status: ✅ Same in all docs
+- Test counts (124/24): ✅ Same in all docs  
+- Key deliverables: ✅ Same in all docs
+- Anti-patterns: ✅ Synchronized across all docs
+- File locations: ✅ All new files documented
+

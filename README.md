@@ -381,6 +381,41 @@ pnpm lint
 
 ---
 
+## CI/CD & Deployment
+
+### GitHub Actions
+
+Two workflows run on every push/PR to `main`:
+
+| Workflow | Trigger | Jobs |
+| :--- | :--- | :--- |
+| `ci.yml` | push, pull_request | TypeScript check, lint, unit tests, build |
+| `e2e.yml` | push, pull_request | Playwright tests on Chromium, Firefox, WebKit |
+
+### Docker
+
+Multi-stage production builds:
+
+```bash
+# Build production images
+docker build -f Dockerfile.web -t onestopnews-web .
+docker build -f Dockerfile.worker -t onestopnews-worker .
+
+# Start full stack
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### Lighthouse CI
+
+```bash
+# Run Lighthouse CI against production build
+npx lhci autorun
+```
+
+Budgets: Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 90, SEO ≥ 90.
+
+---
+
 ## Security & Compliance
 
 | Concern | Posture |
@@ -596,29 +631,35 @@ if (!result.success) {
 
 7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI.
 
-8. **testSuite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests. Current total: 103+ tests across 20 suites. Monitor test duration — if it exceeds 15s, investigate slow tests.
+8. **testSuite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests. Current total: 124+ tests across 24 suites. Monitor test duration — if it exceeds 15s, investigate slow tests.
 
 9. **BM25 Search Tuning**: The `ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...)` weights may need adjustment based on real user queries. Consider A/B testing different weight configurations.
 
-10. **Rate Limiting Implementation**: The `/api/articles` endpoint currently has no rate limiting. Implement Redis-based burst limiting in Phase 8 (e.g., max 20 req/s per IP, burst 50). The `ioredis` package is already a dependency.
+10. **Rate Limiting Implementation**: The `/api/articles` endpoint currently has no rate limiting. Implement Redis-based burst limiting in Phase 9 (e.g., max 20 req/s per IP, burst 50). The `ioredis` package is already a dependency.
+
+11. **CI Pipeline Monitoring**: Monitor GitHub Actions pipeline duration. If it exceeds 10 minutes, investigate slow steps (likely `npx playwright install --with-deps`).
+
+12. **Docker Image Size**: Monitor Docker image sizes. If the web image exceeds 500MB, investigate `node_modules` pruning or multi-stage build optimization.
+
+13. **Lighthouse CI Budgets**: Start with conservative budgets (Perf ≥ 90, A11y ≥ 95) and tighten as the app matures. PPR helps with performance but heavy AI components can slow LCP.
 
 ---
 
-## Outstanding Issues
+## Outstanding Issues & Future Work
 
-### No Rate Limiting on Public API (Known Gap)
+### No Rate Limiting on Public API (Known Gap — Phase 9)
 
 **Impact**: Medium — The `GET /api/articles` endpoint currently has no rate limiting. A malicious or buggy client could make many requests, consuming database connections and compute.
 
-**Planned Fix**: Phase 8 will implement Redis-based rate limiting (e.g., max 20 req/s per IP via `ioredis` token bucket).
+**Planned Fix**: Phase 9 will implement Redis-based rate limiting (e.g., max 20 req/s per IP via `ioredis` token bucket).
 
 **Mitigation**: The endpoint is public (no auth required) and returns cached data. Monitor server metrics and alert on anomalies.
 
-### Missing Summarisation Worker (Phase 7 Dependency)
+### Summarisation Worker AI Integration (Phase 9)
 
-**Impact**: High — Phase 5 built the enqueue endpoint and UI, but the actual worker that calls Anthropic/OpenAI is not yet implemented.
+**Impact**: High — Phase 7 built the worker infrastructure (entry point, scheduler, queue definitions), but the actual `summarize.ts` worker that calls Anthropic/OpenAI is a stub returning placeholder data.
 
-**Status**: The `summarizeQueue` is defined and jobs are enqueued correctly. The worker will be built in Phase 7 (Worker Service, Push & Observability). Until then, summaries remain in `pending` state indefinitely.
+**Status**: The `summarizeQueue` is defined and jobs are enqueued correctly. The worker infrastructure is ready. Integration with Vercel AI SDK (Anthropic/OpenAI) is deferred to Phase 9.
 
 ### Test Flakiness Risk
 
@@ -638,8 +679,8 @@ if (!result.success) {
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API endpoint |
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`), 103+ tests |
-| **Phase 7** — Worker Service, Push & Observability | **NOT STARTED** | 4 workers, content guard, push encryption, quiet hours, health endpoint |
-| **Phase 8** — Testing, CI/CD & Deployment | **NOT STARTED** | Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions |
+| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API (124 tests, 24 suites) |
+| **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 
 ---
 
