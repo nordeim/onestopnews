@@ -9,6 +9,7 @@ import { articles, sources, summaries } from "@/lib/db/schema";
 import { calculateImportanceScore } from "@/domain/ranking/score";
 import { determineContentAvailability } from "./jobs/determineContentAvailability";
 import { syncSchedulers } from "./jobs/scheduler";
+import { publishCacheInvalidation } from "./lib/cacheInvalidation";
 
 // ─── WORKER CONCURRENCY (per PAD §6.2) ──────────────────────────────────────
 const CONCURRENCY = {
@@ -113,6 +114,11 @@ async function processIngestJob(job: {
         failureCount: 0,
       })
       .where(eq(sources.id, sourceId));
+
+    // Invalidate feed cache if new articles were ingested
+    if (newArticlesCount > 0 && source.categoryId) {
+      await publishCacheInvalidation(`feed:${source.categoryId}`);
+    }
 
     return { status: "success", newArticlesCount };
   } catch (error) {
@@ -234,26 +240,34 @@ async function processSummarizeJob(job: { data: { articleId: string } }) {
 async function processScoreJob(job: { data: { articleId: string } }) {
   const { articleId } = job.data;
 
-  const article = await db.query.articles.findFirst({
-    where: eq(articles.id, articleId),
-    with: {
-      source: true,
-    },
-  });
+  // Use innerJoin for proper type safety (per PAD §5.6 JOIN contract)
+  const article = await db
+    .select({
+      id: articles.id,
+      publishedAt: articles.publishedAt,
+      hasSummary: articles.hasSummary,
+      contentAvailability: articles.contentAvailability,
+      sourcePriority: sources.priority,
+    })
+    .from(articles)
+    .innerJoin(sources, eq(articles.sourceId, sources.id))
+    .where(eq(articles.id, articleId))
+    .limit(1);
 
-  if (!article) {
+  if (!article[0]) {
     throw new Error(`Article ${articleId} not found`);
   }
 
+  const row = article[0];
+
   const ageInHours =
-    (Date.now() - article.publishedAt.getTime()) / (1000 * 60 * 60);
+    (Date.now() - row.publishedAt.getTime()) / (1000 * 60 * 60);
 
   const score = calculateImportanceScore({
     ageInHours,
-    hasSummary: article.hasSummary,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sourcePriority: (article as any).source?.priority ?? 2,
-    contentAvailability: article.contentAvailability,
+    hasSummary: row.hasSummary,
+    sourcePriority: row.sourcePriority ?? 2,
+    contentAvailability: row.contentAvailability,
   });
 
   // Update importance score
@@ -271,10 +285,13 @@ async function processFeedSliceJob(job: {
 }) {
   const { categoryId, sort } = job.data;
 
-  // Refresh Redis cache for feed slice
-  // In a real implementation, this would pre-compute and cache
-  // the feed for fast retrieval by the web app
-  return { status: "success", categoryId, sort };
+  // Publish cache invalidation event to Redis channel
+  // Workers cannot use revalidateTag (Next.js-only API).
+  // Instead, they publish to Redis and the web app subscribes.
+  const cacheTag = `feed:${categoryId}`;
+  const invalidated = await publishCacheInvalidation(cacheTag);
+
+  return { status: "success", categoryId, sort, invalidated };
 }
 
 // ─── WORKER DEFINITIONS ─────────────────────────────────────────────────────
