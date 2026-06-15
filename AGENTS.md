@@ -17,7 +17,7 @@ A Next.js 16 + React 19.2 application backed by PostgreSQL 17, BullMQ v5 on Redi
 
 ### 1. The Meticulous Approach (Mandatory for All Tasks)
 
-Follow this six-phase workflow for every implementation:
+Follow this six substantial six-phase workflow for every implementation:
 
 1. **ANALYZE** — Deep requirement mining. Identify explicit, implicit, and edge-case needs. Explore multiple approaches. Assess risks.
 2. **PLAN** — Structured execution roadmap. Present for explicit user confirmation before writing code.
@@ -26,7 +26,7 @@ Follow this six-phase workflow for every implementation:
 5. **VERIFY** — Rigorous QA against success criteria. Test edge cases, accessibility (WCAG AAA), and performance.
 6. **DELIVER** — Complete handoff with instructions, documentation, and next steps.
 
-### 2. OneStopNewsCAST-Specific Principles
+### 2. OneStopNews-Specific Principles
 
 | Principle | Rationale |
 | :--- | :--- |
@@ -206,7 +206,7 @@ The visual identity is **architectural, not cosmetic.** Every element carries th
 
 **CSS Subgrid Feed:**
 ```css
-/* Parent defines columns with gap-x only */  
+/* Parent defines columns with gap-x only */
 /* Each ArticleCard: grid grid-rows-subgrid row-span-3 */
 /* Last card in column: last:mb-0 */
 ```
@@ -341,7 +341,7 @@ Must pass before any PR is merged. No exceptions.
 | Category | Tool | Scope | Target |
 | :--- | :--- | :--- | :--- |
 | Unit | Vitest | Domain logic, utilities, Zod parsing | 80%+ coverage |
-| Integration | Vitest + Docker | Drizzle queries, BullMQ job processing | CI gate |
+| Integration | Vitest + Docker | Drizzle queries, BullMQ jobs | CI gate |
 | E2E | Playwright | Critical user journeys (feed → article → summary) | Zero visual regressions |
 | Perf | k6 | `GET /api/articles`, search | `< 300ms` p95 |
 | A11y | axe-core + Playwright | Keyboard nav, screen reader labels | WCAG 2.1 AAA |
@@ -388,7 +388,7 @@ Must pass before any PR is merged. No exceptions.
 | `enum` / `namespace` | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly`. | String unions (`type Status = "ACTIVE" \| "DRAFT"`) and ES modules. |
 | Custom component over Shadcn | Violates Library Discipline. Wastes engineering time. | Shadcn UI / Radix primitive, wrapped for styling. |
 | `throw new Error()` in RSC auth | Triggers full-page error boundary. Bad UX. | `redirect('/sign-in')` from `next/navigation`. |
-| Lazy proxy for DrizzleAdapter | Incorrectly documented. Lazy proxy IS correct for DrizzleAdapter. See src/lib/db/index.ts for implementation. |
+| Lazy proxy for DrizzleAdapter | Incorrectly documented. Lazy proxy IS correct for DrizzleAdapter. See src/lib/db/index.ts for implementation. | |
 | `drizzle-kit push` in production | Overwrites schema without migration history. Irreversible. | `generate` + `migrate` only. |
 | Caching without `cacheComponents: true` | `"use cache"` is silently inert. Zero caching occurs. | Ensure flag is top-level in `next.config.ts`. |
 | Summarising `title_only` / `excerpt` | AI hallucination risk — fabricating content from insufficient input. | `contentAvailabilityEnum` guard: only `partial_text` or `full_text`. |
@@ -414,10 +414,6 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 ```
 
 **Golden Rule:** Deviation from this order creates security and consistency bugs.
-
----
-
-*This CLAUDE.md mirrors the authoritative Project Architecture Document v4.5 and Project Requirements Document v4.3. When the instructions here and the PAD/PRD diverge, the PAD/PRD are the source of truth.*
 
 ---
 
@@ -504,7 +500,141 @@ type SummaryStatus = 'none' | 'pending' | 'ok' | 'needs_review' | 'disabled';
 
 ---
 
-## Updated File Inventory (Post-Phase 5)
+## Phase 6: Search, Admin & Public API — Lessons Learned
+
+### Phase 6 Gotchas Discovered
+
+#### 1. PostgreSQL FTS Extension Availability
+
+**Issue**: `pg_textsearch` is NOT a separate extension in PostgreSQL 17. `ts_rank_cd()` and `to_tsvector` are built-in. Searching for "pg_textsearch extension" leads to misleading documentation.
+
+**Fix**: Only `pg_trgm` needs explicit installation for autocomplete. Use `ts_rank_cd` and `websearch_to_tsquery` natively via Drizzle `sql` template literals.
+
+```typescript
+import { sql } from "drizzle-orm";
+
+const tsQuery = sql`websearch_to_tsquery('english', ${query})`;
+const rank = sql<number>`ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ${articles.searchVector}, ${tsQuery})`;
+```
+
+#### 2. `searchVector` Column `.notNull()` Contract
+
+**Issue**: The `searchVector` generated column in `schema.ts` must include `.notNull()`. Omitting it causes Drizzle type mismatches.
+
+**Fix**:
+```typescript
+searchVector: tsvector("search_vector")
+  .generatedAlwaysAs(sql`...`)
+  .notNull(),
+```
+
+#### 3. Drizzle `sql` Template Type Safety with SELECT
+
+**Issue**: When using `sql<number>` for `ts_rank_cd` in a `.select()`, the value may return as a string or number depending on the driver. Always coerce with `Number()`. Also, ensure proper escaping when using `sql` for `where` clauses.
+
+**Fix**:
+```typescript
+const rows = await db.select({ rank: sql<number>`ts_rank_cd(...)` }).from(articles);
+// Coerce in mapping:
+const rank = Number(row.rank) || 0;
+```
+
+#### 4. Admin Route Guard — Correct Layer
+
+**Issue**: Placing `verifyAdminSession()` in `proxy.ts` is wrong. `proxy.ts` is Layer 0 (network boundary, no DB access). Admin auth belongs in Layer 1 (App Router layout).
+
+**Fix**: Guard admin routes at `(admin)/layout.tsx`:
+```typescript
+export default async function AdminLayout({ children }) {
+  await verifyAdminSession(); // Redirects non-admins to '/'
+  return <AdminShell>{children}</AdminShell>;
+}
+```
+
+#### 5. Search UI: Server/Client Component Boundary
+
+**Issue**: Search needs both server-rendered initial results and client-side interactivity (debounce, URL sync, loading).
+
+**Fix**: Use a Server Component page to fetch initial results, and a Client Component wrapper for interactivity.
+
+```
+page.tsx (Server) → fetches initial results
+  └── SearchPageClient (Client) → state, debounce, URL sync
+       ├── SearchBar (Client) → input, ⌘K shortcut
+       └── SearchResults (RSC) → receives results via props
+```
+
+#### 6. pg_trgm Extension for Autocomplete
+
+**Issue**: `pg_trgm` is not enabled by default on new PostgreSQL installations. `getSearchSuggestions()` using `similarity()` will fail silently if the extension is missing.
+
+**Fix**: Run on database setup:
+```sql
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+```
+
+#### 7. CORS Headers on Public API
+
+**Issue**: Forgetting `Access-Control-Allow-Origin` on `/api/articles` breaks external consumers.
+
+**Fix**: Always include CORS headers and an `OPTIONS` handler:
+```typescript
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+```
+
+#### 8. `websearch_to_tsquery` vs `to_tsquery`
+
+**Issue**: `to_tsquery` does not handle user input safely (requires `&`, `|` operators). `websearch_to_tsquery` handles natural language queries, quoted phrases, and negation.
+
+**Fix**: Always use `websearch_to_tsquery('english', $query)` for user-facing search.
+
+#### 9. API Route `cursor` Parsing
+
+**Issue**: The `cursor` parameter in `/api/articles?cursor=...` is an ISO date string. Parsing it as a number or forgetting to validate it causes 500 errors.
+
+**Fix**: Parse and validate the cursor before use:
+```typescript
+const cursor = searchParams.get("cursor");
+const cursorDate = cursor ? new Date(cursor) : undefined;
+if (cursor && isNaN(cursorDate.getTime())) {
+  return NextResponse.json({ error: "Invalid cursor" }, { status: 400 });
+}
+```
+
+#### 10. LIMIT 31 + 1 Pattern for Pagination
+
+**Issue**: The `searchArticles()` query fetches `limit + 1` to determine `hasMore`. Forgetting to slice off the extra row causes off-by-one errors in the UI.
+
+**Fix**:
+```typescript
+const rows = await db.select().from(articles).limit(limit + 1);
+const hasMore = rows.length > limit;
+const resultRows = rows.slice(0, limit); // Remove the extra row
+```
+
+### Phase 6 Recommendations
+
+1. **BM25 Weight Tuning**: The `ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...)` weights (D, C, B, A) may need adjustment based on real user queries. Title (A=1.0) and excerpt (B=0.4) weights seem correct for news, but monitor search quality metrics.
+
+2. **Rate Limiting on Public API**: The `/api/articles` endpoint currently has no rate limiting. Implement Redis-based burst limiting in Phase 8 (max 20 req/s per IP, burst 50). `ioredis` is already a dependency.
+
+3. **Autocomplete Debounce**: The `getSearchSuggestions()` function is called on every keystroke. Consider debouncing at the UI layer (already done in `SearchBar` with `useDebounce`) AND adding a minimum character threshold (≥2 chars).
+
+4. **Admin Table Pagination**: The `/admin/sources` and `/admin/summaries` pages fetch ALL rows. For production with many sources, add server-side pagination.
+
+5. **Source Soft Delete**: The `deleteSource()` action sets `isActive = false` rather than removing the row. This preserves referential integrity with `articles.sourceId` but means "deleted" sources still appear in the database. Consider archiving to a separate table if source count grows.
+
+6. **Search Result Caching**: Search results are not currently cached. Consider caching frequent queries with `cacheLife('search')` profile. Cache invalidation strategy: clear on article ingestion (when new articles may match existing queries).
+
+7. **Cross-Field Search**: Currently search only looks at `title` and `excerpt`. Consider adding `sources.name` or `categories.name` to the `searchVector` if users want to search by source or category.
+
+---
+
+## Updated File Inventory (Post-Phase 6)
 
 | New Files | Phase | Purpose |
 |-----------|-------|---------|
@@ -521,6 +651,18 @@ type SummaryStatus = 'none' | 'pending' | 'ok' | 'needs_review' | 'disabled';
 | `src/features/summaries/components/SummaryPanel.test.tsx` | 5 | 6 TDD tests |
 | `src/features/summaries/actions.ts` | 5 | Server Actions for requesting summaries |
 | `src/app/api/summarize/[id]/route.ts` | 5 | POST endpoint with content guard |
+| `src/features/search/queries.ts` | 6 | FTS queries with `ts_rank_cd` BM25 ranking |
+| `src/features/search/queries.test.ts` | 6 | Edge case tests (empty query, whitespace) |
+| `src/features/search/types.ts` | 6 | `SearchResult`, `SearchPage`, `SearchParams` |
+| `src/features/search/components/SearchBar.tsx` | 6 | Client input with debounce, ⌘K shortcut, clear button |
+| `src/features/search/components/SearchResults.tsx` | 6 | Server results display with loading/empty states |
+| `src/app/(public)/search/page.tsx` | 6 | Server-rendered search page with URL persistence |
+| `src/app/(public)/search/SearchPageClient.tsx` | 6 | Client wrapper for interactivity |
+| `src/app/api/articles/route.ts` | 6 | Public REST API with CORS, cache-control |
+| `src/app/(admin)/layout.tsx` | 6 | Admin layout with `verifyAdminSession()` guard |
+| `src/app/(admin)/sources/page.tsx` | 6 | Source management table with status badges |
+| `src/app/(admin)/sources/actions.ts` | 6 | CRUD Server Actions for sources |
+| `src/app/(admin)/summaries/page.tsx` | 6 | Summary review queue for `needs_review` |
 
 ---
 
@@ -532,8 +674,8 @@ type SummaryStatus = 'none' | 'pending' | 'ok' | 'needs_review' | 'disabled';
 | **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (10 tables), lazy DB client, Auth.js v5, BullMQ queues |
 | **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
-| **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, provenance, NutritionLabel, SummaryPanel, DisclosureBadge, actions, API route (99+ tests) |
-| **Phase 6** — Search, Admin & Public API | **NOT STARTED** | FTS search, admin routes, source management, summary review, /api/articles |
+| **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API route |
+| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search (`ts_rank_cd` BM25), admin routes, source CRUD, summary review, `/api/articles` (103+ tests) |
 | **Phase 7** — Worker Service, Push & Observability | **NOT STARTED** | 4 workers, content guard, push encryption, quiet hours, health endpoint |
 | **Phase 8** — Testing, CI/CD & Deployment | **NOT STARTED** | Vitest, Playwright, Lighthouse CI, Dockerfiles, GitHub Actions |
 
