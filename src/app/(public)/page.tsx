@@ -1,10 +1,15 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { FeedData } from "@/features/feed/components/FeedData";
 import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
 import { Header } from "@/shared/components/layout/Header";
 import { Footer } from "@/shared/components/layout/Footer";
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Fix A: Derive year from request headers to avoid next-prerender-current-time
+  const dateHeader = (await headers()).get("date");
+  const currentYear = dateHeader ? new Date(dateHeader).getFullYear() : 2026;
+
   return (
     <div className="min-h-screen bg-paper-50">
       <Header activeCategory="top-stories" />
@@ -25,7 +30,7 @@ export default function HomePage() {
 
         {/* TODO: Restore Load More with cursor pagination */}
       </main>
-      <Footer />
+      <Footer currentYear={currentYear} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { FeedData } from "@/features/feed/components/FeedData";
 import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
 import { Header } from "@/shared/components/layout/Header";
@@ -17,6 +18,10 @@ export default async function CategoryPage({
   const { cursor: cursorString } = await searchParams;
   const cursor = cursorString ? new Date(cursorString) : undefined;
 
+  // Fix A: Derive year from request headers to avoid next-prerender-current-time
+  const dateHeader = (await headers()).get("date");
+  const currentYear = dateHeader ? new Date(dateHeader).getFullYear() : 2026;
+
   return (
     <div className="min-h-screen bg-paper-50">
       <Header activeCategory={category} />
@@ -34,7 +39,7 @@ export default async function CategoryPage({
           <FeedData category={category} cursor={cursor} limit={6} />
         </Suspense>
       </main>
-      <Footer />
+      <Footer currentYear={currentYear} />
     </div>
   );
 }

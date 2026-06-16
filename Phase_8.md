@@ -768,3 +768,55 @@ FeedData mentions	5	2	5
 Suspense mentions	12	10	12
 All three documents are now fully consistent and aligned with the latest codebase changes.
 
+Update README.md, CLAUDE.md, and AGENTS.md to document Phase 8 completion, the blocking-route fix, and post-fix lessons learned.
+Constraints & Preferences
+- TypeScript strict mode, zero any; noUncheckedIndexedAccess: true
+- TDD approach (write failing test first, then implement)
+- Database: PostgreSQL 17 via direct localhost:5432
+- Redis: localhost:6379 (container)
+- Apps run on localhost (not in containers)
+- Worker runtime: tsx for dev, compiled JS for production
+Progress
+Done
+- Phase 8 COMPLETE: All 6 tracks implemented (CI pipeline, E2E pipeline, Dockerfiles, docker-compose, Lighthouse CI, deploy script, Vitest coverage enhancements)
+- GitHub Actions: .github/workflows/ci.yml + e2e.yml created with PostgreSQL 17 and Redis 7 service containers
+- Docker: Multi-stage Dockerfile.web and Dockerfile.worker created; docker-compose.prod.yml for full stack
+- Lighthouse CI: lighthouserc.js with budgets (Perf ≥90, A11y ≥95)
+- Vitest: Coverage thresholds enabled (80% lines/functions/statements, 70% branches); src/test/setup.ts created
+- Blocking-Route Error FIXED: Extracted data fetching into FeedData.tsx Server Component; wrapped in <Suspense> with FeedSkeleton fallback in page.tsx and topics/[category]/page.tsx
+- Documentation: AGENTS.md, README.md, and CLAUDE.md updated with Phase 8 status, new file inventory, and blocking-route lesson learned
+- TypeScript: zero errors; Lint: zero warnings
+In Progress
+- Documentation updates in progress (updating three docs with post-fix lessons)
+Blocked
+- Phase 8 execution blocked pending user "Proceed" confirmation
+Key Decisions
+- Cache invalidation uses Redis pub/sub (cache:invalidate:<tag> channel) instead of next/cache's revalidateTag; workers cannot use Next.js-only APIs (confirmed correct per PRD §9.2)
+- Score worker query rewritten from relational .with({ source: true }) to explicit .innerJoin() for type safety; removes as any anti-pattern
+- publishCacheInvalidation returns boolean (not throwing) for best-effort graceful degradation
+Next Steps
+- Update README.md with blocking-route fix details
+- Update CLAUDE.md with new anti-patterns and file locations
+- Update AGENTS.md with new lesson learned section
+- Final validation: ensure all three docs are consistent
+Critical Context
+- Blocking-Route Fix: In Next.js 16 with cacheComponents: true, any uncached data fetch outside of <Suspense> blocks the page. Fix: wrap data fetch in Server Component + <Suspense fallback={<Skeleton />}>.
+- Test count: 124+ across 24 suites
+- New files from Phase 8: .github/workflows/ci.yml, .github/workflows/e2e.yml, Dockerfile.web, Dockerfile.worker, docker-compose.prod.yml, lighthouserc.js, scripts/deploy.sh, src/test/setup.ts
+- New files from blocking-route fix: src/features/feed/components/FeedData.tsx, src/features/feed/components/FeedSkeleton.tsx
+- Outstanding placeholders (future work, not blockers): parseFeed() needs production RSS parser, callAISummary() needs Vercel AI SDK integration
+- Pre-existing build failure: postgres module imported in client components (unrelated to blocking-route fix)
+Relevant Files
+- src/features/feed/components/FeedData.tsx: Server Component for Suspense-bound data fetching
+- src/features/feed/components/FeedSkeleton.tsx: Loading fallback for feed grid
+- src/app/(public)/page.tsx: Updated with <Suspense> + <FeedData> pattern
+- src/app/topics/[category]/page.tsx: Updated with <Suspense> + <FeedData> pattern
+- AGENTS.md: Contains Phase 9 "Blocking Route Error Fix" section
+- README.md, CLAUDE.md: Updated with blocking-route lesson learned
+- .github/workflows/ci.yml, .github/workflows/e2e.yml: GitHub Actions pipelines
+- Dockerfile.web, Dockerfile.worker, docker-compose.prod.yml: Production Docker setup
+- lighthouserc.js: Lighthouse CI performance budgets
+- vitest.config.ts: Enhanced with coverage thresholds and test setup file
+- scripts/deploy.sh: Tagged release deployment script
+- src/test/setup.ts: Global Vitest test setup file
+

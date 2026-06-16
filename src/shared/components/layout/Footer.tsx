@@ -8,14 +8,17 @@ import { cn } from "@/shared/lib/utils";
  * - Background `bg-paper-100`
  * - AI disclosure statement in `font-mono text-[10px]`
  * - `<footer role="contentinfo">` for screen reader landmark
+ * - NOTE: `currentYear` must be passed as a prop (computed from request headers
+ *   by the parent page) to avoid `next-prerender-current-time` error in Next.js 16.
  */
 
 export interface FooterProps {
   className?: string;
+  /** Year to display in the copyright notice. Must be computed from request data by the parent. */
+  currentYear: number;
 }
 
-export function Footer({ className }: FooterProps) {
-  const currentYear = new Date().getFullYear();
+export function Footer({ className, currentYear }: FooterProps) {
 
   return (
     <footer

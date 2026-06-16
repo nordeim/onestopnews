@@ -1,4 +1,5 @@
 // import { notFound } from "next/navigation"; // TODO: Implement article not found handling
+import { headers } from "next/headers";
 import { Header } from "@/shared/components/layout/Header";
 import { Footer } from "@/shared/components/layout/Footer";
 import { Button } from "@/shared/components/ui/Button";
@@ -10,6 +11,10 @@ interface ArticlePageProps {
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { id } = await params;
+
+  // Fix A: Derive year from request headers to avoid next-prerender-current-time
+  const dateHeader = (await headers()).get("date");
+  const currentYear = dateHeader ? new Date(dateHeader).getFullYear() : 2026;
 
   // TODO: Fetch real article from database
   // For now, render placeholder
@@ -54,7 +59,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               <Button variant="primary" size="sm">
                 Request AI Summary
               </Button>
-           ]?.            </div>
+            </div>
           )}
           <div className="mt-12">
             <Link
@@ -66,7 +71,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           </div>
         </article>
       </main>
-      <Footer />
+      <Footer currentYear={currentYear} />
     </div>
   );
 }
