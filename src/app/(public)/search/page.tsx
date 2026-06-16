@@ -1,21 +1,24 @@
 /**
- * page.tsx — Search page with server-rendered initial results.
+ * page.tsx — Search_without_suspense
  *
  * PRD §6: Server-rendered search page with client-side updates.
  * MEP v5.1: Uses searchParams for query persistence.
+ *
+ * NOTE: This page is synchronous. The searchParams promise is
+ * passed into SearchData (Server Component), which waits for it
+ * inside the <Suspense> boundary, satisfying Next.js 16
+ * cacheComponents requirements.
  */
 
-import { searchArticles } from "@/features/search/queries";
-import { SearchPageClient } from "./SearchPageClient";
+import { Suspense } from "react";
+import { SearchData } from "@/features/search/components/SearchData";
+import { SearchSkeleton } from "@/features/search/components/SearchSkeleton";
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string }>;
 }
 
-export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { q = "" } = await searchParams;
-  const initialResults = q ? await searchArticles({ query: q }) : { results: [], hasMore: false, nextCursor: null };
-
+export default function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <header className="mb-8">
@@ -27,7 +30,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </p>
       </header>
 
-      <SearchPageClient initialResults={initialResults.results} initialQuery={q} />
+      <Suspense fallback={<SearchSkeleton />}>
+        <SearchData searchParams={searchParams} />
+      </Suspense>
     </main>
   );
 }

@@ -1,20 +1,17 @@
 /**
  * layout.tsx — Admin route group layout.
  *
- * PRD §6: Admin routes protected by verifyAdminSession().
- * Non-admin users are redirected to the home page.
+ * Design system: Editorial Dispatch — Ink-900 dark surface, Paper-50 UI.
+ * NOTE: This layout is kept synchronous. Auth verification is performed
+ * inside the individual page data components (wrapped in <Suspense>)
+ * to satisfy Next.js 16 cacheComponents requirements.
  */
 
-import { verifyAdminSession } from "@/lib/auth/dal";
-
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // This will redirect non-admin users
-  await verifyAdminSession();
-
   return (
     <div className="min-h-screen bg-ink-900 text-paper-50">
       <div className="flex">

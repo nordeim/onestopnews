@@ -54,8 +54,10 @@ export const summaryStatusEnum = pgEnum("summary_status", [
 // ─── Tables ───────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
-  email: text("email").notNull().unique(),
   name: text("name"),
+  email: text("email").notNull().unique(),
+  emailVerified: timestamp("email_verified"),
+  image: text("image"),
   role: userRoleEnum("role").default("reader").notNull(),
   passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

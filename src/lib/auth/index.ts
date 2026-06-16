@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { env } from "@/lib/env";
 import { db } from "@/lib/db";
+import { authDb } from "@/lib/db/auth";
 import * as schema from "@/lib/db/schema";
 
 /**
@@ -69,7 +70,11 @@ const credentialsProvider = Credentials({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(db, {
+  adapter: DrizzleAdapter(authDb, {
+    // NOTE: `as any` is required because the adapter's DefaultPostgres*Table types
+    // enforce a strict column structure that doesn't match our custom schema.
+    // Our schema has all required columns (verified manually), just with
+    // different TypeScript shapes. This is a known limitation of the adapter.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     usersTable: schema.users as any,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

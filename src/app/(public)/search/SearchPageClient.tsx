@@ -4,13 +4,14 @@
  * SearchPageClient.tsx — Client-side search interactivity.
  *
  * Wraps SearchBar and SearchResults with URL sync.
+ * NOTE: Imports search action from actions.ts (Server Action), NOT queries.ts (DB layer).
  */
 
 import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SearchBar } from "@/features/search/components/SearchBar";
 import { SearchResults } from "@/features/search/components/SearchResults";
-import { searchArticles } from "@/features/search/queries";
+import { searchArticlesAction } from "@/features/search/actions";
 import type { SearchResult } from "@/features/search/types";
 
 interface SearchPageClientProps {
@@ -39,7 +40,7 @@ export function SearchPageClient({ initialResults, initialQuery }: SearchPageCli
 
     setIsLoading(true);
     try {
-      const { results: newResults } = await searchArticles({ query });
+      const { results: newResults } = await searchArticlesAction({ query });
       setResults(newResults);
     } finally {
       setIsLoading(false);

@@ -7,6 +7,7 @@ to populate article.source.name."
  */
 
 import { desc, eq, lt, and } from "drizzle-orm";
+import { cacheLife } from "next/cache";
 import { db } from "@/lib/db";
 import { articles, sources, categories } from "@/lib/db/schema";
 import type { ArticleWithSource } from "@/domain/articles/types";
@@ -30,8 +31,12 @@ export interface FeedPage {
  *
  * REQUIRED JOIN CONTRACT:
  * This query MUST innerJoin with sources to populate article.source.name.
+ *
+ * NOTE: Uses "use cache" to prevent blocking-route errors in Next.js 16.
  */
 export async function getFeedArticles(options: FeedQueryOptions = {}): Promise<FeedPage> {
+  "use cache";
+  cacheLife("feed");
   const { category, cursor, limit = FEED_PAGE_SIZE } = options;
 
   let categoryId: string | undefined;

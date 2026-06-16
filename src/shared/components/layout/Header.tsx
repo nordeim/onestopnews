@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/shared/lib/utils";
@@ -31,13 +32,23 @@ export const CATEGORIES = [
 
 /* ─── Component Interface ─────────────────────────────────────────────── */
 export interface HeaderProps {
+  /** Explicitly set the active category. Falls back to deriving from `usePathname()`. */
   activeCategory?: string;
   className?: string;
 }
 
 /* ─── Component ───────────────────────────────────────────────────────── */
-export function Header({ activeCategory = "top-stories", className }: HeaderProps) {
+export function Header({ activeCategory: activeCategoryProp, className }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Derive activeCategory from explicit prop or current URL path
+  const activeCategory = React.useMemo(() => {
+    if (activeCategoryProp) return activeCategoryProp;
+    const parts = pathname?.split("/");
+    if (parts?.[1] === "topics" && parts[2]) return parts[2];
+    return "top-stories";
+  }, [activeCategoryProp, pathname]);
 
   return (
     <header
