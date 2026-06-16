@@ -538,9 +538,59 @@ thresholds: {
 ### Phase 8 Recommendations
 
 1. **CI Pipeline Monitoring**: Monitor CI pipeline duration. If it exceeds 10 minutes, investigate slow steps (likely `npx playwright install --with-deps`).
-2. **Docker Image Size**: Monitor Docker image size. If the web image exceeds 500MB, investigate guy otening `node_modules` pruning or multi-stage build optimization.
+2. **Docker Image Size**: Monitor Docker image size. If the web image exceeds 500MB, investigate `node_modules` pruning or multi-stage build optimization.
 3. **Lighthouse CI Budgets**: Start with conservative budgets (Perf ≥ 90, A11y ≥ 95) and tighten as the app matures. PPR helps with performance but heavy AI components can slow LCP.
 4. **Deployment Automation**: The `scripts/deploy.sh` script supports tagged releases. Consider adding Slack/Discord notifications on deployment success/failure.
+
+---
+
+## Phase 9: Blocking Route Error Fix — Lessons Learned
+
+### Next.js 16 `cacheComponents` + Uncached Data Outside `<Suspense>`
+
+**Issue**: When `cacheComponents: true` is enabled in Next.js 16, any uncached data fetch (e.g., database query via Drizzle) outside of a `<Suspense>` boundary blocks the entire page from rendering. This triggers the `blocking-route` error:
+
+> "Route '/': Uncached data or `connection()` was accessed outside of `<Suspense>`. This delays the entire page from rendering, resulting in a slow user experience."
+
+**Root Cause**: Next.js 16's opt-in caching model requires all asynchronous data fetching to be either:
+1. Wrapped in `<Suspense>` to allow streaming the fallback UI immediately
+2. Inside a Cache Component (`"use cache"`) with a `cacheLife` profile for static prerendering
+
+**Fix**: Extract data fetching into a separate Server Component and wrap it in `<Suspense>`:
+
+```tsx
+// ✅ page.tsx — NO direct await; wrap data fetch in Suspense
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
+
+export default function HomePage() {
+  return (
+    <main>
+      <Suspense fallback={<FeedSkeleton />}>
+        <FeedData limit={6} />
+      </Suspense>
+    </main>
+  );
+}
+
+// ✅ FeedData.tsx — Server Component that fetches data
+export async function FeedData({ limit }: { limit: number }) {
+  const feed = await getFeedArticles({ limit });
+  return <FeedGrid articles={feed.articles} />;
+}
+```
+
+**Anti-Pattern (DO NOT DO)**:
+```tsx
+// ❌ page.tsx — Direct await blocks the page
+export default async function HomePage() {
+  const feed = await getFeedArticles(); // BLOCKS the page!
+  return <FeedGrid articles={feed.articles} />;
+}
+```
+
+**Key Rule**: In Next.js 16 with `cacheComponents: true`, **never `await` a database query directly in a page component**. Always use the `<Suspense>` + Server Component pattern.
 
 ---
 
@@ -823,6 +873,8 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `docker-compose.prod.yml` | 8 | Production Docker Compose (web + worker + PostgreSQL 17 + Redis 7) |
 | `scripts/deploy.sh` | 8 | Tagged release deployment script with rollback support |
 | `src/test/setup.ts` | 8 | Global Vitest test setup file |
+| `src/features/feed/components/FeedData.tsx` | 9 | Server Component for Suspense-bound data fetching (blocking-route fix) |
+| `src/features/feed/components/FeedSkeleton.tsx` | 9 | Loading fallback for feed grid during data fetch |
 
 ---
 

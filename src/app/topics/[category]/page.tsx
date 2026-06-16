@@ -1,6 +1,6 @@
-// import { notFound } from "next/navigation"; // TODO: Use for non-existent categories
-import { FeedGrid } from "@/features/feed/components/FeedGrid";
-import { getFeedArticles } from "@/features/feed/queries";
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
 import { Header } from "@/shared/components/layout/Header";
 import { Footer } from "@/shared/components/layout/Footer";
 
@@ -9,15 +9,13 @@ interface CategoryPageProps {
   searchParams: Promise<{ cursor?: string }>;
 }
 
-export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: CategoryPageProps) {
   const { category } = await params;
   const { cursor: cursorString } = await searchParams;
   const cursor = cursorString ? new Date(cursorString) : undefined;
-
-  const feed = await getFeedArticles({ category, cursor, limit: 6 });
-
-  // If no articles and no cursor, category might not exist (or just empty)
-  // For now, we render the page regardless; empty state is handled by FeedGrid.
 
   return (
     <div className="min-h-screen bg-paper-50">
@@ -28,10 +26,13 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
             {category.replace(/-/g, " ")}
           </h2>
           <p className="font-ui text-ink-600 text-lg max-w-2xl">
-            Latest news and analysis from the {category.replace(/-/g, " ")} category你category.
+            Latest news and analysis from the {category.replace(/-/g, " ")} category.
           </p>
         </section>
-        <FeedGrid articles={feed.articles} />
+
+        <Suspense fallback={<FeedSkeleton />}>
+          <FeedData category={category} cursor={cursor} limit={6} />
+        </Suspense>
       </main>
       <Footer />
     </div>

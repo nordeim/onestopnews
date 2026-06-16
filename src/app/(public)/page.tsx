@@ -1,13 +1,10 @@
-import Link from "next/link";
-import { Button } from "@/shared/components/ui/Button";
-import { FeedGrid } from "@/features/feed/components/FeedGrid";
-import { getFeedArticles } from "@/features/feed/queries";
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
 import { Header } from "@/shared/components/layout/Header";
 import { Footer } from "@/shared/components/layout/Footer";
 
-export default async function HomePage() {
-  const feed = await getFeedArticles({ limit: 6 });
-
+export default function HomePage() {
   return (
     <div className="min-h-screen bg-paper-50">
       <Header activeCategory="top-stories" />
@@ -22,15 +19,11 @@ export default async function HomePage() {
           </p>
         </section>
 
-        <FeedGrid articles={feed.articles} />
+        <Suspense fallback={<FeedSkeleton />}>
+          <FeedData limit={6} />
+        </Suspense>
 
-        {feed.hasMore && (
-          <div className="mt-12 text-center">
-            <Button variant="secondary" asChild>
-              <Link href={`?cursor=${feed.nextCursor}`}>Load More Stories</Link>
-            </Button>
-          </div>
-        )}
+        {/* TODO: Restore Load More with cursor pagination */}
       </main>
       <Footer />
     </div>

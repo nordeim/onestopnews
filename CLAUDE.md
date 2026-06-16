@@ -215,6 +215,7 @@ pnpm test
 | `pg_textsearch` extension (PG 17) | Doesn't exist; `ts_rank_cd` is built-in | Use `ts_rank_cd` directly |
 | `revalidateTag` in workers | Next.js-only API, not available in Node.js | Use Redis pub/sub for cache invalidation |
 | `as any` with Drizzle `.with()` | Type inference broken for relational queries | Use explicit `.innerJoin()` instead |
+| Direct `await` of DB query in page | Blocks page render in Next.js 16 with `cacheComponents` | Wrap in `<Suspense>` with Server Component |
 
 ---
 
@@ -391,6 +392,56 @@ actionlint .github/workflows/ci.yml
 | Production Compose | `docker-compose.prod.yml` |
 | Lighthouse Config | `lighthouserc.js` |
 | Deploy Script | `scripts/deploy.sh` |
+| Feed Data (Suspense) | `src/features/feed/components/FeedData.tsx` |
+| Feed Skeleton | `src/features/feed/components/FeedSkeleton.tsx` |
+
+---
+
+## Latest Lessons Learned (Phase 9)
+
+### Next.js 16 `blocking-route` Error — `cacheComponents` + `<Suspense>`
+
+**Issue**: When `cacheComponents: true` is enabled in Next.js 16, any uncached data fetch (e.g., Drizzle query) outside of a `<Suspense>` boundary blocks the entire page from rendering, triggering the `blocking-route` error:
+
+> "Route '/': Uncached data or `connection()` was accessed outside of `<Suspense>`. This delays the entire page from rendering, resulting in a slow user experience."
+
+**Root Cause**: Next.js 16's opt-in caching model requires all asynchronous data fetching to be either:
+1. Wrapped in `<Suspense>` to allow streaming the fallback UI immediately
+2. Inside a Cache Component (`"use cache"`) with a `cacheLife` profile for static prerendering
+
+**Fix**: Extract data fetching into a separate Server Component and wrap it in `<Suspense>`:
+
+```tsx
+// ✅ page.tsx — Correct pattern
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <FeedData limit={6} />
+    </Suspense>
+  );
+}
+
+// ✅ FeedData.tsx — Server Component that fetches data
+export async function FeedData({ limit }: { limit: number }) {
+  const feed = await getFeedArticles({ limit });
+  return <FeedGrid articles={feed.articles} />;
+}
+```
+
+**Anti-Pattern (DO NOT DO)**:
+```tsx
+// ❌ page.tsx — Direct await blocks the page
+export default async function HomePage() {
+  const feed = await getFeedArticles(); // BLOCKS the page!
+  return <FeedGrid articles={feed.articles} />;
+}
+```
+
+**Key Rule**: In Next.js 16 with `cacheComponents: true`, **never `await` a database query directly in a page component**. Always use the `<Suspense>` + Server Component pattern.
 
 ---
 

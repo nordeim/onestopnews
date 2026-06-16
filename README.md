@@ -416,6 +416,33 @@ Budgets: Performance ≥ 90, Accessibility ≥ 95, Best Practices ≥ 90, SEO �
 
 ---
 
+## Known Issues & Troubleshooting
+
+### Next.js 16 `blocking-route` Error
+
+**Symptom**: Console shows: "Uncached data or `connection()` was accessed outside of `<Suspense>`. This delays the entire page from rendering."
+
+**Cause**: In Next.js 16 with `cacheComponents: true`, database queries must be wrapped in `<Suspense>` with a fallback UI. Directly awaiting data in the page component body blocks rendering.
+
+**Fix**: Extract data fetching to a separate Server Component and wrap it in `<Suspense>`:
+
+```tsx
+// page.tsx
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <FeedData limit={6} />
+    </Suspense>
+  );
+}
+```
+
+**Prevention**: Always use the `<Suspense>` + Server Component pattern for database queries in Next.js 16.
+
 ## Security & Compliance
 
 | Concern | Posture |
@@ -642,6 +669,8 @@ if (!result.success) {
 12. **Docker Image Size**: Monitor Docker image sizes. If the web image exceeds 500MB, investigate `node_modules` pruning or multi-stage build optimization.
 
 13. **Lighthouse CI Budgets**: Start with conservative budgets (Perf ≥ 90, A11y ≥ 95) and tighten as the app matures. PPR helps with performance but heavy AI components can slow LCP.
+
+14. **Blocking Route Prevention**: In Next.js 16 with `cacheComponents: true`, always wrap database queries in `<Suspense>` with a fallback UI (e.g., `FeedSkeleton`). Never `await` data fetches directly in the main page component body — this triggers the `blocking-route` error.
 
 ---
 
