@@ -34,6 +34,25 @@ please meticulously review @error.txt and validate the error against the codebas
 
 ---
 
+I started "pnpm dev" at port 3000 and saved the dynamic landing page (`http://localhost:3000/`) as @dynamic_landing_page.html . please meticulously compare the dynamic landing page with the static landing page mockup @static_HTML_mockup_for_dynamic_landing_page.html and then investigate why the dynamic page visual aesthetics is so different and minimal and contains links that are not active. you can use the system installed CLI browser commands `agent-browser` and `playwright-cli` to test the dynamic site yourself.
+
+You will compare the dynamic_landing_page.html (from the Next.js app at localhost:3000) with the static_HTML_mockup_for_dynamic_landing_page.html to identify why the dynamic version is so visually different, minimal, and has non-active/inactive links.
+You will start by using agent-browser to take a screenshot and get a snapshot of the live localhost:3000 site to see what it actually looks like, then compare with the static mockup file.
+Plan:
+- Take a screenshot of the live localhost:3000 using agent-browser.
+- Get a snapshot of the live page structure.
+- Compare with the static HTML mockup file.
+- Identify the key differences: missing sections, inactive links, styling issues, etc.
+- Report findings and plan fixes. 
+
+You will systematically compare the live dynamic landing page with the static mockup to identify the visual and functional discrepancies.
+
+---
+
+please meticulouly plan to seed the data with dummy data/content, then plan to add the missing landing page sections. please create a comprehensive remediation plan with a detailed ToDo list. review and validate the remediation against the codebase to ensure alignment before proceeding to execute it meticulously. use TDD approach to make changes.
+
+---
+
 please meticulously review @MASTER_EXECUTION_PLAN.md and then meticulously plan to create a comprehensive sub-plan for Phase 8 execution with a detailed ToDo list. then review and validate the Phase 8 sub-plan against @Project_Requirements_Document_v4.3.md , @Project_Architecture_Document_v4.5.md and @static_HTML_mockup_for_dynamic_landing_page.html to check for alignment before proceeding to execute the sub-plan meticulously. please note that database connection is via direct localhost port 5432. only the postgresql and redis servers are running in containers, the applications will run directly in the local host. 
 use TDD approach to make code changes.
 

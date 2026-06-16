@@ -39,6 +39,13 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24, // 24h minimum CDN TTL for news thumbnails
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+        pathname: "/**",
+      },
+    ],
   },
 
   // ── EXPERIMENTAL ─────────────────────────────────────────────────────────

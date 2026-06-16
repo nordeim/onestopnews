@@ -9,6 +9,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
+    "db:seed": "tsx src/lib/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "dev": "next dev --turbo",
     "format": "prettier --write .",
@@ -23,6 +24,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
     "@auth/drizzle-adapter": "^1.11.2",
+    "@radix-ui/react-accordion": "^1.2.14",
     "@radix-ui/react-dialog": "^1.1.16",
     "@radix-ui/react-slot": "^1.2.5",
     "@types/bcryptjs": "^3.0.0",
