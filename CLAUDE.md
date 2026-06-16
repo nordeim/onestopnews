@@ -245,6 +245,8 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`), 103+ tests |
 | **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API (124 tests, 24 suites) |
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
+| **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
+| **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 
 ---
 
@@ -394,10 +396,61 @@ actionlint .github/workflows/ci.yml
 | Deploy Script | `scripts/deploy.sh` |
 | Feed Data (Suspense) | `src/features/feed/components/FeedData.tsx` |
 | Feed Skeleton | `src/features/feed/components/FeedSkeleton.tsx` |
+| Landing Page | `src/app/(public)/page.tsx` |
+| News Ticker | `src/features/feed/components/NewsTicker.tsx` |
+| Masthead | `src/features/feed/components/Masthead.tsx` |
+| Lead Story | `src/features/feed/components/LeadStory.tsx` |
+| AI Nutrition Label | `src/features/feed/ai/NutritionLabel.tsx` |
+| Stats | `src/features/feed/stats/Stats.tsx` |
+| FAQ | `src/features/feed/faq/FAQ.tsx` |
+| Newsletter | `src/features/feed/newsletter/Newsletter.tsx` |
+| DB Seed | `src/lib/db/seed.ts` |
+| Global CSS | `src/app/globals.css` |
 
 ---
 
-## Latest Lessons Learned (Phase 9)
+## Latest Lessons Learned (Phase 10)
+
+### 1. Masthead Date Rendering — Server/Client Hydration Mismatch
+
+**Issue**: Rendering `new Date()` or `new Date().toLocaleDateString()` directly in a Server Component causes a hydration mismatch because the server and client have different locales/timezones.
+
+**Fix**: Use a Client Component wrapper for date/time display, or pass pre-formatted date strings from the server.
+
+**Prevention**: Always wrap time-sensitive displays in `'use client'` or pass server-calculated strings as props.
+
+### 2. Saved HTML Staleness Trap
+
+**Issue**: Saved HTML snapshots (`*.html` files captured from the browser) can become stale quickly during active development.
+
+**Fix**: When comparing static vs. dynamic pages, ALWAYS verify by checking the live server (`curl` or browser) before concluding that CSS/JS is broken.
+
+**Prevention**: Label saved snapshots with timestamps. Prefer live verification over saved snapshots during active development.
+
+### 3. next.config.ts remotePatterns for External Images
+
+**Issue**: Using external image URLs without adding them to `next.config.ts` causes Next.js Image Optimization to fail with a security error.
+
+**Fix**: Add all external image domains to `next.config.ts`:
+```typescript
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+    ],
+  },
+};
+```
+
+### 4. Test Mocking for Browser-Only APIs
+
+**Issue**: Tests using `useInView` (Intersection Observer) and `Intl.DateTimeFormat` fail in a headless environment.
+
+**Fix**: Mock these APIs in `vitest.setup.ts` or test files.
+
+**Prevention**: Check browser-only APIs before using them in testable components.
+
+## Previous Lessons Learned (Phase 9)
 
 ### Next.js 16 `blocking-route` Error — `cacheComponents` + `<Suspense>`
 

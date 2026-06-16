@@ -40,6 +40,9 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 | 📊 **BullMQ ingestion pipeline** | Scheduled RSS polling, prioritised summarisation jobs, atomic DAG flows (`ingest → score → refresh-feed-slice`). |
 | 🛡️ **Admin Interface** | Protected admin routes for source management (`/admin/sources`) and summary review (`/admin/summaries`). |
 | 🌐 **Public REST API** | `/api/articles` — unified feed + search endpoint with CORS, cursor pagination, and `Cache-Control`. |
+| 🏠 **10-Section Landing Page** | NewsTicker, Masthead, LeadStory, Feed, AI Nutrition Label, Stats, FAQ, Newsletter with "Editorial Dispatch" design system |
+| 🎨 **Design System Tokens** | Custom Tailwind classes: `cat-label`, `btn-ember`, `pulse-dot`, `number-counter`. WCAG AAA accessibility, `prefers-reduced-motion` support. |
+| 🌱 **Database Seeding** | `db:seed` script for sample articles, categories, and sources. Idempotent, safe to run multiple times. |
 
 ---
 
@@ -150,7 +153,16 @@ onestopnews-web/
 ├── 📂 app/                      ← Next.js App Router (Layer 1)
 │   ├── 📄 layout.tsx            ← Root layout: fonts, providers. No data fetching.
 │   ├── 📂 (public)/             ← Unauthenticated routes
-│   │   ├── 📄 page.tsx          ← / — Top Stories feed (PPR)
+│   │   ├── 📄 page.tsx          ← / — 10-section landing page (Phase 10)
+│   │   │   ├── NewsTicker       ← Animated breaking headlines marquee
+│   │   │   ├── Masthead         ← Edition bar, wordmark, live badge
+│   │   │   ├── LeadStory        ← 7:5 grid hero with breaking badge
+│   │   │   ├── Feed             ← Article card grid (PPR)
+│   │   │   ├── AI Nutrition     ← Transparency panel for AI summaries
+│   │   │   ├── Stats            ← Trust indicators (247, 1.2M, 450K)
+│   │   │   ├── FAQ              ← Accordion with 6 Q&A items
+│   │   │   └── Newsletter       ← Email signup CTA
+│   │   ├── 📂 topics/[category]/← /topics/:category — PPR + Cache Component
 │   │   ├── 📂 topics/[category]/← /topics/:category — PPR + Cache Component
 │   │   ├── 📂 article/[id]/     ← /article/:id — Fully dynamic (summary status)
 │   │   └── 📂 search/           ← /search — Full-text search (Phase 6)
@@ -164,7 +176,11 @@ onestopnews-web/
 │
 ├── 📂 features/                 ← Feature modules (Layer 2)
 │   ├── 📂 feed/
-│   │   ├── 📂 components/       ← Feed.tsx, ArticleCard.tsx, TopicNav.tsx
+│   │   ├── 📂 components/       ← Feed.tsx, ArticleCard.tsx, TopicNav.tsx, **NewsTicker.tsx**, **Masthead.tsx**, **LeadStory.tsx**, **Stats.tsx**, **FAQ.tsx**, **Newsletter.tsx**
+│   │   ├── 📂 ai/               ← AI NutritionLabel.tsx (transparency panel)
+│   │   ├── 📂 stats/            ← Stats.tsx (trust indicators)
+│   │   ├── 📂 faq/              ← FAQ.tsx (accordion)
+│   │   ├── 📂 newsletter/       ← Newsletter.tsx (email CTA)
 │   │   ├── 📄 queries.ts        ← Drizzle queries with explicit sources JOIN
 │   │   └── 📄 actions.ts        ← Server Actions: savePreference, setFavoriteCategory
 │   ├── 📂 summaries/
@@ -182,7 +198,8 @@ onestopnews-web/
 ├── 📂 lib/                      ← Infrastructure integrations (Layer 4)
 │   ├── 📂 db/
 │   │   ├── 📄 index.ts          ← Lazy Proxy DB client (defers connection to first query)
-│   │   └── 📄 schema.ts         ← Complete Drizzle schema: users, articles, summaries, sources, etc.
+│   │   ├── 📄 schema.ts         ← Complete Drizzle schema: users, articles, summaries, sources, etc.
+│   │   └── 📄 seed.ts           ← Database seed script (Phase 10): sample articles, categories, sources
 │   ├── 📂 queue/
 │   │   └── 📄 index.ts          ← BullMQ Queue instances (producer side)
 │   ├── 📂 ai/
@@ -233,6 +250,26 @@ The visual identity is not a skin or an afterthought — it is architectural. Ev
 
 The feed grid uses `grid-rows-subgrid` to force Headline, Excerpt, and Metadata rows to align across every card in a visual row — no fixed heights, no JavaScript measurement. Parent defines columns with `gap-x` only; each `ArticleCard` spans 3 row tracks via `row-span-3`.
 
+### Custom Utility Classes
+
+| Class | Definition | Usage |
+| :--- | :--- | :--- |
+| `.cat-label` | `@apply uppercase tracking-widest font-mono text-[10px] text-center;` | Category labels, metadata tags |
+| `.cat-label-wide` | `@apply uppercase tracking-widest font-mono text-[10px] text-center px-4 py-1.5;` | Wide category labels with padding |
+| `.btn-ember` | `@apply bg-dispatch-ember text-white transition-all duration-200;` | Primary CTA buttons |
+| `.pulse-dot` | `@apply w-1.5 h-1.5 rounded-full bg-dispatch-ember animate-pulse;` | Live indicator badges |
+| `.number-counter` | `@apply font-editorial text-6xl font-bold text-ink-900 transition-all duration-1000;` | Animated stat counters |
+
+### Custom Animation Tokens
+
+| Animation | Keyframes | Usage |
+| :--- | :--- | :--- |
+| `ticker-scroll` | `translateX(0) → translateX(-100%)` | NewsTicker marquee |
+| `pulse-dot` | `scale(1) → scale(1.2) → scale(1)` | Live status indicators |
+| `number-count` | `opacity: 0 → 1, transform: translateY(20px) → 0` | Stat counter entrance |
+
+**Accessibility**: All animations respect `prefers-reduced-motion: reduce`. Use `motion-safe:` and `motion-reduce:` Tailwind variants.
+
 ---
 
 ## Quick Start
@@ -269,9 +306,14 @@ pnpm drizzle-kit generate
 # Apply migrations
 pnpm drizzle-kit migrate
 
-# (Optional) Seed with sample categories and sources
+# Seed with sample data (articles, categories, sources)
 pnpm db:seed
+
+# Verify seed data
+pnpm db:seed --dry-run  # Show what would be inserted without writing
 ```
+
+**Note on `db:seed`**: The seed script is idempotent — safe to run multiple times. It checks for existing data before inserting. Useful for development environments.
 
 ### 4. Enable PostgreSQL extensions
 
@@ -442,6 +484,67 @@ export default function HomePage() {
 ```
 
 **Prevention**: Always use the `<Suspense>` + Server Component pattern for database queries in Next.js 16.
+
+### Masthead / Date Hydration Mismatch
+
+**Symptom**: Console error: "Text content does not match server-rendered HTML" or "Hydration failed because the initial UI does not match".
+
+**Cause**: `new Date().toLocaleDateString()` renders differently on server (Node.js locale) vs client (browser locale). Timezone differences compound the issue.
+
+**Fix**: Use a Client Component for dynamic dates:
+
+```tsx
+"use client";
+export function LiveDate() {
+  const [date, setDate] = useState("");
+  useEffect(() => {
+    setDate(new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }));
+  }, []);
+  return <span>{date}</span>;
+}
+```
+
+**Prevention**: Always wrap client-dependent rendering (`Date`, `window`, `navigator`) in `'use client'` components or pass pre-computed strings as props from Server Components.
+
+### External Image Loading Failure
+
+**Symptom**: Next.js `<Image>` component fails with "hostname is not configured under images in your next.config.ts".
+
+**Cause**: Next.js Image Optimization requires all external domains to be whitelisted in `next.config.ts` for security.
+
+**Fix**: Add external domains to `next.config.ts`:
+
+```typescript
+// next.config.ts
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
+  },
+};
+```
+
+**Prevention**: Whenever adding external image URLs to components, immediately update `next.config.ts`.
+
+### Saved HTML Snapshots Becoming Stale
+
+**Symptom**: Comparing a saved `dynamic_landing_page.html` with the current live site shows major differences (missing sections, old CSS, wrong structure).
+
+**Cause**: Static HTML snapshots are captured at a point in time. During active development, components, layouts, and styles change continuously.
+
+**Fix**: Always verify against the live server:
+
+```bash
+# Capture current state
+curl http://localhost:3000 > current_page.html
+
+# Compare
+diff current_page.html saved_page.html
+```
+
+**Prevention**: Label saved snapshots with timestamps. Use live `curl` or browser verification during active development. Do not rely on saved HTML for regression testing.
 
 ## Security & Compliance
 
@@ -758,6 +861,106 @@ Key ADRs are documented in the [Project Architecture Document (PAD) v4.5](./docs
 | ADR-007 | Turbopack as default bundler | 5–10× faster HMR. Fully compatible with all dependencies. |
 
 ---
+
+---
+
+## Phase 10: Landing Page & Design System — Lessons Learned
+
+#### 1. Masthead Date Rendering — Server/Client Hydration Mismatch
+
+**Issue**: Rendering `new Date()` or `new Date().toLocaleDateString()` directly in a Server Component causes a hydration mismatch because the server and client have different locales/timezones.
+
+**Fix**: Use a Client Component wrapper for date/time display, or pass pre-formatted date strings from the server:
+
+```tsx
+"use client";
+export function LiveDate() {
+  const [date, setDate] = useState("");
+  useEffect(() => {
+    setDate(new Date().toLocaleDateString("en-GB",犯罪行为", "month": "long", "year": "numeric" }));
+  }, []);
+  return <span>{date}</span>;
+}
+```
+
+**Prevention**: Always wrap time-sensitive displays in `'use client'` or pass server-calculated strings as props.
+
+#### 2. Saved HTML Staleness Trap
+
+**Issue**: Saved HTML snapshots (`*.html` files captured from the browser) can become stale quickly during active development. The saved `dynamic_landing_page.html` reflected the old page state (3 sections only), creating the false impression that CSS/JS was broken.
+
+**Fix**: When comparing static vs. dynamic pages, ALWAYS verify by checking the live server (`curl` or browser) before concluding that CSS/JS is broken:
+
+```bash
+curl http://localhost:3000 > current_page.html
+diff current_page.html saved_page.html
+```
+
+**Prevention**: Label saved snapshots with timestamps. Prefer live verification over saved snapshots during active development.
+
+#### 3. next.config.ts remotePatterns for External Images
+
+**Issue**: Using external image URLs (e.g., `picsum.photos`, `images.unsplash.com`) without adding them to `next.config.ts` causes Next.js Image Optimization to fail with a security error.
+
+**Fix**: Add all external image domains to `next.config.ts`:
+
+```typescript
+// next.config.ts
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
+  },
+};
+```
+
+**Prevention**: When adding external images, immediately update `remotePatterns`.
+
+#### 4. Test Mocking for Browser-Only APIs
+
+**Issue**: Tests using Intersection Observer (`useInView` from `framer-motion`) and date formatting fail in a headless environment because `IntersectionObserver` and `Intl.DateTimeFormat` are not available.
+
+**Fix**: Mock these APIs in `vitest.setup.ts` or test files:
+
+```typescript
+// vitest.setup.ts
+global.IntersectionObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof IntersectionObserver;
+
+global.Intl.DateTimeFormat = class {
+  format() { return "10 June 2026"; }
+} as unknown as typeof Intl.DateTimeFormat;
+```
+
+**Prevention**: Check browser-only APIs before using them in testable components.
+
+#### 5. Suspense + Server Components for Dynamic Pages
+
+**Issue**: In Next.js 16 with `cacheComponents: true`, awaiting a database query directly in a page component blocks the entire page render. This triggers the `blocking-route` warning.
+
+**Fix**: Extract data fetching into a separate Server Component and wrap it in `<Suspense>`:
+
+```tsx
+// ✅ page.tsx — wrap async component in Suspense
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <FeedData limit={6} />
+    </Suspense>
+  );
+}
+```
+
+**Prevention**: Never `await` a database query directly in a page component. Always use the `<Suspense>` + Server Component pattern.
 
 ## License
 

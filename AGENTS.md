@@ -400,6 +400,10 @@ Must pass before any PR is merged. No exceptions.
 | Missing `noUncheckedIndexedAccess` | `arr[i]` returns `T` instead of `T \| undefined`, hiding runtime errors. | Enable in `tsconfig.json`. |
 | Mismatched `@auth/core` versions | `DrizzleAdapter` fails at build time with type errors. | Run `pnpm why @auth/core`. Upgrade `next-auth` to align. |
 | Beta adapter `as any` without eslint-disable | Triggers `--max-warnings 0` lint failures. | Add `eslint-disable-next-line @typescript-eslint/no-explicit-any` with justification. |
+| Saved HTML snapshots as reference | Stale HTML saved during development misleads about current state. | Always curl the live server for current state. | |
+| Server-rendered `new Date()` | Causes hydration mismatch between server and client. | Use `'use client'` or pass pre-formatted date strings. | |
+| External images without `remotePatterns` | Next.js Image Optimization fails with security error. | Add all external image domains to `next.config.ts`. | |
+| Browser-only APIs in tests | `useInView`, `Intl.DateTimeFormat` fail in headless environment. | Mock in `vitest.setup.ts` or test files. | |
 
 ---
 
@@ -875,6 +879,164 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `src/test/setup.ts` | 8 | Global Vitest test setup file |
 | `src/features/feed/components/FeedData.tsx` | 9 | Server Component for Suspense-bound data fetching (blocking-route fix) |
 | `src/features/feed/components/FeedSkeleton.tsx` | 9 | Loading fallback for feed grid during data fetch |
+| `src/app/(public)/page.tsx` | 10 | Landing page with 10 integrated sections (root) |
+| `src/features/feed/components/NewsTicker.tsx` | 10 | Animated marquee for breaking headlines |
+| `src/features/feed/components/Masthead.tsx` | 10 | Edition bar, wordmark, live badge (Client Component for date) |
+| `src/features/feed/components/LeadStory.tsx` | 10 | 7:5 grid hero with breaking badge |
+| `src/features/feed/ai/NutritionLabel.tsx` | 10 | AI provenance transparency panel |
+| `src/features/feed/stats/Stats.tsx` | 10 | Trust indicators grid (247, 1.2M, 450K) |
+| `src/features/feed/faq/FAQ.tsx` | 10 | Accordion with 6 Q&A items |
+| `src/features/feed/newsletter/Newsletter.tsx` | 10 | Email signup CTA with trust badges |
+| `src/lib/db/seed.ts` | 10 | Database seed script with sample articles, categories, sources |
+| `src/app/globals.css` | 10 | Custom design system classes (cat-label, btn-ember, animations) |
+| `next.config.ts` | 10 | Updated with `remotePatterns` for external images (picsum.photos) |
+
+---
+
+---
+
+## Phase 10: Landing Page & Design System -- Lessons Learned
+
+### Phase 10 Gotchas Discovered
+
+#### 1. Masthead Date Rendering -- Server/Client Hydration Mismatch
+
+**Issue**: Rendering `new Date()` or `new Date().toLocaleDateString()` directly in a Server Component causes a hydration mismatch because the server and client have different locales/timezones.
+
+**Fix**: Use a Client Component wrapper for date/time display, or pass pre-formatted date strings from the server:
+
+```tsx
+// ✅ Client Component for dynamic dates
+"use client";
+export function LiveDate() {
+  const [date, setDate] = useState("");
+  useEffect(() => {
+    setDate(new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }));
+  }, []);
+  return <span>{date}</span>;
+}
+```
+
+**Prevention**: Always wrap time-sensitive displays in `'use client'` or pass server-calculated strings as props.
+
+#### 2. Saved HTML Staleness Trap
+
+**Issue**: Saved HTML snapshots (`*.html` files captured from the browser) can become stale quickly during active development. The saved `dynamic_landing_page.html` reflected the old page state (3 sections only), creating the false impression that CSS/JS was broken.
+
+**Fix**: When comparing static vs. dynamic pages, ALWAYS verify by checking the live server (`curl` or browser) before concluding that CSS/JS is broken:
+```bash
+curl http://localhost:3000 > current_page.html
+diff current_page.html saved_page.html
+```
+
+**Prevention**: Label saved snapshots with timestamps. Prefer live verification over saved snapshots during active development.
+
+#### 3. next.config.ts remotePatterns for External Images
+
+**Issue**: Using external image URLs (e.g., `picsum.photos`, `images.unsplash.com`) without adding them to `next.config.ts` causes Next.js Image Optimization to fail with a security error.
+
+**Fix**: Add all external image domains to `next.config.ts`:
+```typescript
+// next.config.ts
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      // Add more as needed
+    ],
+  },
+};
+```
+
+**Prevention**: When adding external images, immediately update `remotePatterns.`
+
+#### 4. Test Mocking for `useInView` and Dates
+
+**Issue**: Tests using Intersection Observer (`useInView` from `framer-motion`) and date formatting fail in a headless environment because `IntersectionObserver` and `Intl.DateTimeFormat` are not available.
+
+**Fix**: Mock these APIs in `vitest.setup.ts` or test files:
+```typescript
+// vitest.setup.ts
+global.IntersectionObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof IntersectionObserver;
+
+global.Intl.DateTimeFormat = class {
+  format() { return "10 June 2026"; }
+} as unknown as typeof Intl.DateTimeFormat;
+```
+
+**Prevention**: Check browser-only APIs before using them in testable components.
+
+#### 5. Suspense + Server Components for Dynamic Pages
+
+**Issue**: In Next.js 16 with `cacheComponents: true`, awaiting a database query directly in a page component blocks the entire page render. This triggers the `blocking-route` warning.
+
+**Fix**: Extract data fetching into a separate Server Component and wrap it in `<Suspense>`:
+
+```tsx
+// ✅ page.tsx -- wrap async component in Suspense
+import { Suspense } from "react";
+import { FeedData } from "@/features/feed/components/FeedData";
+import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<FeedSkeleton />}>
+      <FeedData limit={6} />
+    </Suspense>
+  );
+}
+```
+
+**Prevention**: Never `await` a database query directly in a page component. Always use the `<Suspense>` + Server Component pattern.
+
+#### 6. Component Composition Order Matters
+
+**Issue**: The order of components in `page.tsx` affects the visual hierarchy and the DOM structure. The correct order for the landing page is critical for CSS cascade and accessibility.
+
+**Fix**: Follow this exact order in the page component:
+```tsx
+<main>
+  <NewsTicker />      {/* Top-level announcement */}
+  <Masthead />        {/* Brand identity */}
+  <Header />          {/* Navigation */}
+  <LeadStory />       {/* Hero content */}
+  <Feed />            {/* Main content */}
+  <AI_NutritionLabel />{/* Transparency panel */}
+  <Stats />           {/* Trust indicators */}
+  <FAQ />             {/* Questions */}
+  <Newsletter />      {/* CTA */}
+  <Footer />          {/* Bottom */}
+</main>
+```
+
+**Prevention**: Maintain a clear separation between layout and content. Ensure component order matches the visual hierarchy.
+
+#### 7. Design Token Naming Conventions
+
+**Issue**: Custom Tailwind classes (e.g., `cat-label`, `btn-ember`) require explicit definition in `globals.css` and can clash with existing utility classes if not properly scoped.
+
+**Fix**: Define custom classes with clear prefixing and use `@layer components`:
+```css
+@layer components {
+  .cat-label { @apply uppercase tracking-widest font-mono text-[10px] text-center; }
+  .btn-ember { @apply bg-dispatch-ember text-white transition-all duration-200; }
+}
+```
+
+**Prevention**: Prefix all custom classes with a project-specific identifier (e.g., `osn-`). Verify no existing Tailwind utility conflicts with the new class names.
+
+### Phase 10 Recommendations
+
+1. **Subgrid Implementation**: The current feed uses a standard grid. Refactoring to `grid-rows-subgrid` for `ArticleCard` will align headlines, excerpts, and metadata across rows without fixed heights. Test in Firefox first (subgrid support is best there).
+2. **Scroll Progress Bar**: Add a 2px `dispatch-ember` progress bar at the top of the page that fills as the user scrolls. This adds polish and is a low-effort UX win.
+3. **Image Optimization**: Convert `LeadStory` and article card images to use the `<Image>` component with proper `sizes` and `priority` attributes for better LCP.
+4. **Database Seeding**: The `db:seed` script is working. Document the seed data structure and ensure it's idempotent (safe to run multiple times).
+5. **Animation Audit**: All animations should respect `prefers-reduced-motion`. Wrap motion components in a custom hook or utility.
 
 ---
 
@@ -890,6 +1052,8 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search (`ts_rank_cd` BM25), admin routes, source CRUD, summary review, `/api/articles` (103+ tests) |
 | **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | Worker entry point, 4 BullMQ workers, scheduler, content guard, AES-256-GCM encryption, DST-safe quiet hours, push subscribe API, cache invalidation (124 tests, 24 suites) |
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
+| **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
+| **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 
 ---
 
