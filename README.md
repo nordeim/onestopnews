@@ -57,6 +57,7 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 | **Language** | TypeScript | 5.x (Strict) | Zero `any`. Type inference preferred. |
 | **Styling** | Tailwind CSS | v4 | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment. |
 | **PostCSS** | `@tailwindcss/postcss` | 4.3.1 | Mandatory PostCSS plugin for Tailwind v4 utility class generation. |
+| **PostCSS** | `@tailwindcss/postcss` | 4.3.1 | Mandatory PostCSS plugin for Tailwind v4 utility class generation. |
 | **Components** | Shadcn UI + Radix | Latest | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds. |
 | **ORM** | Drizzle ORM | Latest | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
 | **Validation** | Zod | 3.x | Schema-first, composable. Enforces AI output constraints. |
@@ -611,6 +612,59 @@ diff current_page.html saved_page.html
 
 **Prevention**: Label saved snapshots with timestamps. Use live `curl` or browser verification during active development. Do not rely on saved HTML for regression testing.
 
+### Tailwind v4 Utility Classes Not Generating (Zero Utilities)
+
+**Symptom**: Build succeeds but no Tailwind utility classes appear in the compiled CSS. Custom tokens (`bg-ink-900`, `text-paper-50`, `bg-dispatch-ember`) resolve to `undefined` or fallback values. Compiled CSS is ~16KB instead of hundreds of KB. The `@theme` custom properties render but no class selectors are generated.
+
+**Cause**: Tailwind CSS v4 requires `@tailwindcss/postcss` as a PostCSS plugin to generate utility classes from template class usage. Without `postcss.config.mjs`, the `@import "tailwindcss"` directive is treated as a plain CSS import — the `@theme` block renders as custom properties but the class-scanning engine never runs.
+
+**Fix**:
+
+```bash
+# 1. Install the PostCSS plugin
+pnpm add -D @tailwindcss/postcss@4.3.1
+
+# 2. Create PostCSS config
+echo 'export default { plugins: { "@tailwindcss/postcss": {} } }' > postcss.config.mjs
+
+# 3. Clear stale Next.js cache (critical — old cache masks the fix)
+rm -rf .next/
+
+# 4. Restart dev server
+pnpm dev
+```
+
+**Prevention**: If utility classes are missing after a Tailwind v4 setup or upgrade, check for `postcss.config.*` first. The absence of this file produces **no build error** — it silently kills all utility class generation. After any PostCSS/Tailwind/Next.js config change, always clear `.next/`.
+
+### Commit Mono Font Not Loading
+
+**Symptom**: The `font-mono` CSS variable resolves to the fallback stack (Fira Code, monospace) instead of Commit Mono. Network tab shows no request for the Commit Mono woff2 file.
+
+**Cause**: Commit Mono is a fontsmith typeface not available on Google Fonts. `next/font/google` cannot load it.
+
+**Fix**: Use `next/font/local` with a woff2 file:
+
+```tsx
+import localFont from "next/font/local";
+
+const commitMono = localFont({
+  src: "../../public/fonts/commit-mono-400.woff2",
+  variable: "--font-mono",
+  weight: "400",
+  style: "normal",
+  display: "swap",
+});
+```
+
+Extract the woff2 from `@fontsource/commit-mono`:
+
+```bash
+pnpm add -D @fontsource/commit-mono@5.2.5
+cp node_modules/@fontsource/commit-mono/files/commit-mono-400-normal.woff2 public/fonts/commit-mono-400.woff2
+```
+
+**Prevention**: For fonts not on Google Fonts, use `next/font/local` with woff2 files. Never add `@font-face` declarations manually in `globals.css` — `next/font` handles font optimization, preloading, and layout-shift prevention.
+
 ## Security & Compliance
 
 | Concern | Posture |
@@ -878,6 +932,10 @@ if (!result.success) {
 | **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`), 103+ tests |
 | **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API (124 tests, 24 suites) |
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
+| **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
+| **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page, design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
+| **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, `.reveal` scroll animations, `next-prerender-current-time` fix, `ArticleCard` client conversion |
+| **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | `@tailwindcss/postcss` + `postcss.config.mjs`, Commit Mono via `next/font/local`, `.font-editorial` enhancement, `.next` cache clear |
 
 ---
 

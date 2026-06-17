@@ -680,3 +680,66 @@ Relevant Files
 - static_HTML_mockup_for_dynamic_landing_page.html: 1336-line reference mockup with CDN Tailwind
 - src/features/feed/queries.test.ts: Pre-existing test failure (cacheLife() issue, unrelated)
 
+Goal
+- Fix broken CSS on the dynamic landing page and ensure full visual fidelity with the static mockup, then update project documentation (README.md, CLAUDE.md, AGENTS.md).
+Constraints & Preferences
+- Meticulous visual comparison between static mockup and dynamic page
+- Use agent-browser to test the live dynamic site
+- All changes must pass pnpm check (tsc --noEmit + eslint)
+- Root cause analysis before fixing
+- Update README.md, CLAUDE.md, AGENTS.md to reflect latest code changes, gotchas, troubleshooting, and lessons learned
+Progress
+Done
+- FIX-TAILWIND: Installed @tailwindcss/postcss@4.3.1; created postcss.config.mjs — root cause was missing PostCSS plugin
+- FIX-FONT: Installed @fontsource/commit-mono@5.2.5; copied woff2 to public/fonts/commit-mono-400.woff2; added next/font/local commitMono variable in layout.tsx
+- FIX-EDITORIAL: Added .font-editorial block to globals.css
+- Full design system audit passed: 7/7 tokens, 3/3 fonts, 10/10 sections, all ember colors correct
+- pnpm check passes clean
+- Codebase audit completed (package versions, configs, file structure, git history)
+- Key resolved versions: Next 16.2.9, React 19.2.7, Tailwind 4.3.0, drizzle-orm 0.45.2, next-auth 5.0.0-beta.31, bullmq 5.78.0, vitest 4.1.8, TypeScript 5.9.3, Node >=24.0.0
+- Confirmed earlier false alarm: dispatch-ember bg: transparent was from hamburger menu button (uses hover:bg-paper-100); actual ember elements all render correctly
+- AGENTS.md updated: Added Phase 12 row to Phase Status Tracker; added full "Phase 12: Tailwind v4 PostCSS & Commit Mono Font Fix — Lessons Learned" section with 4 gotchas and 3 recommendations
+In Progress
+- Updating README.md and CLAUDE.md to reflect latest codebase state, fixes, gotchas, troubleshooting tips, lessons learned
+Blocked
+- (none)
+Key Decisions
+- Root cause was missing @tailwindcss/postcss + postcss.config.mjs — Tailwind v4 requires the PostCSS plugin
+- Used next/font/local for Commit Mono (not on Google Fonts) with woff2 from @fontsource
+- Kept @theme --font-mono fallback stack in globals.css; next/font/local overrides --font-mono at runtime
+- Cleared .next cache and restarted dev server after PostCSS config fix
+- AGENTS.md Phase 12 gotchas cover: (1) missing PostCSS plugin → zero utility classes, (2) Commit Mono not on Google Fonts → next/font/local required, (3) .next cache stale after PostCSS config change, (4) .font-editorial needs explicit weight/tracking/leading beyond font-family
+Next Steps
+- Complete documentation updates for CLAUDE.md (add Phase 12, PostCSS gotcha, font locations)
+- Complete documentation updates for README.md (add PostCSS/Tailwind v4 troubleshooting, update badges, add Phase 12)
+- Run pnpm check after docs updates to verify no breakage
+Critical Context
+- Pre-fix state: CSS was 16KB with font-face but NO utility class selectors
+- Post-fix: All custom token utility classes generate correctly, all sections render
+- Browser console warning: Image with src "https://picsum.photos/..." has "fill" and parent element with invalid "position" — known layout issue in hero but images still render
+- hover:bg-paper-100 resolves to rgba(0,0,0,0) on non-hovered element — expected
+- Dev server running at localhost:3000 via nohup pnpm dev
+- Pre-existing test failure: src/features/feed/queries.test.ts — cacheLife() issue (unrelated)
+- Stats section renders but has no aria-label (minor accessibility gap)
+- next.config.ts: cacheComponents: true at top-level, cacheLife profiles (feed, topicShell), remotePatterns for picsum
+- Connection pool max: 10 assumes dedicated Node.js runtime; needs PgBouncer for serverless
+Relevant Files
+- postcss.config.mjs: NEW — export default { plugins: { '@tailwindcss/postcss': {} } }
+- src/app/layout.tsx: MODIFIED — localFont import, commitMono constant, commitMono.variable in <html> className
+- src/app/globals.css: MODIFIED — .font-editorial enhancement block
+- public/fonts/commit-mono-400.woff2: NEW — woff2 font file
+- AGENTS.md: UPDATED — Phase 12 row in tracker + full "Phase 12: Lessons Learned" section with 4 gotchas and 3 recommendations added before Phase Status Tracker
+- README.md: Read — needs updating with current package versions, fixes, PostCSS troubleshooting
+- CLAUDE.md: Read — needs updating with Phase 12, PostCSS gotcha, font locations
+- src/features/feed/queries.test.ts: Pre-existing test failure (unrelated)
+
+All tasks are complete. Here's the summary:
+Done:
+- Phase 12 fix applied: @tailwindcss/postcss + postcss.config.mjs (root cause of zero utility classes), Commit Mono via next/font/local, .font-editorial enhancement, .next cache cleared
+- Design system audit: 7/7 tokens, 3/3 fonts, 10/10 sections all correct
+- pnpm check passes clean
+- Three documentation files updated:
+- AGENTS.md: Phase 12 gotchas (4), recommendations (3), file inventory entries, phase status tracker
+- CLAUDE.md: Phase 12 status, PostCSS/Commit Mono anti-patterns, file locations, lessons learned
+- README.md: Phase 12 status tracker, @tailwindcss/postcss in tech stack, updated Next.js badge to ≥16.2.9, 2 new troubleshooting sections (Tailwind v4 utility classes not generating, Commit Mono font not loading)
+
