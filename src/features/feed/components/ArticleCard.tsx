@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { formatTimeAgo } from "@/shared/lib/utils";
 import type { ArticleWithSource } from "@/domain/articles/types";

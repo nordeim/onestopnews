@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader, Instrument_Sans } from "next/font/google";
+import { RevealProvider } from "@/shared/components/providers/RevealProvider";
 import "./globals.css";
 
 const newsreader = Newsreader({
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${newsreader.variable} ${instrumentSans.variable}`} suppressHydrationWarning>
       <body className="bg-paper-50 text-ink-600 font-ui antialiased">
-        {children}
+        <RevealProvider>
+          {children}
+        </RevealProvider>
       </body>
     </html>
   );

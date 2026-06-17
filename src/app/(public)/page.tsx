@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { FeedData } from "@/features/feed/components/FeedData";
 import { FeedSkeleton } from "@/features/feed/components/FeedSkeleton";
 import { Header } from "@/shared/components/layout/Header";
+import { Footer } from "@/shared/components/layout/Footer";
 import { Masthead } from "@/shared/components/layout/Masthead";
 import { NewsTicker } from "@/shared/components/layout/NewsTicker";
 import { StatsSection } from "@/shared/components/ui/StatsSection";
@@ -62,6 +63,11 @@ export default function HomePage() {
 
       {/* 9. Newsletter CTA */}
       <NewsletterCTA />
+
+      {/* 10. Footer */}
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }

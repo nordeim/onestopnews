@@ -53,6 +53,14 @@ please meticulouly plan to seed the data with dummy data/content, then plan to a
 
 ---
 
+I started "pnpm dev" at port 3000 and saved the dynamic landing page (`http://localhost:3000/`) as @dynamic_landing_page.html . please meticulously compare the dynamic landing page with the static landing page mockup @static_HTML_mockup_for_dynamic_landing_page.html and then investigate why the dynamic page visual aesthetics is so different, ugly and minimal and header and footer messed up. it appears that the CSS and Javascript is not working on the dynamic landing page. you can use the system installed CLI browser commands `agent-browser` and `playwright-cli` to test the dynamic site yourself. 
+
+---
+
+please meticulously review the new build @error.txt and validate the error against the codebase to identify the root cause and the optimal fix. then meticulously plan to create a comprehensive remediation plan with a detailed ToDo list to apply the optimal fix. review and validat the remediation plan against the codebase to ensure alignment before proceeding to execute it meticulously. remember to use TDD approach to make code changes.
+
+---
+
 please meticulously review @MASTER_EXECUTION_PLAN.md and then meticulously plan to create a comprehensive sub-plan for Phase 8 execution with a detailed ToDo list. then review and validate the Phase 8 sub-plan against @Project_Requirements_Document_v4.3.md , @Project_Architecture_Document_v4.5.md and @static_HTML_mockup_for_dynamic_landing_page.html to check for alignment before proceeding to execute the sub-plan meticulously. please note that database connection is via direct localhost port 5432. only the postgresql and redis servers are running in containers, the applications will run directly in the local host. 
 use TDD approach to make code changes.
 

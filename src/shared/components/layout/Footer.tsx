@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { cn } from "@/shared/lib/utils";
 
@@ -8,17 +10,19 @@ import { cn } from "@/shared/lib/utils";
  * - Background `bg-paper-100`
  * - AI disclosure statement in `font-mono text-[10px]`
  * - `<footer role="contentinfo">` for screen reader landmark
- * - NOTE: `currentYear` must be passed as a prop (computed from request headers
- *   by the parent page) to avoid `next-prerender-current-time` error in Next.js 16.
+ *
+ * NOTE: This is a Client Component because it accesses `new Date()`
+ * to display the current year in the copyright notice. Next.js 16
+ * forbids `new Date()` in Server Components during prerendering.
+ * See: https://nextjs.org/docs/messages/next-prerender-current-time
  */
 
 export interface FooterProps {
   className?: string;
-  /** Year to display in the copyright notice. Must be computed from request data by the parent. */
-  currentYear: number;
 }
 
-export function Footer({ className, currentYear }: FooterProps) {
+export function Footer({ className }: FooterProps) {
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer

@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function LeadStory() {
   return (
-    <section className="reveal" aria-label="Lead story">
+    <section aria-label="Lead story">
       {/* Category label */}
       <div className="flex items-center gap-3 mb-5">
         <span className="w-2.5 h-2.5 rounded-full bg-dispatch-slate" aria-hidden="true" />

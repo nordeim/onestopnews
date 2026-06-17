@@ -6,7 +6,6 @@
  * errors in Next.js 16 with cacheComponents enabled.
  */
 
-import { headers } from "next/headers";
 import { Footer } from "@/shared/components/layout/Footer";
 import { Button } from "@/shared/components/ui/Button";
 import Link from "next/link";
@@ -17,10 +16,6 @@ interface ArticleDataProps {
 
 export async function ArticleData({ params }: ArticleDataProps) {
   const { id } = await params;
-
-  // Fix: Derive year from request headers to avoid next-prerender-current-time
-  const dateHeader = (await headers()).get("date");
-  const currentYear = dateHeader ? new Date(dateHeader).getFullYear() : 2026;
 
   // TODO: Fetch real article from database
   // For now, render placeholder
@@ -76,7 +71,7 @@ export async function ArticleData({ params }: ArticleDataProps) {
           </div>
         </article>
       </main>
-      <Footer currentYear={currentYear} />
+      <Footer />
     </>
   );
 }

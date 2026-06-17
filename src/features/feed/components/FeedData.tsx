@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { FeedGrid } from "./FeedGrid";
 import { getFeedArticles } from "@/features/feed/queries";
 import { Footer } from "@/shared/components/layout/Footer";
@@ -18,9 +17,9 @@ interface FeedDataProps {
  * It is wrapped in <Suspense> by the parent to prevent blocking
  * the page render in Next.js 16 with cacheComponents enabled.
  */
-export async function FeedData({ 
-  category: propCategory, 
-  cursor: propCursor, 
+export async function FeedData({
+  category: propCategory,
+  cursor: propCursor,
   limit = 6,
   params,
   searchParams,
@@ -41,17 +40,12 @@ export async function FeedData({
     }
   }
 
-  // Fix for next-prerender-current-time: compute year from request headers
-  // inside the Suspense boundary rather than at the page level.
-  const dateHeader = (await headers()).get("date");
-  const currentYear = dateHeader ? new Date(dateHeader).getFullYear() : 2026;
-
   const feed = await getFeedArticles({ category, cursor, limit });
 
   return (
     <>
       <FeedGrid articles={feed.articles} />
-      <Footer currentYear={currentYear} />
+      <Footer />
     </>
   );
 }
