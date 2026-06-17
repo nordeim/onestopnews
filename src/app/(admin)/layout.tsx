@@ -17,7 +17,7 @@ export default function AdminLayout({
       <div className="flex">
         {/* Sidebar */}
         <nav className="w-64 min-h-screen bg-ink-900 border-r border-ink-700 p-6">
-          <h2 className="font-editorial text-lg font-[800] text-paper-50 mb-8">
+          <h2 className="font-editorial text-lg text-paper-50 mb-8">
             OneStopNews
           </h2>
           <ul className="space-y-2">

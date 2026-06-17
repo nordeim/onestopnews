@@ -34,7 +34,7 @@ export async function ArticleData({ params }: ArticleDataProps) {
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <article className="max-w-3xl mx-auto">
           <header className="mb-8">
-            <h1 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 mb-4">
+            <h1 className="font-editorial text-3xl sm:text-4xl text-ink-900 mb-4">
               {article.title}
             </h1>
             <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-ink-600">

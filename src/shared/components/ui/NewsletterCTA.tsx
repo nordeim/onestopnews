@@ -23,7 +23,7 @@ export function NewsletterCTA() {
     <section className="py-16 lg:py-24 bg-ink-900 text-paper-100">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-paper-50 leading-[1.05] tracking-[-0.02em] mb-4">
+          <h2 className="font-editorial text-3xl sm:text-4xl text-paper-50 leading-[1.05] mb-4">
             Get Your Daily Briefing
           </h2>
           <p className="text-paper-200/80 mb-8 leading-relaxed">

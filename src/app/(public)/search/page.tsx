@@ -22,7 +22,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <header className="mb-8">
-        <h1 className="font-editorial text-3xl font-[800] tracking-[-0.02em] text-ink-900">
+        <h1 className="font-editorial text-3xl text-ink-900">
           Search News
         </h1>
         <p className="mt-2 font-ui text-sm text-ink-600">

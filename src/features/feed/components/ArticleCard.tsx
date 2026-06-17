@@ -25,7 +25,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
   return (
     <article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6 transition-colors duration-300 hover:bg-paper-100/50">
       {/* ROW 1: Headline */}
-      <h3 className="font-editorial text-xl leading-tight text-ink-900 font-[800] tracking-[-0.02em] group-hover:text-dispatch-ember transition-colors duration-300">
+      <h3 className="font-editorial text-xl leading-tight text-ink-900 group-hover:text-dispatch-ember transition-colors duration-300">
         <Link
           href={`/article/${article.id}`}
           className="after:absolute after:inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 rounded-sm"

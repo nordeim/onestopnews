@@ -34,7 +34,7 @@ export function Footer({ className }: FooterProps) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <span className="font-editorial text-xl font-[800] text-ink-900 tracking-tight mb-4 block">
+            <span className="font-editorial text-xl text-ink-900 tracking-tight mb-4 block">
               OneStopNews
             </span>
             <p className="font-ui text-sm text-ink-600 leading-relaxed mb-4">

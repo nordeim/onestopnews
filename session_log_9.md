@@ -1575,3 +1575,239 @@ P3	Baked font-weight: 800, line-height: 1.1, letter-spacing: -0.02em into .font-
 P2	Added caveat header to Phase_9.md marking it as a session log with known misalignments
 pnpm check passes clean. Zero remaining font-[800] + font-editorial redundancies in source code.
 
+diff --git a/src/app/(admin)/layout.tsx b/src/app/(admin)/layout.tsx
+index a838a08..c319a93 100644
+--- a/src/app/(admin)/layout.tsx
++++ b/src/app/(admin)/layout.tsx
+@@ -17,7 +17,7 @@ export default function AdminLayout({
+       <div className="flex">
+         {/* Sidebar */}
+         <nav className="w-64 min-h-screen bg-ink-900 border-r border-ink-700 p-6">
+-          <h2 className="font-editorial text-lg font-[800] text-paper-50 mb-8">
++          <h2 className="font-editorial text-lg text-paper-50 mb-8">
+             OneStopNews
+           </h2>
+           <ul className="space-y-2">
+diff --git a/src/app/(admin)/sources/page.tsx b/src/app/(admin)/sources/page.tsx
+index 4554107..55d0a65 100644
+--- a/src/app/(admin)/sources/page.tsx
++++ b/src/app/(admin)/sources/page.tsx
+@@ -16,7 +16,7 @@ export default function SourcesPage() {
+   return (
+     <div>
+       <header className="mb-8">
+-        <h1 className="font-editorial text-3xl font-[800] text-paper-50">
++        <h1 className="font-editorial text-3xl text-paper-50">
+           Sources
+         </h1>
+         <p className="mt-2 font-ui text-sm text-paper-300">
+diff --git a/src/app/(admin)/summaries/page.tsx b/src/app/(admin)/summaries/page.tsx
+index 2da0b42..2867fc4 100644
+--- a/src/app/(admin)/summaries/page.tsx
++++ b/src/app/(admin)/summaries/page.tsx
+@@ -17,7 +17,7 @@ export default function SummariesPage() {
+   return (
+     <div>
+       <header className="mb-8">
+-        <h1 className="font-editorial text-3xl font-[800] text-paper-50">
++        <h1 className="font-editorial text-3xl text-paper-50">
+           Summary Review
+         </h1>
+         <p className="mt-2 font-ui text-sm text-paper-300">
+diff --git a/src/app/(public)/page.tsx b/src/app/(public)/page.tsx
+index d1b36a8..1d820c2 100644
+--- a/src/app/(public)/page.tsx
++++ b/src/app/(public)/page.tsx
+@@ -36,7 +36,7 @@ export default function HomePage() {
+       {/* 5. Feed Section */}
+       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+         <section className="mb-12">
+-          <h2 className="font-editorial text-4xl font-[800] text-ink-900 mb-4">
++          <h2 className="font-editorial text-4xl text-ink-900 mb-4">
+             Top Stories
+           </h2>
+           <p className="font-ui text-ink-600 text-lg max-w-2xl">
+diff --git a/src/app/(public)/search/page.tsx b/src/app/(public)/search/page.tsx
+index e0ef92b..a572eed 100644
+--- a/src/app/(public)/search/page.tsx
++++ b/src/app/(public)/search/page.tsx
+@@ -22,7 +22,7 @@ export default function SearchPage({ searchParams }: SearchPageProps) {
+   return (
+     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+       <header className="mb-8">
+-        <h1 className="font-editorial text-3xl font-[800] tracking-[-0.02em] text-ink-900">
++        <h1 className="font-editorial text-3xl text-ink-900">
+           Search News
+         </h1>
+         <p className="mt-2 font-ui text-sm text-ink-600">
+diff --git a/src/app/globals.css b/src/app/globals.css
+index d0f8d00..9eab8f2 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -51,6 +51,9 @@ body {
+ }
+ 
+ .font-editorial {
++  font-weight: 800;
++  line-height: 1.1;
++  letter-spacing: -0.02em;
+   text-rendering: optimizeLegibility;
+   font-feature-settings: "ss01", "ss02";
+ }
+diff --git a/src/features/articles/components/ArticleData.tsx b/src/features/articles/components/ArticleData.tsx
+index 8c666aa..c6006e9 100644
+--- a/src/features/articles/components/ArticleData.tsx
++++ b/src/features/articles/components/ArticleData.tsx
+@@ -34,7 +34,7 @@ export async function ArticleData({ params }: ArticleDataProps) {
+       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+         <article className="max-w-3xl mx-auto">
+           <header className="mb-8">
+-            <h1 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 mb-4">
++            <h1 className="font-editorial text-3xl sm:text-4xl text-ink-900 mb-4">
+               {article.title}
+             </h1>
+             <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-ink-600">
+diff --git a/src/features/feed/components/ArticleCard.tsx b/src/features/feed/components/ArticleCard.tsx
+index 7d1ff0d..edac02f 100644
+--- a/src/features/feed/components/ArticleCard.tsx
++++ b/src/features/feed/components/ArticleCard.tsx
+@@ -25,7 +25,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
+   return (
+     <article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6 transition-colors duration-300 hover:bg-paper-100/50">
+       {/* ROW 1: Headline */}
+-      <h3 className="font-editorial text-xl leading-tight text-ink-900 font-[800] tracking-[-0.02em] group-hover:text-dispatch-ember transition-colors duration-300">
++      <h3 className="font-editorial text-xl leading-tight text-ink-900 group-hover:text-dispatch-ember transition-colors duration-300">
+         <Link
+           href={`/article/${article.id}`}
+           className="after:absolute after:inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 rounded-sm"
+diff --git a/src/features/feed/components/LeadStory.tsx b/src/features/feed/components/LeadStory.tsx
+index 86ce942..f78355c 100644
+--- a/src/features/feed/components/LeadStory.tsx
++++ b/src/features/feed/components/LeadStory.tsx
+@@ -38,7 +38,7 @@ export function LeadStory() {
+         {/* Headline + Meta — 5 columns */}
+         <div className="lg:col-span-5 flex flex-col justify-center">
+           <h2
+-            className="font-editorial text-3xl sm:text-4xl lg:text-[46px] font-[800] leading-[1.05] tracking-[-0.02em] text-ink-900"
++            className="font-editorial text-3xl sm:text-4xl lg:text-[46px] leading-[1.05] text-ink-900"
+             style={{ fontVariationSettings: "'opsz' 72" }}
+           >
+             The Alignment Problem Is Now a Policy Problem
+diff --git a/src/features/summaries/components/NutritionLabelDemo.tsx b/src/features/summaries/components/NutritionLabelDemo.tsx
+index 99af6bb..c1300d3 100644
+--- a/src/features/summaries/components/NutritionLabelDemo.tsx
++++ b/src/features/summaries/components/NutritionLabelDemo.tsx
+@@ -11,7 +11,7 @@ export function NutritionLabelDemo() {
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+           {/* Left column: Explanation */}
+           <div className="lg:col-span-5">
+-            <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 leading-[1.05] tracking-[-0.02em] mb-6">
++            <h2 className="font-editorial text-3xl sm:text-4xl text-ink-900 leading-[1.05] mb-6">
+               AI Summary Nutrition Label
+             </h2>
+             <p className="text-[15px] leading-relaxed text-ink-600 mb-6">
+@@ -39,7 +39,7 @@ export function NutritionLabelDemo() {
+               {/* Header */}
+               <div className="flex items-center justify-between mb-6 pb-4 border-b border-paper-200">
+                 <div>
+-                  <h3 className="font-editorial text-xl font-[800] text-ink-900">Nutrition Label</h3>
++                  <h3 className="font-editorial text-xl text-ink-900">Nutrition Label</h3>
+                   <p className="font-mono text-[10px] text-ink-400 mt-1 cat-label">
+                     Generated: 10 Jun 2026, 14:30 SGT
+                   </p>
+diff --git a/src/shared/components/layout/Footer.tsx b/src/shared/components/layout/Footer.tsx
+index 06e69b7..74e15be 100644
+--- a/src/shared/components/layout/Footer.tsx
++++ b/src/shared/components/layout/Footer.tsx
+@@ -34,7 +34,7 @@ export function Footer({ className }: FooterProps) {
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
+           {/* Brand */}
+           <div className="col-span-2 md:col-span-1">
+-            <span className="font-editorial text-xl font-[800] text-ink-900 tracking-tight mb-4 block">
++            <span className="font-editorial text-xl text-ink-900 tracking-tight mb-4 block">
+               OneStopNews
+             </span>
+             <p className="font-ui text-sm text-ink-600 leading-relaxed mb-4">
+diff --git a/src/shared/components/layout/Header.tsx b/src/shared/components/layout/Header.tsx
+index bce8008..bcf63bb 100644
+--- a/src/shared/components/layout/Header.tsx
++++ b/src/shared/components/layout/Header.tsx
+@@ -63,7 +63,7 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
+           {/* Wordmark */}
+           <Link
+             href="/"
+-            className="font-editorial text-xl font-[800] tracking-tight text-ink-900 hover:text-dispatch-ember transition-colors duration-150"
++            className="font-editorial text-xl tracking-tight text-ink-900 hover:text-dispatch-ember transition-colors duration-150"
+           >
+             OneStopNews
+           </Link>
+@@ -133,7 +133,7 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
+             aria-label="Mobile navigation"
+           >
+             <div className="flex items-center justify-between mb-8">
+-              <span className="font-editorial text-lg font-[800] text-ink-900">
++              <span className="font-editorial text-lg text-ink-900">
+                 OneStopNews
+               </span>
+               <Dialog.Close asChild>
+diff --git a/src/shared/components/layout/Masthead.tsx b/src/shared/components/layout/Masthead.tsx
+index e7bcfcd..d0ded50 100644
+--- a/src/shared/components/layout/Masthead.tsx
++++ b/src/shared/components/layout/Masthead.tsx
+@@ -23,7 +23,7 @@ export function Masthead() {
+         {/* Wordmark */}
+         <div className="py-8 sm:py-12 text-center">
+           <h1
+-            className="font-editorial text-6xl sm:text-7xl lg:text-8xl font-[800] tracking-[-0.03em] text-ink-900"
++            className="font-editorial text-6xl sm:text-7xl lg:text-8xl tracking-[-0.03em] text-ink-900"
+             style={{ lineHeight: 0.93, fontVariationSettings: "'opsz' 72" }}
+           >
+             OneStopNews
+diff --git a/src/shared/components/ui/Accordion.tsx b/src/shared/components/ui/Accordion.tsx
+index efff0da..40ff9f1 100644
+--- a/src/shared/components/ui/Accordion.tsx
++++ b/src/shared/components/ui/Accordion.tsx
+@@ -45,7 +45,7 @@ const faqItems: FaqItem[] = [
+ export default function FaqAccordion() {
+   return (
+     <section className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+-      <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 leading-[1.05] tracking-[-0.02em] mb-8 text-center">
++      <h2 className="font-editorial text-3xl sm:text-4xl text-ink-900 leading-[1.05] mb-8 text-center">
+         Frequently Asked Questions
+       </h2>
+       <AccordionPrimitive.Root
+diff --git a/src/shared/components/ui/NewsletterCTA.tsx b/src/shared/components/ui/NewsletterCTA.tsx
+index a04d17a..f3910a4 100644
+--- a/src/shared/components/ui/NewsletterCTA.tsx
++++ b/src/shared/components/ui/NewsletterCTA.tsx
+@@ -23,7 +23,7 @@ export function NewsletterCTA() {
+     <section className="py-16 lg:py-24 bg-ink-900 text-paper-100">
+       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+         <div className="max-w-2xl mx-auto text-center">
+-          <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-paper-50 leading-[1.05] tracking-[-0.02em] mb-4">
++          <h2 className="font-editorial text-3xl sm:text-4xl text-paper-50 leading-[1.05] mb-4">
+             Get Your Daily Briefing
+           </h2>
+           <p className="text-paper-200/80 mb-8 leading-relaxed">
+diff --git a/src/shared/components/ui/StatsSection.tsx b/src/shared/components/ui/StatsSection.tsx
+index c50cb95..b3fcfd9 100644
+--- a/src/shared/components/ui/StatsSection.tsx
++++ b/src/shared/components/ui/StatsSection.tsx
+@@ -22,7 +22,7 @@ export function StatsSection() {
+   return (
+     <section className="py-16 lg:py-24 bg-paper-100">
+       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+-        <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 leading-[1.05] tracking-[-0.02em] mb-12 text-center">
++        <h2 className="font-editorial text-3xl sm:text-4xl text-ink-900 leading-[1.05] mb-12 text-center">
+           Our Commitment to Transparency
+         </h2>
+ 
+@@ -33,7 +33,7 @@ export function StatsSection() {
+               <span className="commitment-number font-editorial text-ink-900 opacity-[0.08] select-none">
+                 {stat.figure}
+               </span>
+-              <p className="font-editorial text-4xl font-[800] text-ink-900 mb-2 relative z-10">
++              <p className="font-editorial text-4xl text-ink-900 mb-2 relative z-10">
+                 {stat.figure}
+               </p>
+               <p className="font-mono text-[11px] cat-label text-ink-400 mb-1 relative z-10">

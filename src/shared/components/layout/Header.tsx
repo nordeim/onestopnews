@@ -63,7 +63,7 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
           {/* Wordmark */}
           <Link
             href="/"
-            className="font-editorial text-xl font-[800] tracking-tight text-ink-900 hover:text-dispatch-ember transition-colors duration-150"
+            className="font-editorial text-xl tracking-tight text-ink-900 hover:text-dispatch-ember transition-colors duration-150"
           >
             OneStopNews
           </Link>
@@ -133,7 +133,7 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
             aria-label="Mobile navigation"
           >
             <div className="flex items-center justify-between mb-8">
-              <span className="font-editorial text-lg font-[800] text-ink-900">
+              <span className="font-editorial text-lg text-ink-900">
                 OneStopNews
               </span>
               <Dialog.Close asChild>

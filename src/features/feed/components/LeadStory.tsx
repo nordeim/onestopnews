@@ -38,7 +38,7 @@ export function LeadStory() {
         {/* Headline + Meta — 5 columns */}
         <div className="lg:col-span-5 flex flex-col justify-center">
           <h2
-            className="font-editorial text-3xl sm:text-4xl lg:text-[46px] font-[800] leading-[1.05] tracking-[-0.02em] text-ink-900"
+            className="font-editorial text-3xl sm:text-4xl lg:text-[46px] leading-[1.05] text-ink-900"
             style={{ fontVariationSettings: "'opsz' 72" }}
           >
             The Alignment Problem Is Now a Policy Problem

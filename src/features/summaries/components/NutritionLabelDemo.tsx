@@ -11,7 +11,7 @@ export function NutritionLabelDemo() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Left column: Explanation */}
           <div className="lg:col-span-5">
-            <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 leading-[1.05] tracking-[-0.02em] mb-6">
+            <h2 className="font-editorial text-3xl sm:text-4xl text-ink-900 leading-[1.05] mb-6">
               AI Summary Nutrition Label
             </h2>
             <p className="text-[15px] leading-relaxed text-ink-600 mb-6">
@@ -39,7 +39,7 @@ export function NutritionLabelDemo() {
               {/* Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-paper-200">
                 <div>
-                  <h3 className="font-editorial text-xl font-[800] text-ink-900">Nutrition Label</h3>
+                  <h3 className="font-editorial text-xl text-ink-900">Nutrition Label</h3>
                   <p className="font-mono text-[10px] text-ink-400 mt-1 cat-label">
                     Generated: 10 Jun 2026, 14:30 SGT
                   </p>

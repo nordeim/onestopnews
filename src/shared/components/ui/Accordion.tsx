@@ -45,7 +45,7 @@ const faqItems: FaqItem[] = [
 export default function FaqAccordion() {
   return (
     <section className="py-16 lg:py-24 max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 leading-[1.05] tracking-[-0.02em] mb-8 text-center">
+      <h2 className="font-editorial text-3xl sm:text-4xl text-ink-900 leading-[1.05] mb-8 text-center">
         Frequently Asked Questions
       </h2>
       <AccordionPrimitive.Root

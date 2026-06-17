@@ -22,7 +22,7 @@ export function StatsSection() {
   return (
     <section className="py-16 lg:py-24 bg-paper-100">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="font-editorial text-3xl sm:text-4xl font-[800] text-ink-900 leading-[1.05] tracking-[-0.02em] mb-12 text-center">
+        <h2 className="font-editorial text-3xl sm:text-4xl text-ink-900 leading-[1.05] mb-12 text-center">
           Our Commitment to Transparency
         </h2>
 
@@ -33,7 +33,7 @@ export function StatsSection() {
               <span className="commitment-number font-editorial text-ink-900 opacity-[0.08] select-none">
                 {stat.figure}
               </span>
-              <p className="font-editorial text-4xl font-[800] text-ink-900 mb-2 relative z-10">
+              <p className="font-editorial text-4xl text-ink-900 mb-2 relative z-10">
                 {stat.figure}
               </p>
               <p className="font-mono text-[11px] cat-label text-ink-400 mb-1 relative z-10">

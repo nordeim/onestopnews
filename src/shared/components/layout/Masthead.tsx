@@ -23,7 +23,7 @@ export function Masthead() {
         {/* Wordmark */}
         <div className="py-8 sm:py-12 text-center">
           <h1
-            className="font-editorial text-6xl sm:text-7xl lg:text-8xl font-[800] tracking-[-0.03em] text-ink-900"
+            className="font-editorial text-6xl sm:text-7xl lg:text-8xl tracking-[-0.03em] text-ink-900"
             style={{ lineHeight: 0.93, fontVariationSettings: "'opsz' 72" }}
           >
             OneStopNews
