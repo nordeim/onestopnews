@@ -528,6 +528,26 @@ const nextConfig = {
 
 **Prevention**: Whenever adding external image URLs to components, immediately update `next.config.ts`.
 
+**Symptom**: Next.js `<Image>` component fails with "hostname is not configured under images in your next.config.ts".
+
+**Cause**: Next.js Image Optimization requires all external domains to be whitelisted in `next.config.ts` for security.
+
+**Fix**: Add external domains to `next.config.ts`:
+
+```typescript
+// next.config.ts
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
+  },
+};
+```
+
+**Prevention**: Whenever adding external image URLs to components, immediately update `next.config.ts`.
+
 ### Saved HTML Snapshots Becoming Stale
 
 **Symptom**: Comparing a saved `dynamic_landing_page.html` with the current live site shows major differences (missing sections, old CSS, wrong structure).

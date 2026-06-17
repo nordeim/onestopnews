@@ -211,6 +211,10 @@ pnpm test
 | `throw new Error()` in RSC auth | Triggers full-page error boundary | `redirect('/sign-in')` |
 | `drizzle-kit push` in production | Overwrites schema without history | `generate` + `migrate` only |
 | Summarising `title_only` / `excerpt` | AI hallucination risk | Content availability guard |
+| `new Date()` in Server Component | Prerender non-deterministic; Next.js 16 blocks it with `next-prerender-current-time` | Move to Client Component with `useEffect`, or wrap in `<Suspense>` |
+| `new Date()` in Client Component without `<Suspense>` | Prerender still fails; client needs Suspense boundary | Wrap Client Component in `<Suspense>` |
+| `.reveal` class on above-the-fold elements | Hydration mismatch: server renders `reveal`, client wants `reveal visible` | Only use `.reveal` for below-the-fold elements |
+| Merge artifact in CSS (e.g. ` INCLUDED`) | Corrupts Tailwind v4 `@theme` block, poisoning entire theme | Review diffs after merge; run `pnpm build` before pushing |
 | Admin auth in `proxy.ts` | Layer 0 has no DB access | `verifyAdminSession()` in `(admin)/layout.tsx` |
 | `pg_textsearch` extension (PG 17) | Doesn't exist; `ts_rank_cd` is built-in | Use `ts_rank_cd` directly |
 | `revalidateTag` in workers | Next.js-only API, not available in Node.js | Use Redis pub/sub for cache invalidation |
@@ -401,9 +405,10 @@ actionlint .github/workflows/ci.yml
 | Masthead | `src/features/feed/components/Masthead.tsx` |
 | Lead Story | `src/features/feed/components/LeadStory.tsx` |
 | AI Nutrition Label | `src/features/feed/ai/NutritionLabel.tsx` |
-| Stats | `src/features/feed/stats/Stats.tsx` |
+| Stats | `src/features/ pipelines can be found in `/src/features/feed/stats/Stats.tsx` |
 | FAQ | `src/features/feed/faq/FAQ.tsx` |
 | Newsletter | `src/features/feed/newsletter/Newsletter.tsx` |
+| Reveal Provider | `src/shared/components/providers/RevealProvider.tsx` |
 | DB Seed | `src/lib/db/seed.ts` |
 | Global CSS | `src/app/globals.css` |
 
@@ -449,6 +454,71 @@ const nextConfig = {
 **Fix**: Mock these APIs in `vitest.setup.ts` or test files.
 
 **Prevention**: Check browser-only APIs before using them in testable components.
+
+### 5. `new Date()` in Server Components (Next.js 16 `cacheComponents`)
+
+**Issue**: Accessing `new Date()` in a Server Component during prerendering throws `next-prerender-current-time` in Next.js 16 with `cacheComponents: true`.
+
+**Fix**: Move time-sensitive computation to a Client Component (`'use client'`) with `useEffect`, or compute from request headers (`headers().get('date')`).
+
+```typescript
+// ❌ Don't: Server Component with new Date()
+export default function Page() {
+  const year = new Date().getFullYear(); // ERROR during prerender
+  return <Footer year={year} />;
+}
+
+// ✅ Do: Client Component computes its own year
+"use client";
+export function Footer() {
+  const year = new Date().getFullYear(); // Safe: runs in browser
+  return <footer>© {year}</footer>;
+}
+```
+
+### 6. `new Date()` in Client Components Requires `<Suspense>` Boundary
+
+**Issue**: Even when moved to a Client Component, `new Date()` still fails during prerendering unless the Client Component is inside a `<Suspense>` boundary.
+
+**Fix**: Wrap the Client Component in `<Suspense>`:
+
+```tsx
+// ✅ page.tsx
+<Suspense fallback={null}>
+  <Footer />
+</Suspense>
+```
+
+### 7. Scroll-Reveal Animations and SSR Hydration Mismatch
+
+**Issue**: Applying `.reveal` class to above-the-fold elements causes hydration mismatch. Server renders `class="reveal"` but the client's `IntersectionObserver` (in `useEffect`) would add `.visible`, creating a mismatch.
+
+**Fix**: Only use `.reveal` (and `RevealProvider`) for below-the-fold elements. Above-the-fold elements should be visible immediately.
+
+**Implementation**:
+- `globals.css`: Define `.reveal` (hidden) and `.reveal.visible` (shown) styles
+- `RevealProvider.tsx`: Client Component with `useEffect` + `IntersectionObserver` that adds `.visible` when elements enter viewport
+- Only apply `className="reveal"` to elements below the initial viewport
+- For reduced-motion users: immediately reveal all (`prefers-reduced-motion: reduce`)
+
+### 8. Merge Artifacts in CSS Can Poison Tailwind v4 `@theme`
+
+**Issue**: A git merge can inject text (e.g. ` INCLUDED`) into CSS variable declarations, corrupting the entire `@theme` block.
+
+**Example corruption**:
+```css
+@theme {
+  --color-ink-600: #3d3 INCLUDED-500: #525250; /* BROKEN */
+}
+```
+
+**Fix**: Regularly run `pnpm build` to catch CSS parsing errors early. Review all CSS diffs after merges.
+
+### 9. Footer Year: Client-Side Computation Pattern
+
+**Issue**: The footer copyright year needs to be current but cannot be computed server-side during prerender.
+
+**Fix**: Convert `Footer` to a Client Component (`'use client'`) that computes `new Date().getFullYear()` internally. Remove `currentYear` prop from `FooterProps`. Wrap `<Footer />` in `<Suspense>` in page components.
 
 ## Previous Lessons Learned (Phase 9)
 

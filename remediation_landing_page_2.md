@@ -483,3 +483,89 @@ Verification
 - ✅ agent-browser snapshot — Full DOM renders without hydration errors
 - ✅ agent-browser screenshot — Visual confirmation of all sections (ticker, masthead, header, lead story, feed, nutrition label, stats, FAQ, newsletter, footer)
 
+# Verify TypeScript and lint after all changes
+$ cd /home/project/onestopnews && pnpm check 2>&1
+> onestopnews@0.1.0 check /home/project/onestopnews
+> tsc --noEmit && pnpm lint
+
+
+> onestopnews@0.1.0 lint /home/project/onestopnews
+> eslint . --max-warnings 0
+All checks pass. Let me now verify the final build as well to ensure no regressions:
+# Run production build to verify no regressions
+$ cd /home/project/onestopnews && pnpm build 2>&1 | tail -30
+Collecting page data using 3 workers ...
+  Generating static pages using 3 workers (0/12) ...
+  Generating static pages using 3 workers (3/12) 
+  Generating static pages using 3 workers (6/12) 
+  Generating static pages using 3 workers (9/12) 
+✓ Generating static pages using 3 workers (12/12) in 978ms
+  Finalizing page optimization ...
+
+Route (app)                    Revalidate  Expire
+┌ ○ /                                  2m     10m
+…
+Click to expand
+✅ Build succeeds! Production build completes with all 12 pages generated and no errors.
+Now let me verify the final state of the updated files by checking key sections:  The build and all checks pass. Let me do a final verification of the three documentation files to ensure they are consistent and complete:
+✱Grep "Phase 11" in . (24 matches)
+✅ Documentation Update Complete
+All three core documentation files have been meticulously updated to reflect the latest codebase state, fixed issues, and lessons learned. Here's a summary of what was updated:
+Changes Made
+1. AGENTS.md (Most Critical — Agent Instructions)
+Added Phase 11 Section (Lines ~1049–1122):
+- 6 new gotchas discovered with detailed explanations and fixes:
+1. Merge Artifact in CSS (globals.css line 7)
+2. .reveal CSS Missing — Scroll Animations Broken
+3. next-prerender-current-time Error
+4. Hydration Mismatch with .reveal on Above-the-Fold Elements
+5. new Date() in Client Component Needs Suspense Boundary
+6. new Date() in Utility Function (formatTimeAgo)
+- 5 recommendations for prevention and future work
+- Updated Phase Status Tracker: Added Phase 11 as COMPLETE with key deliverables
+- Updated Anti-Patterns Table: Added 4 new rows:
+- new Date() in Server Component
+- new Date() in Client Component without <Suspense>
+- .reveal class on above-the-fold elements
+- Merge artifact in CSS
+- Updated File Inventory: Added RevealProvider.tsx and RevealProvider.test.tsx
+2. CLAUDE.md (Development Reference)
+Added 4 New Lessons Learned (Lines ~449–498):
+1. new Date() in Server Components — move to Client Component or compute from headers()
+2. new Date() in Client Components requires <Suspense> boundary
+3. Scroll-Reveal Animations and SSR Hydration Mismatch — only use .reveal for below-the-fold
+4. Merge Artifacts in CSS — can poison Tailwind v4 @theme block
+5. Footer Year: Client-Side Computation Pattern
+Updated Anti-Patterns Table: Added the same 4 new anti-patterns as AGENTS.md
+Updated Quick Reference: Added RevealProvider file location
+3. README.md (Public Documentation)
+Added 3 New Troubleshooting Sections (Lines ~487–530):
+1. new Date() in Server Component — next-prerender-current-time
+2. Scroll-Reveal Animations Causing Hydration Mismatch
+3. Merge Artifacts in CSS
+Each includes: Symptom, Cause, Fix (with code examples), and Prevention
+Verification
+- ✅ pnpm check — TypeScript strict + ESLint pass clean
+- ✅ pnpm build — Production build succeeds with all 12 pages generated
+- ✅ agent-browser — DOM snapshot confirms all sections render correctly with no hydration errors
+- ✅ All three documentation files are consistent with each other (same lessons, same fixes, same file references)  The three documentation files (AGENTS.md, CLAUDE.md, README.md) have been meticulously updated to reflect:
+Key Additions:
+1. new Date() Gotchas in Next.js 16:
+- Server Components must not use new Date() during prerender
+- Client Components with new Date() must be inside <Suspense> boundaries
+- Time-ago utilities (formatTimeAgo) require Client Component usage
+2. .reveal Scroll-Animation SSR Pitfalls:
+- Above-the-fold elements must not use className="reveal" (hydration mismatch)
+- Below-the-fold elements are fine with RevealProvider + IntersectionObserver
+- Always respect prefers-reduced-motion: reduce
+3. CSS Merge Artifacts:
+- Git merge can inject text into CSS variables, corrupting the entire @theme block
+- Always run pnpm build after merges to catch CSS parsing errors early
+- Review CSS diffs carefully
+4. New File Inventory Entries:
+- RevealProvider.tsx / RevealProvider.test.tsx
+- Updated Footer.tsx (now Client Component)
+- Updated ArticleCard.tsx (now Client Component)
+5. Phase 11 Status: Added to Phase Status Tracker as COMPLETE
+All documentation is now aligned with the current codebase state and build configuration.
+

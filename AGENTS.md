@@ -402,6 +402,10 @@ Must pass before any PR is merged. No exceptions.
 | Beta adapter `as any` without eslint-disable | Triggers `--max-warnings 0` lint failures. | Add `eslint-disable-next-line @typescript-eslint/no-explicit-any` with justification. |
 | Saved HTML snapshots as reference | Stale HTML saved during development misleads about current state. | Always curl the live server for current state. | |
 | Server-rendered `new Date()` | Causes hydration mismatch between server and client. | Use `'use client'` or pass pre-formatted date strings. | |
+| `new Date()` in Server Component | Next.js 16 `cacheComponents` blocks prerender with `next-prerender-current-time` | Move to Client Component (`'use client'`) with `useEffect`, or compute from `headers()` | |
+| `new Date()` in Client Component without `<Suspense>` | Prerender still fails — needs a Suspense boundary above it | Wrap Client Component in `<Suspense>` | |
+| `.reveal` class on above-the-fold elements | Hydration mismatch: server renders `reveal`, client expects `reveal visible` | Only use `.reveal` for below-the-fold elements | |
+| Merge artifact in CSS (e.g., ` INCLUDED`) | Corrupts Tailwind v4 `@theme` block, breaking all custom colors | Review CSS diffs after merges; run `pnpm build` before pushing | |
 | External images without `remotePatterns` | Next.js Image Optimization fails with security error. | Add all external image domains to `next.config.ts`. | |
 | Browser-only APIs in tests | `useInView`, `Intl.DateTimeFormat` fail in headless environment. | Mock in `vitest.setup.ts` or test files. | |
 
@@ -890,6 +894,8 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `src/lib/db/seed.ts` | 10 | Database seed script with sample articles, categories, sources |
 | `src/app/globals.css` | 10 | Custom design system classes (cat-label, btn-ember, animations) |
 | `next.config.ts` | 10 | Updated with `remotePatterns` for external images (picsum.photos) |
+| `src/shared/components/providers/RevealProvider.tsx` | 11 | IntersectionObserver-driven scroll-reveal animation provider |
+| `src/shared/components/providers/RevealProvider.test.tsx` | 11 | Tests for RevealProvider (IntersectionObserver, reduced motion) |
 
 ---
 
@@ -1040,6 +1046,65 @@ export default function HomePage() {
 
 ---
 
+## Phase 11: landing-page dynamic landing page bug fixes -- Lessons Learned
+
+### Phase 11 Gotchas Discovered
+
+#### 1. Merge Artifact in CSS (`globals.css` line 7)
+
+**Issue**: A git merge injected the text ` INCLUDED` into a CSS variable declaration (`--color-ink-600: #3d3 INCLUDED-500: #525250;`), corrupting the entire Tailwind v4 `@theme` block. This poisoned all custom color token generation, causing undefined or fallback colors throughout the UI.
+
+**Fix**: Always review CSS diffs after merges. Run `pnpm build` before pushing to catch parsing errors early.
+
+```css
+/* ❌ Broken (merge artifact) */
+--color-ink-600: #3d3 INCLUDED-500: #525250;
+
+/* ✅ Fixed */
+--color-ink-600: #3d3d3a;
+--color-ink-500: #525250;
+```
+
+#### 2. `.reveal` CSS Missing — Scroll Animations Broken
+
+**Issue`. The static HTML mockup had `.reveal` and `.reveal.visible` CSS rules with `opacity` and `transform` transitions, but these were never migrated to the Next.js app. As a result, elements with `className="reveal"` were permanently invisible and no scroll-triggered animations worked.
+
+**Fix**: Added the `.reveal` / `.reveal.visible` / `.reveal-delay-*` CSS rules to `globals.css` and created a `RevealProvider` client component using `IntersectionObserver` to toggle the `.visible` class.
+
+#### 3. `next-prerender-current-time` Error
+
+**Issue**: Using `new Date().getFullYear()` in a Server Component (`page.tsx`) causes Next.js 16 to throw `next-prerender-current-time` during static prerendering.
+
+**Fix**: Convert `Footer` to a Client Component (`'use client'`) and compute the year with `new Date().getFullYear()` internally. Remove the `currentYear` prop from `FooterProps`.
+
+#### 4. Hydration Mismatch with `.reveal` on Above-the-Fold Elements
+
+**Issue**: The `LeadStory` component had `className="reveal"`. During SSR, it rendered with `class="reveal"` (invisible). On the client, `useEffect` would add `.visible`, but React detected a hydration mismatch because the server and client initial HTML differed.
+
+**Fix**: Removed `className="reveal"` from `LeadStory`. Only below-the-fold elements should use `.reveal`. Created a `RevealProvider` client component with `IntersectionObserver` to safely add `.visible` after hydration for below-the-fold elements.
+
+#### 5. `new Date()` in Client Component Needs Suspense Boundary
+
+**Issue**: Even after converting `Footer` to a Client Component, `new Date().getFullYear()` still failed during prerendering because the Client Component was not inside a `<Suspense>` boundary.
+
+**Fix**: Wrapped `<Footer />` in `<Suspense fallback={null}>` in `page.tsx` (and in other page components that render `Footer`).
+
+#### 6. `new Date()` in Utility Function (`formatTimeAgo`)
+
+**Issue**: The `formatTimeAgo()` utility in `src/shared/lib/utils.ts` uses `new Date()`. When called from `ArticleCard` (a Server Component during prerender), it threw `next-prerender-current-time`.
+
+**Fix**: Converted `ArticleCard` to a `'use client'` component. Since `formatTimeAgo` needs the current time (to compute "2 hours ago"), the component that uses it must be client-side.
+
+### Phase 11 Recommendations
+
+1. **CSS Merge Artifacts**: Add a pre-commit hook or CI step that runs `pnpm build` to validate CSS is not corrupted by merge artifacts.
+2. **Reveal Animation Strategy**: The current `RevealProvider` with `IntersectionObserver` is a good start. Consider using `animation-timeline: view()` for modern browsers as a progressive enhancement.
+3. **Date / Time in SSR**: Any component that displays time-ago or current year should be a Client Component or wrapped in `<Suspense>`. Do not pass `new Date()` results as props from Server Components.
+4. **Test Coverage**: The `Footer.test.tsx` was updated to test year logic with `vi.useFakeTimers()`. Ensure all time-sensitive tests mock `Date` consistently.
+5. **Static vs Dynamic Check**: After any major change, compare the live dynamic page (`pnpm dev`) against the static mockup to catch visual regressions early.
+
+---
+
 ## Phase Status Tracker
 
 | Phase | Status | Key Deliverables |
@@ -1054,6 +1119,7 @@ export default function HomePage() {
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 | **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
+| **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch on above-the-fold elements, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
 
 ---
 
