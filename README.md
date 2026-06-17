@@ -506,27 +506,71 @@ export function LiveDate() {
 
 **Prevention**: Always wrap client-dependent rendering (`Date`, `window`, `navigator`) in `'use client'` components or pass pre-computed strings as props from Server Components.
 
-### External Image Loading Failure
+### `next-prerender-current-time` Error
 
-**Symptom**: Next.js `<Image>` component fails with "hostname is not configured under images in your next.config.ts".
+**Symptom**: Build error during static prerendering: `next-prerender-current-time`. The build fails or hangs when Next.js 16 with `cacheComponents: true` encounters `new Date()` in a component tree.
 
-**Cause**: Next.js Image Optimization requires all external domains to be whitelisted in `next.config.ts` for security.
+**Cause**: `new Date()` or `Date.now()` is called in a Server Component or a Client Component that lacks a `<Suspense>` boundary. Next.js 16's prerender phase cannot resolve dynamic time values and throws this error instead of producing stale or mismatched timestamps.
 
-**Fix**: Add external domains to `next.config.ts`:
+**Fix**: Three steps, applied in order:
 
-```typescript
-// next.config.ts
-const nextConfig = {
-  images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "picsum.photos" },
-      { protocol: "https", hostname: "images.unsplash.com" },
-    ],
-  },
-};
+1. Move time-dependent logic to a `'use client'` component:
+
+```tsx
+"use client";
+import { useState, useEffect } from "react";
+
+export function LiveDate() {
+  const [year, setYear] = useState("");
+  useEffect(() => {
+    setYear(String(new Date().getFullYear()));
+  }, []);
+  return <span>{year}</span>;
+}
 ```
 
-**Prevention**: Whenever adding external image URLs to components, immediately update `next.config.ts`.
+2. Wrap the Client Component in `<Suspense>` in the parent Server Component:
+
+```tsx
+import { Suspense } from "react";
+
+export default function Page() {
+  return (
+    <footer>
+      <Suspense fallback={null}>
+        <LiveDate />
+      </Suspense>
+    </footer>
+  );
+}
+```
+
+3. For utility functions like `formatTimeAgo()` that call `new Date()`, ensure they are only invoked from Client Components — never from Server Components.
+
+**Prevention**: Never use `new Date()`, `Date.now()`, or any time-dependent utility in a Server Component. All time-logic must reside in `'use client'` components wrapped in `<Suspense>`. Pre-computed date strings passed as props from Server Components are safe.
+
+### CSS Merge Artifacts in Tailwind v4 `@theme`
+
+**Symptom**: Custom design tokens silently break — colors resolve to `undefined` or fall back to defaults. The entire Tailwind v4 `@theme` block becomes invalid. No build error is thrown; the visual regression is the only signal.
+
+**Cause**: A git merge conflict injects stray text into a CSS custom property declaration inside the `@theme` block. For example:
+
+```css
+/* ❌ Broken by merge artifact */
+--color-ink-600: #3d3 INCLUDED-500: #525250;
+
+/* ✅ Correct */
+--color-ink-600: #3d3d3a;
+--color-ink-500: #525250;
+```
+
+Tailwind v4's `@theme` is a regular CSS block — merge artifacts corrupt the CSS parser silently.
+
+**Fix**: Review CSS diffs after every merge that touches `globals.css` or any file containing `@theme`. Run `pnpm build` before pushing to catch parsing errors early. Inspect the `@theme` block line by line for stray characters, duplicated lines, or merged property names.
+
+**Prevention**: Add `pnpm build` to CI as a quality gate. Treat CSS `@theme` blocks with the same caution as JSON or YAML — a single stray character can invalidate the entire block without a compile-time error.
+
+### External Image Loading Failure
 
 **Symptom**: Next.js `<Image>` component fails with "hostname is not configured under images in your next.config.ts".
 

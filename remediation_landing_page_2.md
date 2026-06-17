@@ -569,3 +569,67 @@ Key Additions:
 5. Phase 11 Status: Added to Phase Status Tracker as COMPLETE
 All documentation is now aligned with the current codebase state and build configuration.
 
+Goal
+- Investigate and fix why the OneStopNews dynamic Next.js landing page (http://localhost:3000/) has broken visual aesthetics (ugly/minimal, broken header/footer, missing CSS/JS animations) compared to the static HTML mockup.
+Constraints & Preferences
+- Use agent-browser and playwright-cli for browser testing of dynamic site
+- Preserve exact file paths and component structure
+- Only modify dynamic page source; static mockup is reference-only
+- TDD approach for code changes
+- Update @README.md, @CLAUDE.md, @AGENTS.md to reflect all changes
+Progress
+Done
+- Read and compared @dynamic_landing_page.html with @static_HTML_mockup_for_dynamic_landing_page.html
+- Found broken CSS merge artifact in src/app/globals.css line 7: --color-ink-600: #3d3 INCLUDED-500: #525250; — fixed to 600: #3d3d3a / 500: #525250
+- Discovered .reveal CSS class is completely missing from globals.css and from generated CSS — added .reveal, .reveal.visible, delay classes, and prefers-reduced-motion support
+- Created src/shared/components/providers/RevealProvider.tsx ('use client') with IntersectionObserver to toggle .visible for below-the-fold elements
+- Integrated RevealProvider into src/app/layout.tsx
+- Found and fixed next-prerender-current-time error: converted Footer to 'use client' component, removed currentYear prop from FooterProps and all call sites
+- Fixed hydration mismatch in LeadStory.tsx by removing className="reveal" — above-the-fold elements must not use .reveal
+- Added Suspense wrapper around <Footer /> in page.tsx to satisfy Next.js 16 client component prerender requirements
+- Updated src/features/feed/components/ArticleCard.tsx to 'use client' to allow safe use of new Date() in formatTimeAgo()
+- Fixed src/shared/components/layout/Footer.test.tsx to import vi, beforeEach, afterEach from vitest
+- Created comprehensive remediation plan and executed all fixes with TDD
+- Ran pnpm build ✅ — clean production build (12 pages generated)
+- Ran pnpm check ✅ — TypeScript strict + ESLint pass with no errors/warnings
+- Browser-tested with agent-browser: full DOM renders, footer present, no hydration errors
+- Updated @CLAUDE.md with new anti-patterns, lessons learned (Phase 11), and RevealProvider in file reference
+- Updated @AGENTS.md with Phase 11 section, new gotchas, anti-patterns, recommendations, and phase tracker
+- Updated @README.md with troubleshooting next-prerender-current-time section
+- Saved comprehensive build error analysis in error_analysis.md
+In Progress
+- (none)
+Blocked
+- (none)
+Key Decisions
+- Convert Footer to 'use client' + remove currentYear prop instead of computing it server-side — this avoids next-prerender-current-time by moving time-sensitive logic to the browser where it's safe
+- Use IntersectionObserver + classList mutation (not React state) for scroll-reveal to avoid unnecessary re-renders on every scroll event
+- Never apply className="reveal" to above-the-fold elements — only below-the-fold to prevent hydration mismatch
+- Keep RevealProvider in layout.tsx (not per-page) so it applies to all routes consistently
+Next Steps
+- (none — all fixes applied and verified)
+Critical Context
+- src/app/globals.css line 7 had a git merge artifact ( INCLUDED) that corrupted --color-ink-500, breaking the entire Tailwind v4 @theme block and causing all custom colors to fail
+- .reveal CSS was completely missing from globals.css — all scroll-reveal animations silently failed, making elements invisible
+- next-prerender-current-time is thrown whenever new Date() is called in a Server Component or in a Client Component without a <Suspense> boundary during Next.js 16 prerendering
+- Hydration mismatch occurs when className differs between server and client initial render — in this case, .reveal (server) vs .reveal.visible (client intent)
+- Generated CSS file changed hash after code changes (Turbopack invalidation) — /[root-of-the-server]__<hash>._.css
+- All time-sensitive logic (new Date()) must be in 'use client' components wrapped in <Suspense> or computed from headers() in Server Components
+Relevant Files
+- src/app/globals.css: Fixed merge artifact on --color-ink-500, added .reveal/.reveal.visible animations, delay classes, reduced-motion support
+- src/app/(public)/page.tsx: Removed currentYear, wrapped <Footer /> in <Suspense>
+- src/app/layout.tsx: Added <RevealProvider> wrapper around {children}
+- src/shared/components/providers/RevealProvider.tsx: New 'use client' component with IntersectionObserver toggling .visible on .reveal elements
+- src/shared/components/layout/Footer.tsx: Converted to 'use client', removed currentYear prop, computes year internally with new Date().getFullYear()
+- src/shared/components/layout/Footer.test.tsx: Fixed imports (vi, beforeEach, afterEach from vitest), tests with vi.useFakeTimers()
+- src/features/feed/components/LeadStory.tsx: Removed className="reveal" from above-the-fold section
+- src/features/feed/components/ArticleCard.tsx: Added 'use client' for formatTimeAgo() which uses new Date()
+- src/features/feed/components/FeedData.tsx: Removed currentYear prop from <Footer />
+- src/features/articles/components/ArticleData.tsx: Removed headers() date logic, removed currentYear prop from <Footer />
+- static_HTML_mockup_for_dynamic_landing_page.html: Reference static mockup with full inline CSS and complete sections
+- dynamic_landing_page.html: Post-fix snapshot of rendered dynamic page HTML
+- @CLAUDE.md: Updated with anti-patterns, Phase 11 lessons learned, new file references
+- @AGENTS.md: Updated with new gotchas, anti-patterns, Phase 11 tracker, recommendations
+- @README.md: Updated with troubleshooting next-prerender-current-time section
+- error_analysis.md: Comprehensive root-cause and remediation documentation
+
