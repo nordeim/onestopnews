@@ -264,166 +264,174 @@ Relevant Files
 - README.md: Updated with 2 new troubleshooting sections, duplicate removed (line ~507-573 area modified)
 - AGENTS.md: Contains file inventory that now correctly references RevealProvider.test.tsx
 - src/features/feed/queries.test.ts: Pre-existing failing test (1 of 2 tests fails) — unrelated to current work
-▣  Compaction · GLM-5.1 · 30.4s
-Let me take a screenshot and inspect the live dynamic page, then read the source files systematically.
-# Open dynamic landing page in browser
-$ agent-browser open http://localhost:3000/ 2>&1 | head -20
-✓ OneStopNews — Your Briefing Room
-  http://localhost:3000/
-# Wait for page to fully load
-$ agent-browser wait --load networkidle 2>&1 | head -5
-✓ Done
-# Screenshot full dynamic page
-$ agent-browser screenshot /tmp/dynamic_before.png --full 2>&1
-✓ Screenshot saved to /tmp/dynamic_before.png
-# Check browser console for errors
-$ agent-browser console 2>&1 | head -50
-[info] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[log] [HMR] connected
-[log] %c%s%c Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7] background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Cache  
-[warning] Image with src "https://picsum.photos/seed/eu-ai-act-vote/1200/750.jpg" has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative.
-# Check for page errors
-$ agent-browser errors 2>&1
-(no output)
-# Get compact accessibility tree
-$ agent-browser snapshot -c 2>&1 | head -80
-- banner
-  - heading "OneStopNews" [level=1, ref=e1]
-- banner
-  - link "OneStopNews" [ref=e2]
-  - link "Search news" [ref=e13]
-  - button "Open menu" [expanded=false, ref=e3]
-  - tablist "Topic categories"
-    - tab "Top Stories" [selected, ref=e14]
-    - tab "Local" [ref=e15]
-    - tab "Tech" [ref=e16]
-…
-Click to expand
-Now let me check what the page looks like visually and compare CSS:
-# Check CSS loading status
-$ agent-browser eval "document.querySelectorAll('style,link[rel=stylesheet]').length + ' stylesheet/style tags; bodyClasses: ' + document.body.className" 2>&1
-"2 stylesheet/style tags; bodyClasses: bg-paper-50 text-ink-600 font-ui antialiased"
-# Check loaded stylesheet URLs
-$ agent-browser eval "JSON.stringify(Array.from(document.querySelectorAll('link[rel=stylesheet]')).map(l=>l.href))" 2>&1
-"[\"http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__1zoeqi6._.css\"]"
-# Check computed body font
-$ agent-browser eval "window.getComputedStyle(document.body).fontFamily" 2>&1
-"\"Instrument Sans\", \"Instrument Sans Fallback\""
-# Check computed body background
-$ agent-browser eval "window.getComputedStyle(document.body).backgroundColor" 2>&1
-"rgba(0, 0, 0, 0)"
-# Check if design tokens are loaded
-$ agent-browser eval "window.getComputedStyle(document.documentElement).getPropertyValue('--color-paper-50')" 2>&1
-""
-# Check font-editorial token
-$ agent-browser eval "window.getComputedStyle(document.documentElement).getPropertyValue('--font-editorial')" 2>&1
-"\"Newsreader\", \"Newsreader Fallback\""
-Critical finding — --color-paper-50 is empty and background is transparent. The design tokens from globals.css aren't being applied correctly. Let me check the CSS file and the globals.css:
-# Check body text color
-$ agent-browser eval "window.getComputedStyle(document.body).color" 2>&1
-"rgb(0, 0, 0)"
-# Check h1 font
-$ agent-browser eval "document.querySelector('h1')?.getComputedStyle?.(document.querySelector('h1'))?.fontFamily || getComputedStyle(document.querySelector('h1')).fontFamily" 2>&1
-"\"Instrument Sans\", \"Instrument Sans Fallback\""
-# Check font-editorial computed
-$ agent-browser eval "getComputedStyle(document.querySelector('[class*=font-editorial]')).fontFamily" 2>&1
-"\"Instrument Sans\", \"Instrument Sans Fallback\""
-# Check font-editorial with class
-$ agent-browser eval "getComputedStyle(document.querySelector('.font-editorial')).fontFamily" 2>&1
-"\"Instrument Sans\", \"Instrument Sans Fallback\""
-# Dynamically check font-editorial class
-$ agent-browser eval "const el = document.createElement('span'); el.className='font-editorial'; document.body.appendChild(el); const ff = getComputedStyle(el).fontFamily; el.remove(); ff" 2>&1
-"\"Instrument Sans\", \"Instrument Sans Fallback\""
-The font-editorial class is resolving to Instrument Sans instead of Newsreader. The font token is wrong. Let me now check globals.css and the actual CSS being loaded:
-→Read src/app/globals.css 
-# Fetch actual CSS from dev server
-$ curl -s http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__1zoeqi6._.css 2>/dev/null | head -100
-/* [next]/internal/font/google/newsreader_69b81ab5.module.css [app-client] (css) */
-@font-face {
-  font-family: Newsreader;
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("../media/150f724d70372c02-s.1ljbalzvxyif7.woff2") format("woff2");
-  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301, U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
-}
 
-…
-Click to expand
-The CSS file is there and fonts are loading. The issue is that the Tailwind CSS output may not contain the custom theme tokens. Let me check more of the compiled CSS:
-# Check compiled CSS file size
-$ curl -s http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__1zoeqi6._.css 2>/dev/null | wc -c
-16053
-# Check if design tokens exist in compiled CSS
-$ curl -s http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__1zoeqi6._.css 2>/dev/null > /tmp/compiled.css && grep -c 'paper-50' /tmp/compiled.css && grep -c 'ink-900' /tmp/compiled.css && grep -c 'dispatch-ember' /tmp/compiled.css && grep -c 'font-editorial' /tmp/compiled.css
-6
-1
-8
-3
-# Find paper-50 references in compiled CSS
-$ grep -n 'paper-50' /tmp/compiled.css
-266:  --color-paper-50: #fafaf8;
-300:  background-color: var(--color-paper-50);
-384:  background: linear-gradient(to right, var(--color-paper-100) 0%, var(--color-paper-50) 100%);
-432:  color: var(--color-paper-50);
-454:  background: var(--color-paper-50);
-468:  scrollbar-color: var(--color-ink-100) var(--color-paper-50);
-# Find ink-900 references in compiled CSS
-$ grep -n 'ink-900' /tmp/compiled.css
-257:  --color-ink-900: #1a1a18;
-# Find font-editorial references in compiled CSS
-$ grep -n 'font-editorial' /tmp/compiled.css
-152:  --font-editorial: "Newsreader", "Newsreader Fallback";
-284:  --font-editorial: "Newsreader", Georgia, "Times New Roman", serif;
-553:  font-family: var(--font-editorial);
-Tokens exist! But notice line 152 says "Newsreader", "Newsreader Fallback" (Tailwind's generated version overrides line 284's richer stack). Let me check if bg-paper-50 utility is actually generated:
-# Check bg-paper-50 utility class
-$ grep -n 'bg-paper-50' /tmp/compiled.css
-(no output)
-# Check text-ink-600 utility class
-$ grep -n 'text-ink-600' /tmp/compiled.css
-(no output)
-# Check text-ink-900 utility class
-$ grep -n 'text-ink-900' /tmp/compiled.css
-(no output)
-# Check font-editorial utility
-$ grep -n 'font-\?editorial' /tmp/compiled.css | head -10
-152:  --font-editorial: "Newsreader", "Newsreader Fallback";
-284:  --font-editorial: "Newsreader", Georgia, "Times New Roman", serif;
-553:  font-family: var(--font-editorial);
-Critical finding! The CSS variables are defined but the Tailwind utility classes like bg-paper-50, text-ink-600, text-ink-900 are NOT being generated. The @theme block defines CSS custom properties, but Tailwind v4 needs to generate the utility classes from those tokens. Let me verify this in the browser:
-# Test if utility classes resolve
-$ agent-browser eval "
-const test = document.createElement('div');
-test.className = 'bg-paper-50';
-document.body.appendChild(test);
-const bg = getComputedStyle(test).backgroundColor;
-test.className = 'text-ink-600';
-const color = getComputedStyle(test).color;
-test.remove();
-JSON.stringify({bg, color})
-" 2>&1
-"{\"bg\":\"rgba(0, 0, 0, 0)\",\"color\":\"rgb(0, 0, 0)\"}"
-Confirmed: bg-paper-50 and text-ink-600 produce transparent/black — meaning the utility classes don't exist in the compiled CSS. The @theme tokens are defined as CSS custom properties but Tailwind v4 is NOT generating utility classes from them. Let me investigate the Tailwind v4 configuration:
-# Check for tailwind config files
-$ ls /home/project/onestopnews/tailwind.config.* /home/project/onestopnews/postcss.config.* 2>/dev/null
-(no output)
-# Check all stylesheets for bg-paper
-$ agent-browser eval "Array.from(document.styleSheets).flatMap(s => { try { return Array.from(s.cssRules).map(r => r.cssText).filter(t => t.includes('bg-paper')) } catch(e) { return [] } }).join('\\n')" 2>&1
-""
-# Check if any element uses bg-paper-50
-$ agent-browser eval "
-const el = document.querySelector('.bg-paper-50');
-el ? 'EXISTS with class bg-paper-50' : 'No element with bg-paper-50';
-" 2>&1
-✗ Evaluation error: SyntaxError: Identifier 'el' has already been declared
-# Check body class names
-$ agent-browser eval "document.body.className" 2>&1
-"bg-paper-50 text-ink-600 font-ui antialiased"
-So the body has bg-paper-50 text-ink-600 utility classes applied, but those classes don't generate any CSS rules. This is a Tailwind v4 configuration issue — the @theme block defines custom properties but Tailwind v4 needs those tokens registered properly to generate utility classes from them. Let me check how the CSS is loaded and the layout:
-
-So the body has bg-paper-50 text-ink-600 utility classes applied, but those classes don't generate any CSS rules. This is a Tailwind v4 configuration issue — the @theme block defines custom properties but Tailwind v4 needs those tokens registered properly to generate utility classes from them. Let me check how the CSS is loaded and the layout:
-
+Let me assess the current state systematically.
+# Take screenshot of current page
+$ agent-browser screenshot 2>&1 | head -5
+✓ Screenshot saved to /home/pete/.agent-browser/tmp/screenshots/screenshot-1781714715937.png
+→Skill "ai-multimodal"
+# Verify screenshot exists
+$ ls /home/pete/.agent-browser/tmp/screenshots/screenshot-1781714715937.png
+/home/pete/.agent-browser/tmp/screenshots/screenshot-1781714715937.png
+# Analyze screenshot with AI vision
+$ python3 /home/pete/.claude/skills/ai-multimodal/scripts/gemini_batch_process.py \
+  --files /home/pete/.agent-browser/tmp/screenshots/screenshot-1781714715937.png \
+  --task analyze \
+  --prompt "Analyze this landing page screenshot. List ALL visual issues you see: broken layouts, missing styles, wrong colors, wrong fonts, spacing problems, alignment issues, missing sections, or anything that looks off for an editorial news website. Be specific about which section has the problem and what it should look like." \
+  --model gemini-2.5-flash 2>&1
+Error: GEMINI_API_KEY not found
+Set via: export GEMINI_API_KEY='your-key'
+Or create .env file with: GEMINI_API_KEY=your-key
+# Detailed computed style audit
+$ agent-browser eval "(function(){
+  var issues = [];
+  
+  // 1. Check background color of page
+  var body = document.body;
+  var bodyBg = getComputedStyle(body).backgroundColor;
+  issues.push('body bg: ' + bodyBg);
+  
+  // 2. Check h1 font
+  var h1 = document.querySelector('h1');
+  if (h1) issues.push('h1 font: ' + getComputedStyle(h1).fontFamily + ', size: ' + getComputedStyle(h1).fontSize + ', color: ' + getComputedStyle(h1).color);
+  
+  // 3. Check ticker
+  var ticker = document.querySelector('.ticker-track');
+  if (ticker) {
+    issues.push('ticker bg: ' + getComputedStyle(ticker.parentElement).backgroundColor);
+    issues.push('ticker color: ' + getComputedStyle(ticker).color);
+  }
+  
+  // 4. Check header/nav
+  var nav = document.querySelector('nav');
+  if (nav) issues.push('nav exists, bg: ' + getComputedStyle(nav).backgroundColor);
+  
+  // 5. Check lead story
+  var leadSection = document.querySelector('[aria-label=\"Lead story\"]');
+  if (leadSection) {
+    var img = leadSection.querySelector('img');
+    issues.push('lead img: ' + (img ? img.src.substring(0,50) + ' w:' + img.width + ' h:' + img.height : 'NONE'));
+  }
+  
+  // 6. Check feed cards
+  var cards = document.querySelectorAll('[role=feed] article');
+  issues.push('feed cards: ' + cards.length);
+  if (cards.length > 0) {
+    var first = cards[0];
+    issues.push('card bg: ' + getComputedStyle(first).backgroundColor);
+    var cardTitle = first.querySelector('h3');
+    if (cardTitle) issues.push('card title font: ' + getComputedStyle(cardTitle).fontFamily);
+  }
+  
+  // 7. Check stats section
+  var stats = document.querySelector('[aria-label=\"Trust indicators\"]') || document.querySelectorAll('.stats-section, .grid-cols-3, .grid-cols-4')[0];
+  issues.push('stats section: ' + (stats ? 'EXISTS' : 'NOT FOUND'));
+  
+  // 8. Check newsletter
+  var nl = document.querySelector('input[type=email]');
+  issues.push('newsletter input: ' + (nl ? 'EXISTS' : 'NOT FOUND'));
+  
+  // 9. Check footer  
+  var footer = document.querySelector('[role=contentinfo]') || document.querySelector('footer');
+  issues.push('footer: ' + (footer ? 'EXISTS' : 'NOT FOUND'));
+  
+  // 10. Overall height
+  issues.push('page height: ' + document.documentElement.scrollHeight + 'px');
+  
+  // 11. Check bg-paper-50 renders
+  var pageDiv = document.querySelector('.bg-paper-50');
+  if (pageDiv) issues.push('page div bg: ' + getComputedStyle(pageDiv).backgroundColor);
+  
+  // 12. Check font-editorial
+  var editorialEl = document.querySelector('.font-editorial');
+  if (editorialEl) issues.push('font-editorial resolves to: ' + getComputedStyle(editorialEl).fontFamily);
+  
+  // 13. Check font-mono
+  var monoEl = document.querySelector('.font-mono');
+  if (monoEl) issues.push('font-mono resolves to: ' + getComputedStyle(monoEl).fontFamily);
+  
+  // 14. Check font-ui
+  var uiEl = document.querySelector('.font-ui');
+  if (uiEl) issues.push('font-ui resolves to: ' + getComputedStyle(uiEl).fontFamily);
+  
+  return issues.join('\\n');
+})()" 2>&1
+"body bg: rgb(250, 250, 248)\nh1 font: Newsreader, \"Newsreader Fallback\", size: 96px, color: rgb(26, 26, 24)\nticker bg: rgb(26, 26, 24)\nticker color: rgb(242, 242, 238)\nnav exists, bg: rgba(0, 0, 0, 0)\nlead img: http://localhost:3000/_next/image?url=https%3A%2F% w:689 h:431\nfeed cards: 6\ncard bg: rgba(0, 0, 0, 0)\ncard title font: Newsreader, \"Newsreader Fallback\"\nstats section: NOT FOUND\nnewsletter input: EXISTS\nfooter: EXISTS\npage height: 4843px\npage div bg: rgb(250, 250, 248)\nfont-editorial resolves to: Newsreader, \"Newsreader Fallback\"\nfont-mono resolves to: commitMono, \"commitMono Fallback\"\nfont-ui resolves to: \"Instrument Sans\", \"Instrument Sans Fallback\""
+# Sticky header and missing sections audit
+$ agent-browser eval "(function(){
+  var issues = [];
+  
+  // Find the stats section by looking for large number displays
+  var allDivs = document.querySelectorAll('div');
+  var statsFound = false;
+  for (var i = 0; i < allDivs.length; i++) {
+    if (allDivs[i].textContent.includes('247') || allDivs[i].textContent.includes('1.2M')) {
+      statsFound = true;
+      break;
+    }
+  }
+  issues.push('stats content found: ' + statsFound);
+  
+  // Check if FAQ exists
+  issues.push('FAQ: ' + (document.querySelector('details') ? 'EXISTS' : 'NOT FOUND'));
+  
+  // Check AI nutrition label
+  issues.push('Nutrition: ' + (document.querySelector('.nutrition-label, [class*=nutrition]') ? 'EXISTS' : 'NOT FOUND'));
+  
+  // Check scroll-progress element
+  var sp = document.querySelector('.scroll-progress');
+  if (sp) issues.push('scroll-progress: bg=' + getComputedStyle(sp).backgroundColor + ', height=' + getComputedStyle(sp).height);
+  
+  // Check if any images are broken (0 width/height)
+  var imgs = document.querySelectorAll('img');
+  var brokenImgs = [];
+  for (var i = 0; i < imgs.length; i++) {
+    if (imgs[i].naturalWidth === 0 && imgs[i].complete) brokenImgs.push(imgs[i].src.substring(0,60));
+  }
+  issues.push('broken images: ' + (brokenImgs.length || 'none'));
+  
+  // Check category nav
+  var catNav = document.querySelector('.category-nav');
+  issues.push('category-nav: ' + (catNav ? 'EXISTS' : 'NOT FOUND'));
+  
+  // Check dispatch-ember color renders
+  var emberEls = document.querySelectorAll('[class*=dispatch-ember], [class*=bg-dispatch-ember]');
+  if (emberEls.length > 0) issues.push('dispatch-ember bg: ' + getComputedStyle(emberEls[0]).backgroundColor);
+  
+  // Check ember text
+  var emberText = document.querySelectorAll('.text-dispatch-ember');
+  if (emberText.length > 0) issues.push('dispatch-ember text color: ' + getComputedStyle(emberText[0]).color);
+  
+  // Check Header position
+  var header = document.querySelector('header') || document.querySelector('[role=banner]');
+  if (header) {
+    var hStyle = getComputedStyle(header);
+    issues.push('header position: ' + hStyle.position + ', top: ' + hStyle.top + ', z-index: ' + hStyle.zIndex);
+  }
+  
+  // Check if there's a visible sticky header
+  var stickyHeader = document.querySelector('.sticky');
+  if (stickyHeader) issues.push('sticky header: tag=' + stickyHeader.tagName + ', pos=' + getComputedStyle(stickyHeader).position);
+  
+  return issues.join('\\n');
+})()" 2>&1
+"stats content found: true\nFAQ: NOT FOUND\nNutrition: EXISTS\nscroll-progress: bg=rgb(199, 81, 63), height=2px\nbroken images: none\ncategory-nav: EXISTS\ndispatch-ember bg: rgba(0, 0, 0, 0)\ndispatch-ember text color: rgb(199, 81, 63)\nheader position: static, top: auto, z-index: auto\nsticky header: tag=HEADER, pos=sticky"
+# Find FAQ component in DOM
+$ agent-browser eval "(function(){
+  // Check FAQ component more broadly
+  var faqCandidates = document.querySelectorAll('button[aria-expanded], [data-state], [role=tablist], details, summary');
+  var result = 'FAQ candidates: ' + faqCandidates.length;
+  for (var i = 0; i < faqCandidates.length; i++) {
+    result += '\\n  - ' + faqCandidates[i].tagName + '.' + faqCandidates[i].className.substring(0,40) + ' text: ' + faqCandidates[i].textContent.substring(0,60);
+  }
+  
+  // Check if FAQ text appears anywhere
+  var body = document.body.textContent;
+  result += '\\nFAQ text found: ' + (body.includes('frequently asked') || body.includes('FAQ') || body.includes('question'));
+  
+  return result;
+})()" 2>&1
+"FAQ candidates: 20\n  - BUTTON.md:hidden inline-flex items-center justi text: \n  - NAV.hidden md:flex items-center gap-1 py-2 o text: Top StoriesLocalTechGlobalFinancePoliticsCulture\n  - DIV.border-b border-paper-200 text: What is the AI Nutrition Label?\n  - BUTTON.w-full flex items-center justify-between text: What is the AI Nutrition Label?\n  - DIV.overflow-hidden data-[state=open]:animat text: \n  - DIV.border-b border-paper-200 text: How are articles summarised?\n  - BUTTON.w-full flex items-center justify-between text: How are articles summarised?\n  - DIV.overflow-hidden data-[state=open]:animat text: \n  - DIV.border-b border-paper-200 text: What sources does OneStopNews use?\n  - BUTTON.w-full flex items-center justify-between text: What sources does OneStopNews use?\n  - DIV.overflow-hidden data-[state=open]:animat text: \n  - DIV.border-b border-paper-200 text: Is my data private?\n  - BUTTON.w-full flex items-center justify-between text: Is my data private?\n  - DIV.overflow-hidden data-[state=open]:animat text: \n  - DIV.border-b border-paper-200 text: How does the EU AI Act affect the summaries?\n  - BUTTON.w-full flex items-center justify-between text: How does the EU AI Act affect the summaries?\n  - DIV.overflow-hidden data-[state=open]:animat text: \n  - DIV.border-b border-paper-200 text: Can I contribute a source?\n  - BUTTON.w-full flex items-center justify-between text: Can I contribute a source?\n  - DIV.overflow-hidden data-[state=open]:animat text: \nFAQ text found: false"
 Good — FAQ exists with Radix collapsible buttons. Let me now check the remaining issues I identified:
 1. dispatch-ember background renders as transparent — bg-dispatch-ember appears not to work on elements like buttons
 2. Header is position: static but should be sticky
@@ -475,7 +483,70 @@ $ agent-browser eval "(function(){
 "{\n  \"emberBg\": [\n    {\n      \"tag\": \"SPAN\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"w-1.5 h-1.5 rounded-full bg-dispatch-ember pulse-dot\"\n    },\n    {\n      \"tag\": \"SPAN\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"w-2 h-2 rounded-full shrink-0 bg-dispatch-ember\"\n    },\n    {\n      \"tag\": \"SPAN\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"inline-block w-1.5 h-1.5 rounded-full bg-dispatch-ember mr-2 align-middle\"\n    },\n    {\n      \"tag\": \"DIV\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"bg-dispatch-ember h-4 rounded-full\"\n    },\n    {\n      \"tag\": \"BUTTON\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"btn-ember bg-dispatch-ember text-white px-6 py-3 rounded-sm font-mono text-[11px\"\n    },\n    {\n      \"tag\": \"SPAN\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"inline-block w-1.5 h-1.5 rounded-full bg-dispatch-ember mr-2 align-middle\"\n    }\n  ],\n  \"stickyInfo\": [\n    {\n      \"tag\": \"HEADER\",\n      \"pos\": \"sticky\",\n      \"top\": \"0px\",\n      \"zIndex\": \"40\",\n      \"classes\": \"sticky top-0 z-40 bg-paper-50/95 backdrop-blur-sm border-b border-paper-200\"\n    }\n  ],\n  \"btnInfo\": [\n    {\n      \"tag\": \"BUTTON\",\n      \"bg\": \"rgba(0, 0, 0, 0)\",\n      \"classes\": \"md:hidden inline-flex items-center justify-center h-9 w-9 rounded-sm text-ink-600 hover:bg-paper-100\"\n    },\n    {\n      \"tag\": \"BUTTON\",\n      \"bg\": \"rgb(199, 81, 63)\",\n      \"classes\": \"btn-ember bg-dispatch-ember text-white px-6 py-3 rounded-sm font-mono text-[11px] font-semibold cat-\"\n    }\n  ]\n}"
 Everything is actually rendering correctly now. The earlier false alarm about dispatch-ember bg: transparent was from the hamburger menu button (which intentionally uses hover:bg-paper-100, not bg-dispatch-ember). Let me do a final comprehensive check:
 # Full design system + layout audit
-
+$ agent-browser eval "(function(){
+  var results = {};
+  
+  // Core design tokens all resolve correctly
+  var testDiv = document.createElement('div');
+  testDiv.style.cssText = 'position:absolute;left:-9999px;';
+  document.body.appendChild(testDiv);
+  
+  // Test all key token classes
+  var testClasses = {
+    'bg-paper-50': 'rgb(250, 250, 248)',
+    'bg-paper-100': 'rgb(242, 242, 238)',
+    'bg-ink-900': 'rgb(26, 26, 24)',
+    'text-ink-600': 'rgb(61, 61, 58)',
+    'text-ink-300': 'rgb(138, 138, 131)',
+    'bg-dispatch-ember': 'rgb(199, 81, 63)',
+    'text-dispatch-slate': 'rgb(90, 107, 122)',
+    'border-ink-100': 'rgb(232, 232, 228)',
+  };
+  
+  var tokenResults = {};
+  for (var cls in testClasses) {
+    testDiv.className = cls;
+    var computed = cls.startsWith('bg-') ? getComputedStyle(testDiv).backgroundColor : 
+                  cls.startsWith('text-') ? getComputedStyle(testDiv).color :
+                  cls.startsWith('border-') ? getComputedStyle(testDiv).borderColor : 'N/A';
+    tokenResults[cls] = { expected: testClasses[cls], actual: computed, match: computed === testClasses[cls] };
+  }
+  results.tokens = tokenResults;
+  
+  // Fonts
+  results.fonts = {
+    editorial: getComputedStyle(document.querySelector('.font-editorial')).fontFamily,
+    ui: getComputedStyle(document.querySelector('.font-ui')).fontFamily,
+    mono: getComputedStyle(document.querySelector('.font-mono')).fontFamily,
+  };
+  
+  // Key sections present
+  results.sections = {
+    ticker: !!document.querySelector('.ticker-track'),
+    masthead: !!document.querySelector('h1'),
+    header: !!document.querySelector('header.sticky'),
+    leadStory: !!document.querySelector('[aria-label=\"Lead story\"]'),
+    feed: document.querySelectorAll('[role=feed] article').length,
+    nutritionLabel: !!document.querySelector('[class*=nutrition]'),
+    stats: !!document.querySelector('.text-5xl') || document.body.textContent.includes('247'),
+    faq: document.querySelectorAll('button[aria-expanded]').length > 0,
+    newsletter: !!document.querySelector('input[type=email]'),
+    footer: !!document.querySelector('[role=contentinfo]'),
+  };
+  
+  // Layout
+  results.layout = {
+    pageHeight: document.documentElement.scrollHeight,
+    maxWidthApplied: !!document.querySelector('.max-w-\\[1440px\\]'),
+    scrollProgress: !!document.querySelector('.scroll-progress'),
+  };
+  
+  document.body.removeChild(testDiv);
+  return JSON.stringify(results, null, 2);
+})()" 2>&1
+✗ Evaluation error: SyntaxError: Failed to execute 'querySelector' on 'Document': '.max-w-[1440px]' is not a valid selector.
+    at <anonymous>:55:33
+    at <anonymous>:61:3
 # Full design system audit
 $ agent-browser eval "(function(){
   var results = {};

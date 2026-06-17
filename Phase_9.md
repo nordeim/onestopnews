@@ -621,3 +621,62 @@ Based on the Phase 9 plan, the two remaining high-priority items are:
 2. Public API Rate Limiting — add Redis-based burst rate limiting to GET /api/articles (20 req/s per IP, burst 50).
 Question: Which would you like me to tackle first? Or would you prefer I create the full implementation plan for both and ask for your confirmation before writing any code?
 
+Goal
+- Fix broken CSS on the dynamic landing page and ensure full visual fidelity with the static mockup, then update project documentation.
+Constraints & Preferences
+- Meticulous visual comparison between static mockup and dynamic page
+- Use agent-browser to test the live dynamic site
+- All changes must pass pnpm check (tsc --noEmit + eslint)
+- Root cause analysis before fixing
+- Update README.md, CLAUDE.md, AGENTS.md to reflect latest code changes, gotchas, troubleshooting, and lessons learned
+Progress
+Done
+- FIX-TAILWIND DONE: Installed @tailwindcss/postcss@4.3.1 via pnpm add -D @tailwindcss/postcss; created postcss.config.mjs with @tailwindcss/postcss plugin — root cause was missing PostCSS plugin, Tailwind v4 never processed @import "tailwindcss"
+- FIX-FONT DONE: Installed @fontsource/commit-mono@5.2.5; copied woff2 to public/fonts/commit-mono-400.woff2; added next/font/local commitMono variable in layout.tsx with variable: "--font-mono"; added commitMono.variable to <html> className
+- FIX-EDITORIAL DONE: Added .font-editorial { text-rendering: optimizeLegibility; font-feature-settings: "ss01", "ss02"; } to globals.css
+- Full design system + layout audit passed (all PASS):
+- 7/7 design token classes resolve correctly (correct RGB values)
+- 3/3 fonts: Newsreader, Instrument Sans, commitMono
+- 10/10 page sections: ticker, masthead, sticky header, lead story, feed (6 cards), nutrition label, FAQ accordion (7 buttons), newsletter input, footer, scroll-progress
+- Sticky header: position: sticky; top: 0; z-index: 40
+- bg-dispatch-ember renders as rgb(199, 81, 63) on buttons, dots, and spans
+- text-dispatch-ember renders as rgb(199, 81, 63) for Live label
+- btn-ember CTA button renders with correct ember background
+- No broken images, page height 4843px
+- pnpm check (tsc + eslint) passes clean
+- Confirmed earlier false alarm: dispatch-ember bg: transparent was from hamburger menu button (uses hover:bg-paper-100, not bg-dispatch-ember); actual ember elements all render correctly
+- Header.tsx and Footer.tsx both structurally correct, matching static mockup
+In Progress
+- Updating README.md, CLAUDE.md, and AGENTS.md to reflect latest codebase state, fixes, gotchas, troubleshooting tips, lessons learned, and outstanding issues/recommendations
+Blocked
+- (none)
+Key Decisions
+- Root cause was missing @tailwindcss/postcss + postcss.config.mjs — Tailwind v4 requires the PostCSS plugin to process @import "tailwindcss" and generate utility classes from @theme
+- Used next/font/local for Commit Mono (not on Google Fonts) with woff2 from @fontsource/commit-mono package copied to public/fonts/
+- Commit Mono only has weight 400 — fontsource package has 200-700 but only 400 normal copied for now
+- Kept @theme --font-mono fallback stack in globals.css; next/font/local overrides --font-mono CSS variable at runtime via className on <html>
+- Cleared .next cache and restarted dev server after PostCSS config fix
+Next Steps
+- Complete documentation updates for README.md, CLAUDE.md, AGENTS.md
+- Run pnpm check after docs updates to verify no breakage
+Critical Context
+- Pre-fix state: CSS file was only 16KB with font-face declarations but NO utility class selectors — @import "tailwindcss" was inert without PostCSS plugin
+- Post-fix state: All custom token utility classes generate correctly, all sections render
+- Browser console warning: Image with src "https://picsum.photos/..." has "fill" and parent element with invalid "position". Provided "static" should be one of absolute,fixed,relative. — known layout issue in hero/lead story but images still render
+- hover:bg-paper-100 resolves to rgba(0,0,0,0) on non-hovered element — expected; hover states require actual user interaction
+- Dev server running at localhost:3000 via nohup pnpm dev
+- Static mockup uses Tailwind Browser CDN (<script src="https://unpkg.com/@tailwindcss/browser@4">) which processes @theme client-side — different pipeline but same design tokens
+- Pre-existing test failure: src/features/feed/queries.test.ts — cacheLife() issue (unrelated)
+- Stats section renders but has no aria-label (minor accessibility gap)
+Relevant Files
+- postcss.config.mjs: NEW — export default { plugins: { '@tailwindcss/postcss': {} } }
+- src/app/layout.tsx: MODIFIED — added localFont import for Commit Mono, commitMono constant, commitMono.variable in <html> className
+- src/app/globals.css: MODIFIED — added .font-editorial enhancement block
+- public/fonts/commit-mono-400.woff2: NEW — woff2 font file
+- src/shared/components/layout/Header.tsx: Read — sticky masthead with category tabs, bg-paper-50/95 backdrop-blur-sm, mobile dialog
+- src/shared/components/layout/Footer.tsx: Read — editorial footer with AI disclosure
+- src/shared/components/layout/Masthead.tsx: Read — edition bar, wordmark, broadsheet column rules
+- src/app/(public)/page.tsx: Read — 10 sections: scroll-progress, NewsTicker, Masthead, Header, LeadStory, Feed, StatsSection, NutritionLabelDemo, FAQ, NewsletterCTA
+- static_HTML_mockup_for_dynamic_landing_page.html: 1336-line reference mockup with CDN Tailwind
+- src/features/feed/queries.test.ts: Pre-existing test failure (cacheLife() issue, unrelated)
+

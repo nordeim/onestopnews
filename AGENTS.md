@@ -896,6 +896,10 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `next.config.ts` | 10 | Updated with `remotePatterns` for external images (picsum.photos) |
 | `src/shared/components/providers/RevealProvider.tsx` | 11 | IntersectionObserver-driven scroll-reveal animation provider |
 | `src/shared/components/providers/RevealProvider.test.tsx` | 11 | Tests for RevealProvider (IntersectionObserver, reduced motion) |
+| `postcss.config.mjs` | 12 | PostCSS config for Tailwind CSS v4 (`@tailwindcss/postcss` plugin) |
+| `public/fonts/commit-mono-400.woff2` | 12 | Commit Mono woff2 font file (extracted from `@fontsource/commit-mono`) |
+| `src/app/layout.tsx` (modified) | 12 | Added `localFont` import, `commitMono` constant, `commitMono.variable` in `<html>` className |
+| `src/app/globals.css` (modified) | 12 | Added `.font-editorial` enhancement block |
 
 ---
 
@@ -1105,6 +1109,93 @@ export default function HomePage() {
 
 ---
 
+## Phase 12: Tailwind v4 PostCSS & Commit Mono Font Fix — Lessons Learned
+
+### Phase 12 Gotchas Discovered
+
+#### 1. Missing `@tailwindcss/postcss` — Zero Utility Classes Generated
+
+**Issue**: After installing `tailwindcss@4.3.0`, the build produced CSS with `@font-face` declarations and `@theme` custom properties but **zero Tailwind utility class selectors**. Every custom token (`bg-ink-900`, `text-paper-50`, `bg-dispatch-ember`, etc.) was undefined. The compiled CSS was only ~16KB (should be hundreds of KB with utilities).
+
+**Root Cause**: Tailwind CSS v4 requires `@tailwindcss/postcss` as a PostCSS plugin. Without `postcss.config.mjs` (or `.css`), Tailwind v4's `@import "tailwindcss"` is treated as a plain CSS import — the `@theme` block renders as custom properties but no utility classes are generated from class usage in templates.
+
+**Fix**: Install the PostCSS plugin and create the config:
+
+```bash
+pnpm add -D @tailwindcss/postcss@4.3.1
+```
+
+```js
+// postcss.config.mjs
+export default { plugins: { '@tailwindcss/postcss': {} } };
+```
+
+**Prevention**: When setting up Tailwind CSS v4, the PostCSS plugin is **mandatory**, not optional. If utility classes are missing, check for `postcss.config.*` first. Also clear `.next/` cache after adding the config — stale cache masks the fix.
+
+#### 2. Commit Mono Not on Google Fonts — Requires `next/font/local`
+
+**Issue**: The "Editorial Dispatch" design system uses Commit Mono for metadata. Unlike Newsreader and Instrument Sans (available via Google Fonts), Commit Mono is a fontsmith typeface not on Google Fonts. `next/font/google` cannot load it.
+
+**Fix**: Use `next/font/local` with the woff2 file:
+
+```tsx
+// src/app/layout.tsx
+import localFont from "next/font/local";
+
+const commitMono = localFont({
+  src: "../../public/fonts/commit-mono-400.woff2",
+  variable: "--font-mono",
+  weight: "400",
+  style: "normal",
+  display: "swap",
+});
+```
+
+The woff2 was extracted from `@fontsource/commit-mono@5.2.5` (installed as source):
+
+```bash
+cp node_modules/@fontsource/commit-mono/files/commit-mono-400-normal.woff2 public/fonts/commit-mono-400.woff2
+```
+
+**Prevention**: For fonts not on Google Fonts, use `next/font/local` with woff2 files. Never add `@font-face` declarations manually in `globals.css` — `next/font` handles font optimization, preloading, and layout-shift prevention.
+
+#### 3. `.next` Cache Stale After PostCSS Config Addition
+
+**Issue**: After creating `postcss.config.mjs`, running `pnpm dev` still produced the old CSS (no utility classes). The stale `.next/` cache served the pre-fix compiled CSS.
+
+**Fix**: Always clear the `.next` cache after adding or changing PostCSS configuration:
+
+```bash
+rm -rf .next/
+pnpm dev
+```
+
+**Prevention**: After any config change to PostCSS, Tailwind, or Next.js, clear `.next/`. This is also documented in the Anti-Patterns table ("Stale `.next/` cache after route deletion").
+
+#### 4. `.font-editorial` Enhancement Block in `globals.css`
+
+**Issue**: While `font-editorial` (Newsreader via `next/font/google`) applied the font family, it didn't enforce the tight leading, negative tracking, and display weight that the "Editorial Dispatch" design system requires.
+
+**Fix**: Added an enhancement block in `globals.css`:
+
+```css
+.font-editorial {
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+```
+
+**Prevention**: When using `next/font` variable fonts, the weight and tracking must still be specified in CSS or Tailwind classes. `next/font` only handles the font-family and font-display aspects.
+
+### Phase 12 Recommendations
+
+1. **PostCSS as CI Gate**: Add a check to CI that verifies `postcss.config.mjs` or `postcss.config.js` exists. Its absence produces no build error but silently kills all utility class generation.
+2. **Font Audit**: After adding any new font, verify it loads correctly by inspecting the browser's Computed Styles panel. A missing woff2 file or incorrect `next/font/local` path fails silently.
+3. **`.next` Cache Clearing**: Document `rm -rf .next/` as a first troubleshooting step for any CSS or configuration issue. It should be in every developer's muscle memory.
+
+---
+
 ## Phase Status Tracker
 
 | Phase | Status | Key Deliverables |
@@ -1120,6 +1211,7 @@ export default function HomePage() {
 | **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch on above-the-fold elements, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
+| **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
 
 ---
 

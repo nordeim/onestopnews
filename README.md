@@ -4,7 +4,7 @@
 
 **Topic-first news aggregation with source-cited AI summaries.**
 
-[![Next.js](https://img.shields.io/badge/Next.js-%E2%89%A516.2.6-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-%E2%89%A516.2.9-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -52,10 +52,11 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 
 | Layer | Technology | Version | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Web Framework** | Next.js | ≥16.2.6 | App Router, PPR, Cache Components, `proxy.ts` |
+| **Web Framework** | Next.js | ≥16.2.9 | App Router, PPR, Cache Components, `proxy.ts` |
 | **UI Runtime** | React | 19.2 (stable) | View Transitions, `<Activity>` for zero-shift summary loading |
 | **Language** | TypeScript | 5.x (Strict) | Zero `any`. Type inference preferred. |
 | **Styling** | Tailwind CSS | v4 | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment. |
+| **PostCSS** | `@tailwindcss/postcss` | 4.3.1 | Mandatory PostCSS plugin for Tailwind v4 utility class generation. |
 | **Components** | Shadcn UI + Radix | Latest | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds. |
 | **ORM** | Drizzle ORM | Latest | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
 | **Validation** | Zod | 3.x | Schema-first, composable. Enforces AI output constraints. |

@@ -220,6 +220,9 @@ pnpm test
 | `revalidateTag` in workers | Next.js-only API, not available in Node.js | Use Redis pub/sub for cache invalidation |
 | `as any` with Drizzle `.with()` | Type inference broken for relational queries | Use explicit `.innerJoin()` instead |
 | Direct `await` of DB query in page | Blocks page render in Next.js 16 with `cacheComponents` | Wrap in `<Suspense>` with Server Component |
+| Missing `@tailwindcss/postcss` plugin | Tailwind v4 generates zero utility classes — only `@theme` custom properties | Install `@tailwindcss/postcss` + create `postcss.config.mjs` |
+| `next/font/google` for Commit Mono | Not available on Google Fonts | Use `next/font/local` with woff2 file |
+| Stale `.next/` cache after config change | Serves pre-fix CSS; masks the fix | Always `rm -rf .next/` after PostCSS/Tailwind/Next.js config changes |
 
 ---
 
@@ -251,6 +254,8 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 | **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
+| **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
+| **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
 
 ---
 
@@ -411,6 +416,8 @@ actionlint .github/workflows/ci.yml
 | Reveal Provider | `src/shared/components/providers/RevealProvider.tsx` |
 | DB Seed | `src/lib/db/seed.ts` |
 | Global CSS | `src/app/globals.css` |
+| PostCSS Config | `postcss.config.mjs` |
+| Commit Mono Font | `public/fonts/commit-mono-400.woff2` |
 
 ---
 
@@ -572,5 +579,48 @@ export default async function HomePage() {
 
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
-- **Last Updated**: June 15, 2026
+- **Last Updated**: June 18, 2026
 - **Total Tests**: 124+ across 24 suites
+
+---
+
+## Latest Lessons Learned (Phase 12)
+
+### 1. Missing `@tailwindcss/postcss` — Zero Utility Classes
+
+**Issue**: Tailwind CSS v4 requires `@tailwindcss/postcss` as a PostCSS plugin. Without `postcss.config.mjs`, `@import "tailwindcss"` is treated as plain CSS — `@theme` custom properties render but no utility classes are generated from template class usage. Compiled CSS is ~16KB instead of hundreds of KB.
+
+**Fix**: `pnpm add -D @tailwindcss/postcss@4.3.1` + create `postcss.config.mjs` with `{ plugins: { '@tailwindcss/postcss': {} } }`.
+
+**Prevention**: If utility classes are missing, check `postcss.config.*` first. Clear `.next/` after adding.
+
+### 2. Commit Mono Requires `next/font/local`
+
+**Issue**: Commit Mono is not on Google Fonts. `next/font/google` cannot load it.
+
+**Fix**: Use `next/font/local` with a woff2 file extracted from `@fontsource/commit-mono`:
+
+```tsx
+import localFont from "next/font/local";
+const commitMono = localFont({
+  src: "../../public/fonts/commit-mono-400.woff2",
+  variable: "--font-mono",
+  weight: "400",
+  display: "swap",
+});
+```
+
+### 3. `.next` Cache Must Be Cleared After Config Changes
+
+**Issue**: After creating `postcss.config.mjs`, stale `.next/` cache serves pre-fix CSS.
+
+**Fix**: `rm -rf .next/` then restart dev server. Make this a reflex for any PostCSS/Tailwind/Next.js config change.
+
+### 4. `.font-editorial` Needs Explicit Weight + Tracking
+
+**Issue**: `next/font/google` only applies the font family. The display weight (800), tight leading (1.1), and negative tracking (-0.02em) must be specified separately.
+
+**Fix**: Added enhancement block in `globals.css`:
+```css
+.font-editorial { font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+```
