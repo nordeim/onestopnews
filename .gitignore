@@ -6,6 +6,7 @@ venv/
 vendor/
 bak.git/
 plan/
+plans/
 backup/
 nohup.out
 .windsurfrules
