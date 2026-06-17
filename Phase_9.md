@@ -1,3 +1,11 @@
+> **⚠️ CAVEAT**: This document is a raw conversational session log, not a structured phase document.
+> It captures **intermediate** fixes that were later superseded by Phase 11–12 remediations.
+> Key misalignments with the current codebase:
+> - The Footer `currentYear` prop approach (Fix A) was reverted — Footer is now a Client Component
+> - The `.font-editorial` CSS block now includes `font-weight: 800`, `line-height: 1.1`, `letter-spacing: -0.02em`, `text-rendering: optimizeLegibility`, and `font-feature-settings` — inline `font-[800]`/`tracking-[-0.02em]` are redundant
+> - PostCSS config and Commit Mono font work is attributed to Phase 12 in AGENTS.md, not here
+> Consult AGENTS.md for the authoritative current state.
+
 Let me read the remaining sections of Phase_8.md to complete the review.
 →Read Phase_8.md [offset=688, limit=200]
 Comprehensive Phase 8 Validation Report
@@ -743,3 +751,172 @@ Done:
 - CLAUDE.md: Phase 12 status, PostCSS/Commit Mono anti-patterns, file locations, lessons learned
 - README.md: Phase 12 status tracker, @tailwindcss/postcss in tech stack, updated Next.js badge to ≥16.2.9, 2 new troubleshooting sections (Tailwind v4 utility classes not generating, Commit Mono font not loading)
 
+Now let me verify the .font-editorial discrepancy directly — this is a significant documentation-code mismatch:
+✱Grep "font-editorial" in src/app/globals.css (9 matches)
+→Read src/app/globals.css [limit=10, offset=50]
+Now let me also check the Footer.tsx directly to confirm its current state:
+→Read src/shared/components/layout/Footer.tsx 
+Now I have a complete picture. Let me compile the validation report.
+Phase_9.md Validation Report
+Executive Summary
+Phase_9.md is a 745-line conversational session log (not a structured phase document). It documents multiple remediation efforts across what became Phases 9–12. The document has significant misalignment with the current codebase — 4 claims are false and 2 are partially true out of 24 checked items.
+Critical Discrepancies
+1. Footer/currentYear fix — STALE (Items 1–4)
+Claim in Phase_9.md	Current Codebase
+Footer receives currentYear as prop from parent pages using headers().get("date")	Footer is a 'use client' component using new Date().getFullYear() directly (Footer.tsx:25)
+(public)/page.tsx, topics/[category], article/[id] all read headers() and pass currentYear to Footer	None of these pages import headers or pass currentYear. Footer renders with zero props, wrapped in <Suspense>
+Root cause: Phase9.md documents an intermediate fix (Fix A: headers().get("date") approach). This was later reverted in Phase 11 (per AGENTS.md), which converted Footer to a Client Component — the correct final solution. Phase9.md is a snapshot of an approach that no longer exists.
+2. .font-editorial CSS block — MISMATCH (Item 19)
+Documented content	Actual globals.css:53-56
+font-weight: 800; line-height: 1.1; letter-spacing: -0.02em;	text-rendering: optimizeLegibility; font-feature-settings: "ss01", "ss02";
+The weight/leading/tracking are applied inline via Tailwind classes (e.g., font-editorial text-3xl font-[800] tracking-[-0.02em]) — not in the CSS block. AGENTS.md and CLAUDE.md also contain this incorrect documentation. The CSS block applies OpenType features only.
+3. Phase attribution overlap — CONFUSION (Items 16–18)
+Phase9.md claims credit for PostCSS config, Commit Mono font file, and localFont setup. AGENTS.md attributes all three to Phase 12. Both documents describe the same files — the actual work happened in what is now labeled Phase 12, but Phase9.md captured it as part of its session.
+4. src/lib/auth/index.ts — MISLEADING (Item 6)
+Claim	Reality
+"Import authDb instead of db"	Both db and authDb are imported. authDb for DrizzleAdapter, db for credentials provider query
+5. Phase numbering recommendation — NOT ADOPTED (Item 23)
+Phase_9.md recommended renaming "Phase 9" to "Phase 8 Remediation". This was not adopted — Phase 9 stands alone as "Blocking Route Fix & Suspense" in AGENTS.md.
+Verified Claims (16 TRUE)
+Item	File	Status
+5	src/lib/db/auth.ts	EXISTS — eager Drizzle instance for adapter
+7	src/lib/db/schema.ts	EXISTS — emailVerified + image columns present
+8	src/features/search/actions.ts	EXISTS — "use server" Server Action wrapper
+9	SearchPageClient.tsx	MODIFIED — imports from actions.ts, not queries.ts
+10	(admin)/layout.tsx	verifyAdminSession() removed, layout is sync
+11	(admin)/sources/page.tsx	<Suspense> + SourcesData + SourcesSkeleton
+12	(admin)/summaries/page.tsx	<Suspense> + SummariesData + SummariesSkeleton
+13	src/features/sources/queries.ts	EXISTS — "use cache" + cacheLife("feed")
+14	SourcesData.tsx	EXISTS — calls verifyAdminSession() internally
+15	SourcesSkeleton.tsx	EXISTS — proper ARIA attributes
+16	postcss.config.mjs	EXISTS (Phase 12 attribution)
+17	commit-mono-400.woff2	EXISTS (Phase 12 attribution)
+18	layout.tsx localFont	EXISTS — commitMono variable in <html>
+20	feed/queries.ts	"use cache" + cacheLife("feed") present
+21	workers/index.ts	callAISummary() stub still present
+24	package.json	Both @tailwindcss/postcss and @fontsource/commit-mono in devDeps
+Score: 16 TRUE / 4 FALSE / 2 PARTIAL / 2 phase-attribution-overlap
+Recommendations
+Priority	Action	Rationale
+P1	Update .font-editorial documentation in AGENTS.md + CLAUDE.md to match actual CSS	Docs claim font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; but actual block only has text-rendering + font-feature-settings. Weight/leading/tracking are applied via Tailwind classes inline
+P2	Mark Phase_9.md as a session log, not a source of truth	It captures intermediate states (Fix A for Footer) that were later superseded. Future readers could be misled
+P3	Add .font-editorial weight/leading/tracking to the actual CSS block	Currently font-editorial requires manual Tailwind classes (font-[800] tracking-[-0.02em]) on every usage. Per the design system, these should be baked into the CSS block to enforce consistency
+P4	Replace callAISummary() stub in workers/index.ts	This is the highest-impact remaining work item. The stub returns hardcoded data — no real AI integration exists yet
+Want me to proceed with any of these recommendations?
+
+Goal
+- Fix broken CSS on the dynamic landing page and ensure full visual fidelity with the static mockup, then update project documentation (README.md, CLAUDE.md, AGENTS.md), and validate Phase_9.md against the codebase.
+Constraints & Preferences
+- Meticulous visual comparison between static mockup and dynamic page
+- Use agent-browser to test the live dynamic site
+- All changes must pass pnpm check (tsc --noEmit + eslint)
+- Root cause analysis before fixing
+- Update README.md, CLAUDE.md, AGENTS.md to reflect latest code changes, gotchas, troubleshooting, and lessons learned
+- Validate phase logs against actual codebase state
+Progress
+Done
+- FIX-TAILWIND: Installed @tailwindcss/postcss@4.3.1; created postcss.config.mjs — root cause was missing PostCSS plugin
+- FIX-FONT: Installed @fontsource/commit-mono@5.2.5; copied woff2 to public/fonts/commit-mono-400.woff2; added next/font/local commitMono variable in layout.tsx
+- FIX-EDITORIAL: Added .font-editorial block to globals.css
+- Full design system audit passed: 7/7 tokens, 3/3 fonts, 10/10 sections, all ember colors correct
+- pnpm check passes clean (verified after docs updates too)
+- AGENTS.md updated: Phase 12 row in tracker + full "Phase 12: Lessons Learned" section with 4 gotchas, 3 recommendations, 6 new file inventory entries
+- CLAUDE.md updated: Phase 12 status row, 4 new anti-patterns (PostCSS missing, next/font/google for Commit Mono, stale .next cache, .font-editorial needs explicit weight), PostCSS Config + Commit Mono Font file locations, 4 lessons learned entries
+- README.md updated: Phase 12 status row, @tailwindcss/postcss in tech stack table, Next.js badge → ≥16.2.9, 2 new troubleshooting sections (Tailwind v4 utility classes not generating, Commit Mono font not loading)
+- Phase_9.md validation completed via subagent exploring 24 claims against codebase
+In Progress
+- Reviewing Phase_9.md validation findings (subagent completed research; findings not yet synthesized into user-facing report)
+Blocked
+- (none)
+Key Decisions
+- Root cause was missing @tailwindcss/postcss + postcss.config.mjs — Tailwind v4 requires the PostCSS plugin
+- Used next/font/local for Commit Mono (not on Google Fonts) with woff2 from @fontsource
+- Kept @theme --font-mono fallback stack in globals.css; next/font/local overrides --font-mono at runtime
+- Cleared .next cache and restarted dev server after PostCSS config fix
+Next Steps
+- Synthesize and present Phase_9.md validation report to user (key misalignments found: Footer currentYear prop claim is stale — Footer is now a Client Component with new Date() internally; pages don't pass currentYear; auth.ts eager DB claim needs verification; other Phase 9 claims need cross-checking)
+Critical Context
+- Phase_9.md validation findings (partial — subagent truncated):
+- Footer.tsx: Phase_9 claims "year as required prop, removed new Date()" — FALSE: Footer is currently a Client Component using new Date().getFullYear() internally, FooterProps only has className?: string
+- src/app/(public)/page.tsx: Phase_9 claims "reads headers(), passes currentYear to Footer" — FALSE: No headers import, Footer rendered as <Footer /> with no props
+- Phase 11 (per AGENTS.md) subsequently re-fixed Footer to client-side — Phase_9's fix was overridden
+- Pre-fix state: CSS was 16KB with font-face but NO utility class selectors
+- Post-fix: All custom token utility classes generate correctly
+- Browser console warning: Image with src "https://picsum.photos/..." has "fill" and parent element with invalid "position" — known layout issue
+- hover:bg-paper-100 resolves to rgba(0,0,0,0) on non-hovered element — expected
+- Dev server running at localhost:3000 via nohup pnpm dev
+- Pre-existing test failure: src/features/feed/queries.test.ts — cacheLife() issue (unrelated)
+- Stats section has no aria-label (minor accessibility gap)
+- Connection pool max: 10 assumes dedicated Node.js runtime; needs PgBouncer for serverless
+Relevant Files
+- postcss.config.mjs: NEW — export default { plugins: { '@tailwindcss/postcss': {} } }
+- src/app/layout.tsx: MODIFIED — localFont import, commitMono constant, commitMono.variable in <html> className
+- src/app/globals.css: MODIFIED — .font-editorial enhancement block
+- public/fonts/commit-mono-400.woff2: NEW — woff2 font file
+- AGENTS.md: UPDATED — Phase 12 tracker row + Lessons Learned section + file inventory
+- CLAUDE.md: UPDATED — Phase 12, PostCSS gotchas, font locations, lessons learned
+- README.md: UPDATED — Phase 12, PostCSS troubleshooting, badge updates, tech stack table
+- Phase_9.md: READ — being validated against codebase; several claims found stale/overridden by later phases
+- src/shared/components/layout/Footer.tsx: Client Component with new Date() — contradicts Phase_9 claim
+- src/app/(public)/page.tsx: No headers() usage, <Footer /> with no props — contradicts Phase_9 claim
+
+# Todos
+[ ] Fix .font-editorial documentation in AGENTS.md + CLAUDE.md (P1)
+[ ] Bake weight/leading/tracking into .font-editorial CSS block (P3)
+[ ] Mark Phase_9.md as session log, not source of truth (P2)
+[ ] Run pnpm check after changes
+# Todos
+[•] Fix .font-editorial documentation in AGENTS.md + CLAUDE.md (P1)
+[ ] Bake weight/leading/tracking into .font-editorial CSS block (P3)
+[ ] Mark Phase_9.md as session log, not source of truth (P2)
+[ ] Run pnpm check after changes
+First, let me fix the .font-editorial CSS block in globals.css to bake in the design-system-mandated weight/leading/tracking (P3), then update all documentation to match (P1).
+→Read src/app/globals.css [limit=10, offset=50]
+← Edit src/app/globals.css
+
+Now the CSS block has the correct design-system values. Next, I need to update all font-editorial usages in the codebase — since weight/leading/tracking are now baked into .font-editorial, the inline font-[800] and tracking-[-0.02em] classes are redundant. Let me find all usages:
+✱Grep "font-editorial.*font-\[800\]|font-\[800\].*font-editorial" (100 matches)
+There are many usages across the codebase. The inline font-[800] and tracking-[-0.02em] classes are now redundant since .font-editorial bakes those in. However, some elements use different values (e.g., tracking-[-0.03em] for the Masthead wordmark, leading-[1.05] for LeadStory). The CSS base sets sensible defaults; specific overrides via Tailwind classes will naturally take precedence via specificity/cascade.
+Let me focus only on source files (not docs/mockups) and remove the truly redundant font-[800] and tracking-[-0.02em] from elements that just need the default editorial styling. Elements with custom leading/tracking should keep their overrides.
+✓Explore Task — Remove redundant font-[800] from font-editorial
+↳ 2 toolcalls · 24.9s
+ctrl+x down view subagents
+Good — all 18 instances have font-[800] alongside font-editorial, which is now redundant. I also need to check tracking-[-0.02em] cases (which is the default the CSS block now sets — any tracking-[-0.02em] alongside font-editorial is also redundant). Let me remove font-[800] from all font-editorial usages, and remove tracking-[-0.02em] only where it's the default (not -0.03em or -0.01em which are intentional overrides).
+Let me edit each source file:
+→Read src/shared/components/ui/NewsletterCTA.tsx 
+→Read src/shared/components/ui/Accordion.tsx 
+→Read src/shared/components/ui/StatsSection.tsx 
+→Read src/shared/components/layout/Masthead.tsx 
+→Read src/shared/components/layout/Header.tsx 
+→Read src/features/feed/components/ArticleCard.tsx 
+→Read src/features/feed/components/LeadStory.tsx 
+→Read src/features/summaries/components/NutritionLabelDemo.tsx 
+Now let me read the remaining files and apply all edits:
+→Read src/features/articles/components/ArticleData.tsx 
+→Read src/app/(admin)/sources/page.tsx 
+→Read src/app/(admin)/summaries/page.tsx 
+→Read src/app/(admin)/layout.tsx 
+→Read src/app/(public)/page.tsx 
+→Read src/app/(public)/search/page.tsx 
+Now I'll apply all edits to remove redundant font-[800] from font-editorial elements, and tracking-[-0.02em] where it's the CSS default (not custom overrides like -0.03em or leading-[1.05] — those stay):
+← Edit src/shared/components/ui/NewsletterCTA.tsx
+
+> onestopnews@0.1.0 lint /home/project/onestopnews
+> eslint . --max-warnings 0
+Clean. Let me also verify there are no remaining font-[800] alongside font-editorial in source files:
+# Check no redundant font-[800] with font-editorial in .
+$ rg 'font-editorial.*font-\[800\]|font-\[800\].*font-editorial' src/ --count
+(no output)
+Zero remaining instances.
+# Todos
+[✓] Fix .font-editorial documentation in AGENTS.md + CLAUDE.md (P1)
+[✓] Bake weight/leading/tracking into .font-editorial CSS block (P3)
+[✓] Mark Phase_9.md as session log, not source of truth (P2)
+[✓] Run pnpm check after changes
+All 4 recommendations from the validation report are complete. Here's the summary:
+Completed:
+#	Action	Files Changed
+P1	Fixed .font-editorial docs in AGENTS.md + CLAUDE.md to include text-rendering + font-feature-settings and document the redundancy rule	AGENTS.md, CLAUDE.md
+P3	Baked font-weight: 800, line-height: 1.1, letter-spacing: -0.02em into .font-editorial CSS block; removed redundant font-[800] and tracking-[-0.02em] from 18 instances across 14 source files	globals.css, 14 .tsx files
+P2	Added caveat header to Phase_9.md marking it as a session log with known misalignments	Phase_9.md
+pnpm check passes clean. Zero remaining font-[800] + font-editorial redundancies in source code.

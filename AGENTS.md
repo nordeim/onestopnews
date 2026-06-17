@@ -1174,7 +1174,7 @@ pnpm dev
 
 #### 4. `.font-editorial` Enhancement Block in `globals.css`
 
-**Issue**: While `font-editorial` (Newsreader via `next/font/google`) applied the font family, it didn't enforce the tight leading, negative tracking, and display weight that the "Editorial Dispatch" design system requires.
+**Issue**: While `font-editorial` (Newsreader via `next/font/google`) applied the font family, it didn't enforce the tight leading, negative tracking, display weight, and OpenType features that the "Editorial Dispatch" design system requires.
 
 **Fix**: Added an enhancement block in `globals.css`:
 
@@ -1183,10 +1183,12 @@ pnpm dev
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "ss02";
 }
 ```
 
-**Prevention**: When using `next/font` variable fonts, the weight and tracking must still be specified in CSS or Tailwind classes. `next/font` only handles the font-family and font-display aspects.
+**Prevention**: When using `next/font` variable fonts, the weight and tracking must still be specified in CSS or Tailwind classes. `next/font` only handles the font-family and font-display aspects. Since `.font-editorial` bakes in `font-weight: 800`, `line-height: 1.1`, and `letter-spacing: -0.02em`, inline `font-[800]` and `tracking-[-0.02em]` classes are redundant when using `font-editorial` and should be omitted. Elements needing different values (e.g., `tracking-[-0.03em]` for the Masthead wordmark, `font-[700]` for accordion questions, or `leading-[1.05]` for section heads) still need explicit overrides.
 
 ### Phase 12 Recommendations
 

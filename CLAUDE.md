@@ -618,9 +618,11 @@ const commitMono = localFont({
 
 ### 4. `.font-editorial` Needs Explicit Weight + Tracking
 
-**Issue**: `next/font/google` only applies the font family. The display weight (800), tight leading (1.1), and negative tracking (-0.02em) must be specified separately.
+**Issue**: `next/font/google` only applies the font family. The display weight (800), tight leading (1.1), negative tracking (-0.02em), and OpenType features must be specified separately.
 
 **Fix**: Added enhancement block in `globals.css`:
 ```css
-.font-editorial { font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+.font-editorial { font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; text-rendering: optimizeLegibility; font-feature-settings: "ss01", "ss02"; }
 ```
+
+**Redundancy**: Since `.font-editorial` bakes in weight 800, leading 1.1, and tracking -0.02em, do NOT add `font-[800]`, `leading-tight`, or `tracking-[-0.02em]` alongside `font-editorial`. Only add overrides for different values (e.g., `tracking-[-0.03em]`, `font-[700]`, `leading-[1.05]`).
