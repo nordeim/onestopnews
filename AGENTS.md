@@ -309,21 +309,29 @@ pnpm drizzle-kit migrate
 
 # 4. Start development
 pnpm dev              # Next.js (Turbopack) on http://localhost:3000
-pnpm worker:dev       # Worker service (separate terminal)
+pnpm worker           # Worker service (BullMQ + RSS ingestion + AI summarization)
+pnpm db:seed          # Seed sample data (idempotent, safe to re-run)
 ```
 
 ### Build & Quality Commands
 
 | Command | Purpose |
 | `pnpm dev` | Next.js dev server with Turbopack Fast Refresh |
+| `pnpm worker` | Worker service (BullMQ consumers + RSS + AI) |
 | `pnpm build` | Production build (Next.js) |
 | `pnpm start` | Production server (Next.js) |
-| `pnpm lint` | ESLint + Prettier |
+| `pnpm lint` | ESLint (`--max-warnings 0`) |
+| `pnpm check` | `tsc --noEmit && pnpm lint` (combined gate) |
 | `pnpm tsc --noEmit` | TypeScript strict check |
-| `pnpm test` | Run all test suites |
+| `pnpm test` | Run all test suites (`vitest run`) |
+| `pnpm test:watch` | Vitest in watch mode |
+| `pnpm test:e2e` | Playwright E2E tests |
 | `pnpm drizzle-kit generate` | Generate migration SQL from schema |
 | `pnpm drizzle-kit migrate` | Apply pending migrations |
-| `pnpm worker:dev` | Worker service (BullMQ + Node.js) |
+| `pnpm db:seed` | Seed sample articles/categories/sources |
+| `pnpm db:studio` | Drizzle Studio (DB GUI) |
+| `pnpm format` | Prettier write |
+| `pnpm format:check` | Prettier check |
 
 ### Pre-Commit Gate
 ```bash
@@ -371,12 +379,16 @@ Must pass before any PR is merged. No exceptions.
 
 | Concern | Posture |
 | :--- | :--- |
-| Next.js version | Pinned to `>=16.0.7`. CVE-2025-55182 (React2Shell RCE) + 13-advisory DoS/SSRF fix. |
-| Auth | Auth.js v5 beta, HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
+| Next.js version | Pinned to `>=16.0.7` (installed 16.2.9). Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182 (React2Shell RCE) + 13-advisory DoS/SSRF fix. |
+| Auth | Auth.js v5 beta (`5.0.0-beta.31`), HttpOnly session cookies. Drizzle adapter, same PostgreSQL instance. |
 | AI Disclosure | 3-layer: JSON-LD + HTTP header + HTML meta. C2PA rejected. EU AI Act Art. 50 compliant. |
-| Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex. |
-| DB connections | Eager connection with graceful fallback when `DATABASE_URL` is missing at build time. `max: 10` for dedicated runtimes. Serverless: use PgBouncer/Supavisor or inject dummy URI at build time. |
-| Access control | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins. |
+| Push keys | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex (32-byte), validated at module load. |
+| DB connections | Lazy Proxy connection (defers until first query). `max: 10` for dedicated runtimes. Serverless: use PgBouncer/Supavisor or inject dummy URI at build time. |
+| Access control | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins. `proxy.ts` is UX-only. |
+| Rate limiting | `GET /api/articles` rate-limited to 20 req/s per IP via Redis fixed-window counter (Phase 13). Returns `429` with `Retry-After` header. |
+| Content hashing | `articles.contentHash` uses SHA-256 (`node:crypto`) of `title\|publishedAt.toISOString()`. Used for change detection in ingest upserts (Phase 13). |
+| Env validation | All required env vars validated by Zod at module load (`src/lib/env/index.ts`). Fails fast with descriptive error. |
+| Cursor validation | `/api/articles` cursor param validated as ISO 8601; returns `400` on invalid input (Phase 13). |
 
 ---
 
@@ -400,14 +412,24 @@ Must pass before any PR is merged. No exceptions.
 | Missing `noUncheckedIndexedAccess` | `arr[i]` returns `T` instead of `T \| undefined`, hiding runtime errors. | Enable in `tsconfig.json`. |
 | Mismatched `@auth/core` versions | `DrizzleAdapter` fails at build time with type errors. | Run `pnpm why @auth/core`. Upgrade `next-auth` to align. |
 | Beta adapter `as any` without eslint-disable | Triggers `--max-warnings 0` lint failures. | Add `eslint-disable-next-line @typescript-eslint/no-explicit-any` with justification. |
-| Saved HTML snapshots as reference | Stale HTML saved during development misleads about current state. | Always curl the live server for current state. | |
-| Server-rendered `new Date()` | Causes hydration mismatch between server and client. | Use `'use client'` or pass pre-formatted date strings. | |
-| `new Date()` in Server Component | Next.js 16 `cacheComponents` blocks prerender with `next-prerender-current-time` | Move to Client Component (`'use client'`) with `useEffect`, or compute from `headers()` | |
-| `new Date()` in Client Component without `<Suspense>` | Prerender still fails — needs a Suspense boundary above it | Wrap Client Component in `<Suspense>` | |
-| `.reveal` class on above-the-fold elements | Hydration mismatch: server renders `reveal`, client expects `reveal visible` | Only use `.reveal` for below-the-fold elements | |
-| Merge artifact in CSS (e.g., ` INCLUDED`) | Corrupts Tailwind v4 `@theme` block, breaking all custom colors | Review CSS diffs after merges; run `pnpm build` before pushing | |
-| External images without `remotePatterns` | Next.js Image Optimization fails with security error. | Add all external image domains to `next.config.ts`. | |
-| Browser-only APIs in tests | `useInView`, `Intl.DateTimeFormat` fail in headless environment. | Mock in `vitest.setup.ts` or test files. | |
+| Saved HTML snapshots as reference | Stale HTML saved during development misleads about current state. | Always curl the live server for current state. |
+| Server-rendered `new Date()` | Causes hydration mismatch between server and client. | Use `'use client'` or pass pre-formatted date strings. |
+| `new Date()` in Server Component | Next.js 16 `cacheComponents` blocks prerender with `next-prerender-current-time` | Move to Client Component (`'use client'`) with `useEffect`, or compute from `headers()` |
+| `new Date()` in Client Component without `<Suspense>` | Prerender still fails — needs a Suspense boundary above it | Wrap Client Component in `<Suspense>` |
+| `.reveal` class on above-the-fold elements | Hydration mismatch: server renders `reveal`, client expects `reveal visible` | Only use `.reveal` for below-the-fold elements |
+| Merge artifact in CSS (e.g., ` INCLUDED`) | Corrupts Tailwind v4 `@theme` block, breaking all custom colors | Review CSS diffs after merges; run `pnpm build` before pushing |
+| Corrupted className (e.g. `font浃着`, `Monad`) | Invalid CSS class silently ignored; element falls back to wrong font (Phase 13) | Review CSS class strings after edits; use `font-mono` consistently |
+| External images without `remotePatterns` | Next.js Image Optimization fails with security error. | Add all external image domains to `next.config.ts`. |
+| Browser-only APIs in tests | `useInView`, `Intl.DateTimeFormat` fail in headless environment. | Mock in `vitest.setup.ts` or test files. |
+| FNV-1a hash for `contentHash` (Phase 13) | 8-char hash not collision-resistant; doesn't match PAD §7.1 SHA-256 spec | Use `node:crypto` `createHash("sha256")` returning 64-char hex |
+| `parseFeed` stub returning `[]` (Phase 13) | Ingestion pipeline produces zero articles; system appears healthy but never ingests | Use real `rss-parser` in `src/workers/jobs/parseFeed.ts` |
+| `callAISummary` stub returning placeholder (Phase 13) | Summaries contain fake data; no real AI call | Use Vercel AI SDK `generateObject()` in `src/workers/jobs/summarize.ts` |
+| Individual `scoreQueue.add()` per article (Phase 13) | Not atomic; cache invalidation can fire before all scoring completes | Use `enqueuePostIngestFlow()` FlowProducer atomic DAG |
+| `new Redis()` per cache invalidation call (Phase 13) | Connection churn under high ingest load (50 workers × N calls) | Module-level singleton publisher |
+| Missing env vars in CI (Phase 13) | `src/lib/env/index.ts` validates at module load; breaks ALL CI steps including lint | Set all 11 required env vars in `ci.yml` `env:` block with CI-safe dummy values |
+| `??=` for test env vars (Phase 13) | Shell env may contain values that fail Zod schema (e.g., SQLite `DATABASE_URL`) | Use direct `=` assignment in `src/test/setup.ts` |
+| `vi.fn(() => mockInstance)` for constructors (Phase 13) | `new` on vi.fn returns empty object, ignoring return value | Use `class MockX { ... }` in the mock factory |
+| `clientSegmentCache` flag (Next.js 16.2.9) (Phase 13) | Not in `ExperimentalConfig` type; produces `TS2353` | Document as deferred in `next.config.ts`; re-enable when upstream type includes it |
 
 ---
 
@@ -421,21 +443,40 @@ Must pass before any PR is merged. No exceptions.
 
 **Fix**: Use Redis pub/sub for worker-to-web-app cache invalidation. Workers publish invalidation events to a Redis channel; the Next.js app subscribes and calls `revalidateTag()` locally.
 
+**Phase 13 refinement**: The original implementation created a new Redis connection per call. Phase 13 refactored to a module-level singleton publisher to avoid connection churn under high ingest load (50 concurrent workers):
+
 ```typescript
-// src/workers/lib/cacheInvalidation.ts
-import { publisher } from '@/lib/queue';
+// src/workers/lib/cacheInvalidation.ts (Phase 13 singleton pattern)
+import { Redis } from "ioredis";
+import { env } from "@/lib/env";
+
+let _publisher: Redis | null = null;
+
+function getPublisher(): Redis {
+  if (!_publisher) {
+    _publisher = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      connectTimeout: 5000,
+    });
+  }
+  return _publisher;
+}
 
 export async function publishCacheInvalidation(tag: string): Promise<boolean> {
   try {
-    await publisher.publish(`cache:invalidate:${tag}`, '1');
+    const publisher = getPublisher();
+    const channel = `cache:invalidate:${tag}`;
+    const message = JSON.stringify({ tag, timestamp: new Date().toISOString() });
+    await publisher.publish(channel, message);
     return true;
-  } catch {
+  } catch (error) {
+    console.warn("[CacheInvalidation] Failed to publish invalidation:", error);
     return false; // Best-effort: don't crash the worker
   }
 }
 ```
 
-**TDD**: 3 tests in `cacheInvalidation.test.ts` verify publish, error handling, and Redis integration.
+**TDD**: 4 tests in `cacheInvalidation.test.ts` verify publish, error handling, channel format, and singleton reuse (Phase 13 added the singleton test).
 
 #### 2. Type Safety: `as any` Cast in Score Worker
 
@@ -900,6 +941,34 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `public/fonts/commit-mono-400.woff2` | 12 | Commit Mono woff2 font file (extracted from `@fontsource/commit-mono`) |
 | `src/app/layout.tsx` (modified) | 12 | Added `localFont` import, `commitMono` constant, `commitMono.variable` in `<html>` className |
 | `src/app/globals.css` (modified) | 12 | Added `.font-editorial` enhancement block |
+| `src/workers/jobs/parseFeed.ts` | 13 | RSS/Atom/JSON Feed parser via `rss-parser` (replaces stub) |
+| `src/workers/jobs/parseFeed.test.ts` | 13 | 13 TDD tests (RSS 2.0, Atom, JSON Feed, edge cases) |
+| `src/workers/jobs/summarize.ts` | 13 | AI summarization via Vercel AI SDK (Anthropic primary + OpenAI fallback) |
+| `src/workers/jobs/summarize.test.ts` | 13 | 8 TDD tests (mocked AI SDK, fallback, content priority) |
+| `src/lib/queue/flows.ts` | 13 | FlowProducer atomic DAG (ingest → score → refresh-feed-slice) |
+| `src/lib/queue/flows.test.ts` | 13 | 6 TDD tests (DAG structure, priorities, empty children) |
+| `src/lib/rateLimit.ts` | 13 | Redis fixed-window rate limiter (20 req/s per IP) |
+| `src/lib/rateLimit.test.ts` | 13 | 7 TDD tests (INCR/EXPIRE, window reset, TTL fallback) |
+| `src/app/api/categories/route.ts` | 13 | GET /api/categories — all categories with CORS + Cache-Control |
+| `src/app/api/categories/route.test.ts` | 13 | 5 TDD tests (200 response, CORS, Cache-Control, 500 handling) |
+| `src/app/api/articles/route.ts` (modified) | 13 | Added cursor validation (400 on invalid ISO 8601) + rate limiting (429 on exceed) |
+| `src/app/api/articles/route.test.ts` | 13 | 8 TDD tests (cursor validation + rate limiting) |
+| `src/domain/articles/normalize.ts` (modified) | 13 | `hashContent` migrated from FNV-1a to SHA-256 (`node:crypto`) |
+| `src/domain/articles/normalize.test.ts` (modified) | 13 | 11 tests (was 3) — added 64-char hex, deterministic SHA-256 vector, collision-resistance |
+| `src/lib/ai/provenance.ts` (modified) | 13 | `accountablePerson.name` now includes model (`AI System: ${model}`) |
+| `src/lib/ai/provenance.test.ts` (modified) | 13 | 5 tests (was 4) — added accountablePerson.name assertion |
+| `src/workers/index.ts` (modified) | 13 | Uses new `parseFeed` + `callAISummary` + `enqueuePostIngestFlow`; stores `body`; content-change-detection upserts via `(xmax = 0)` |
+| `src/workers/lib/cacheInvalidation.ts` (modified) | 13 | Refactored to singleton publisher (was new Redis per call) |
+| `src/workers/lib/cacheInvalidation.test.ts` (modified) | 13 | 4 tests (was 3) — added singleton reuse assertion |
+| `src/lib/db/schema.ts` (modified) | 13 | Added `body: text("body")` column to articles table |
+| `drizzle/0003_strong_mac_gargan.sql` | 13 | Migration: ADD COLUMN body (articles) + email_verified/image (users) |
+| `src/features/summaries/components/NutritionLabel.tsx` (modified) | 13 | Fixed corrupted className `font浃着` → `font-mono` |
+| `src/features/summaries/components/SummaryPanel.tsx` (modified) | 13 | Fixed typos `Monad`/`monospace` → `font-mono` |
+| `next.config.ts` (modified) | 13 | CVE comment `≥16.2.6` → `≥16.0.7` per MEP v5.1; documented deferred experimental flags |
+| `.github/workflows/ci.yml` (modified) | 13 | Node 22→24, `check-types`→`check`, added all 11 required env vars |
+| `.github/workflows/e2e.yml` (modified) | 13 | Node 22→24 |
+| `src/test/setup.ts` (modified) | 13 | Sets all required env vars with direct assignment (not `??=`) for test isolation |
+| `src/features/feed/queries.test.ts` (modified) | 13 | Updated to handle `cacheLife` error in vitest (no Next.js runtime) |
 
 ---
 
@@ -1203,17 +1272,106 @@ pnpm dev
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |
 | **Phase 1** — Foundation & Configuration | **COMPLETE** | next.config.ts, proxy.ts, tsconfig.json, docker-compose |
-| **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (10 tables), lazy DB client, Auth.js v5, BullMQ queues |
+| **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (11 tables: 8 business + 3 Auth.js adapter), lazy DB client, Auth.js v5, BullMQ queues |
 | **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API route |
-| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search (`ts_rank_cd` BM25), admin routes, source CRUD, summary review, `/api/articles` (103+ tests) |
-| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | Worker entry point, 4 BullMQ workers, scheduler, content guard, AES-256-GCM encryption, DST-safe quiet hours, push subscribe API, cache invalidation (124 tests, 24 suites) |
+| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search (`ts_rank_cd` BM25), admin routes, source CRUD, summary review, `/api/articles` |
+| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | Worker entry point, 4 BullMQ workers, scheduler, content guard, AES-256-GCM encryption, DST-safe quiet hours, push subscribe API, cache invalidation |
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 | **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch on above-the-fold elements, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
+| **Phase 13** — Critical Gaps Remediation (RSS + AI + FlowProducer + Rate Limiting) | **COMPLETE** | Real RSS/Atom/JSON parser via `rss-parser`, real AI summarization via Vercel AI SDK (Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick (**212 tests across 40 suites**) |
+
+---
+
+## Phase 13: Critical Gaps Remediation — Lessons Learned
+
+### Phase 13 Gotchas Discovered
+
+#### 1. RSS Parser Selection — `rss-parser` Field Conflation
+
+**Issue:** `rss-parser` conflates several source fields into its built-in `content` property:
+- For RSS 2.0: `content` = `<content:encoded>` if present, else `<description>`
+- For Atom: `content` = `<content>` if present, else `<summary>`
+
+This makes it impossible to distinguish "body" from "excerpt" using `content` alone.
+
+**Fix:** Read fields explicitly by feed type:
+- RSS: use `content:encoded` (custom field) for body, `contentSnippet` for excerpt
+- Atom: detect via root element `<feed>` in raw XML, use `content` for body, `summary` for excerpt
+
+**Lesson:** Always check what a library conflates before relying on its built-in fields. For feeds, explicit field extraction by format is safer than generic fallbacks.
+
+#### 2. `feedType` is Undefined in `rss-parser` for Atom
+
+**Issue:** `rss-parser` documentation suggests `parsed.feedType` returns `"rss"` | `"atom"` | `"rdf"`. In practice (v3.13.0), `feedType` is `undefined` for Atom feeds.
+
+**Fix:** Detect feed type by inspecting the raw XML root element:
+```typescript
+const isAtom = /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
+               /^\s*<feed[\s>]/i.test(content.trim());
+```
+
+#### 3. Vercel AI SDK v6 — `generateObject` Returns `result.object`, Not `result`
+
+**Issue:** The AI SDK v6 `generateObject()` returns `{ object, usage, ... }` — the validated output is in `result.object`, not `result` directly.
+
+**Fix:** Spread `result.object` and add `model` + `tokensUsed` from `result.usage`:
+```typescript
+const result = await generateObject({ model, schema, messages, temperature: 0.1 });
+return { ...result.object, model: PRIMARY_MODEL, tokensUsed: result.usage?.totalTokens ?? 0 };
+```
+
+#### 4. `articles.body` Column — Schema Design Gap
+
+**Issue:** The original schema had no `body` column, but `contentAvailabilityEnum` tiers (`partial_text` = 300–1500 chars body, `full_text` = >1500 chars body) imply body content exists. The `determineContentAvailability` function checks `body.length` — but body was never persisted.
+
+**Fix:** Added nullable `body: text("body")` column via additive Drizzle migration (`drizzle/0003_strong_mac_gargan.sql`). The ingest worker now stores body extracted from feeds, and the summarize worker passes it to `callAISummary` instead of the previous `body: null` placeholder.
+
+#### 5. `vi.fn().mockImplementation()` Is NOT a Constructor
+
+**Issue:** When mocking classes like `Redis` or `FlowProducer` that are called with `new`, `vi.fn(() => mockInstance)` doesn't work — `new` on a vi.fn returns an empty object, ignoring the return value.
+
+**Fix:** Use a real class in the mock factory:
+```typescript
+vi.mock("ioredis", () => ({
+  Redis: class MockRedis {
+    incr = mockRedis.incr;
+    expire = mockRedis.expire;
+    // ...
+  },
+}));
+```
+
+#### 6. Test Setup Environment Variable Override
+
+**Issue:** The shell environment may contain values that fail the env schema (e.g., a SQLite `DATABASE_URL` from a parent project). Using `??=` (nullish coalescing assignment) in test setup doesn't override these.
+
+**Fix:** Use direct assignment (`=`) in `src/test/setup.ts` to force test-safe values, and document why. Also note: `process.env.NODE_ENV` is typed as read-only by `@types/node` — vitest already sets it to `"test"`, so no manual assignment is needed.
+
+#### 7. CI Workflow — Missing Env Vars Break All Steps
+
+**Issue:** `src/lib/env/index.ts` validates all required env vars at module load time and throws if any are missing/invalid. This means even `pnpm install` → `pnpm lint` would fail in CI if env vars aren't set, because linting imports modules that import `@/lib/env`.
+
+**Fix:** Set all required env vars (with CI-safe dummy values) in the `env:` block of `.github/workflows/ci.yml`. Use values that pass the Zod schema (e.g., `DATABASE_URL=postgres://...`, `ANTHROPIC_API_KEY=sk-ant-...`, `PUSH_KEY_ENCRYPTION_KEY=0000...0000` 64 hex chars).
+
+#### 8. `clientSegmentCache` Not in `ExperimentalConfig` (Next.js 16.2.9)
+
+**Issue:** PRD §5.2 / PAD §5.3 list `experimental.clientSegmentCache: true`, `turbopackPersistentCaching: true`, and `turbopackFileSystemCacheForBuild: true`. The installed Next.js 16.2.9 does not expose these flags in `ExperimentalConfig` — adding them produces `TS2353: Object literal may only specify known properties`.
+
+**Fix:** Document the flags as deferred in `next.config.ts` with a comment explaining they'll be re-enabled once the upstream type includes them. Only `viewTransition: true` is currently enabled.
+
+### Phase 13 Recommendations
+
+1. **Article Detail Page:** The article detail page (`src/app/article/[id]/page.tsx` + `ArticleData.tsx`) is still a placeholder — it renders hardcoded mock data and does not call `generateProvenanceMetadata()`. Wiring this up to fetch real articles + render `NutritionLabel` + emit JSON-LD/HTTP header/meta tag is the next milestone.
+2. **Token Usage Tracking:** `result.usage?.totalTokens ?? 0` is a defensive fallback. Monitor actual token usage in production to verify the AI SDK v6 `usage` field is populated correctly for both Anthropic and OpenAI.
+3. **RSS Parser HTML Stripping:** `stripHtml()` in `parseFeed.ts` is a simple regex-based stripper. For production-grade content extraction (especially for complex RSS with nested HTML), consider `sanitize-html` or `cheerio` once performance becomes a concern.
+4. **Rate Limit Identifier:** The current rate limiter uses `x-forwarded-for` IP. Behind a CDN (e.g., Cloudflare), this header may contain multiple IPs or be spoofed. Consider also checking `x-real-ip` or using a signed CDN IP header in production.
+5. **FlowProducer Connection:** The flow producer uses the Queue (producer) connection config (`enableOfflineQueue: false`). If Redis is temporarily unreachable during an ingest burst, flow enqueues will fail fast. Consider whether this is acceptable or whether a retry queue is needed.
+6. **Schema Migration — `users.email_verified` and `users.image`:** The Phase 13 migration (`0003_strong_mac_gargan.sql`) also picked up `email_verified` and `image` columns on `users` that were in the schema but never migrated. These are additive and safe — they're standard Auth.js adapter fields.
 
 ---
 

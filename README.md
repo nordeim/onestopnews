@@ -4,7 +4,7 @@
 
 **Topic-first news aggregation with source-cited AI summaries.**
 
-[![Next.js](https://img.shields.io/badge/Next.js-%E2%89%A516.2.9-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-%E2%89%A516.0.7-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x%20Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -52,23 +52,25 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 
 | Layer | Technology | Version | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Web Framework** | Next.js | ≥16.2.9 | App Router, PPR, Cache Components, `proxy.ts` |
+| **Web Framework** | Next.js | ≥16.0.7 (installed 16.2.9) | App Router, PPR, Cache Components, `proxy.ts`. Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182. |
 | **UI Runtime** | React | 19.2 (stable) | View Transitions, `<Activity>` for zero-shift summary loading |
-| **Language** | TypeScript | 5.x (Strict) | Zero `any`. Type inference preferred. |
-| **Styling** | Tailwind CSS | v4 | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment. |
-| **PostCSS** | `@tailwindcss/postcss` | 4.3.1 | Mandatory PostCSS plugin for Tailwind v4 utility class generation. |
+| **Language** | TypeScript | 5.x (Strict) | Zero `any`. Type inference preferred. `noUncheckedIndexedAccess` + `erasableSyntaxOnly` + `verbatimModuleSyntax` enabled. |
+| **Styling** | Tailwind CSS | v4 (4.3.0) | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment. |
 | **PostCSS** | `@tailwindcss/postcss` | 4.3.1 | Mandatory PostCSS plugin for Tailwind v4 utility class generation. |
 | **Components** | Shadcn UI + Radix | Latest | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds. |
-| **ORM** | Drizzle ORM | Latest | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
-| **Validation** | Zod | 3.x | Schema-first, composable. Enforces AI output constraints. |
+| **ORM** | Drizzle ORM | 0.45+ | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
+| **Validation** | Zod | 4.x (installed 4.4.3) | Schema-first, composable. Enforces AI output constraints. |
 | **Auth** | Auth.js | 5.0.0-beta.31 | HttpOnly session cookies, Drizzle adapter. Pinned exact beta. Next-auth aligns with `@auth/drizzle-adapter` on `@auth/core@0.41.2`. |
 | **Database** | PostgreSQL | 17 | Primary datastore. GIN FTS + `ts_rank_cd` BM25. |
 | **Search** | `tsvector` + `ts_rank_cd` | Built-in | BM25 relevance ranking natively in Postgres. `pg_trgm` for autocomplete. |
-| **Job Queue** | BullMQ | 5.x | Job graphs (Flows), priorities, built-in monitoring dashboard. |
+| **Job Queue** | BullMQ | 5.78+ | Job graphs (Flows via `FlowProducer`), priorities, built-in monitoring dashboard. |
 | **Queue Backend** | Redis (Upstash) | 7.x | AOF persistence, `noeviction`, `maxRetriesPerRequest: null`. |
 | **Worker Runtime** | Node.js | 24 LTS ("Krypton") | BullMQ-native. LTS through April 2028. |
+| **AI SDK** | Vercel AI SDK | `ai@6` + `@ai-sdk/anthropic@3` + `@ai-sdk/openai@3` | `generateObject()` with Zod schema validation. Anthropic primary, OpenAI fallback. |
 | **AI (Primary)** | Claude 4.5 Haiku | `claude-haiku-4-5` | $1/$5 per M tokens. Best cost/quality for news summarisation. |
 | **AI (Fallback)** | GPT-5 Mini | `gpt-5-mini` | Validated cost/quality fallback model. |
+| **RSS Parsing** | `rss-parser` | 3.13+ | RSS 2.0 + Atom 1.0 parsing. JSON Feed parsed natively. |
+| **Rate Limiting** | `ioredis` (fixed-window) | 5.11+ | Redis `INCR` + `EXPIRE` pattern. 20 req/s per IP on `/api/articles`. |
 | **Bundler** | Turbopack | Next.js 16 default | 5–10× faster Fast Refresh. Stable since 16.0. |
 
 ### System Topology
@@ -165,7 +167,6 @@ onestopnews-web/
 │   │   │   ├── FAQ              ← Accordion with 6 Q&A items
 │   │   │   └── Newsletter       ← Email signup CTA
 │   │   ├── 📂 topics/[category]/← /topics/:category — PPR + Cache Component
-│   │   ├── 📂 topics/[category]/← /topics/:category — PPR + Cache Component
 │   │   ├── 📂 article/[id]/     ← /article/:id — Fully dynamic (summary status)
 │   │   └── 📂 search/           ← /search — Full-text search (Phase 6)
 │   ├── 📂 (admin)/              ← Protected admin routes
@@ -173,7 +174,10 @@ onestopnews-web/
 │   │   ├── 📂 sources/          ← /admin/sources — Source management (Phase 6)
 │   │   └── 📂 summaries/        ← /admin/summaries — Summary review (Phase 6)
 │   └── 📂 api/                  ← Route Handlers: public HTTP API
-│       ├── 📂 articles/         ← GET /api/articles (feed + search, Phase 6)
+│       ├── 📂 articles/         ← GET /api/articles (feed + search, Phase 6; rate limited + cursor validation Phase 13)
+│       ├── 📂 categories/       ← GET /api/categories (Phase 13)
+│       ├── 📂 health/           ← GET /api/health — DB + Redis health check
+│       ├── 📂 push/subscribe/   ← POST /api/push/subscribe (Phase 7)
 │       └── 📂 summarize/[id]/   ← POST /api/summarize/:id (enqueue only)
 │
 ├── 📂 features/                 ← Feature modules (Layer 2)
@@ -194,22 +198,40 @@ onestopnews-web/
 │       └── 📄 types.ts            ← SearchResult, SearchPage, SearchParams
 │
 ├── 📂 domain/                   ← Pure domain logic (Layer 3)
-│   ├── 📂 articles/normalize.ts ← URL normalization, content hashing
+│   ├── 📂 articles/normalize.ts ← URL normalization, SHA-256 content hashing (Phase 13)
 │   └── 📂 ranking/score.ts      ← Importance scoring formula
 │
 ├── 📂 lib/                      ← Infrastructure integrations (Layer 4)
 │   ├── 📂 db/
 │   │   ├── 📄 index.ts          ← Lazy Proxy DB client (defers connection to first query)
-│   │   ├── 📄 schema.ts         ← Complete Drizzle schema: users, articles, summaries, sources, etc.
+│   │   ├── 📄 schema.ts         ← Complete Drizzle schema: 11 tables (8 business + 3 Auth.js adapter)
 │   │   └── 📄 seed.ts           ← Database seed script (Phase 10): sample articles, categories, sources
 │   ├── 📂 queue/
-│   │   └── 📄 index.ts          ← BullMQ Queue instances (producer side)
+│   │   ├── 📄 index.ts          ← BullMQ Queue instances (producer side) + split Worker/Queue connection configs
+│   │   └── 📄 flows.ts          ← FlowProducer atomic DAG: ingest → score → refresh-feed-slice (Phase 13)
 │   ├── 📂 ai/
 │   │   ├── 📄 prompts.ts        ← Prompt templates with Zod response schemas
 │   │   └── 📄 provenance.ts     ← 3-layer AI provenance generator (JSON-LD + HTTP header + meta)
-│   └── 📂 auth/
-│       ├── 📄 index.ts          ← Auth.js v5 server instance
-│       └── 📄 dal.ts            ← Data Access Layer: verifySession(), verifyAdminSession()
+│   ├── 📂 auth/
+│   │   ├── 📄 index.ts          ← Auth.js v5 server instance
+│   │   └── 📄 dal.ts            ← Data Access Layer: verifySession(), verifyAdminSession()
+│   ├── 📂 env/
+│   │   └── 📄 index.ts          ← Zod-validated environment variables (fails fast at module load)
+│   ├── 📂 security/
+│   │   └── 📄 encrypt.ts        ← AES-256-GCM push key encryption (Phase 7)
+│   └── 📄 rateLimit.ts          ← Redis fixed-window rate limiter (Phase 13)
+│
+├── 📂 workers/                  ← Worker service (separate Node.js process)
+│   ├── 📄 index.ts              ← 4 BullMQ workers (ingest/summarize/score/feed-slice) + graceful shutdown
+│   ├── 📂 jobs/
+│   │   ├── 📄 parseFeed.ts      ← RSS/Atom/JSON Feed parser via rss-parser (Phase 13)
+│   │   ├── 📄 summarize.ts      ← AI summarization via Vercel AI SDK (Anthropic + OpenAI fallback) (Phase 13)
+│   │   ├── 📄 determineContentAvailability.ts ← Content availability guard (Phase 7)
+│   │   └── 📄 scheduler.ts      ← Idempotent job scheduler via upsertJobScheduler()
+│   ├── 📂 push/
+│   │   └── 📄 isWithinQuietHours.ts ← DST-safe quiet hours via luxon (Phase 7)
+│   └── 📂 lib/
+│       └── 📄 cacheInvalidation.ts ← Redis pub/sub cache invalidation (singleton publisher, Phase 13)
 │
 └── 📂 shared/
     ├── 📂 components/           ← Shadcn UI wrapped for bespoke "Editorial Dispatch" aesthetic
@@ -331,8 +353,8 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;  -- For fuzzy search suggestions
 # Terminal 1 — Next.js dev server (Turbopack)
 pnpm dev
 
-# Terminal 2 — Worker service
-pnpm worker:dev
+# Terminal 2 — Worker service (BullMQ consumers + RSS ingestion + AI summarization)
+pnpm worker
 ```
 
 ### 6. Verify setup
@@ -342,41 +364,56 @@ pnpm worker:dev
 | `curl http://localhost:3000` | HTML response with PPR shell |
 | `curl http://localhost:3000/api/articles?category=tech` | JSON array of articles with `source` objects |
 | `curl "http://localhost:3000/api/articles?q=AI+regulation"` | JSON array of search results with `rank` |
-| `curl http://localhost:3000/api/health` | `{ status: "ok", ... }` |
-| BullMQ dashboard at `http://localhost:3001` | Active queues: `ingest`, `summarize`, `score` |
+| `curl http://localhost:3000/api/categories` | JSON `{ categories: [...] }` with id/slug/name per category |
+| `curl http://localhost:3000/api/health` | `{ status: "ok", deps: { db: "connected", redis: "connected" } }` |
+| `curl -H "x-forwarded-for: 1.2.3.4" "http://localhost:3000/api/articles?cursor=invalid"` | `400` with `{ error: "Invalid cursor format..." }` |
+| BullMQ dashboard at `http://localhost:3001` | Active queues: `ingest`, `summarize`, `score`, `feed-slice` |
 | `pnpm tsc --noEmit` | Zero type errors |
-| `pnpm test` | All tests pass |
+| `pnpm test` | All 212 tests pass across 40 suites |
 
 ---
 
 ## Environment Variables
 
+All variables are validated by Zod at module load time (`src/lib/env/index.ts`). The app fails fast with a descriptive error if any required variable is missing or invalid.
+
 ```bash
 # ── Database ──────────────────────────────────────────────
 DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews
-# Connection pooler URL for serverless (PgBouncer / Supavisor)
-# DATABASE_URL_UNPOOLED=postgresql://user:pass@localhost:5432/onestopnews
+# Must start with postgres:// or postgresql://
+# For serverless (Vercel/Lambda), use PgBouncer/Supavisor pooler URL
 
 # ── Redis ─────────────────────────────────────────────────
 REDIS_URL=redis://localhost:6379
+# Must start with redis://
 
 # ── Authentication (Auth.js v5) ───────────────────────────
-AUTH_SECRET=  # Generate with: openssl rand -base64 33
+AUTH_SECRET=  # Generate with: openssl rand -base64 33 (min 32 chars)
 AUTH_URL=http://localhost:3000  # Production: your canonical URL
 
 # ── AI Models ─────────────────────────────────────────────
-ANTHROPIC_API_KEY=             # Claude 4.5 Haiku (primary)
-OPENAI_API_KEY=                # GPT-5 Mini (fallback)
+ANTHROPIC_API_KEY=             # Must start with sk-ant- (Claude 4.5 Haiku, primary)
+OPENAI_API_KEY=                # Must start with sk- (GPT-5 Mini, fallback)
 
 # ── Web Push (VAPID) ──────────────────────────────────────
+# Generate with: npx web-push generate-vapid-keys
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=mailto:admin@onestopnews.com
+
+# ── Push Key Encryption ───────────────────────────────────
+# 32-byte hex string (64 chars). Generate with: openssl rand -hex 32
+PUSH_KEY_ENCRYPTION_KEY=
+
+# ── Node Environment ──────────────────────────────────────
+NODE_ENV=development  # development | production | test
 
 # ── Observability (Optional) ──────────────────────────────
 SENTRY_DSN=
 AXIOM_TOKEN=
 ```
+
+**CI Note:** All required env vars must be set even for `pnpm lint` and `pnpm test`, because `src/lib/env/index.ts` validates at module load time. See `.github/workflows/ci.yml` for CI-safe dummy values.
 
 ---
 
@@ -384,12 +421,18 @@ AXIOM_TOKEN=
 
 | Endpoint | Method | Auth | Description |
 | :--- | :--- | :--- | :--- |
-| `/api/articles` | `GET` | Public | Feed articles with cursor pagination. Query: `?category=tech&cursor=2026-06-10T12:00:00Z` |
-| `/api/articles` | `GET` | Public | Full-text search. Query: `?q=AI+regulation&category=tech` |
-| `/api/summarize/[id]` | `POST` | Session | Enqueue summarisation job for article `id`. Returns `202` with job ID. |
-| `/admin/sources` | `GET` | Admin | Source management dashboard. |
-| `/admin/sources` | `POST` | Admin | Add new RSS/Atom/JSON feed source. |
+| `/api/articles` | `GET` | Public (rate limited) | Feed articles with cursor pagination. Query: `?category=tech&cursor=2026-06-10T12:00:00Z&limit=31` |
+| `/api/articles` | `GET` | Public (rate limited) | Full-text search. Query: `?q=AI+regulation&category=tech` |
+| `/api/categories` | `GET` | Public | All categories (id, slug, name). Cached 5min at CDN. (Phase 13) |
+| `/api/health` | `GET` | Public | DB + Redis health check. Returns `200 { status: "ok" }` or `503 { status: "degraded" }`. |
+| `/api/summarize/[id]` | `POST` | Session | Enqueue summarisation job for article `id`. Returns `202` with job ID. Content availability guard enforced. |
+| `/api/push/subscribe` | `POST` | Session | Web Push subscription. Encrypts p256dh/auth keys with AES-256-GCM before storage. (Phase 7) |
+| `/admin/sources` | `GET/POST` | Admin | Source management dashboard + CRUD. |
 | `/admin/summaries` | `GET` | Admin | Summary review queue for flagged content. |
+
+**Rate Limiting (Phase 13):** `GET /api/articles` is rate-limited to 20 requests/second per IP via Redis fixed-window counter (`src/lib/rateLimit.ts`). Exceeding the limit returns `429 Too Many Requests` with `Retry-After` and `X-RateLimit-Remaining` headers.
+
+**Cursor Validation (Phase 13):** The `cursor` query parameter must be a valid ISO 8601 date string (e.g., `2026-06-10T12:00:00Z`). Invalid cursors return `400 Bad Request` with `{ error: "Invalid cursor format..." }`.
 
 **Public API Response Shape:**
 ```json
@@ -399,6 +442,11 @@ AXIOM_TOKEN=
   "hasNextPage": true
 }
 ```
+
+**Headers on success:**
+- `Cache-Control: public, max-age=60, stale-while-revalidate=300`
+- `X-RateLimit-Remaining: <count>`
+- CORS headers (`Access-Control-Allow-Origin: *`)
 
 ---
 
@@ -665,18 +713,109 @@ cp node_modules/@fontsource/commit-mono/files/commit-mono-400-normal.woff2 publi
 
 **Prevention**: For fonts not on Google Fonts, use `next/font/local` with woff2 files. Never add `@font-face` declarations manually in `globals.css` — `next/font` handles font optimization, preloading, and layout-shift prevention.
 
+### RSS Feed Parsing Returns Empty Array (Phase 13)
+
+**Symptom**: The ingest worker fetches a feed successfully (HTTP 200) but `parseFeed` returns `[]` — no articles are ingested.
+
+**Cause 1**: The feed XML is malformed. `parseFeed` catches XML parse errors and returns `[]` rather than throwing (to avoid crashing the worker). Check the worker logs for `[parseFeed] XML parse failed:` warnings.
+
+**Cause 2**: All items in the feed lack a `<title>` element. `parseFeed` filters out items without titles (required field).
+
+**Cause 3**: The feed format detection failed. `parseFeed` detects Atom feeds by checking for `<feed` in the raw XML; if the XML has unusual whitespace or encoding, detection may fail and the feed is treated as RSS.
+
+**Fix**: Validate the feed URL with `curl -s <feed-url> | head -20` to inspect the raw XML. Test parsing in isolation:
+```bash
+npx tsx -e "import { parseFeed } from './src/workers/jobs/parseFeed'; fetch('<feed-url>').then(r => r.text()).then(t => parseFeed(t, 'rss').then(items => console.log(items.length, 'items')))";
+```
+
+**Prevention**: The `parseFeed.test.ts` suite has 13 tests covering RSS 2.0, Atom, JSON Feed, and edge cases. Run `pnpm test -- parseFeed` after any parser change.
+
+### AI Summarization Returns Placeholder Data (Phase 13)
+
+**Symptom**: Summaries are being generated but contain `"Summary placeholder"` or `["Point 1", "Point 2"]` text.
+
+**Cause**: The `callAISummary` function in `src/workers/jobs/summarize.ts` is being shadowed by an older stub. This can happen if you have uncommitted changes or are on a branch predating Phase 13.
+
+**Fix**: Verify the worker is using the real implementation:
+```bash
+grep -n "Summary placeholder" src/workers/
+# Should return NO matches. If it matches, the stub is still present.
+```
+
+**Prevention**: The `summarize.test.ts` suite (8 tests) mocks the AI SDK and verifies `generateObject` is called. If the stub is present, these tests will fail because the stub doesn't call `generateObject`.
+
+### Rate Limit Returns 429 Unexpectedly (Phase 13)
+
+**Symptom**: Legitimate clients receive `429 Too Many Requests` from `/api/articles` despite low traffic.
+
+**Cause 1**: Multiple clients behind the same NAT/proxy share an IP. The fixed-window counter is per-IP, so 20 req/s is shared across all clients behind that IP.
+
+**Cause 2**: The Redis key `ratelimit:api:articles:<ip>` has a stale TTL. This shouldn't happen (TTL is set on first INCR), but a Redis restart mid-window could leave a key without expiry.
+
+**Fix**: Check the current count and TTL in Redis:
+```bash
+redis-cli get ratelimit:api:articles:1.2.3.4
+redis-cli ttl ratelimit:api:articles:1.2.3.4
+```
+If the count is stuck high with a long TTL, delete the key: `redis-cli del ratelimit:api:articles:1.2.3.4`.
+
+**Prevention**: The rate limiter uses a 1-second window, so counts reset quickly. For production behind a CDN, consider using a signed CDN IP header instead of `x-forwarded-for`.
+
+### `hashContent` Returns 8-Character Hash (Phase 13)
+
+**Symptom**: The `articles.content_hash` column contains 8-character hex strings instead of 64-character SHA-256 hashes.
+
+**Cause**: The old FNV-1a implementation is still present. Phase 13 migrated `hashContent` to SHA-256, but if you're on a branch predating Phase 13, the old implementation returns 8-char hashes.
+
+**Fix**: Verify the implementation:
+```bash
+grep -n "createHash\|FNV\|2166136261" src/domain/articles/normalize.ts
+# Should show createHash("sha256"). If it shows 2166136261 (FNV-1a seed), the old impl is present.
+```
+
+**Prevention**: The `normalize.test.ts` suite has a test asserting `hash` matches `/^[0-9a-f]{64}$/` and a deterministic SHA-256 vector test. These fail if the old FNV-1a implementation is restored.
+
+### FlowProducer Not Enqueuing Scoring Jobs (Phase 13)
+
+**Symptom**: New articles are ingested (visible in `articles` table) but never get scored (importance_score stays at default 0.5).
+
+**Cause**: The `enqueuePostIngestFlow` function in `src/lib/queue/flows.ts` may be failing silently, OR the ingest worker is using the old per-article `scoreQueue.add()` pattern instead of the atomic flow.
+
+**Fix**: Verify the ingest worker calls `enqueuePostIngestFlow`:
+```bash
+grep -n "enqueuePostIngestFlow\|scoreQueue.add" src/workers/index.ts
+# Should show enqueuePostIngestFlow. If it shows scoreQueue.add, the old pattern is present.
+```
+
+Check BullMQ dashboard for the `score` queue — if jobs are appearing there but not completing, the score worker may be crashing. Check worker logs for `[Score] Failed:` errors.
+
+**Prevention**: The `flows.test.ts` suite (6 tests) verifies the DAG structure. The atomic guarantee (parent runs only after all children) is a BullMQ FlowProducer feature — no application-level test needed.
+
+### CI Fails with "Environment variable validation failed" (Phase 13)
+
+**Symptom**: GitHub Actions CI fails at the `pnpm install` or `pnpm lint` step with an error listing missing environment variables.
+
+**Cause**: `src/lib/env/index.ts` validates all required env vars at module load time. Even linting imports modules that import `@/lib/env`, so missing env vars break ALL CI steps — not just runtime ones.
+
+**Fix**: Ensure all required env vars are set in `.github/workflows/ci.yml` `env:` block. Phase 13 added all 11 required vars with CI-safe dummy values. If you added a new required env var to `src/lib/env/index.ts`, you MUST also add it to `ci.yml`.
+
+**Prevention**: The `src/test/setup.ts` file sets all required env vars for local test runs. If you add a new env var, update both `src/test/setup.ts` AND `.github/workflows/ci.yml`.
+
 ## Security & Compliance
 
 | Concern | Posture |
 | :--- | :--- |
-| **Next.js version** | Pinned to ≥16.2.6. Mitigates CVE-2025-55182 (React2Shell RCE) and 13-advisory DoS/SSRF bundle. |
+| **Next.js version** | Pinned to ≥16.0.7 (installed 16.2.9). Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182 (React2Shell RCE) and the 13-advisory DoS/SSRF bundle. (Earlier docs cited ≥16.2.6; MEP v5.1 corrected this — 16.0.7 is the actual security patch.) |
 | **AI Disclosure** | 3-layer machine-readable: JSON-LD + HTTP header + HTML meta. C2PA explicitly rejected (no text standard exists). EU AI Act Art. 50 compliant. |
 | **Authentication** | Auth.js v5 with HttpOnly session cookies. No JWT tokens in localStorage. |
 | **Network boundary** | `proxy.ts` provides optimistic UX redirects. Real auth enforcement in `(admin)/layout.tsx`. |
-| **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. |
-| **Push key encryption** | VAPID keys encrypted at rest with AES-256-GCM. |
+| **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. Enforced at both Server Action and API Route layers. |
+| **Rate limiting** | `GET /api/articles` rate-limited to 20 req/s per IP via Redis fixed-window counter (Phase 13). Returns `429` with `Retry-After` header. |
+| **Push key encryption** | VAPID keys encrypted at rest with AES-256-GCM. `PUSH_KEY_ENCRYPTION_KEY` is 64-char hex (32-byte), validated at module load. |
 | **Accessibility** | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely. |
-| **DB connections** | Eager connection with graceful fallback when `DATABASE_URL` is unavailable at build time. `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
+| **DB connections** | Lazy Proxy connection (defers until first query). `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
+| **Content hashing** | `articles.contentHash` uses SHA-256 (via `node:crypto`) of `title|publishedAt.toISOString()`. Used for change detection in ingest upserts (Phase 13). |
+| **Env validation** | All required env vars validated by Zod at module load (`src/lib/env/index.ts`). Fails fast with descriptive error if any are missing/invalid. |
 
 ---
 
@@ -740,7 +879,7 @@ page.tsx (Server) → fetches initial results
 
 #### 6. CORS on Public API
 
-**Lesson**: The `/api暴晒/api/articles` endpoint must include CORS headers (`Access-Control-Allow-Origin: *`) for external consumers. Always include an `OPTIONS` handler.
+**Lesson**: The `/api/articles` endpoint must include CORS headers (`Access-Control-Allow-Origin: *`) for external consumers. Always include an `OPTIONS` handler.
 
 #### 7. `websearch_to_tsquery` Query Parsing
 
@@ -874,19 +1013,19 @@ if (!result.success) {
 
 4. **Dependency Monitoring**: Regularly run `pnpm outdated` and `pnpm why @auth/core` to catch version mismatches early.
 
-5. **AI Model Evaluation**: Monitor summarisation quality across models. Claude 4.5 Haiku is primary, GPT-5 Mini is fallback. Consider adding a quality scoring metric to the `summaries` table for model comparison.
+5. **AI Model Evaluation**: Monitor summarisation quality across models. Claude 4.5 Haiku is primary, GPT-5 Mini is fallback. Consider adding a quality scoring metric to the `summaries` table for model comparison. Track `summaries.tokensUsed` to monitor cost per model.
 
 6. **Zod Schema Evolution**: As LLM capabilities improve, schema constraints may need adjustment. Keep the Zod schema and tests version-controlled. Changes to `summaryText` min/max lengths or `keyPoints` count should be accompanied by new tests.
 
-7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI.
+7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI. Note: the article detail page (`/article/[id]`) is still a placeholder and does not yet emit provenance — wiring this up is the next milestone.
 
-8. **testSuite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests. Current total: 124+ tests across 24 suites. Monitor test duration — if it exceeds 15s, investigate slow tests.
+8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests (parseFeed: 13, summarize: 8, flows: 6, rateLimit: 7, /api/articles route: 8, /api/categories route: 5, plus updates to existing suites). Current total: **212 tests across 40 suites**. Monitor test duration — currently ~11s; if it exceeds 30s, investigate slow tests.
 
 9. **BM25 Search Tuning**: The `ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...)` weights may need adjustment based on real user queries. Consider A/B testing different weight configurations.
 
-10. **Rate Limiting Implementation**: The `/api/articles` endpoint currently has no rate limiting. Implement Redis-based burst limiting in Phase 9 (e.g., max 20 req/s per IP, burst 50). The `ioredis` package is already a dependency.
+10. **~~Rate Limiting Implementation~~** (RESOLVED — Phase 13): `GET /api/articles` now has Redis fixed-window rate limiting (20 req/s per IP) via `src/lib/rateLimit.ts`. Returns `429` with `Retry-After` header. **Future enhancement**: Consider token bucket for burst support, and extend rate limiting to `/api/summarize/[id]` (currently relies on `summaryStatus !== "none"` check as a natural rate limiter).
 
-11. **CI Pipeline Monitoring**: Monitor GitHub Actions pipeline duration. If it exceeds 10 minutes, investigate slow steps (likely `npx playwright install --with-deps`).
+11. **CI Pipeline Monitoring**: Monitor GitHub Actions pipeline duration. If it exceeds 10 minutes, investigate slow steps (likely `npx playwright install --with-deps`). Phase 13 fixed the CI workflow to use Node 24 + all required env vars — verify CI passes on next push.
 
 12. **Docker Image Size**: Monitor Docker image sizes. If the web image exceeds 500MB, investigate `node_modules` pruning or multi-stage build optimization.
 
@@ -894,23 +1033,37 @@ if (!result.success) {
 
 14. **Blocking Route Prevention**: In Next.js 16 with `cacheComponents: true`, always wrap database queries in `<Suspense>` with a fallback UI (e.g., `FeedSkeleton`). Never `await` data fetches directly in the main page component body — this triggers the `blocking-route` error.
 
+15. **Article Detail Page** (Phase 14 candidate): The article detail page (`src/app/article/[id]/page.tsx` + `ArticleData.tsx`) is still a placeholder rendering hardcoded mock data. Wire it to fetch via `getArticleWithSummary(id)`, render `SummaryPanel` + `NutritionLabel`, and call `generateProvenanceMetadata()` in `generateMetadata()` to emit all 3 provenance layers.
+
+16. **RSS Ingestion E2E Test** (Phase 14 candidate): Phase 13 implemented `parseFeed` with unit tests, but no integration test verifies the full ingest pipeline (fetch → parse → upsert → score → cache invalidation). Add an integration test that mocks `fetch` returning a sample RSS feed and runs `processIngestJob` end-to-end.
+
+17. **Token Usage Monitoring**: The `summarize.ts` worker tracks `tokensUsed` per summary. Monitor aggregate token usage in production to verify the AI SDK v6 `usage` field is populated correctly for both Anthropic and OpenAI, and to catch unexpected cost spikes.
+
+18. **Rate Limit Identifier Hardening**: The current rate limiter uses `x-forwarded-for` IP. Behind a CDN (e.g., Cloudflare), this header may contain multiple IPs or be spoofed. Consider also checking `x-real-ip` or using a signed CDN IP header in production.
+
 ---
 
 ## Outstanding Issues & Future Work
 
-### No Rate Limiting on Public API (Known Gap — Phase 9)
+### ~~No Rate Limiting on Public API~~ (RESOLVED — Phase 13)
 
-**Impact**: Medium — The `GET /api/articles` endpoint currently has no rate limiting. A malicious or buggy client could make many requests, consuming database connections and compute.
+**Status**: RESOLVED. Phase 13 implemented Redis fixed-window rate limiting on `GET /api/articles` (max 20 req/s per IP) via `src/lib/rateLimit.ts`. Returns HTTP 429 with `Retry-After` and `X-RateLimit-Remaining` headers when exceeded. Cursor validation also added (returns 400 for invalid ISO 8601 date strings).
 
-**Planned Fix**: Phase 9 will implement Redis-based rate limiting (e.g., max 20 req/s per IP via `ioredis` token bucket).
+### ~~Summarisation Worker AI Integration~~ (RESOLVED — Phase 13)
 
-**Mitigation**: The endpoint is public (no auth required) and returns cached data. Monitor server metrics and alert on anomalies.
+**Status**: RESOLVED. Phase 13 integrated the Vercel AI SDK (`ai@6`, `@ai-sdk/anthropic@3`, `@ai-sdk/openai@3`) in `src/workers/jobs/summarize.ts`. Calls Claude 4.5 Haiku as primary with GPT-5 Mini fallback, using `generateObject()` with the Zod-validated `summarisationOutputSchema`. Token usage is tracked per summary.
 
-### Summarisation Worker AI Integration (Phase 9)
+### Article Detail Page (Next Milestone)
 
-**Impact**: High — Phase 7 built the worker infrastructure (entry point, scheduler, queue definitions), but the actual `summarize.ts` worker that calls Anthropic/OpenAI is a stub returning placeholder data.
+**Impact**: High — The article detail page (`src/app/article/[id]/page.tsx` + `ArticleData.tsx`) is still a placeholder rendering hardcoded mock data. It does not yet fetch real articles, render `NutritionLabel`, or emit the 3-layer provenance (JSON-LD / `X-AI-Provenance` header / `<meta name="ai-provenance">`).
 
-**Status**: The `summarizeQueue` is defined and jobs are enqueued correctly. The worker infrastructure is ready. Integration with Vercel AI SDK (Anthropic/OpenAI) is deferred to Phase 9.
+**Planned Fix**: Wire `ArticleData.tsx` to fetch via `getArticleWithSummary(id)`, render `SummaryPanel` + `NutritionLabel`, and call `generateProvenanceMetadata()` in `generateMetadata()` to emit all three provenance layers.
+
+### RSS Ingestion End-to-End Test (Future)
+
+**Impact**: Low — Phase 13 implemented `parseFeed` with unit tests covering RSS 2.0, Atom, and JSON Feed formats, but no integration test verifies the full ingest pipeline (fetch → parse → upsert → score → cache invalidation) against a real RSS feed.
+
+**Planned Fix**: Add an integration test that mocks `fetch` returning a sample RSS feed, runs `processIngestJob`, and verifies articles are inserted + scoring flow is enqueued.
 
 ### Test Flakiness Risk
 
@@ -929,13 +1082,14 @@ if (!result.success) {
 | **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API endpoint |
-| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`), 103+ tests |
-| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API (124 tests, 24 suites) |
+| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`) |
+| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API |
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 | **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page, design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, `.reveal` scroll animations, `next-prerender-current-time` fix, `ArticleCard` client conversion |
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | `@tailwindcss/postcss` + `postcss.config.mjs`, Commit Mono via `next/font/local`, `.font-editorial` enhancement, `.next` cache clear |
+| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes, `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts (**212 tests across 40 suites**) |
 
 ---
 
@@ -1000,7 +1154,7 @@ Key ADRs are documented in the [Project Architecture Document (PAD) v4.5](./docs
 export function LiveDate() {
   const [date, setDate] = useState("");
   useEffect(() => {
-    setDate(new Date().toLocaleDateString("en-GB",犯罪行为", "month": "long", "year": "numeric" }));
+    setDate(new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }));
   }, []);
   return <span>{date}</span>;
 }
@@ -1084,6 +1238,112 @@ export default function HomePage() {
 ```
 
 **Prevention**: Never `await` a database query directly in a page component. Always use the `<Suspense>` + Server Component pattern.
+
+---
+
+## Phase 13: Critical Gaps Remediation — Lessons Learned
+
+### 1. RSS Parser Selection — `rss-parser` Field Conflation
+
+**Issue**: `rss-parser` conflates several source fields into its built-in `content` property:
+- For RSS 2.0: `content` = `<content:encoded>` if present, else `<description>`
+- For Atom: `content` = `<content>` if present, else `<summary>`
+
+This makes it impossible to distinguish "body" from "excerpt" using `content` alone.
+
+**Fix**: Read fields explicitly by feed type:
+- RSS: use `content:encoded` (custom field) for body, `contentSnippet` for excerpt
+- Atom: detect via root element `<feed>` in raw XML, use `content` for body, `summary` for excerpt
+
+**Lesson**: Always check what a library conflates before relying on its built-in fields. For feeds, explicit field extraction by format is safer than generic fallbacks.
+
+### 2. `feedType` is Undefined in `rss-parser` for Atom
+
+**Issue**: `rss-parser` documentation suggests `parsed.feedType` returns `"rss"` | `"atom"` | `"rdf"`. In practice (v3.13.0), `feedType` is `undefined` for Atom feeds.
+
+**Fix**: Detect feed type by inspecting the raw XML root element:
+```typescript
+const isAtom = /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
+               /^\s*<feed[\s>]/i.test(content.trim());
+```
+
+### 3. Vercel AI SDK v6 — `generateObject` Returns `result.object`, Not `result`
+
+**Issue**: The AI SDK v6 `generateObject()` returns `{ object, usage, ... }` — the validated output is in `result.object`, not `result` directly.
+
+**Fix**: Spread `result.object` and add `model` + `tokensUsed` from `result.usage`:
+```typescript
+const result = await generateObject({ model, schema, messages, temperature: 0.1 });
+return { ...result.object, model: PRIMARY_MODEL, tokensUsed: result.usage?.totalTokens ?? 0 };
+```
+
+### 4. `articles.body` Column — Schema Design Gap
+
+**Issue**: The original schema had no `body` column, but `contentAvailabilityEnum` tiers (`partial_text` = 300–1500 chars body, `full_text` = >1500 chars body) imply body content exists. The `determineContentAvailability` function checks `body.length` — but body was never persisted.
+
+**Fix**: Added nullable `body: text("body")` column via additive Drizzle migration (`drizzle/0003_strong_mac_gargan.sql`). The ingest worker now stores body extracted from feeds, and the summarize worker passes it to `callAISummary` instead of the previous `body: null` placeholder.
+
+### 5. `vi.fn().mockImplementation()` Is NOT a Constructor
+
+**Issue**: When mocking classes like `Redis` or `FlowProducer` that are called with `new`, `vi.fn(() => mockInstance)` doesn't work — `new` on a vi.fn returns an empty object, ignoring the return value.
+
+**Fix**: Use a real class in the mock factory:
+```typescript
+vi.mock("ioredis", () => ({
+  Redis: class MockRedis {
+    incr = mockRedis.incr;
+    expire = mockRedis.expire;
+    // ...
+  },
+}));
+```
+
+### 6. Test Setup Environment Variable Override
+
+**Issue**: The shell environment may contain values that fail the env schema (e.g., a SQLite `DATABASE_URL` from a parent project). Using `??=` (nullish coalescing assignment) in test setup doesn't override these.
+
+**Fix**: Use direct assignment (`=`) in `src/test/setup.ts` to force test-safe values, and document why. Also note: `process.env.NODE_ENV` is typed as read-only by `@types/node` — vitest already sets it to `"test"`, so no manual assignment is needed.
+
+### 7. CI Workflow — Missing Env Vars Break All Steps
+
+**Issue**: `src/lib/env/index.ts` validates all required env vars at module load time and throws if any are missing/invalid. This means even `pnpm install` → `pnpm lint` would fail in CI if env vars aren't set, because linting imports modules that import `@/lib/env`.
+
+**Fix**: Set all required env vars (with CI-safe dummy values) in the `env:` block of `.github/workflows/ci.yml`. Use values that pass the Zod schema (e.g., `DATABASE_URL=postgres://...`, `ANTHROPIC_API_KEY=sk-ant-...`, `PUSH_KEY_ENCRYPTION_KEY=0000...0000` 64 hex chars).
+
+### 8. `clientSegmentCache` Not in `ExperimentalConfig` (Next.js 16.2.9)
+
+**Issue**: PRD §5.2 / PAD §5.3 list `experimental.clientSegmentCache: true`, `turbopackPersistentCaching: true`, and `turbopackFileSystemCacheForBuild: true`. The installed Next.js 16.2.9 does not expose these flags in `ExperimentalConfig` — adding them produces `TS2353: Object literal may only specify known properties`.
+
+**Fix**: Document the flags as deferred in `next.config.ts` with a comment explaining they'll be re-enabled once the upstream type includes them. Only `viewTransition: true` is currently enabled.
+
+### 9. Content Change Detection via `(xmax = 0)` Trick
+
+**Issue**: When using `onConflictDoUpdate`, how do you distinguish a newly INSERTed row from an UPDATEd row?
+
+**Fix**: Use the PostgreSQL system column `xmax` in the RETURNING clause:
+```typescript
+.returning({
+  id: articles.id,
+  isNew: sql<boolean>`(xmax = 0)`,  // true for INSERT, false for UPDATE
+})
+```
+`xmax = 0` is true only for newly inserted rows (no transaction ID to delete). For updated rows, `xmax` is non-zero. Combined with a `WHERE content_hash != excluded.content_hash` clause, this lets you detect content changes and only enqueue scoring for genuinely new articles.
+
+### 10. Singleton Publisher Pattern for Cache Invalidation
+
+**Issue**: The original `cacheInvalidation.ts` created a new Redis connection per call (`new Redis(...)` + `redis.quit()` in finally). Under high ingest load (50 concurrent workers), this caused connection churn.
+
+**Fix**: Module-level singleton publisher:
+```typescript
+let _publisher: Redis | null = null;
+function getPublisher(): Redis {
+  if (!_publisher) {
+    _publisher = new Redis(env.REDIS_URL, { maxRetriesPerRequest: 3, connectTimeout: 5000 });
+  }
+  return _publisher;
+}
+```
+The publisher stays alive for the process lifetime. The `flows.ts` FlowProducer uses the same singleton pattern.
 
 ## License
 

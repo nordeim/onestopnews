@@ -1,4 +1,4 @@
-"# OneStopNews
+# OneStopNews
 
 **Topic-first news aggregation with source-cited AI summaries.**
 
@@ -154,23 +154,32 @@ export const verifySession = cache(async () => {
 ```bash
 pnpm install
 cp .env.example .env.local
-# Edit .env.local
+# Edit .env.local — all required vars validated by Zod at src/lib/env/index.ts
 pnpm drizzle-kit generate
 pnpm drizzle-kit migrate
-pnpm dev              # Next.js
-pnpm worker:dev       # Worker service
+pnpm dev              # Next.js (Turbopack)
+pnpm worker           # Worker service (BullMQ + RSS ingestion + AI summarization)
+pnpm db:seed          # Seed sample data (idempotent)
 ```
 
 ### Build & Quality Commands
 | Command | Purpose |
 | :--- | :--- |
 | `pnpm dev` | Next.js dev server with Turbopack |
+| `pnpm worker` | Worker service (BullMQ consumers + RSS + AI) |
 | `pnpm build` | Production build |
-| `pnpm lint` | ESLint + Prettier |
+| `pnpm lint` | ESLint (`--max-warnings 0`) |
+| `pnpm check` | `tsc --noEmit && pnpm lint` (combined gate) |
 | `pnpm tsc --noEmit` | TypeScript strict check |
-| `pnpm test` | Run all test suites |
-| `pnpm drizzle-kit generate` | Generate migration SQL |
+| `pnpm test` | Run all test suites (vitest run) |
+| `pnpm test:watch` | Vitest in watch mode |
+| `pnpm test:e2e` | Playwright E2E tests |
+| `pnpm drizzle-kit generate` | Generate migration SQL from schema |
 | `pnpm drizzle-kit migrate` | Apply pending migrations |
+| `pnpm db:seed` | Seed sample articles/categories/sources |
+| `pnpm db:studio` | Drizzle Studio (DB GUI) |
+| `pnpm format` | Prettier write |
+| `pnpm format:check` | Prettier check |
 
 ### Pre-Commit Gate
 ```bash
@@ -215,6 +224,7 @@ pnpm test
 | `new Date()` in Client Component without `<Suspense>` | Prerender still fails; client needs Suspense boundary | Wrap Client Component in `<Suspense>` |
 | `.reveal` class on above-the-fold elements | Hydration mismatch: server renders `reveal`, client wants `reveal visible` | Only use `.reveal` for below-the-fold elements |
 | Merge artifact in CSS (e.g. ` INCLUDED`) | Corrupts Tailwind v4 `@theme` block, poisoning entire theme | Review diffs after merge; run `pnpm build` before pushing |
+| Corrupted className (e.g. `font浃着`, `Monad`) | Invalid CSS class silently ignored; element falls back to wrong font | Review CSS class strings after edits; use `font-mono` consistently |
 | Admin auth in `proxy.ts` | Layer 0 has no DB access | `verifyAdminSession()` in `(admin)/layout.tsx` |
 | `pg_textsearch` extension (PG 17) | Doesn't exist; `ts_rank_cd` is built-in | Use `ts_rank_cd` directly |
 | `revalidateTag` in workers | Next.js-only API, not available in Node.js | Use Redis pub/sub for cache invalidation |
@@ -223,6 +233,15 @@ pnpm test
 | Missing `@tailwindcss/postcss` plugin | Tailwind v4 generates zero utility classes — only `@theme` custom properties | Install `@tailwindcss/postcss` + create `postcss.config.mjs` |
 | `next/font/google` for Commit Mono | Not available on Google Fonts | Use `next/font/local` with woff2 file |
 | Stale `.next/` cache after config change | Serves pre-fix CSS; masks the fix | Always `rm -rf .next/` after PostCSS/Tailwind/Next.js config changes |
+| FNV-1a hash for `contentHash` (Phase 13) | 8-char hash is not collision-resistant; doesn't match PAD §7.1 SHA-256 spec | Use `node:crypto` `createHash("sha256")` returning 64-char hex |
+| `parseFeed` stub returning `[]` (Phase 13) | Ingestion pipeline produces zero articles; system appears healthy but never ingests | Use real `rss-parser` implementation in `src/workers/jobs/parseFeed.ts` |
+| `callAISummary` stub returning placeholder (Phase 13) | Summaries contain fake data; no real AI call | Use Vercel AI SDK `generateObject()` in `src/workers/jobs/summarize.ts` |
+| Individual `scoreQueue.add()` per article (Phase 13) | Not atomic; cache invalidation can fire before all scoring completes | Use `enqueuePostIngestFlow()` FlowProducer atomic DAG |
+| `new Redis()` per cache invalidation call (Phase 13) | Connection churn under high ingest load (50 workers × N calls) | Module-level singleton publisher |
+| Missing env vars in CI (Phase 13) | `src/lib/env/index.ts` validates at module load; breaks ALL CI steps including lint | Set all 11 required env vars in `ci.yml` `env:` block with CI-safe dummy values |
+| `??=` for test env vars (Phase 13) | Shell env may contain values that fail Zod schema (e.g., SQLite `DATABASE_URL`) | Use direct `=` assignment in `src/test/setup.ts` |
+| `vi.fn(() => mockInstance)` for constructors | `new` on vi.fn returns empty object, ignoring return value | Use `class MockX { ... }` in the mock factory |
+| `clientSegmentCache` flag (Next.js 16.2.9) | Not in `ExperimentalConfig` type; produces `TS2353` | Document as deferred in `next.config.ts`; re-enable when upstream type includes it |
 
 ---
 
@@ -245,17 +264,18 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |
 | **Phase 1** — Foundation & Configuration | **COMPLETE** | next.config.ts, proxy.ts, tsconfig.json, docker-compose |
-| **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (10 tables), lazy DB client, Auth.js v5, BullMQ queues |
+| **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (11 tables: 8 business + 3 Auth.js adapter), lazy DB client, Auth.js v5, BullMQ queues |
 | **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
 | **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
 | **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API endpoint |
-| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`), 103+ tests |
-| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API (124 tests, 24 suites) |
+| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`) |
+| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API |
 | **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
 | **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
+| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG, `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick (**212 tests across 40 suites**) |
 
 ---
 
@@ -305,15 +325,34 @@ export default async function AdminLayout({ children }) {
 
 **Fix**: Use Redis pub/sub for worker-to-web-app cache invalidation. Workers publish invalidation events to a Redis channel; the Next.js app subscribes and calls `revalidateTag()` locally.
 
+**Phase 13 refinement**: The original implementation created a new Redis connection per call. Phase 13 refactored to a module-level singleton publisher to avoid connection churn under high ingest load:
+
 ```typescript
-// src/workers/lib/cacheInvalidation.ts
-import { publisher } from '@/lib/queue';
+// src/workers/lib/cacheInvalidation.ts (Phase 13 singleton pattern)
+import { Redis } from "ioredis";
+import { env } from "@/lib/env";
+
+let _publisher: Redis | null = null;
+
+function getPublisher(): Redis {
+  if (!_publisher) {
+    _publisher = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      connectTimeout: 5000,
+    });
+  }
+  return _publisher;
+}
 
 export async function publishCacheInvalidation(tag: string): Promise<boolean> {
   try {
-    await publisher.publish(`cache:invalidate:${tag}`, '1');
+    const publisher = getPublisher();
+    const channel = `cache:invalidate:${tag}`;
+    const message = JSON.stringify({ tag, timestamp: new Date().toISOString() });
+    await publisher.publish(channel, message);
     return true;
-  } catch {
+  } catch (error) {
+    console.warn("[CacheInvalidation] Failed to publish invalidation:", error);
     return false; // Best-effort: don't crash the worker
   }
 }
@@ -376,11 +415,17 @@ actionlint .github/workflows/ci.yml
 | Lazy DB Client | `src/lib/db/index.ts` |
 | Auth Configuration | `src/lib/auth/index.ts` |
 | Auth DAL | `src/lib/auth/dal.ts` |
+| Env Validation | `src/lib/env/index.ts` |
 | BullMQ Queues | `src/lib/queue/index.ts` |
+| FlowProducer DAG | `src/lib/queue/flows.ts` (Phase 13) |
+| Rate Limiter | `src/lib/rateLimit.ts` (Phase 13) |
 | Feed Queries | `src/features/feed/queries.ts` |
 | Search Queries | `src/features/search/queries.ts` |
 | Search Types | `src/features/search/types.ts` |
-| Public API | `src/app/api/articles/route.ts` |
+| Public API (Articles) | `src/app/api/articles/route.ts` |
+| Public API (Categories) | `src/app/api/categories/route.ts` (Phase 13) |
+| Health Check | `src/app/api/health/route.ts` |
+| Push Subscribe | `src/app/api/push/subscribe/route.ts` |
 | Admin Layout | `src/app/(admin)/layout.tsx` |
 | Admin Sources | `src/app/(admin)/sources/page.tsx` |
 | Admin Summaries | `src/app/(admin)/summaries/page.tsx` |
@@ -391,8 +436,12 @@ actionlint .github/workflows/ci.yml
 | Next.js Config | `next.config.ts` |
 | Proxy | `proxy.ts` |
 | Worker Entry Point | `src/workers/index.ts` |
+| RSS Feed Parser | `src/workers/jobs/parseFeed.ts` (Phase 13) |
+| AI Summarization | `src/workers/jobs/summarize.ts` (Phase 13) |
 | Job Scheduler | `src/workers/jobs/scheduler.ts` |
 | Content Guard | `src/workers/jobs/determineContentAvailability.ts` |
+| Content Hashing (SHA-256) | `src/domain/articles/normalize.ts` |
+| Importance Scoring | `src/domain/ranking/score.ts` |
 | Push Encryption | `src/lib/security/encrypt.ts` |
 | Quiet Hours | `src/workers/push/isWithinQuietHours.ts` |
 | Cache Invalidation | `src/workers/lib/cacheInvalidation.ts` |
@@ -409,15 +458,17 @@ actionlint .github/workflows/ci.yml
 | News Ticker | `src/features/feed/components/NewsTicker.tsx` |
 | Masthead | `src/features/feed/components/Masthead.tsx` |
 | Lead Story | `src/features/feed/components/LeadStory.tsx` |
-| AI Nutrition Label | `src/features/feed/ai/NutritionLabel.tsx` |
-| Stats | `src/features/ pipelines can be found in `/src/features/feed/stats/Stats.tsx` |
-| FAQ | `src/features/feed/faq/FAQ.tsx` |
-| Newsletter | `src/features/feed/newsletter/Newsletter.tsx` |
+| AI Nutrition Label | `src/features/summaries/components/NutritionLabel.tsx` |
+| Stats Section | `src/shared/components/ui/StatsSection.tsx` |
+| FAQ | `src/shared/components/ui/Accordion.tsx` |
+| Newsletter CTA | `src/shared/components/ui/NewsletterCTA.tsx` |
 | Reveal Provider | `src/shared/components/providers/RevealProvider.tsx` |
 | DB Seed | `src/lib/db/seed.ts` |
 | Global CSS | `src/app/globals.css` |
 | PostCSS Config | `postcss.config.mjs` |
 | Commit Mono Font | `public/fonts/commit-mono-400.woff2` |
+| Test Setup | `src/test/setup.ts` |
+| Vitest Config | `vitest.config.ts` |
 
 ---
 
@@ -580,7 +631,8 @@ export default async function HomePage() {
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
 - **Last Updated**: June 18, 2026
-- **Total Tests**: 124+ across 24 suites
+- **Total Tests**: 212 across 40 suites (Phase 13)
+- **Quality Gate**: `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) — all green
 
 ---
 
@@ -626,3 +678,88 @@ const commitMono = localFont({
 ```
 
 **Redundancy**: Since `.font-editorial` bakes in weight 800, leading 1.1, and tracking -0.02em, do NOT add `font-[800]`, `leading-tight`, or `tracking-[-0.02em]` alongside `font-editorial`. Only add overrides for different values (e.g., `tracking-[-0.03em]`, `font-[700]`, `leading-[1.05]`).
+
+---
+
+## Latest Lessons Learned (Phase 13)
+
+### 1. `rss-parser` Field Conflation
+
+**Issue**: `rss-parser` conflates `<content:encoded>`, `<description>`, and `<content>` into its built-in `content` field. You cannot distinguish "body" from "excerpt" using `content` alone.
+
+**Fix**: Read fields explicitly by feed type. Detect Atom via raw XML root element (`<feed>`), not `parsed.feedType` (which is `undefined` in v3.13.0). For RSS: use `content:encoded` (custom field) for body, `contentSnippet` for excerpt. For Atom: use `content` for body, `summary` for excerpt.
+
+### 2. Vercel AI SDK v6 `generateObject` Return Shape
+
+**Issue**: `generateObject()` returns `{ object, usage, ... }` — the validated output is in `result.object`, not `result` directly.
+
+**Fix**:
+```typescript
+const result = await generateObject({ model, schema, messages, temperature: 0.1 });
+return { ...result.object, model: PRIMARY_MODEL, tokensUsed: result.usage?.totalTokens ?? 0 };
+```
+
+### 3. `articles.body` Column — Schema Design Gap
+
+**Issue**: `contentAvailabilityEnum` tiers (`partial_text` = 300–1500 chars body, `full_text` = >1500 chars) imply body content exists, but the original schema had no `body` column. The `determineContentAvailability` function checked `body.length` on input that was never persisted.
+
+**Fix**: Added nullable `body: text("body")` column via additive migration (`drizzle/0003_strong_mac_gargan.sql`). Ingest worker now stores body from feeds; summarize worker passes it to `callAISummary`.
+
+### 4. `vi.fn().mockImplementation()` Is NOT a Constructor
+
+**Issue**: When mocking classes called with `new` (like `Redis` or `FlowProducer`), `vi.fn(() => mockInstance)` doesn't work — `new` on a vi.fn returns an empty object.
+
+**Fix**: Use a real class in the mock factory:
+```typescript
+vi.mock("ioredis", () => ({
+  Redis: class MockRedis {
+    incr = mockRedis.incr;
+    expire = mockRedis.expire;
+  },
+}));
+```
+
+### 5. Test Setup Environment Variable Override
+
+**Issue**: Shell environment may contain values that fail the Zod env schema (e.g., a SQLite `DATABASE_URL`). Using `??=` doesn't override these.
+
+**Fix**: Use direct assignment (`=`) in `src/test/setup.ts` to force test-safe values. Note: `process.env.NODE_ENV` is read-only per `@types/node` — vitest already sets it to `"test"`.
+
+### 6. CI Workflow — Missing Env Vars Break All Steps
+
+**Issue**: `src/lib/env/index.ts` validates env vars at module load. Even `pnpm lint` imports modules that import `@/lib/env`, so missing env vars break ALL CI steps.
+
+**Fix**: Set all 11 required env vars in `.github/workflows/ci.yml` `env:` block with CI-safe dummy values that pass the Zod schema.
+
+### 7. `clientSegmentCache` Not in `ExperimentalConfig` (Next.js 16.2.9)
+
+**Issue**: PRD §5.2 / PAD §5.3 list `experimental.clientSegmentCache`, `turbopackPersistentCaching`, and `turbopackFileSystemCacheForBuild`. Next.js 16.2.9 doesn't expose these in `ExperimentalConfig` — adding them produces `TS2353`.
+
+**Fix**: Document as deferred in `next.config.ts`. Only `viewTransition: true` is currently enabled. Re-enable when upstream types include them.
+
+### 8. Content Change Detection via `(xmax = 0)` Trick
+
+**Issue**: With `onConflictDoUpdate`, how do you distinguish INSERT from UPDATE?
+
+**Fix**: Use PostgreSQL system column `xmax` in RETURNING:
+```typescript
+.returning({
+  id: articles.id,
+  isNew: sql<boolean>`(xmax = 0)`,  // true for INSERT, false for UPDATE
+})
+```
+Combined with `WHERE content_hash != excluded.content_hash`, this detects content changes and only enqueues scoring for genuinely new articles.
+
+### 9. Singleton Publisher Pattern for Cache Invalidation
+
+**Issue**: Original `cacheInvalidation.ts` created a new Redis connection per call. Under 50 concurrent ingest workers, this caused connection churn.
+
+**Fix**: Module-level singleton publisher. The `flows.ts` FlowProducer uses the same singleton pattern. See `src/workers/lib/cacheInvalidation.ts` and `src/lib/queue/flows.ts`.
+
+### 10. Corrupted CSS Class Names (Silent Failures)
+
+**Issue**: The codebase had corrupted className strings (`font浃着` in `NutritionLabel.tsx`, `Monad` and `monospace` in `SummaryPanel.tsx`). These are invalid CSS classes — browsers silently ignore them, and the elements fall back to the wrong font. No build error or warning is thrown.
+
+**Fix**: Changed all to `font-mono`. Review CSS class strings after any edit, especially after merges or AI-generated code.
+
+**Prevention**: Add a lint rule or pre-commit hook that flags non-ASCII characters in className strings. Consider a visual regression test that verifies metadata text renders in Commit Mono.
