@@ -61,6 +61,15 @@ export const envSchema = z.object({
       "PUSH_KEY_ENCRYPTION_KEY must be 64 hex characters"
     ),
 
+  // ── OAuth Providers (optional) ──────────────────────────────────────────
+  // When both CLIENT_ID and CLIENT_SECRET for a given provider are present,
+  // the provider is enabled in src/lib/auth/providers.ts. When absent, the
+  // app falls back to Credentials-only auth (backward compat).
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+
   // ── Node Environment ────────────────────────────────────────────────────
   NODE_ENV: z
     .enum(["development", "production", "test"])

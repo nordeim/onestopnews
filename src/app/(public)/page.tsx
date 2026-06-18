@@ -48,8 +48,6 @@ export default function HomePage() {
         <Suspense fallback={<FeedSkeleton />}>
           <FeedData limit={6} />
         </Suspense>
-
-        {/* TODO: Restore Load More with cursor pagination */}
       </main>
 
       {/* 6. AI Nutrition Label Demo */}

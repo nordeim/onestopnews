@@ -10,6 +10,21 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/onestopnews
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
+      # Pass through auth env vars from host (set in .env.production or shell)
+      - AUTH_SECRET=${AUTH_SECRET:-}
+      - AUTH_URL=${AUTH_URL:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
+      - PUSH_KEY_ENCRYPTION_KEY=${PUSH_KEY_ENCRYPTION_KEY:-}
+      - TRUSTED_PROXY=${TRUSTED_PROXY:-}
+      # OAuth providers (optional — Credentials-only auth if blank)
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID:-}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -25,6 +40,12 @@ services:
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/onestopnews
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=production
+      - AUTH_SECRET=${AUTH_SECRET:-}
+      - AUTH_URL=${AUTH_URL:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - PUSH_KEY_ENCRYPTION_KEY=${PUSH_KEY_ENCRYPTION_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-}
     depends_on:
       postgres:
         condition: service_healthy

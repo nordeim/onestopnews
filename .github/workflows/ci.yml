@@ -66,4 +66,11 @@ jobs:
       VAPID_PRIVATE_KEY: "ci-dummy-vapid-private-key-not-real"
       VAPID_SUBJECT: "mailto:ci@onestopnews.com"
       PUSH_KEY_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      # OAuth env vars are optional in env/index.ts. CI sets dummy values so
+      # any test that imports @/lib/auth doesn't trip env validation if the
+      # schema ever changes to require them.
+      GOOGLE_CLIENT_ID: "ci-dummy-google-client-id"
+      GOOGLE_CLIENT_SECRET: "ci-dummy-google-client-secret"
+      GITHUB_CLIENT_ID: "ci-dummy-github-client-id"
+      GITHUB_CLIENT_SECRET: "ci-dummy-github-client-secret"
       NODE_ENV: "test"

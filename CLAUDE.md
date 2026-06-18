@@ -248,6 +248,18 @@ pnpm test
 | `summaryStatus: "none"` after all retries exhausted (Phase 14) | No observability — failed summaries invisible | Set `summaryStatus: "needs_review"` via `getSummaryFailureState()` |
 | Hardcoded SHA-256 vector in test (Phase 14) | Brittle — fails if delimiter/date format changes | Property-based test: compute expected via `node:crypto` inline |
 | E2E tests in vitest (Phase 14) | `@playwright/test` not installed in vitest env → import errors | Exclude `e2e/` from `vitest.config.ts`, `eslint.config.mjs`, `tsconfig.json` |
+| `node:22-alpine` in Dockerfile (Phase 15) | Violates `package.json` `engines.node: ">=24.0.0"` — runtime crashes on Node 22-only APIs | Pin to `node:24-alpine` in all Dockerfiles |
+| Missing `output: "standalone"` in `next.config.ts` (Phase 15) | `Dockerfile.web` copies `.next/standalone/` which doesn't exist → build fails | Add `output: "standalone"` top-level in `next.config.ts` |
+| `Dockerfile.worker` referencing `worker:build` script (Phase 15) | Script doesn't exist — `pnpm run worker:build` fails | Run `tsx src/workers/index.ts` directly; copy `node_modules` + `src` to runner |
+| `Dockerfile.worker` copying non-existent `dist/` (Phase 15) | No build step produces `dist/` — `COPY --from=builder /app/dist` fails | Don't compile the worker; run from `src/` via `tsx` |
+| Malformed Dockerfile lines (`COPY . .RUN`) (Phase 15) | Missing newline between commands — Docker parses as single command, fails | Each `RUN`/`COPY`/`WORKDIR` must be on its own line |
+| `Dockerfile.dev` copying `packages/` (Phase 15) | Directory doesn't exist (not a monorepo) — `COPY packages/ ./packages/` fails | Remove the `COPY packages/` line |
+| Always-on OAuth providers (Phase 15) | Auth.js throws at boot if `CLIENT_ID`/`CLIENT_SECRET` env vars are missing | Make providers conditional via `buildProviders()` — only include when env vars present |
+| Missing `/sign-in` page referenced in `pages.signIn` (Phase 15) | Auth.js silently accepts non-existent path; user redirected to 404 at runtime | Create `src/app/sign-in/page.tsx` + `SignInClient.tsx` |
+| Missing `/auth-error` page referenced in `pages.error` (Phase 15) | Auth errors redirect to non-existent page → 404 | Create `src/app/auth-error/page.tsx` |
+| `vi.fn()` for `global.fetch` without `vi.stubGlobal` (Phase 15) | Real `fetch` is called instead of mock — tests fail with network errors | Use `vi.stubGlobal("fetch", mockFetch)` in `beforeEach()` |
+| Accessing `provider.id` without type narrowing (Phase 15) | `Provider` type is a union (object form + function form) — `TS2339` | Use `'id' in p ? p.id : "unknown"` narrowing |
+| Direct `<FeedGrid>` rendering in `FeedData` (Phase 15) | No "Load More" pagination — users see only the initial 6 articles | Render `<FeedContainer>` which manages article list + load more state |
 
 ---
 
@@ -283,6 +295,7 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
 | **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG, `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick |
 | **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test, `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh`), article detail page with real data + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review`), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
+| **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth) | **COMPLETE** | Pinned Dockerfiles to `node:24-alpine` + `output: "standalone"` in `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent scripts/paths); cursor-based "Load More" pagination (`FeedContainer` + `LoadMoreButton` client components); dropped deprecated `push_subscriptions.keys` column (migration `0005_neat_wolverine.sql`); added Google + GitHub OAuth providers (conditional on env vars, backward-compatible); created `/sign-in` + `/auth-error` pages (previously missing); added OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + CI + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E) |
 
 ---
 
@@ -460,10 +473,12 @@ actionlint .github/workflows/ci.yml
 | Lighthouse Config | `lighthouserc.js` |
 | Deploy Script | `scripts/deploy.sh` |
 | Feed Data (Suspense) | `src/features/feed/components/FeedData.tsx` |
+| Feed Container (Load More) | `src/features/feed/components/FeedContainer.tsx` (Phase 15) |
+| Load More Button | `src/features/feed/components/LoadMoreButton.tsx` (Phase 15) |
 | Feed Skeleton | `src/features/feed/components/FeedSkeleton.tsx` |
 | Landing Page | `src/app/(public)/page.tsx` |
-| News Ticker | `src/features/feed/components/NewsTicker.tsx` |
-| Masthead | `src/features/feed/components/Masthead.tsx` |
+| News Ticker | `src/shared/components/layout/NewsTicker.tsx` |
+| Masthead | `src/shared/components/layout/Masthead.tsx` |
 | Lead Story | `src/features/feed/components/LeadStory.tsx` |
 | AI Nutrition Label | `src/features/summaries/components/NutritionLabel.tsx` |
 | Stats Section | `src/shared/components/ui/StatsSection.tsx` |
@@ -483,6 +498,11 @@ actionlint .github/workflows/ci.yml
 | Push Subscribe Route | `src/app/api/push/subscribe/route.ts` |
 | Playwright Config | `playwright.config.ts` (Phase 14) |
 | E2E Smoke Tests | `e2e/smoke.spec.ts` (Phase 14) |
+| Auth Providers Builder | `src/lib/auth/providers.ts` (Phase 15) |
+| Sign-In Page | `src/app/sign-in/page.tsx` (Phase 15) |
+| Sign-In Client Component | `src/app/sign-in/SignInClient.tsx` (Phase 15) |
+| Auth Error Page | `src/app/auth-error/page.tsx` (Phase 15) |
+| Migration 0005 (Drop keys) | `drizzle/0005_neat_wolverine.sql` (Phase 15) |
 
 ---
 
@@ -645,7 +665,7 @@ export default async function HomePage() {
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
 - **Last Updated**: June 18, 2026
-- **Total Tests**: 251 across 45 suites + 10 Playwright E2E (Phase 14)
+- **Total Tests**: 279 across 49 suites + 10 Playwright E2E (Phase 15)
 - **Quality Gate**: `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) — all green
 
 ---
@@ -845,3 +865,63 @@ Combined with `WHERE content_hash != excluded.content_hash`, this detects conten
 **Fix**: Self-referential mock: `leftJoinResult.leftJoin = leftJoin` so the second `leftJoin` returns the same object (which has `where`).
 
 **Lesson**: Drizzle's query builder is deeply chainable. Self-referential mocks (`result.method = method`) handle arbitrary chaining depth.
+
+---
+
+## Latest Lessons Learned (Phase 15)
+
+### 1. Dockerfile Drift — Node Version Mismatch + Malformed Lines
+
+**Issue**: Production Dockerfiles pinned `node:22-alpine` while `package.json` requires Node 24. Additionally, `Dockerfile.worker` had malformed lines (missing newlines: `COPY . .RUN`, `WORKDIR /appENV`), referenced a non-existent `worker:build` script, and copied a non-existent `dist/` directory.
+
+**Fix**: Pinned both Dockerfiles to `node:24-alpine`. Rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (copying `node_modules` + `src` to the runner stage). Fixed `Dockerfile.dev`/`Dockerfile.worker.dev` (removed non-existent `packages/` copy + corrected script names).
+
+**Lesson**: Dockerfiles must be validated as part of CI — not just visually reviewed. Always pin to the exact Node version specified in `engines.node`. Each Dockerfile instruction (`RUN`, `COPY`, `WORKDIR`) must be on its own line.
+
+### 2. `output: "standalone"` Required for Production Docker
+
+**Issue**: `Dockerfile.web` copied `.next/standalone/server.js` but `next.config.ts` didn't set `output: "standalone"` — the build would fail because the standalone directory wasn't generated.
+
+**Fix**: Added `output: "standalone"` to `next.config.ts` (top-level, alongside `cacheComponents: true`).
+
+**Lesson**: `output: "standalone"` is mandatory when using the standalone Docker pattern. Without it, the Dockerfile references a directory that doesn't exist. Always pair the config flag with the Dockerfile copy step.
+
+### 3. Cursor-Based "Load More" — Server Fetch Initial, Client Fetches Subsequent
+
+**Issue**: `getFeedArticles()` already returned `{ articles, nextCursor, hasMore }` but the UI never surfaced this. The home page had a `TODO: Restore Load More with cursor pagination` comment.
+
+**Fix**: Created `FeedContainer` (client component) that receives `initialArticles` + `initialNextCursor` + `initialHasMore` from the Server Component (`FeedData`). On "Load More" click, it fetches `/api/articles?cursor=...` and appends results. Handles loading, error+retry, and "no more articles" states.
+
+**Lesson**: The Next.js 16 App Router pattern for paginated feeds is: Server Component fetches page 1 (for fast initial render + SEO), Client Component fetches subsequent pages (for interactivity). The `<Suspense>` boundary wraps the Server Component so the page shell renders immediately.
+
+### 4. Dropping a Deprecated Column — Additive Migration Verification
+
+**Issue**: The `keys` column on `push_subscriptions` was marked `@deprecated` in Phase 14 but retained for "backward compat". Phase 15 verified no code reads it (via grep) and dropped it.
+
+**Fix**: Removed `keys` from `schema.ts`, generated migration `0005_neat_wolverine.sql` (`ALTER TABLE push_subscriptions DROP COLUMN keys;`). The TDD-style verification: first removed `keys` from the test mock and confirmed tests still passed (proving no code reads it), THEN removed the column from the schema.
+
+**Lesson**: Before dropping a column, grep the entire `src/` for references. Use the test mock as a canary — if removing the column from the mock doesn't break tests, no code reads it. Always generate a Drizzle migration (`drizzle-kit generate`) rather than writing SQL by hand.
+
+### 5. OAuth Providers — Conditional Configuration for Backward Compat
+
+**Issue**: Adding Google + GitHub OAuth providers naively (always-on) would break existing deployments that don't have OAuth env vars configured — Auth.js would throw at boot.
+
+**Fix**: Extracted `buildProviders()` into a separate module (`src/lib/auth/providers.ts`) that conditionally includes Google/GitHub only when both `CLIENT_ID` and `CLIENT_SECRET` are present. The env vars are `.optional()` in the Zod schema. This preserves backward compat: deployments without OAuth continue to work with Credentials-only auth.
+
+**Lesson**: When adding new auth providers, make them conditional on env vars. The `Provider` type from Auth.js v5 is a union (object form + function form) — use `'id' in p` narrowing to access the `id` property safely in tests.
+
+### 6. Missing `/sign-in` and `/auth-error` Pages — Referenced but Non-Existent
+
+**Issue**: `src/lib/auth/index.ts` had `pages.signIn: "/sign-in"` and `pages.error: "/auth-error"`, but neither page existed. The Credentials flow was broken (no UI to trigger it).
+
+**Fix**: Created `src/app/sign-in/page.tsx` (Server Component that inspects env vars and passes `showGoogle`/`showGithub` to `SignInClient`) + `src/app/sign-in/SignInClient.tsx` (Client Component with OAuth buttons + Credentials form). Created `src/app/auth-error/page.tsx` (simple error landing). Used `<form action="/api/auth/signin/google" method="post">` for OAuth (progressive enhancement — works without client JS).
+
+**Lesson**: Always verify that routes referenced in `pages.signIn`/`pages.error` actually exist. The Auth.js config silently accepts non-existent paths — the failure only appears at runtime when a user is redirected to a 404. Server-action forms (`<form action="..." method="post">`) are the simplest OAuth trigger pattern — no `SessionProvider` or client-side `signIn()` needed.
+
+### 7. Mocking `global.fetch` in Vitest — `vi.stubGlobal` Pattern
+
+**Issue**: Tests for `FeedContainer` (which calls `fetch("/api/articles?cursor=...")`) created a `vi.fn()` mock but never assigned it to `global.fetch`, so the real `fetch` was called (which failed since no server was running).
+
+**Fix**: Used `vi.stubGlobal("fetch", mockFetch)` in `beforeEach()` to replace the global `fetch` with the mock. Reset in `beforeEach` via `mockFetch.mockReset()`.
+
+**Lesson**: `vi.fn()` creates a mock function but doesn't replace anything by itself. For global APIs like `fetch`, use `vi.stubGlobal("fetch", mockFn)`. Always reset between tests to avoid cross-test contamination.

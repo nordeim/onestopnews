@@ -24,6 +24,13 @@ process.env.VAPID_PRIVATE_KEY = "test-vapid-private-key";
 process.env.VAPID_SUBJECT = "mailto:test@onestopnews.com";
 process.env.PUSH_KEY_ENCRYPTION_KEY =
   "0000000000000000000000000000000000000000000000000000000000000000";
+// OAuth env vars are optional in env/index.ts (Zod .optional()). Set dummy
+// values so tests that exercise the auth module don't trigger env validation
+// errors if the schema ever changes to require them.
+process.env.GOOGLE_CLIENT_ID = "test-google-client-id";
+process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
+process.env.GITHUB_CLIENT_ID = "test-github-client-id";
+process.env.GITHUB_CLIENT_SECRET = "test-github-client-secret";
 // NODE_ENV is set by vitest to "test" — no need to set it manually.
 // If a test needs a different NODE_ENV, use vi.stubEnv("NODE_ENV", value).
 

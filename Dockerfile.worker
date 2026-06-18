@@ -1,18 +1,24 @@
-# Stage 1: Builder
-FROM node:22-alpine AS builder
+# Stage 1: Builder — install ALL deps (tsx is in devDependencies, needed at runtime)
+FROM node:24-alpine AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml* ./
-COPY . .RUN pnpm install --frozen-lockfile
-# Build/compile the worker application
-RUN pnpm run worker:build 2>/dev/null || echo 'No worker build script'
+RUN pnpm install --frozen-lockfile
+COPY . .
 
 # Stage 2: Production
-FROM node:22-alpine AS runner
-WORKDIR /appENV NODE_ENV=production
+# The worker runs `tsx src/workers/index.ts` directly (no compilation step).
+# tsx is required at runtime to handle TypeScript + path alias resolution
+# (the worker imports via "@/lib/...", "@/features/...", etc., which Node's
+# native TypeScript stripping does not resolve).
+FROM node:24-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
 RUN addgroup -g 1001 -S onestopnews && adduser -S onestopnews -u 1001
-COPY --from=builder --chown=onestopnews:onestopnews /app/dist ./dist
+# Copy node_modules (contains tsx + all deps), src, and package.json.
 COPY --from=builder --chown=onestopnews:onestopnews /app/node_modules ./node_modules
+COPY --from=builder --chown=onestopnews:onestopnews /app/src ./src
+COPY --from=builder --chown=onestopnews:onestopnews /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=onestopnews:onestopnews /app/package.json ./
 USER onestopnews
-CMD ["node", "dist/workers/index.js"]
+CMD ["npx", "tsx", "src/workers/index.ts"]

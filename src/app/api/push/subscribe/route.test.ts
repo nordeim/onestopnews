@@ -26,7 +26,6 @@ vi.mock("@/lib/db", () => ({
   pushSubscriptions: {
     endpoint: "endpoint",
     encryptedKeys: "encrypted_keys",
-    keys: "keys",
   },
 }));
 

@@ -1,4 +1,4 @@
-import { FeedGrid } from "./FeedGrid";
+import { FeedContainer } from "./FeedContainer";
 import { getFeedArticles } from "@/features/feed/queries";
 import { Footer } from "@/shared/components/layout/Footer";
 
@@ -13,9 +13,12 @@ interface FeedDataProps {
 /**
  * FeedData — Server Component for fetching and rendering feed articles.
  *
- * This component fetches data and renders the FeedGrid + Footer.
- * It is wrapped in <Suspense> by the parent to prevent blocking
- * the page render in Next.js 16 with cacheComponents enabled.
+ * This component fetches the initial page of articles and renders the
+ * `FeedContainer` (client component) which manages cursor-based "Load More"
+ * pagination by calling `/api/articles?cursor=...` on user click.
+ *
+ * Wrapped in <Suspense> by the parent to prevent blocking the page render
+ * in Next.js 16 with cacheComponents enabled.
  */
 export async function FeedData({
   category: propCategory,
@@ -44,7 +47,11 @@ export async function FeedData({
 
   return (
     <>
-      <FeedGrid articles={feed.articles} />
+      <FeedContainer
+        initialArticles={feed.articles}
+        initialNextCursor={feed.nextCursor}
+        initialHasMore={feed.hasMore}
+      />
       <Footer />
     </>
   );

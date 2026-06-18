@@ -621,3 +621,204 @@ All 4 validated issues have been meticulously remediated using TDD discipline (R
 
 The codebase is now production-ready with all 4 issues resolved, full backward compatibility preserved, and the test suite expanded from 251 → 279 tests.
 
+---
+
+I'll follow the Meticulous Approach: ANALYZE the current state of all three docs against the actual codebase → PLAN the updates → VALIDATE → IMPLEMENT → VERIFY → DELIVER.
+## Phase 1 (ANALYZE) — Audit Current Doc State vs Codebase
+
+Let me first re-read the current state of all three docs and the codebase in parallel to identify all drift.
+Now let me grep for specific stale references in the docs to identify all drift points.
+Confirmed. Now let me read specific sections that need updates — first the README file hierarchy and a few key sections:
+Now I have a clear picture of the file hierarchy drift. Let me check a few more sections to identify all the inconsistencies:
+Now I have a complete picture of what needs updating. Let me create the comprehensive plan.
+---
+
+# Phase 2 (PLAN) — Comprehensive Doc Update Plan
+
+## Identified Drift (Consolidated)
+
+### Cross-doc inconsistencies (all 3 docs affected)
+1. **Test count:** Phase 14 entry says "251 tests across 45 suites" — actual is **279 across 49 suites**
+2. **Table count:** README Phase 2 entry says "10 tables" — actual is **11 tables** (8 business + 3 Auth.js adapter)
+3. **File hierarchy drift in README:** Lists `Masthead.tsx`, `NewsTicker.tsx` under `src/features/feed/components/` and `Stats.tsx`, `FAQ.tsx`, `Newsletter.tsx` under `src/features/feed/{stats,faq,newsletter}/` — actual locations are `src/shared/components/layout/{Masthead,NewsTicker}.tsx` and `src/shared/components/ui/{StatsSection,Accordion,NewsletterCTA}.tsx`
+4. **Missing `/sign-in` and `/auth-error` routes** in README file hierarchy + API reference (already added to API ref in Phase 15, but file hierarchy still missing)
+5. **Missing Phase 15 file inventory entries** in CLAUDE.md and AGENTS.md Quick Reference tables
+6. **Missing Phase 15 anti-patterns** in CLAUDE.md and AGENTS.md anti-patterns tables
+7. **Missing Phase 15 Lessons Learned section** in CLAUDE.md and AGENTS.md (only README has it)
+8. **Missing Phase 15 Recommendations section** in AGENTS.md
+9. **Stale Phase 14 entry test count** in all 3 docs (says 251/45, should clarify "at end of Phase 14")
+
+### README-specific
+10. File hierarchy is missing new files: `FeedContainer.tsx`, `LoadMoreButton.tsx`, `providers.ts`, `sign-in/`, `auth-error/`, `0005_neat_wolverine.sql`
+11. File hierarchy lists `app/topics/[category]/` and `app/article/[id]/` under `(public)/` route group — actual location is `app/topics/` and `app/article/` (top-level, not in route group)
+12. File hierarchy says `actions.ts` exists in `features/feed/` — does NOT exist (only `queries.ts`)
+13. File hierarchy missing `sources/` feature module (SourcesData, SourcesSkeleton, queries)
+14. File hierarchy missing `articles/` feature module (ArticleData, ArticleSkeleton, queries)
+15. File hierarchy missing `components/primitives/PageTransition.tsx`
+16. File hierarchy missing `lib/auth/providers.ts`
+17. Recommendations section #8 says "Current total: 251 tests across 45 suites" — stale
+18. Recommendations section #15 still says "Article Detail Page (Phase 14 candidate)" — already resolved in Phase 14
+19. Recommendations section #16 still says "RSS Ingestion E2E Test (Phase 14 candidate)" — already resolved in Phase 14
+20. Outstanding Issues section: items already resolved (Rate Limiting, Summarisation Worker, Article Detail Page, RSS Ingestion E2E) — keep the RESOLVED markers but ensure consistency
+21. Missing Dockerfile troubleshooting section (Phase 15 introduced Docker fixes — should document common Docker pitfalls)
+
+### CLAUDE-specific
+22. Anti-patterns table missing Phase 15 entries (Dockerfile Node drift, missing `output: "standalone"`, OAuth always-on without env vars, missing `/sign-in` page)
+23. Quick Reference File Locations missing Phase 15 entries (FeedContainer, LoadMoreButton, providers, sign-in page, auth-error page)
+24. Phase 14 entry test count says "251 tests across 45 suites" — should be left as historical record but contact section already updated to 279/49 ✓
+25. Missing Phase 15 Lessons Learned section
+
+### AGENTS-specific
+26. Phase Status Tracker Phase 14 entry test count says "251 tests across 45 suites" — historical, keep as-is but Phase 15 entry correctly says 279/49 ✓
+27. Updated File Inventory (Post-Phase 6) section is stale — lists files through Phase 6 only; should add Phase 15 entries
+28. Missing Phase 15 Lessons Learned + Recommendations sections
+29. Anti-patterns table missing Phase 15 entries
+30. Code example at lines 619-644 shows old `FeedData` returning `<FeedGrid>` directly — should reflect new `<FeedContainer>` pattern
+
+## Plan Summary (per doc)
+
+### README.md
+- Fix file hierarchy: correct all component locations, add new files, remove non-existent files
+- Update Recommendations #8 test count to 279/49
+- Mark Recommendations #15 and #16 as RESOLVED (Phase 14)
+- Add Docker troubleshooting section to Known Issues
+- Add Phase 15 outstanding items + recommendations
+- Ensure consistency: Phase 14 entry keeps historical 251/45; Phase 15 entry says 279/49
+
+### CLAUDE.md
+- Add Phase 15 anti-patterns to Anti-Patterns table
+- Add Phase 15 file locations to Quick Reference
+- Add Phase 15 Lessons Learned section
+- Update code examples to reflect new `FeedContainer` pattern (where applicable)
+
+### AGENTS.md
+- Add Phase 15 file inventory entries to Updated File Inventory
+- Add Phase 15 anti-patterns to Anti-Patterns table
+- Add Phase 15 Lessons Learned + Recommendations sections
+- Update stale code example showing old `FeedData` → `<FeedGrid>` pattern
+
+---
+
+# Phase 3 (VALIDATE) — Plan Alignment
+
+The plan is validated against the file inventory I gathered. All file paths cited in the plan have been verified to exist (or not exist) in the actual codebase. Now proceeding to implementation.
+# Phase 4 (IMPLEMENT) — README.md Updates
+
+## README Edit 1: Fix File Hierarchy (lines 149-241)
+## README Edit 2: Fix "10 tables" → "11 tables" in Phase 2 entry
+## README Edit 3: Update Recommendations #8 (test count), #15 and #16 (mark RESOLVED)
+## README Edit 4: Add Phase 15 entries to Outstanding Issues + Recommendations
+## README Edit 5: Add Docker troubleshooting section + OAuth troubleshooting to Known Issues
+Let me find the end of the Known Issues section to add Docker + OAuth troubleshooting:
+README updates complete. Now let me update CLAUDE.md.
+
+# Phase 4 (IMPLEMENT) — CLAUDE.md Updates
+
+## CLAUDE Edit 1: Update stale NewsTicker/Masthead file locations
+## CLAUDE Edit 2: Add Phase 15 anti-patterns to Anti-Patterns table
+## CLAUDE Edit 3: Add Phase 15 Lessons Learned section at end of file
+CLAUDE.md updates complete. Now let me update AGENTS.md.
+
+# Phase 4 (IMPLEMENT) — AGENTS.md Updates
+
+## AGENTS Edit 1: Fix stale NewsTicker/Masthead/Stats/FAQ/Newsletter file inventory entries
+## AGENTS Edit 2: Append Phase 15 file inventory entries at the end of the file inventory section
+## AGENTS Edit 3: Add Phase 15 anti-patterns to Anti-Patterns table
+## AGENTS Edit 4: Add Phase 15 Lessons Learned + Recommendations sections at end of file
+I see Phase 14 Recommendation #4 says "Drop Old `keys` Column" — that's now been done in Phase 15. Let me update that and add Phase 15 sections:
+All three docs are updated. Now let me also update the stale code example in AGENTS.md (the `FeedData` example showing old `<FeedGrid>` direct rendering):
+Let me update the stale "Component Composition Order" example to use the actual component names:
+Now let me verify all changes are clean by running the quality gates and doing a consistency check.
+# Phase 5 (VERIFY) — Quality Gates + Consistency Check
+All quality gates green. Now let me run a comprehensive consistency check across all three docs:
+Excellent — all consistency checks pass:
+- **Test counts**: Each doc has exactly 1 historical "251 tests" mention (Phase 14 entry, intentionally retained) + the correct "279 tests" current count
+- **Table count**: README has 0 "10 tables" mentions (stale reference removed) and 2 "11 tables" mentions (correct)
+- **Phase 15 mentions**: All 3 docs have substantial Phase 15 coverage (30/23/25 mentions)
+
+Let me also verify the file paths cited in the docs actually exist:
+All cited file paths exist — zero missing. Let me also verify no stale references to non-existent paths remain:
+All stale file path references are eliminated. The "worker:build" mentions in docs are intentional — they're in the Phase 15 Lessons Learned sections explaining what was fixed (the historical anti-pattern being documented). Let me verify these are all in the correct context:
+All "worker:build" mentions are in the correct historical/lesson context — they document the anti-pattern that was fixed in Phase 15. The actual `Dockerfile.worker` no longer references `worker:build` (verified earlier).
+---
+
+# Phase 6 (DELIVER) — Documentation Update Complete
+
+## Executive Summary
+
+All three documentation files (`README.md`, `CLAUDE.md`, `AGENTS.md`) have been meticulously reviewed and updated to align with the Phase 15 code changes. The updates address stale file paths, missing Phase 15 entries, inconsistencies in test/table counts, and add comprehensive new sections covering gotchas, troubleshooting tips, lessons learned, outstanding issues, and recommendations.
+
+## Final Verification Results
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | ✅ Zero TypeScript errors |
+| `npx eslint . --max-warnings 0` | ✅ Zero warnings, zero errors |
+| `npx vitest run` | ✅ **279 tests passing across 49 suites** |
+| File path verification | ✅ All 78 cited paths exist (zero missing) |
+| Stale reference check | ✅ Zero stale `Masthead/NewsTicker/Stats/FAQ/Newsletter` paths under `features/feed/` |
+| Consistency check | ✅ Test counts aligned (279 current, 251 historical Phase 14); table count fixed (11 not 10) |
+
+## What Was Updated
+
+### README.md (1510 → 1655 lines, +145 lines)
+
+**Fixed:**
+- **File Hierarchy** (lines 149-297): Complete rewrite with accurate file locations. Removed stale references to `Masthead.tsx`/`NewsTicker.tsx` under `features/feed/components/` and `Stats.tsx`/`FAQ.tsx`/`Newsletter.tsx` under non-existent `features/feed/{stats,faq,newsletter}/`. Corrected to actual locations in `shared/components/layout/` and `shared/components/ui/`. Added all Phase 15 new files (`FeedContainer`, `LoadMoreButton`, `providers.ts`, `sign-in/`, `auth-error/`, `0005_neat_wolverine.sql`). Added missing modules (`articles/`, `sources/`, `components/primitives/`). Added note clarifying `/topics/[category]` and `/article/[id]` are NOT inside the `(public)` route group.
+- **Phase 2 entry**: "10 tables" → "11 tables (8 business + 3 Auth.js adapter)"
+- **Recommendations #8**: Test count updated from "251 tests across 45 suites" → "279 tests across 49 suites" with Phase 15 breakdown
+- **Recommendations #15, #16, #18**: Marked as RESOLVED (Phase 14) with strikethrough
+
+**Added:**
+- **3 new Outstanding Issues entries** (Dockerfile Drift RESOLVED, Missing Sign-In/Auth-Error Pages RESOLVED, Deprecated `keys` Column RESOLVED — all Phase 15)
+- **3 new Future Enhancement entries** (Add Sign-In/Sign-Out Button to Header, Extend Load More to Topic Pages, OAuth Account Linking)
+- **5 new Troubleshooting entries**: Docker Build Fails with "Cannot find module" / ".next/standalone not found", OAuth Sign-In Button Not Appearing, OAuth Callback URL Mismatch, "Load More" Button Not Appearing
+- **Phase 15 Lessons Learned section** (7 detailed gotchas with Issue/Fix/Lesson structure)
+
+### CLAUDE.md (848 → 927 lines, +79 lines)
+
+**Fixed:**
+- **Quick Reference File Locations**: Corrected `NewsTicker.tsx` and `Masthead.tsx` paths from `features/feed/components/` → `shared/components/layout/`
+
+**Added:**
+- **12 new Phase 15 anti-patterns** in the Anti-Patterns table (Node version mismatch, missing `output: "standalone"`, `worker:build` script reference, non-existent `dist/`, malformed Dockerfile lines, `packages/` copy, always-on OAuth, missing `/sign-in` + `/auth-error` pages, `vi.fn()` without `vi.stubGlobal`, `provider.id` without type narrowing, direct `<FeedGrid>` rendering)
+- **8 new Phase 15 file location entries** (FeedContainer, LoadMoreButton, providers, sign-in page, SignInClient, auth-error page, migration 0005)
+- **Phase 15 Lessons Learned section** (7 detailed gotchas matching README)
+
+### AGENTS.md (1488 → 1640 lines, +152 lines)
+
+**Fixed:**
+- **File Inventory**: Corrected `NewsTicker.tsx`, `Masthead.tsx` paths; replaced stale `Stats.tsx`/`FAQ.tsx`/`Newsletter.tsx` entries with actual `StatsSection.tsx`/`Accordion.tsx`/`NewsletterCTA.tsx` + added `NutritionLabelDemo.tsx`
+- **Component Composition Order example**: Updated to use actual component names (`NewsTicker`, `Masthead`, `Header`, `LeadStory`, `FeedData`, `NutritionLabelDemo`, `StatsSection`, `FaqAccordion`, `NewsletterCTA`, `Footer`) matching `src/app/(public)/page.tsx`
+- **Phase 14 Recommendation #4**: Marked "Drop Old `keys` Column" as RESOLVED (Phase 15)
+
+**Added:**
+- **13 new Phase 15 anti-patterns** in the Anti-Patterns table (matching CLAUDE.md + a "Stale file paths in docs" entry)
+- **22 new Phase 15 file inventory entries** (all new + modified files with descriptions)
+- **Phase 15 Lessons Learned section** (8 detailed gotchas with Issue/Fix/Lesson structure)
+- **Phase 15 Recommendations section** (8 actionable recommendations including migration, Docker build, OAuth config, sign-in button, Load More extension, account linking, E2E tests, doc audits)
+
+## Consistency Achieved
+
+All three docs now consistently report:
+- **Test count**: 279 tests across 49 suites + 10 Playwright E2E tests (current); 251/45 retained as historical Phase 14 entry
+- **Table count**: 11 tables (8 business + 3 Auth.js adapter)
+- **Phase 15**: Production Readiness — COMPLETE
+- **File paths**: All cited paths verified to exist on the filesystem
+- **Dockerfiles**: All 4 pinned to `node:24-alpine`; `output: "standalone"` documented
+- **OAuth**: 4 optional env vars documented across all 3 docs + `.env.example` + CI + test setup
+- **Migration `0005`**: Documented as dropping the deprecated `keys` column
+- **Sign-in/auth-error pages**: Documented as Phase 15 deliverables
+
+## Recommended Next Steps
+
+1. **Commit the changes**: The docs are now fully aligned with the codebase. A single commit covering all 3 doc updates + the Phase 15 code changes would be clean.
+2. **Run `pnpm drizzle-kit migrate`** in your environment to apply migration `0005` (drops the `keys` column)
+3. **Build and test Docker images** to verify the Phase 15 Dockerfile fixes work end-to-end
+4. **Consider the Future Enhancements** documented in the new Outstanding Issues section (sign-in button in header, Load More on topic pages, OAuth account linking)
+5. **Audit docs periodically** — the Phase 15 Lessons Learned #8 recommends running `find src -name "*.tsx" | sort` and comparing against doc-cited paths to catch future drift
+
+The documentation is now a comprehensive, accurate, and self-consistent knowledge base that reflects the true state of the OneStopNews codebase through Phase 15.
+
+# https://chat.z.ai/s/81439202-03b4-4a40-b274-30298eb53e09 
+

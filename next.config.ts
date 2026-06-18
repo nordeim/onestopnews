@@ -10,6 +10,13 @@ import type { NextConfig } from "next";
  * (v5.1 corrected the earlier ≥16.2.6 guidance — 16.0.7 is the actual security patch.)
  */
 const nextConfig: NextConfig = {
+  // ── OUTPUT MODE ─────────────────────────────────────────────────────────
+  // "standalone" produces a self-contained .next/standalone/ directory that
+  // can be deployed without node_modules (only used deps are bundled). This
+  // is the Next.js-recommended pattern for production Docker images and is
+  // required by Dockerfile.web.
+  output: "standalone",
+
   // ── CACHE COMPONENTS ───────────────────────────────────────────────────
   // TOP-LEVEL flag. Enables Cache Components ("use cache" directive), PPR,
   // and opt-in caching model. Replaces ALL of: experimental.ppr + dynamicIO.

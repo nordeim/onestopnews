@@ -194,18 +194,12 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   /**
    * Encrypted push subscription keys (AES-256-GCM encrypted envelope).
    *
-   * Phase 14 (MEDIUM-2 fix): This column stores the entire encrypted JSON
-   * envelope as a single string. The old `keys` column (below) stored
-   * `{ p256dh: encryptedEnvelope, auth: "encrypted" }` which was semantically
-   * misleading — the schema type said `{ p256dh: string; auth: string }` but
-   * `p256dh` actually held the entire encrypted envelope for both keys.
-   *
-   * The `keys` column is retained for backward compatibility during the
-   * migration transition period. It can be dropped in a future release.
+   * Stores the entire encrypted JSON envelope as a single string. The
+   * legacy `keys` column (which stored `{ p256dh: encryptedEnvelope, auth:
+   * "encrypted" }` and was semantically misleading) was dropped in migration
+   * `0005` after Phase 14 verified no code reads it.
    */
   encryptedKeys: text("encrypted_keys"),
-  /** @deprecated Use `encryptedKeys` instead. Retained for backward compat. */
-  keys: jsonb("keys").$type<{ p256dh: string; auth: string }>(),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true).notNull(),
