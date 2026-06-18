@@ -1,79 +1,111 @@
-# OneStopNews — Gemini CLI Context
+# OneStopNews — Master Instruction Context
 
-This project is an elite, topic-first news aggregation platform with AI-generated summaries and machine-readable provenance. It follows the **"Editorial Dispatch"** design system and adheres to a strict **Meticulous Approach** for all engineering tasks.
+This file serves as the definitive instructional context for the OneStopNews project. It distills the institutional knowledge, architectural mandates, and engineering standards required for all development tasks.
 
-## Project Overview
+---
 
-*   **Goal:** Reorganize public news around subjects, providing calm, source-cited AI summaries.
-*   **Target Personas:** Daily scanners, enterprise analysts, and platform editors.
-*   **Compliance:** EU AI Act Article 50 (3-layer AI provenance disclosure).
-*   **Design Philosophy:** **Anti-Generic**. Rejects "AI slop" and safe templates. Uses Newsreader, Instrument Sans, and Commit Mono.
+## 1. Project Overview & Design Philosophy
 
-## Tech Stack
+OneStopNews is a topic-first news aggregation platform that reorganizes public news around subjects with source-cited AI summaries.
+
+- **Design System**: "Editorial Dispatch" — High-end editorial aesthetic.
+- **Typography**: Newsreader (Headlines), Instrument Sans (Body/UI), Commit Mono (Metadata).
+- **Compliance**: EU AI Act Article 50 (3-layer machine-readable AI provenance).
+- **Anti-Generic**: Rejects "AI slop" and safe templates. Whitespace and hierarchy as structural elements.
+
+---
+
+## 2. The Meticulous Approach (Mandatory SOP)
+
+Every task must follow this 6-phase lifecycle:
+
+1.  **ANALYZE**: Deep requirement mining. Identify explicit, implicit, and edge-case needs.
+2.  **PLAN**: Structured execution roadmap. **Present for approval before writing code.**
+3.  **VALIDATE**: Obtain explicit user confirmation of the plan.
+4.  **IMPLEMENT**: Modular, tested, documented builds. Use library primitives first.
+5.  **VERIFY**: Rigorous QA. Edge cases, accessibility (WCAG AAA), and performance.
+6.  **DELIVER**: Complete handoff with knowledge transfer.
+
+---
+
+## 3. Tech Stack & Commands
 
 | Layer | Technology |
 | :--- | :--- |
-| **Web Framework** | Next.js 16.2.9+ (App Router, PPR, Cache Components) |
-| **UI Runtime** | React 19.2 (stable) |
-| **Language** | TypeScript 5.x (Strict mode, no `any`) |
+| **Web Framework** | Next.js 16.2.9+ (App Router, Turbopack, `cacheComponents: true`) |
+| **UI Runtime** | React 19.2 (Stable, View Transitions, `useActionState`, `useOptimistic`) |
+| **Language** | TypeScript 5.7+ (Strict mode, `noUncheckedIndexedAccess: true`) |
 | **Styling** | Tailwind CSS v4 (with PostCSS plugin), CSS Subgrid |
 | **Database** | PostgreSQL 17 + Drizzle ORM |
-| **Search** | Postgres-native FTS (BM25 `ts_rank_cd`) + `pg_trgm` |
 | **Job Queue** | BullMQ v5 on Redis (Upstash) |
 | **Worker Service** | Node.js 24 LTS (Krypton) |
 | **AI Models** | Claude 4.5 Haiku (Primary), GPT-5 Mini (Fallback) |
 | **Authentication** | Auth.js v5 (beta.31) |
 
-## Core Commands
-
-| Action | Command |
-| :--- | :--- |
-| **Install** | `pnpm install` |
-| **Development** | `pnpm dev` (Next.js) and `pnpm worker:dev` (Worker) |
-| **Build** | `pnpm build` |
-| **Testing** | `pnpm test` (Unit/Integration), `pnpm test:e2e` (Playwright) |
-| **Lint & Typecheck** | `pnpm check` (Runs `tsc --noEmit && pnpm lint`) |
-| **Database** | `pnpm db:generate`, `pnpm db:migrate`, `pnpm db:seed` |
-
-## Architecture & Layer Model
-
-Adhere strictly to this 5-layer model to prevent security and consistency bugs:
-
-1.  **Layer 0: `proxy.ts`** — Network boundary. Cookie check + redirect only. No DB, no logic.
-2.  **Layer 1: App Router** — Routes, metadata, PPR, Suspense. Pages fetch data; Layouts do not.
-3.  **Layer 2: Feature Modules** — UI composition, data binding, mutations. All DB access via `queries.ts`.
-4.  **Layer 3: Domain Services** — Pure business logic. No Next.js or DB client imports.
-5.  **Layer 4: Infrastructure** — Drizzle, Auth.js, BullMQ. Side-effecting operations.
-
-## Development Conventions
-
-### 1. The Meticulous Approach (Mandatory)
-*   **ANALYZE:** Deep requirement mining.
-*   **PLAN:** Structured roadmap presented for approval.
-*   **VALIDATE:** Explicit user confirmation.
-*   **IMPLEMENT:** Modular, tested, documented builds.
-*   **VERIFY:** Rigorous QA (edge cases, accessibility, performance).
-*   **DELIVER:** Complete handoff.
-
-### 2. Implementation Standards
-*   **Next.js 16:** Always `await` `params`, `searchParams`, and `cookies()`.
-*   **Suspense Pattern:** Wrap all database queries in Server Components with `<Suspense>` fallback to avoid `blocking-route` errors.
-*   **TypeScript:** `strict: true`, `noUncheckedIndexedAccess: true`. Zero `any`. Use `interface` for shapes, `type` for unions.
-*   **Drizzle:** Use the Lazy Proxy Connection in `src/lib/db/index.ts`. Never `push` in production; use `generate` + `migrate`.
-*   **AI Guard:** Never summarize `title_only` or `excerpt` articles (prevents hallucination).
-*   **Time Rendering:** Never use `new Date()` in Server Components during prerender. Use Client Components with `useEffect` or wrap in `<Suspense>`.
-
-## Key Files & Directories
-
-*   `AGENTS.md`: Detailed agent instructions (Authoritative).
-*   `CLAUDE.md`: Implementation standards and patterns.
-*   `Project_Architecture_Document_v4.5.md`: Core architecture source of truth.
-*   `Project_Requirements_Document_v4.3.md`: Detailed project requirements.
-*   `src/lib/db/schema.ts`: Drizzle schema definition.
-*   `src/lib/db/index.ts`: Lazy database client.
-*   `src/lib/auth/dal.ts`: Data Access Layer for session verification.
-*   `src/workers/`: BullMQ worker implementation.
-*   `src/features/`: Modularized feature logic (feed, search, summaries).
+### Key Commands
+- `pnpm dev`: Start Next.js (Turbopack).
+- `pnpm worker`: Start the background job service.
+- `pnpm check`: Runs `tsc --noEmit && pnpm lint` (Pre-commit gate).
+- `pnpm test`: Run unit/integration tests (Vitest).
+- `pnpm test:e2e`: Run Playwright tests.
+- `pnpm db:generate` / `migrate`: Manage database schema.
+- `pnpm db:seed`: Seed the database with sample data (idempotent).
 
 ---
-*Refer to **AGENTS.md** for more granular technical rules and anti-patterns.*
+
+## 4. Architecture: The 5-Layer Model
+
+Adhere strictly to this hierarchy. Deviations create security and consistency bugs.
+
+- **Layer 0: `proxy.ts`**: Network boundary. Optimistic redirects only. **NO DB, NO LOGIC.**
+- **Layer 1: App Router**: Routes, Metadata, PPR, Suspense. **Layouts must not fetch data.**
+- **Layer 2: Feature Modules**: UI + `queries.ts` (all DB access) + `actions.ts` (mutations).
+- **Layer 3: Domain Services**: Pure business logic. No Next.js or DB client imports.
+- **Layer 4: Infrastructure**: Drizzle, Auth.js, BullMQ, AI, Env. Side-effecting operations.
+
+---
+
+## 5. Critical Implementation Standards
+
+### Database: Lazy Proxy Connection
+Database connections in `src/lib/db/index.ts` must use a **Proxy** to defer initialization until the first query. This prevents build-time crashes when `DATABASE_URL` is missing.
+- **Rule**: Never call `getDb()` directly at module load. Export the `db` proxy.
+
+### Next.js 16: Suspense & Caching
+- **Blocking-Route Fix**: Async data fetches in Server Components must be wrapped in `<Suspense>` with a fallback.
+- **Rule**: Never `await` a DB query directly in a Page body without a Suspense boundary.
+
+### AI & Provenance
+- **Content Guard**: Only summarize articles with `partial_text` or `full_text` availability. Never summarize `title_only` or `excerpt`.
+- **3-Layer Disclosure**: Every summary must emit JSON-LD, an `X-AI-Provenance` HTTP header, and a `<meta name="ai-provenance">` tag.
+
+### Workers & Flows
+- **Atomic DAG**: Use `FlowProducer` for the `ingest → score → feed-slice refresh` sequence.
+- **Rule**: The parent (`feed-slice`) must only run after all children (`score`) complete.
+
+### Environment Validation
+- All variables must be declared and validated in `src/lib/env/index.ts` using Zod. The app must fail fast at module load if validation fails.
+
+---
+
+## 6. Anti-Patterns & Critical Pitfalls
+
+| Anti-Pattern | Reason | Fix |
+| :--- | :--- | :--- |
+| `new Date()` in Server Components | Non-deterministic; causes `next-prerender-current-time` build error. | Move to Client Component or compute from headers. |
+| Missing `@tailwindcss/postcss` | Tailwind v4 will generate zero utility classes. | Ensure `postcss.config.mjs` is present. |
+| `revalidateTag` in Workers | Next.js API not available in Node.js worker process. | Use Redis pub/sub for cache invalidation. |
+| `.reveal` on top-of-page elements | Causes hydration mismatch (invisible vs visible). | Only use scroll-reveal for below-the-fold content. |
+| Corrupted `className` | Non-ASCII characters (e.g., `font浃着`) or typos break styling silently. | Use standard classes like `font-mono` and audit strings. |
+| `as any` in Drizzle `.with()` | Relational queries break type inference. | Use explicit `.innerJoin()` for type-safety. |
+
+---
+
+## 7. Current Project Status (Phase 13 Recap)
+
+- **Completed**: Real RSS/Atom/JSON parsing, AI integration (SDK v6), FlowProducer DAG, Redis Rate Limiting (20 req/s), Category API, SHA-256 content hashing.
+- **Total Tests**: 212 tests across 40 suites.
+- **Next Milestone**: Wiring the Article Detail Page (`/article/[id]`) to real data and full provenance emission.
+
+---
+*Refer to **AGENTS.md** for granular technical rules and **PAD v4.5** for architectural deep dives.*
