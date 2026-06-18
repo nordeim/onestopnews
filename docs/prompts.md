@@ -34,6 +34,10 @@ please meticulously review @error.txt and validate the error against the codebas
 
 ---
 
+Awesome meticulous job so far. Please keep up the good work. Now, please meticulously validate the critical gaps identified in your code review against the codebase to identify the root causes and the optimal fixes. then meticulously plan to create a comprehensive remediation plan with a detailed ToDo list to apply the optimal fix. Review and validate the remediation plan against the codebase to ensure alignment before proceeding to execute it meticulously. Remember to use TDD approach to make code changes.
+
+---
+
 I started "pnpm dev" at port 3000 and saved the dynamic landing page (`http://localhost:3000/`) as @dynamic_landing_page.html . please meticulously compare the dynamic landing page with the static landing page mockup @static_HTML_mockup_for_dynamic_landing_page.html and then investigate why the dynamic page visual aesthetics is so different and minimal and contains links that are not active. you can use the system installed CLI browser commands `agent-browser` and `playwright-cli` to test the dynamic site yourself.
 
 You will compare the dynamic_landing_page.html (from the Next.js app at localhost:3000) with the static_HTML_mockup_for_dynamic_landing_page.html to identify why the dynamic version is so visually different, minimal, and has non-active/inactive links.
