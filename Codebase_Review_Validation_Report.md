@@ -1312,3 +1312,180 @@ All 8 phases (A–H) of the remediation plan have been meticulously executed usi
 5. **Set real `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`** in `.env.local` to test the AI summarization pipeline with live models
 
 The codebase is now production-ready for the core ingestion + AI summarization pipeline. All critical gaps identified in the code review have been resolved with TDD discipline, comprehensive test coverage, and full documentation.
+
+---
+
+I'll meticulously review the three documentation files against the actual codebase state, then update each to reflect Phase 13's changes, new gotchas, troubleshooting tips, and lessons learned. Let me start by setting up the task tracker and gathering current state.
+Let me read all three docs in parallel and inventory the actual codebase state:
+I have a complete picture of the README. I noticed several issues to fix:
+1. Line 7: Badge says `≥16.2.9` but MEP v5.1 corrected to `≥16.0.7`
+2. Lines 59-60: Duplicate PostCSS row
+3. Line 63: Zod version says `3.x` but installed is `4.4.3`
+4. Line 167-168: Duplicate `topics/[category]/` line
+5. Line 346: References `pnpm worker:dev` but no such script exists (only `pnpm worker`)
+6. Line 672: Security table says `≥16.2.6` but MEP v5.1 corrected to `≥16.0.7`
+7. Line 743: Corrupted text `/api暴晒/api/articles` (Chinese characters injected)
+8. Line 883: Says "124+ tests across 24 suites" but actual is 212 tests across 40 suites
+9. Line 887: Recommendation #10 says "no rate limiting" but it's now implemented
+10. Line 1010: Corrupted text `犯罪行为` in code example
+
+Let me read CLAUDE.md and AGENTS.md in parallel, plus check the actual package.json scripts:
+Let me read CLAUDE.md directly in smaller chunks to avoid the persisted-output wrapper:
+I have a complete picture of CLAUDE.md. Issues to fix:
+1. Line 1: Spurious `"` prefix at start
+2. Line 161: References `pnpm worker:dev` but no such script exists
+3. Line 252-253: Phase tracker still says "103+ tests" / "124 tests, 24 suites" (actual is 212 tests, 40 suites)
+4. Line 311: Code example references `publisher` from `@/lib/queue` but the actual implementation creates its own Redis singleton (Phase 13 refactor)
+5. Line 414: Corrupted line `| Stats | src/features/ pipelines can be found in \`/src/features/feed/stats/Stats.tsx\` |`
+6. Line 584: Says "124+ across 24 suites" but actual is 212 across 40 suites
+7. Missing Phase 13 lessons learned section
+8. Anti-patterns table missing Phase 13 entries (rate limit missing, hashContent FNV-1a, FlowProducer missing, etc.)
+
+Now let me read the AGENTS.md (which I already updated in Phase 13) and verify the package.json scripts:
+Confirmed: the script is `pnpm worker` (not `pnpm worker:dev`). Installed packages now include `@ai-sdk/anthropic@^3.0.85`, `@ai-sdk/openai@^3.0.73`, `rss-parser@^3.13.0`. Let me check the actual installed zod version and verify the test count:
+Now let me verify the current test count and check the actual file structure:
+Confirmed: **40 test files, 212 tests passing**. New files exist: `parseFeed.ts`, `summarize.ts`, `flows.ts`, `/api/categories/`. Now let me update the tracker and read the current AGENTS.md (which I already updated in Phase 13, but I should review it for completeness):
+Now I have a complete inventory of drift. Let me catalog the issues to fix:
+
+**README.md issues:**
+1. Line 7: Badge `≥16.2.9` → `≥16.0.7` (MEP v5.1 correction)
+2. Lines 59-60: Duplicate PostCSS row
+3. Line 63: Zod `3.x` → `4.x` (installed 4.4.3)
+4. Line 67: BullMQ `5.x` → `5.78+`
+5. Line 167-168: Duplicate `topics/[category]/` line
+6. Line 181: File hierarchy missing new files (parseFeed.ts, summarize.ts, flows.ts, rateLimit.ts, /api/categories)
+7. Line 335: `pnpm worker:dev` → `pnpm worker` (no such script)
+8. Line 387-388: API Reference missing `/api/categories` and `/api/health`
+9. Line 672: Security table `≥16.2.6` → `≥16.0.7`
+10. Line 743: Corrupted text `/api暴晒/api/articles`
+11. Line 883: "124+ tests across 24 suites" → "212 tests across 40 suites"
+12. Line 887: Recommendation #10 "no rate limiting" → mark as resolved
+13. Line 1010: Corrupted `犯罪行为` in code example
+14. Missing Phase 13 troubleshooting entries (RSS parser, AI SDK, rate limiter, FlowProducer)
+
+Let me start fixing README.md. I'll work through it systematically:
+
+## README.md Updates
+Now fix the Tech Stack table — update versions, remove duplicate PostCSS row, add AI SDK + rss-parser:
+Now fix the File Hierarchy section — remove the duplicate `topics/[category]/` line and add the new Phase 13 files:
+Now update the rest of the File Hierarchy — add the new lib/queue/flows.ts, lib/rateLimit.ts, workers/jobs/parseFeed.ts, workers/jobs/summarize.ts:
+Now fix the Quick Start section — `pnpm worker:dev` → `pnpm worker`:
+Now update the Verify Setup table to include `/api/categories`:
+Now update the Environment Variables section to include `PUSH_KEY_ENCRYPTION_KEY` (which is required but missing from the README):
+Now update the API Reference table to include `/api/categories`, `/api/health`, `/api/push/subscribe`, and document rate limiting + cursor validation:
+Now fix the Security & Compliance table (CVE version):
+Now fix the corrupted text `/api暴晒/api/articles` on line 743:
+Now update the Recommendations section — fix test count, mark rate limiting as resolved, update recommendation #10:
+Now fix the corrupted `犯罪行为` text in the Phase 10 Lessons Learned section and add a Phase 13 troubleshooting section. First the corruption fix:
+Now let me add a Phase 13 Troubleshooting section. I'll insert it after the existing "Commit Mono Font Not Loading" section (before "Security & Compliance"):
+Now update the Phase Status table to reflect accurate test counts. Let me also add a Phase 13 Lessons Learned section before the License section. First, let me update the test counts in the Phase Status table:
+Now let me add a Phase 13 Lessons Learned section. I'll insert it before the License section. Let me find the exact location:
+README.md is now fully updated. Let me mark it complete and move to CLAUDE.md:
+## CLAUDE.md Updates
+
+First, fix the spurious `"` prefix on line 1:
+Now fix the `pnpm worker:dev` reference (line 161) and the Setup Commands section:
+Now fix the cache invalidation code example (line 311) — the actual implementation uses a singleton publisher, not a `publisher` import:
+Now fix the corrupted line in the File Locations table (line 414) and add the new Phase 13 files:
+Now update the Anti-Patterns table to add Phase 13 entries and fix the test count in the Contact section. First, let me add Phase 13 anti-patterns:
+Now fix the Phase Status tracker (test counts) and the Contact section:
+Now fix the Contact section (test count) and add a Phase 13 Lessons Learned section. First the Contact section:
+Now add a Phase 13 Lessons Learned section at the very end of CLAUDE.md (after Phase 12 lessons):
+CLAUDE.md is now fully updated. Let me mark it complete and move to AGENTS.md:
+## AGENTS.md Updates
+
+I already added a Phase 13 section to AGENTS.md during the remediation. Let me now review it for completeness and consistency with the README/CLAUDE updates. Let me check the current state of the key sections — Anti-Patterns table, Phase Status Tracker, and the Updated File Inventory:
+I see the AGENTS.md Anti-Patterns table needs Phase 13 entries, and the Phase 7 cache invalidation code example (line 424-431) still shows the old non-singleton pattern. Let me update the Anti-Patterns table first:
+Now let me fix the Phase 7 cache invalidation code example to reflect the Phase 13 singleton refactor:
+Now let me find and update the "Updated File Inventory" section in AGENTS.md to add Phase 13 files. Let me locate it:
+Now let me add the Phase 13 file inventory entries:
+Now let me also update the Security & Compliance table in AGENTS.md (Next.js version) and the Phase Status Tracker. Let me check the Security section:
+The Security table here already says `>=16.0.7` (correct). Let me update it to add rate limiting and content hashing rows:
+Now let me also update the Build & Quality Commands section in AGENTS.md (I noticed it references `pnpm worker:dev` which doesn't exist). Let me find it:
+Now let me verify the Phase Status Tracker in AGENTS.md is accurate (I updated it in Phase 13, but let me verify the test count is correct):
+The Phase 13 tracker says "220+ tests, 41 suites" but the actual count is 212 tests across 40 suites. Let me fix this:
+Now let me also update the Phase 6 and Phase 7 entries in the AGENTS.md Phase Status Tracker (they still say "103+ tests" and "124 tests, 24 suites"):
+All three docs are now updated. Let me move to the final verification step — check internal consistency and run the test suite to confirm nothing broke:
+## Final Verification
+
+Let me run a comprehensive consistency check — verify no remaining references to the old test counts, the old CVE version, the nonexistent `worker:dev` script, or corrupted text:
+All checks pass:
+- ✅ No stale "124 tests" / "103+ tests" / "220+ tests" references
+- ✅ No stale "worker:dev" references (all now use `pnpm worker`)
+- ✅ "≥16.2.6" only appears in historical/contextual references explaining the MEP v5.1 correction (correct usage)
+- ✅ Corrupted text (`font浃着`, `Monad`, `monospace`, `暴晒`, `犯罪行为`) only appears in documentation explaining what was fixed — NOT in live code examples
+- ✅ `pnpm worker` consistently used across all 3 docs
+
+The `monospace` matches on README lines 255 and 689 are legitimate — they refer to the CSS fallback stack ("Fira Code, monospace"), not the corrupted className. Let me verify the test suite still passes (docs-only changes shouldn't affect it, but let me confirm):
+**212 tests, 40 suites, all passing.** Let me also verify the line counts of the three docs to confirm they've been substantively updated:
+All three docs have been substantively updated. Let me complete the tracker:
+---
+
+# Documentation Update Complete
+
+I meticulously reviewed and updated all three documentation files to align with the Phase 13 code changes. Here's a summary of what was done:
+
+## Changes Summary
+
+**651 insertions, 96 deletions** across the three docs (3,493 total lines).
+
+### README.md (1,350 lines, 33 Phase 13 mentions)
+**Fixed drift:**
+- Badge: `≥16.2.9` → `≥16.0.7` (MEP v5.1 correction)
+- Tech Stack: Removed duplicate PostCSS row; updated Zod (3.x→4.x), BullMQ (5.x→5.78+), Drizzle (Latest→0.45+); added AI SDK, rss-parser, rate limiting rows
+- File Hierarchy: Removed duplicate `topics/[category]/` line; added 15+ new Phase 13 files (parseFeed.ts, summarize.ts, flows.ts, rateLimit.ts, /api/categories, env/, security/, etc.)
+- Quick Start: `pnpm worker:dev` → `pnpm worker` (correct script)
+- Verify Setup: Added `/api/categories`, `/api/health`, rate limit check, updated test count to 212/40
+- Environment Variables: Added `PUSH_KEY_ENCRYPTION_KEY`, `NODE_ENV`, validation notes, CI note
+- API Reference: Added `/api/categories`, `/api/health`, `/api/push/subscribe`; documented rate limiting + cursor validation + response headers
+- Security & Compliance: Updated CVE to `≥16.0.7`; added rate limiting, content hashing, env validation rows
+- Fixed corrupted text: `/api暴晒/api/articles` → `/api/articles`; `犯罪行为` in code example → proper object syntax
+
+**Added:**
+- 6 new Phase 13 troubleshooting entries (RSS parsing, AI placeholder, rate limit 429, hashContent 8-char, FlowProducer, CI env validation)
+- Phase 13 Lessons Learned section (10 gotchas)
+- 4 new recommendations (#15-18: article detail page, RSS E2E test, token monitoring, rate limit hardening)
+- Marked 2 outstanding issues as RESOLVED with strikethrough
+
+### CLAUDE.md (765 lines, 17 Phase 13 mentions)
+**Fixed drift:**
+- Removed spurious `"` prefix on line 1
+- Setup Commands: `pnpm worker:dev` → `pnpm worker`; added `pnpm db:seed`
+- Build & Quality Commands: Expanded from 7 to 15 entries with correct script names
+- Cache invalidation code example: Updated to Phase 13 singleton pattern (was referencing nonexistent `publisher` import)
+- File Locations: Fixed corrupted Stats entry; added 12 new Phase 13 file locations
+- Phase Status Tracker: Corrected test counts (103+/124 → accurate per-phase); updated Phase 13 entry with accurate "212 tests across 40 suites"
+- Contact section: Updated test count from "124+ across 24 suites" to "212 across 40 suites"
+
+**Added:**
+- 9 new Phase 13 anti-patterns (FNV-1a hash, parseFeed stub, callAISummary stub, scoreQueue.add pattern, new Redis per call, missing CI env vars, ??= for test env, vi.fn constructor mock, clientSegmentCache flag)
+- 1 new anti-pattern for corrupted className
+- Phase 13 Lessons Learned section (10 gotchas with code examples)
+
+### AGENTS.md (1,378 lines, 21 Phase 13 mentions)
+**Fixed drift:**
+- Setup Commands: `pnpm worker:dev` → `pnpm worker`
+- Build & Quality Commands: Expanded from 9 to 15 entries
+- Cache invalidation code example (Phase 7 section): Updated to Phase 13 singleton pattern with note about the refinement
+- Security & Compliance: Added rate limiting, content hashing, env validation, cursor validation rows; updated DB connections to "Lazy Proxy"
+- Phase Status Tracker: Corrected test counts; updated Phase 13 entry with accurate "212 tests across 40 suites" and `(xmax = 0)` detail
+- Updated File Inventory: Added 28 Phase 13 file entries (new files + modified files with descriptions)
+
+**Added:**
+- 9 new Phase 13 anti-patterns (matching CLAUDE.md)
+- 1 new anti-pattern for corrupted className
+
+## Consistency Verification
+
+All three docs now consistently report:
+- **Next.js version**: `≥16.0.7` (per MEP v5.1)
+- **Test count**: 212 tests across 40 suites
+- **Worker command**: `pnpm worker` (not `worker:dev`)
+- **Phase 13 deliverables**: Identical list across all three docs
+- **No corrupted text** in live code examples (only in "what was fixed" documentation context)
+
+**Test suite remains green**: 212/212 tests passing after all doc updates.
+
+The documentation is now fully aligned with the codebase state post-Phase 13. The next step would be to commit these changes (`git add README.md CLAUDE.md AGENTS.md && git commit -m "docs: align README/CLAUDE/AGENTS with Phase 13 changes"`).
+
+# https://chat.z.ai/s/f8a0f3d1-788a-4fd1-9332-06e2d15892ba 
