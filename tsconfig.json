@@ -48,6 +48,8 @@
   "exclude": [
     "node_modules",
     ".next",
-    "drizzle"
+    "drizzle",
+    "e2e",
+    "playwright.config.ts"
   ]
 }

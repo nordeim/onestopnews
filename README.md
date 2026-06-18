@@ -1345,6 +1345,74 @@ function getPublisher(): Redis {
 ```
 The publisher stays alive for the process lifetime. The `flows.ts` FlowProducer uses the same singleton pattern.
 
+---
+
+## Phase 14: Validated Gaps Closure — Lessons Learned
+
+### 1. `hashContent` Must Include Body for Content Change Detection
+
+**Issue**: The original `hashContent(title, publishedAt)` only hashed title + date. If a feed updated an article's body (same title + pubDate, different content), the `contentHash` wouldn't change, and the `onConflictDoUpdate WHERE content_hash != excluded.content_hash` clause would skip the update.
+
+**Fix**: Updated `hashContent(title, body, publishedAt)` to include body in the SHA-256 input: `${title.trim()}|${body ?? ""}|${publishedAt.toISOString()}`. Now content-only updates are detected.
+
+**Lesson**: When hashing for change detection, include ALL fields that represent "content" — not just identifiers. Title + date identify the article; body IS the content.
+
+### 2. Rate Limiter IP Extraction — Trusted Proxy Pattern
+
+**Issue**: The `x-forwarded-for` header is spoofable. An attacker can send `X-Forwarded-For: 1.2.3.4` and bypass rate limiting by appearing as different IPs.
+
+**Fix**: Added `TRUSTED_PROXY` env var. When `true`, the app uses the RIGHTMOST IP from `x-forwarded-for` (the trusted proxy's view of the client). When unset (default), uses the LEFTMOST IP (client-supplied, spoofable but documented).
+
+**Lesson**: IP extraction from `x-forwarded-for` must distinguish between "direct exposure" (leftmost = client) and "behind trusted proxy" (rightmost = proxy's client). Use an env var to switch modes — don't hardcode either.
+
+### 3. `pushSubscriptions.keys` Schema Convention Was Misleading
+
+**Issue**: The encrypted push key envelope was stored as `keys: { p256dh: encryptedEnvelope, auth: "encrypted" }`. The schema type said `{ p256dh: string; auth: string }` but `p256dh` actually held the entire encrypted envelope for both keys, and `auth` was a hardcoded string.
+
+**Fix**: Added a dedicated `encryptedKeys: text("encrypted_keys")` column. The old `keys` column is retained (now nullable) for backward compat. New subscriptions write to `encryptedKeys`; old `keys` column can be dropped in a future release.
+
+**Lesson**: Schema types should match storage semantics. If a field stores an encrypted envelope, it should be a single string column — not stuffed into a typed object field. Additive migrations (new column) are safer than in-place type changes.
+
+### 4. Article Detail Page — `generateMetadata` for Provenance
+
+**Issue**: The article detail page was a placeholder rendering hardcoded mock data. No real data fetch, no `SummaryPanel`, no 3-layer provenance emission.
+
+**Fix**: Implemented `getArticleWithSummary(id)` with 4-way JOIN. `ArticleData.tsx` fetches real data and renders `SummaryPanel`. `generateMetadata()` in `page.tsx` calls `generateProvenanceMetadata()` and emits all 3 layers via `metadata.other`.
+
+**Lesson**: `generateMetadata()` is the correct Next.js 16 mechanism for emitting per-page HTTP headers and meta tags. Set `metadata.other = { "ai-provenance": metaTag, "X-AI-Provenance": httpHeader }` for the 3-layer provenance. JSON-LD can be emitted via a `<script type="application/ld+json">` tag rendered in the page body.
+
+### 5. Property-Based Testing > Hardcoded Vectors
+
+**Issue**: The `hashContent` test used a hardcoded SHA-256 vector (`expected = "28f1f634..."`). If the implementation changed (delimiter, date format), the test would fail with a cryptic mismatch.
+
+**Fix**: Replaced with a property-based test that computes the expected hash via `node:crypto` inline: `createHash("sha256").update(expectedData, "utf8").digest("hex")`. This verifies the algorithm matches without hardcoding a specific output.
+
+**Lesson**: Prefer property-based tests (determinism, collision resistance, algorithm verification) over hardcoded vectors. Hardcoded vectors are brittle and don't explain WHY the hash should be that value.
+
+### 6. E2E Tests Require Config Separation
+
+**Issue**: Playwright E2E tests (`e2e/*.spec.ts`) were picked up by vitest, causing import errors (`@playwright/test` not installed in vitest environment).
+
+**Fix**: Excluded `e2e/` and `playwright.config.ts` from `vitest.config.ts` (`exclude`), `eslint.config.mjs` (`ignores`), and `tsconfig.json` (`exclude`). Playwright has its own config and runs via `pnpm test:e2e`.
+
+**Lesson**: When using multiple test runners (vitest for unit/integration, Playwright for E2E), explicitly exclude each runner's files from the other's config. Otherwise, the runner without the dependency will fail to parse the files.
+
+### 7. BullMQ Failure State — `needs_review` After Retries
+
+**Issue**: When `callAISummary` failed, the catch block reset `summaryStatus` to `"none"` — allowing BullMQ retry but providing no observability. After 3 retries, the article's status stayed `"none"` (no summary, no error indication).
+
+**Fix**: Created `getSummaryFailureState(attemptsMade, maxAttempts)` pure function. When `attemptsMade >= maxAttempts`, sets `summaryStatus: "needs_review"` — making failed summaries visible in the admin review queue.
+
+**Lesson**: For retryable operations, distinguish between "temporary failure (retry)" and "permanent failure (escalate)". After exhausting retries, set a visible failure state — don't silently leave the entity in its initial state.
+
+### 8. Mock Query Builder Chaining for Drizzle
+
+**Issue**: Testing Drizzle queries requires mocking the chainable query builder: `db.select().from().innerJoin().leftJoin().leftJoin().where().limit()`. The mock must return the correct object at each step.
+
+**Fix**: Created a self-referential mock: `leftJoinResult.leftJoin = leftJoin` so the second `leftJoin` call returns the same object (which has `where`).
+
+**Lesson**: Drizzle's query builder is deeply chainable. Mock factories must handle arbitrary chaining depth. Self-referential mocks (`result.method = method`) are the cleanest pattern for this.
+
 ## License
 
 Proprietary. All rights reserved. See [LICENSE](./LICENSE) for details.

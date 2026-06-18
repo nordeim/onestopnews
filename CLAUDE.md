@@ -763,3 +763,76 @@ Combined with `WHERE content_hash != excluded.content_hash`, this detects conten
 **Fix**: Changed all to `font-mono`. Review CSS class strings after any edit, especially after merges or AI-generated code.
 
 **Prevention**: Add a lint rule or pre-commit hook that flags non-ASCII characters in className strings. Consider a visual regression test that verifies metadata text renders in Commit Mono.
+
+---
+
+**Prevention**: Add a lint rule or pre-commit hook that flags non-ASCII characters in className strings. Consider a visual regression test that verifies metadata text renders in Commit Mono.
+
+---
+
+## Latest Lessons Learned (Phase 14)
+
+### 1. `hashContent` Must Include Body for Content Change Detection
+
+**Issue**: `hashContent(title, publishedAt)` only hashed title + date. Content-only updates (same title+date, different body) were silently dropped by `onConflictDoUpdate WHERE content_hash != excluded.content_hash`.
+
+**Fix**: `hashContent(title, body, publishedAt)` — hash input is now `${title.trim()}|${body ?? ""}|${publishedAt.toISOString()}`.
+
+**Lesson**: When hashing for change detection, include ALL fields that represent "content" — not just identifiers. Title + date identify the article; body IS the content.
+
+### 2. Rate Limiter `TRUSTED_PROXY` Pattern
+
+**Issue**: `x-forwarded-for` is spoofable. Leftmost IP (client-supplied) allows bypass.
+
+**Fix**: `TRUSTED_PROXY=true` env var → use rightmost IP (trusted proxy's client view). Default (unset) → leftmost IP (direct exposure, documented as spoofable).
+
+**Lesson**: IP extraction must distinguish "direct exposure" (leftmost) from "behind trusted proxy" (rightmost). Use env var to switch — don't hardcode either.
+
+### 3. `pushSubscriptions.encryptedKeys` Schema Fix
+
+**Issue**: `keys: { p256dh: encryptedEnvelope, auth: "encrypted" }` was semantically misleading. Schema type said `{ p256dh: string; auth: string }` but `p256dh` held the entire encrypted envelope.
+
+**Fix**: Added `encryptedKeys: text("encrypted_keys")` column. Old `keys` column retained (nullable, deprecated). New subscriptions write to `encryptedKeys`.
+
+**Lesson**: Schema types should match storage semantics. Additive migrations (new column) are safer than in-place type changes.
+
+### 4. Article Detail Page — `generateMetadata` for Provenance
+
+**Issue**: Article detail page was a placeholder. No real data fetch, no `SummaryPanel`, no 3-layer provenance.
+
+**Fix**: `getArticleWithSummary(id)` with 4-way JOIN. `ArticleData.tsx` renders real data + `SummaryPanel`. `generateMetadata()` calls `generateProvenanceMetadata()` and emits all 3 layers via `metadata.other`.
+
+**Lesson**: `generateMetadata()` is the Next.js 16 mechanism for per-page HTTP headers + meta tags. Set `metadata.other = { "ai-provenance": metaTag, "X-AI-Provenance": httpHeader }`.
+
+### 5. Property-Based Testing > Hardcoded Vectors
+
+**Issue**: `hashContent` test used hardcoded SHA-256 vector. Brittle — fails if delimiter or date format changes.
+
+**Fix**: Replaced with property-based test computing expected hash via `node:crypto` inline: `createHash("sha256").update(expectedData, "utf8").digest("hex")`.
+
+**Lesson**: Prefer property-based tests (determinism, collision resistance, algorithm verification) over hardcoded vectors.
+
+### 6. E2E Tests Require Config Separation
+
+**Issue**: Playwright E2E tests (`e2e/*.spec.ts`) picked up by vitest → import errors (`@playwright/test` not installed in vitest env).
+
+**Fix**: Excluded `e2e/` + `playwright.config.ts` from `vitest.config.ts`, `eslint.config.mjs`, `tsconfig.json`.
+
+**Lesson**: When using multiple test runners, explicitly exclude each runner's files from the other's config.
+
+### 7. BullMQ `getSummaryFailureState` — Permanent Failure Visibility
+
+**Issue**: After 3 BullMQ retries, `summaryStatus` stayed `"none"` — no observability for failed summaries.
+
+**Fix**: `getSummaryFailureState(attemptsMade, maxAttempts)` returns `{ summaryStatus: "needs_review", flagReason: "AI summarization failed after N attempts" }` when `attemptsMade >= maxAttempts`.
+
+**Lesson**: For retryable operations, distinguish "temporary failure (retry)" from "permanent failure (escalate)". After exhausting retries, set a visible failure state.
+
+### 8. Drizzle Mock Query Builder Chaining
+
+**Issue**: Testing Drizzle queries requires mocking the chainable builder: `select().from().innerJoin().leftJoin().leftJoin().where().limit()`.
+
+**Fix**: Self-referential mock: `leftJoinResult.leftJoin = leftJoin` so the second `leftJoin` returns the same object (which has `where`).
+
+**Lesson**: Drizzle's query builder is deeply chainable. Self-referential mocks (`result.method = method`) handle arbitrary chaining depth.
+

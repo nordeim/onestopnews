@@ -61,19 +61,21 @@ export async function POST(request: Request) {
     // Encrypt push keys before storage (AES-256-GCM)
     const encryptedKeys = encryptPushKeys(keys);
 
-    // Upsert subscription (idempotent by endpoint)
-    // Note: In production, add userId check to prevent cross-user overwrite
+    // Upsert subscription (idempotent by endpoint).
+    // Phase 14 (MEDIUM-2 fix): Store encrypted envelope in the dedicated
+    // `encryptedKeys` column instead of stuffing it into `keys.p256dh`.
+    // The old `keys` column is retained for backward compat but not written.
     await db
       .insert(pushSubscriptions)
       .values({
         userId: session.user.id,
         endpoint,
-        keys: { p256dh: encryptedKeys, auth: "encrypted" },
+        encryptedKeys,
       })
       .onConflictDoUpdate({
         target: pushSubscriptions.endpoint,
         set: {
-          keys: { p256dh: encryptedKeys, auth: "encrypted" },
+          encryptedKeys,
         },
       });
 

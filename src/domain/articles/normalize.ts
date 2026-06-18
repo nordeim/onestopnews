@@ -42,17 +42,26 @@ export function normalizeCanonicalUrl(url: string): string {
 }
 
 /**
- * Creates a SHA-256 content hash from title + publishedAt for change detection.
+ * Creates a SHA-256 content hash from title + body + publishedAt for change detection.
  *
- * Per PAD §7.1: "SHA-256 of title + publishedAt ISO". Used as the
- * `articles.contentHash` value to detect content changes during ingestion
- * upserts (onConflictDoUpdate WHERE content_hash != excluded.content_hash).
+ * Per PAD §7.1 (extended in Phase 14): "SHA-256 of title + body + publishedAt ISO".
+ * Used as the `articles.contentHash` value to detect content changes during
+ * ingestion upserts (onConflictDoUpdate WHERE content_hash != excluded.content_hash).
  *
- * @param title — Article title (whitespace-trimmed before hashing)
+ * Including `body` ensures that content-only updates (same title + date, but
+ * updated body text) are detected and trigger an upsert. Without body in the
+ * hash, article body edits would be silently dropped.
+ *
+ * @param title       — Article title (whitespace-trimmed before hashing)
+ * @param body        — Article body (nullable; null/undefined treated as empty string)
  * @param publishedAt — Article publication date (serialized to ISO 8601)
  * @returns 64-character lowercase hex SHA-256 digest
  */
-export function hashContent(title: string, publishedAt: Date): string {
-  const data = `${title.trim()}|${publishedAt.toISOString()}`;
+export function hashContent(
+  title: string,
+  body: string | null | undefined,
+  publishedAt: Date
+): string {
+  const data = `${title.trim()}|${body ?? ""}|${publishedAt.toISOString()}`;
   return createHash("sha256").update(data, "utf8").digest("hex");
 }

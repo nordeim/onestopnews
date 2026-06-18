@@ -1364,14 +1364,96 @@ vi.mock("ioredis", () => ({
 
 **Fix:** Document the flags as deferred in `next.config.ts` with a comment explaining they'll be re-enabled once the upstream type includes them. Only `viewTransition: true` is currently enabled.
 
+---
+
 ### Phase 13 Recommendations
 
-1. **Article Detail Page:** The article detail page (`src/app/article/[id]/page.tsx` + `ArticleData.tsx`) is still a placeholder — it renders hardcoded mock data and does not call `generateProvenanceMetadata()`. Wiring this up to fetch real articles + render `NutritionLabel` + emit JSON-LD/HTTP header/meta tag is the next milestone.
+1. **~~Article Detail Page~~** (RESOLVED — Phase 14): The article detail page now fetches real data via `getArticleWithSummary(id)`, renders `SummaryPanel` + `NutritionLabel`, and emits 3-layer provenance via `generateMetadata()`.
 2. **Token Usage Tracking:** `result.usage?.totalTokens ?? 0` is a defensive fallback. Monitor actual token usage in production to verify the AI SDK v6 `usage` field is populated correctly for both Anthropic and OpenAI.
 3. **RSS Parser HTML Stripping:** `stripHtml()` in `parseFeed.ts` is a simple regex-based stripper. For production-grade content extraction (especially for complex RSS with nested HTML), consider `sanitize-html` or `cheerio` once performance becomes a concern.
-4. **Rate Limit Identifier:** The current rate limiter uses `x-forwarded-for` IP. Behind a CDN (e.g., Cloudflare), this header may contain multiple IPs or be spoofed. Consider also checking `x-real-ip` or using a signed CDN IP header in production.
+4. **~~Rate Limit Identifier~~** (RESOLVED — Phase 14): The rate limiter now supports `TRUSTED_PROXY=true` env var. When set, uses the rightmost IP from `x-forwarded-for` (the trusted proxy's client view), preventing spoofing. When unset, uses the leftmost IP (documented as spoofable for direct-exposure deployments).
 5. **FlowProducer Connection:** The flow producer uses the Queue (producer) connection config (`enableOfflineQueue: false`). If Redis is temporarily unreachable during an ingest burst, flow enqueues will fail fast. Consider whether this is acceptable or whether a retry queue is needed.
 6. **Schema Migration — `users.email_verified` and `users.image`:** The Phase 13 migration (`0003_strong_mac_gargan.sql`) also picked up `email_verified` and `image` columns on `users` that were in the schema but never migrated. These are additive and safe — they're standard Auth.js adapter fields.
+
+---
+
+## Phase 14: Validated Gaps Closure — Lessons Learned
+
+### Phase 14 Gotchas Discovered
+
+#### 1. `hashContent` Without Body — Content Updates Silently Dropped
+
+**Issue**: `hashContent(title, publishedAt)` only hashed title + date. If a feed updated an article's body (same title + pubDate, different content), the `contentHash` wouldn't change, and the `onConflictDoUpdate WHERE content_hash != excluded.content_hash` clause would skip the update.
+
+**Fix**: `hashContent(title, body, publishedAt)` — hash input is `${title.trim()}|${body ?? ""}|${publishedAt.toISOString()}`.
+
+**Lesson**: When hashing for change detection, include ALL fields that represent "content" — not just identifiers.
+
+#### 2. Rate Limiter `x-forwarded-for` Spoofing
+
+**Issue**: The `x-forwarded-for` header is spoofable. An attacker can send `X-Forwarded-For: 1.2.3.4` and bypass rate limiting.
+
+**Fix**: `TRUSTED_PROXY=true` env var → use rightmost IP (trusted proxy's client). Default (unset) → leftmost IP (direct exposure, documented as spoofable).
+
+**Lesson**: IP extraction must distinguish "direct exposure" (leftmost) from "behind trusted proxy" (rightmost). Use env var to switch — don't hardcode either.
+
+#### 3. `pushSubscriptions.keys` Schema Convention Was Misleading
+
+**Issue**: `keys: { p256dh: encryptedEnvelope, auth: "encrypted" }` — the schema type said `{ p256dh: string; auth: string }` but `p256dh` held the entire encrypted envelope for both keys.
+
+**Fix**: Added `encryptedKeys: text("encrypted_keys")` column. Old `keys` column retained (nullable, deprecated).
+
+**Lesson**: Schema types should match storage semantics. Additive migrations (new column) are safer than in-place type changes.
+
+#### 4. Article Detail Page — `generateMetadata` for Provenance
+
+**Issue**: The article detail page was a placeholder. No real data fetch, no `SummaryPanel`, no 3-layer provenance emission.
+
+**Fix**: `getArticleWithSummary(id)` with 4-way JOIN. `ArticleData.tsx` renders real data + `SummaryPanel`. `generateMetadata()` calls `generateProvenanceMetadata()` and emits all 3 layers via `metadata.other`.
+
+**Lesson**: `generateMetadata()` is the Next.js 16 mechanism for per-page HTTP headers + meta tags. Set `metadata.other = { "ai-provenance": metaTag, "X-AI-Provenance": httpHeader }`.
+
+#### 5. Property-Based Testing > Hardcoded Vectors
+
+**Issue**: `hashContent` test used a hardcoded SHA-256 vector. Brittle — fails if delimiter or date format changes.
+
+**Fix**: Replaced with property-based test computing expected hash via `node:crypto` inline.
+
+**Lesson**: Prefer property-based tests (determinism, collision resistance, algorithm verification) over hardcoded vectors.
+
+#### 6. E2E Tests Require Config Separation
+
+**Issue**: Playwright E2E tests (`e2e/*.spec.ts`) were picked up by vitest → import errors (`@playwright/test` not installed in vitest environment).
+
+**Fix**: Excluded `e2e/` + `playwright.config.ts` from `vitest.config.ts`, `eslint.config.mjs`, `tsconfig.json`.
+
+**Lesson**: When using multiple test runners, explicitly exclude each runner's files from the other's config.
+
+#### 7. BullMQ `getSummaryFailureState` — Permanent Failure Visibility
+
+**Issue**: After 3 BullMQ retries, `summaryStatus` stayed `"none"` — no observability for failed summaries.
+
+**Fix**: `getSummaryFailureState(attemptsMade, maxAttempts)` returns `{ summaryStatus: "needs_review", flagReason: "AI summarization failed after N attempts" }` when `attemptsMade >= maxAttempts`.
+
+**Lesson**: For retryable operations, distinguish "temporary failure (retry)" from "permanent failure (escalate)". After exhausting retries, set a visible failure state.
+
+#### 8. Drizzle Mock Query Builder Chaining
+
+**Issue**: Testing Drizzle queries requires mocking the chainable builder: `select().from().innerJoin().leftJoin().leftJoin().where().limit()`.
+
+**Fix**: Self-referential mock: `leftJoinResult.leftJoin = leftJoin` so the second `leftJoin` returns the same object (which has `where`).
+
+**Lesson**: Drizzle's query builder is deeply chainable. Self-referential mocks (`result.method = method`) handle arbitrary chaining depth.
+
+### Phase 14 Recommendations
+
+1. **Install Playwright Browsers:** Run `npx playwright install --with-deps` before executing E2E tests. The `playwright.config.ts` auto-starts the dev server via `webServer` config.
+2. **Apply Phase 14 Migration:** Run `pnpm drizzle-kit migrate` to apply `0004_smiling_newton_destine.sql` (adds `encrypted_keys` column, drops NOT NULL on `keys`).
+3. **Set `TRUSTED_PROXY=true`** in `.env.local` when behind a CDN/reverse proxy (Cloudflare, Nginx). This switches the rate limiter to use the rightmost IP from `x-forwarded-for`.
+4. **Drop Old `keys` Column:** After confirming all push subscriptions use the new `encryptedKeys` column, drop the deprecated `keys` column in a future migration.
+5. **Expand E2E Coverage:** The 10 smoke tests cover basic journeys. Add tests for: admin login → source management, article detail → request AI summary, search with filters, push subscription flow.
+6. **Integration Test with Real DB:** The current pipeline integration test mocks the DB. Consider adding a test that uses a real PostgreSQL instance (via Docker) for true end-to-end verification.
+7. **Monitor `needs_review` Queue:** Phase 14 sets `summaryStatus: "needs_review"` after 3 AI failures. Monitor the admin review queue (`/admin/summaries`) for failed summaries and investigate root causes.
 
 ---
 

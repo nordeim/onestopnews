@@ -130,6 +130,63 @@ describe("GET /api/articles — rate limiting", () => {
       expect.any(Number)
     );
   });
+
+  it("uses leftmost IP from x-forwarded-for by default (no trusted proxy)", async () => {
+    // Without TRUSTED_PROXY, the leftmost (first) IP is used.
+    // This is the client-supplied value — spoofable but documented.
+    const req = new NextRequest("http://localhost:3000/api/articles", {
+      headers: { "x-forwarded-for": "1.2.3.4, 10.0.0.1, 192.168.1.1" },
+    });
+    await GET(req);
+    expect(checkRateLimit).toHaveBeenCalledWith(
+      "api:articles:1.2.3.4",
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+
+  it("uses rightmost IP from x-forwarded-for when TRUSTED_PROXY=true (behind CDN)", async () => {
+    // When TRUSTED_PROXY is set, the app trusts the proxy chain and uses
+    // the rightmost IP (the trusted proxy's view of the client).
+    // This prevents spoofing because only the trusted proxy can set the header.
+    vi.stubEnv("TRUSTED_PROXY", "true");
+    try {
+      const req = new NextRequest("http://localhost:3000/api/articles", {
+        headers: { "x-forwarded-for": "1.2.3.4, 10.0.0.1, 192.168.1.1" },
+      });
+      await GET(req);
+      // Rightmost (last) IP after trimming — the trusted proxy's client
+      expect(checkRateLimit).toHaveBeenCalledWith(
+        "api:articles:192.168.1.1",
+        expect.any(Number),
+        expect.any(Number)
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("falls back to x-real-ip when x-forwarded-for is absent", async () => {
+    const req = new NextRequest("http://localhost:3000/api/articles", {
+      headers: { "x-real-ip": "198.51.100.42" },
+    });
+    await GET(req);
+    expect(checkRateLimit).toHaveBeenCalledWith(
+      "api:articles:198.51.100.42",
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+
+  it("falls back to 'unknown' when no IP headers present", async () => {
+    const req = new NextRequest("http://localhost:3000/api/articles");
+    await GET(req);
+    expect(checkRateLimit).toHaveBeenCalledWith(
+      "api:articles:unknown",
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
 });
 
 describe("OPTIONS /api/articles", () => {

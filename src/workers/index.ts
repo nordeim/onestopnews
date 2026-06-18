@@ -10,6 +10,7 @@ import { calculateImportanceScore } from "@/domain/ranking/score";
 import { hashContent } from "@/domain/articles/normalize";
 import { parseFeed, type FeedItem } from "./jobs/parseFeed";
 import { callAISummary } from "./jobs/summarize";
+import { getSummaryFailureState } from "./jobs/summarizeFailure";
 import { determineContentAvailability } from "./jobs/determineContentAvailability";
 import { syncSchedulers } from "./jobs/scheduler";
 import { publishCacheInvalidation } from "./lib/cacheInvalidation";
@@ -72,6 +73,7 @@ async function processIngestJob(job: {
 
       const contentHash = hashContent(
         item.title,
+        item.body ?? null,
         item.publishedAt ?? new Date()
       );
 
@@ -162,7 +164,11 @@ async function processIngestJob(job: {
 
 // ─── SUMMARIZE WORKER ────────────────────────────────────────────────────────
 
-async function processSummarizeJob(job: { data: { articleId: string } }) {
+async function processSummarizeJob(job: {
+  data: { articleId: string };
+  attemptsMade?: number;
+  opts?: { attempts?: number };
+}) {
   const { articleId } = job.data;
 
   // Fetch article with source name (innerJoin per PAD §5.6 JOIN contract).
@@ -235,11 +241,24 @@ async function processSummarizeJob(job: { data: { articleId: string } }) {
 
     return { status: "success" };
   } catch (error) {
-    // On failure, reset to 'none' to allow retry
+    // Phase 14 (G): Determine failure state based on BullMQ retry progress.
+    // If this is NOT the final retry, set to 'none' (allows BullMQ retry).
+    // If all retries exhausted, set to 'needs_review' so the failure appears
+    // in the admin review queue (observability — prevents silent infinite retry).
+    const attemptsMade = job.attemptsMade ?? 0;
+    const maxAttempts = job.opts?.attempts ?? 3;
+    const failureState = getSummaryFailureState(attemptsMade, maxAttempts);
+
     await db
       .update(articles)
-      .set({ summaryStatus: "none" })
+      .set({ summaryStatus: failureState.summaryStatus })
       .where(eq(articles.id, articleId));
+
+    console.error(
+      `[Summarize] Failed (attempt ${attemptsMade + 1}/${maxAttempts}) for article ${articleId}:`,
+      error,
+      failureState.flagReason ? `→ Marked as ${failureState.summaryStatus}: ${failureState.flagReason}` : "→ Will retry"
+    );
 
     throw error;
   }

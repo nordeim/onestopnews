@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: [".next/**", "node_modules/**", "drizzle/**", "dist/**"],
+    ignores: [".next/**", "node_modules/**", "drizzle/**", "dist/**", "e2e/**", "playwright.config.ts"],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],

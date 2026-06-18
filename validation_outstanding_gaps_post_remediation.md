@@ -845,3 +845,107 @@ All 7 phases (A–G) have been meticulously executed using TDD discipline (RED �
 6. **Commit the changes**: `git add -A && git commit -m "Phase 14: Close validated gaps (contentHash body, rate limiter IP, pushKeys schema, article detail page, E2E tests, failure state)"`
 
 The codebase is now production-ready with all 6 validated findings from the gap analysis report resolved. Test coverage increased from 212 to 251 tests (+39), with 10 additional E2E tests covering critical user journeys.
+
+---
+
+Let me gather the current state of all three docs and the codebase in parallel to identify what needs updating:
+Now let me find the Phase 13 references in each doc to know where to add Phase 14:
+Now I have a clear picture. Let me update all three docs systematically. I'll start with README.md:
+## README.md Updates
+
+### Update test count in Verify Setup table:
+### Add `TRUSTED_PROXY` to Environment Variables section:
+### Update the API Reference to mention the article detail page now emits provenance:
+### Update Security & Compliance table:
+### Update Test Suite Growth recommendation + mark outstanding issues resolved:
+### Update recommendation #7 (provenance) — article detail page is now implemented:
+### Update the Outstanding Issues section — mark article detail page as resolved:
+### Update Phase Status Tracker — add Phase 14:
+Now let me add a Phase 14 Lessons Learned section at the end of README.md (before License):
+README.md is updated. Now let me update CLAUDE.md:
+## CLAUDE.md Updates
+
+### Update Phase Status tracker + test count:
+### Update Contact section test count:
+### Add Phase 14 file locations to the Quick Reference table:
+### Add Phase 14 anti-patterns to the Anti-Patterns table:
+### Add Phase 14 Lessons Learned section at the end of CLAUDE.md:
+CLAUDE.md is updated. Now let me update AGENTS.md:
+## AGENTS.md Updates
+
+### Update Phase Status Tracker:
+### Add Phase 14 file inventory entries:
+### Add Phase 14 anti-patterns to AGENTS.md:
+### Add Phase 14 Recommendations + Lessons Learned section to AGENTS.md:
+All three docs are updated. Let me run the final consistency check:
+All consistency checks pass:
+- ✅ Test count "251 across 45" consistently mentioned across all 3 docs
+- ✅ Phase 14 referenced in all 3 docs (17/15/14 mentions)
+- ✅ `TRUSTED_PROXY` documented in all 3 docs
+- ✅ `encryptedKeys` documented in all 3 docs
+- ✅ No stale "212 tests" references remain
+- ✅ No stale "placeholder" references for article detail page remain
+- ✅ No stale "worker:dev" references remain
+
+Let me verify the test suite still passes (docs-only changes shouldn't affect it):
+---
+
+# Documentation Update Complete
+
+All three documentation files have been meticulously updated to align with the Phase 14 code changes.
+
+## Summary
+
+**925 insertions, 97 deletions** across the three docs (3,766 total lines).
+
+### README.md (1,432 lines, 17 Phase 14 mentions)
+
+**Updated:**
+- Test count: `212 tests across 40 suites` → `251 tests across 45 suites` (Verify Setup table)
+- Environment Variables: Added `TRUSTED_PROXY` env var documentation
+- API Reference: Added `/article/[id]` endpoint; updated push subscribe to mention `encryptedKeys`; added `TRUSTED_PROXY` note to rate limiting
+- Security & Compliance: Updated content hashing to include body; added 4 new rows (push key storage, trusted proxy, AI failure observability)
+- Test Suite Growth recommendation: Updated to 251 tests + 10 Playwright E2E
+- Provenance Verification recommendation: Updated to note article detail page now emits provenance
+- Outstanding Issues: Marked "Article Detail Page" and "RSS Ingestion E2E Test" as RESOLVED with strikethrough
+- Phase Status Tracker: Added Phase 14 entry
+
+**Added:**
+- Phase 14 Lessons Learned section (8 gotchas: hashContent body, TRUSTED_PROXY, encryptedKeys schema, generateMetadata provenance, property-based testing, E2E config separation, getSummaryFailureState, Drizzle mock chaining)
+
+### CLAUDE.md (847 lines, 15 Phase 14 mentions)
+
+**Updated:**
+- Phase Status Tracker: Added Phase 14 entry
+- Contact section test count: `212 across 40` → `251 across 45 + 10 E2E`
+- Anti-Patterns table: Added 6 Phase 14 anti-patterns (hashContent without body, leftmost x-forwarded-for, keys.p256dh convention, summaryStatus none after retries, hardcoded SHA-256 vector, E2E tests in vitest)
+
+**Added:**
+- 7 Phase 14 file locations (queries.ts, ArticleData.tsx, summarizeFailure.ts, pipeline.integration.test.ts, push subscribe route, playwright.config.ts, smoke.spec.ts)
+- Phase 14 Lessons Learned section (8 gotchas matching README)
+
+### AGENTS.md (1,487 lines, 14 Phase 14 mentions)
+
+**Updated:**
+- Phase Status Tracker: Added Phase 14 entry
+- Anti-Patterns table: Added 6 Phase 14 anti-patterns (matching CLAUDE.md)
+- Phase 13 Recommendations: Marked "Article Detail Page" and "Rate Limit Identifier" as RESOLVED with strikethrough
+
+**Added:**
+- 22 Phase 14 file inventory entries (new files + modified files with descriptions)
+- Phase 14 Lessons Learned section (8 gotchas + 7 recommendations)
+
+## Consistency Verification
+
+All three docs now consistently report:
+- **Test count**: 251 tests across 45 suites + 10 Playwright E2E tests
+- **Phase 14**: Validated Gaps Closure — COMPLETE
+- **TRUSTED_PROXY**: Documented as rate limiter IP hardening env var
+- **encryptedKeys**: Documented as push subscription schema fix
+- **Article detail page**: Marked as RESOLVED (no longer placeholder)
+- **No stale content**: Zero references to "212 tests", "placeholder", or "worker:dev"
+
+**Test suite remains green**: 251/251 tests passing across 45 suites.
+
+# https://chat.z.ai/s/f8a0f3d1-788a-4fd1-9332-06e2d15892ba 
+
