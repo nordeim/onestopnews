@@ -47,4 +47,10 @@ describe("generateProvenanceMetadata", () => {
     expect(result.metaTag).toContain("model:claude-4");
     expect(result.metaTag).toContain("compliance:eu-ai-act-art50");
   });
+
+  it("includes model name in accountablePerson.name per PAD §8.4", () => {
+    const result = generateProvenanceMetadata(mockInput);
+    const jsonLd = JSON.parse(result.jsonLd);
+    expect(jsonLd.accountablePerson.name).toBe(`AI System: ${mockInput.model}`);
+  });
 });

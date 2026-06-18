@@ -74,7 +74,7 @@ export function SummaryPanel({
         <div id="ai-summary" className="my-8 border-l-2 border-ink-300 bg-paper-100/50 p-6">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-ink-300 animate-pulse" aria-hidden="true" />
-            <span className=" Monad font-ui text-ink-600">
+            <span className="font-mono font-ui text-ink-600">
               Generating AI summary...
             </span>
           </div>
@@ -89,7 +89,7 @@ export function SummaryPanel({
         >
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" />
-            <span className="monospace font-ui text-amber-800">
+            <span className="font-mono font-ui text-amber-800">
               Summary under editorial review
             </span>
           </div>

@@ -64,7 +64,7 @@ function generateJsonLd(input: ProvenanceInput): string {
     isBasedOn: input.summary.sourcesCited.map((s) => s.url),
     accountablePerson: {
       "@type": "Person",
-      name: "OneStopNews AI",
+      name: `AI System: ${input.model}`,
     },
     dateModified: input.generatedAt,
     description: input.summary.summaryText.substring(0, 200),

@@ -1473,7 +1473,7 @@ export const env = envSchema.parse(process.env); // Fails fast on startup if mis
 
 #### 9.3 Operational Runbooks
 **Runbook: Ingestion Source Failure**
-1. **Diagnose:** Check BullMQ dashboard → filter by `sourceId` → examine `error_message` in `sourceHealthSnapshots`.
+1. **Diagnose:** Check BullMQ dashboard → filter by `sourceId` → examine `sources.last_error_message` and `sources.failure_count` columns (the `sourceHealthSnapshots` table referenced in earlier drafts was never implemented — the schema uses denormalized health fields on the `sources` row directly).
 2. **Classify:** 
    - `HTTP 404`: Feed URL changed. Update in `/admin/sources`.
    - `Connection timeout`: Source temporarily down. Monitor; auto-disables at 5 failures.
@@ -1539,7 +1539,7 @@ export const env = envSchema.parse(process.env); // Fails fast on startup if mis
 #### Post-Deploy
 - [ ] Monitor API p95 latency for 10 minutes (no spike above 1s).
 - [ ] Monitor BullMQ queue depths (ingest queue should drain normally).
-- [ ] Verify ingestion is still running: check `sourceHealthSnapshots.last_success_at`.
+- [ ] Verify ingestion is still running: check `sources.last_fetched_at` (recent timestamp) and `sources.failure_count` (should be 0 for healthy sources).
 - [ ] Spot-check 3 articles for correctness in the production UI.
 - [ ] Test one manual summary request end-to-end to verify AI pipeline and cache invalidation.
 

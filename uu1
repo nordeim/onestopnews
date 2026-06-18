@@ -1,2 +1,0 @@
-please meticulously review the new build @error.txt and validate the error against the codebase to identify the root cause and the optimal fix. then meticulously plan to create a comprehensive remediation plan with a detailed ToDo list to apply the optimal fix. review and validat the remediation plan against the codebase to ensure alignment before proceeding to execute it meticulously. remember to use TDD approach to make code changes.
-

@@ -115,6 +115,16 @@ export const articles = pgTable(
     subcategoryId: uuid("subcategory_id").references(() => subcategories.id),
     title: text("title").notNull(),
     excerpt: text("excerpt"),
+    /**
+     * Full article body (plain text, HTML-stripped).
+     * Populated by the ingest worker from RSS content:encoded / Atom <content> /
+     * JSON Feed content_text. Nullable because not all feeds provide full body
+     * content (e.g., title-only feeds).
+     *
+     * Used by the summarize worker as input to AI summarization when
+     * contentAvailability is 'partial_text' or 'full_text'.
+     */
+    body: text("body"),
     canonicalUrl: text("canonical_url").notNull(),
     contentHash: text("content_hash").notNull(),
     contentAvailability: contentAvailabilityEnum("content_availability")

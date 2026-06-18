@@ -1,13 +1,38 @@
-import { beforeAll, afterAll } from 'vitest';
+import { beforeAll, afterAll } from "vitest";
+
+// Override required environment variables BEFORE any test file imports modules
+// that import @/lib/env (which validates at module load time and throws
+// if any required var is missing or invalid).
+//
+// IMPORTANT: Use direct assignment (=), not nullish coalescing (??=).
+// The shell environment may contain values that fail the env schema
+// (e.g., a SQLite DATABASE_URL from the parent project). We always want
+// tests to use these dummy values for isolation.
+//
+// NOTE on NODE_ENV: TypeScript types process.env.NODE_ENV as a read-only
+// property (because @types/node declares it as such). Use Object.defineProperty
+// to bypass the type check at runtime — vitest already sets NODE_ENV="test",
+// so this is just a defensive explicit set.
+process.env.DATABASE_URL = "postgres://test:test@localhost:5432/test?sslmode=disable";
+process.env.REDIS_URL = "redis://localhost:6379";
+process.env.AUTH_SECRET = "test-secret-at-least-32-characters-long-xxx";
+process.env.AUTH_URL = "http://localhost:3000";
+process.env.ANTHROPIC_API_KEY = "sk-ant-test-dummy-key";
+process.env.OPENAI_API_KEY = "sk-test-dummy-key";
+process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = "test-vapid-public-key";
+process.env.VAPID_PRIVATE_KEY = "test-vapid-private-key";
+process.env.VAPID_SUBJECT = "mailto:test@onestopnews.com";
+process.env.PUSH_KEY_ENCRYPTION_KEY =
+  "0000000000000000000000000000000000000000000000000000000000000000";
+// NODE_ENV is set by vitest to "test" — no need to set it manually.
+// If a test needs a different NODE_ENV, use vi.stubEnv("NODE_ENV", value).
 
 // Global test setup
 beforeAll(() => {
-  // Setup code before sunrise
-  console.log('Test suite starting...');
+  console.log("Test suite starting...");
 });
 
 // Global test teardown
 afterAll(() => {
-  // Cleanup code at sunset
-  console.log('Test suite complete.');
+  console.log("Test suite complete.");
 });

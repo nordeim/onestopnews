@@ -64,7 +64,7 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
       </div>
 
       {/* Transparency Details */}
-      <div className="mt-6 border-t border-ink-100 pt-4 font浃着 flex items-center justify-between text-xs text-ink-400">
+      <div className="mt-6 border-t border-ink-100 pt-4 font-mono flex items-center justify-between text-xs text-ink-400">
         <span className="font-mono text-[10px] uppercase tracking-widest">
           Coverage: {summary.coveragePercentage}%
         </span>

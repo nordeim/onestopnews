@@ -4,6 +4,8 @@
  * PAD §5.6: "Pure functions – zero Next.js or DB imports."
  */
 
+import { createHash } from "node:crypto";
+
 /**
  * Removes UTM parameters, normalizes trailing slashes, and lowercases the scheme/host.
  * Used for deduplication via canonical URL.
@@ -40,16 +42,17 @@ export function normalizeCanonicalUrl(url: string): string {
 }
 
 /**
- * Creates a content hash from title + publishedAt for change detection.
- * Uses a simple string concatenation + hash approach.
+ * Creates a SHA-256 content hash from title + publishedAt for change detection.
+ *
+ * Per PAD §7.1: "SHA-256 of title + publishedAt ISO". Used as the
+ * `articles.contentHash` value to detect content changes during ingestion
+ * upserts (onConflictDoUpdate WHERE content_hash != excluded.content_hash).
+ *
+ * @param title — Article title (whitespace-trimmed before hashing)
+ * @param publishedAt — Article publication date (serialized to ISO 8601)
+ * @returns 64-character lowercase hex SHA-256 digest
  */
 export function hashContent(title: string, publishedAt: Date): string {
   const data = `${title.trim()}|${publishedAt.toISOString()}`;
-  // Simple hash function (FNV-1a like) for client-side usage
-  let hash = 2166136261;
-  for (let i = 0; i < data.length; i++) {
-    hash ^= data.charCodeAt(i);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
+  return createHash("sha256").update(data, "utf8").digest("hex");
 }

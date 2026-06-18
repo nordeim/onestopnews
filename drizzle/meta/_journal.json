@@ -22,6 +22,13 @@
       "when": 1781412402462,
       "tag": "0002_flippant_screwball",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781745098302,
+      "tag": "0003_strong_mac_gargan",
+      "breakpoints": true
     }
   ]
 }

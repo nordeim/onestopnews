@@ -1,0 +1,144 @@
+/**
+ * route.test.ts — Tests for /api/articles public REST API.
+ *
+ * Tests cursor validation and rate limiting. The underlying data
+ * access (getFeedArticles, searchArticles) is mocked to isolate
+ * validation logic from DB access.
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
+
+// Mock the data access modules BEFORE importing the route handler.
+// Both getFeedArticles and searchArticles use "use cache" + DB — we
+// want to test only the route handler's validation logic here.
+vi.mock("@/features/feed/queries", () => ({
+  getFeedArticles: vi.fn().mockResolvedValue({
+    articles: [],
+    nextCursor: null,
+    hasMore: false,
+  }),
+}));
+
+vi.mock("@/features/search/queries", () => ({
+  searchArticles: vi.fn().mockResolvedValue({
+    results: [],
+    nextCursor: null,
+    hasMore: false,
+  }),
+}));
+
+// Mock the rate limiter so we can simulate allowed/blocked states.
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    remaining: 20,
+    resetAt: Date.now() + 1000,
+  }),
+}));
+
+// Import after mocks are registered.
+const { GET, OPTIONS } = await import("./route");
+const { getFeedArticles } = await import("@/features/feed/queries");
+const { searchArticles } = await import("@/features/search/queries");
+const { checkRateLimit } = await import("@/lib/rateLimit");
+
+function makeRequest(url: string, ip = "127.0.0.1"): NextRequest {
+  return new NextRequest(`http://localhost:3000${url}`, {
+    headers: { "x-forwarded-for": ip },
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Reset rate limit mock to default allowed state.
+  vi.mocked(checkRateLimit).mockResolvedValue({
+    allowed: true,
+    remaining: 20,
+    resetAt: Date.now() + 1000,
+  });
+});
+
+describe("GET /api/articles — cursor validation", () => {
+  it("returns 400 for invalid cursor (non-date string)", async () => {
+    const response = await GET(makeRequest("/api/articles?cursor=not-a-date"));
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/invalid cursor/i);
+  });
+
+  it("returns 400 for cursor with impossible date (month 13)", async () => {
+    const response = await GET(
+      makeRequest("/api/articles?cursor=2024-13-45T00:00:00Z")
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it("accepts valid ISO 8601 cursor", async () => {
+    const response = await GET(
+      makeRequest("/api/articles?cursor=2024-06-01T00:00:00Z")
+    );
+    expect(response.status).toBe(200);
+    expect(getFeedArticles).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cursor: new Date("2024-06-01T00:00:00Z"),
+      })
+    );
+  });
+
+  it("accepts absent cursor", async () => {
+    const response = await GET(makeRequest("/api/articles"));
+    expect(response.status).toBe(200);
+    expect(getFeedArticles).toHaveBeenCalledWith(
+      expect.objectContaining({ cursor: undefined })
+    );
+  });
+});
+
+describe("GET /api/articles — rate limiting", () => {
+  it("returns 429 with Retry-After header when rate limit exceeded", async () => {
+    vi.mocked(checkRateLimit).mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      resetAt: Date.now() + 5000, // 5 seconds
+    });
+
+    const response = await GET(makeRequest("/api/articles"));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBeTruthy();
+    expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
+
+    const body = await response.json();
+    expect(body.error).toMatch(/rate limit/i);
+
+    // Data access should NOT have been called when rate-limited.
+    expect(getFeedArticles).not.toHaveBeenCalled();
+    expect(searchArticles).not.toHaveBeenCalled();
+  });
+
+  it("proceeds when rate limit allows", async () => {
+    const response = await GET(makeRequest("/api/articles"));
+    expect(response.status).toBe(200);
+    expect(getFeedArticles).toHaveBeenCalled();
+  });
+
+  it("uses IP from x-forwarded-for as rate-limit identifier", async () => {
+    await GET(makeRequest("/api/articles", "203.0.113.42"));
+    expect(checkRateLimit).toHaveBeenCalledWith(
+      expect.stringContaining("203.0.113.42"),
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+});
+
+describe("OPTIONS /api/articles", () => {
+  it("returns 200 with CORS headers", async () => {
+    const response = await OPTIONS();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+      "GET"
+    );
+  });
+});

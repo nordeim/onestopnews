@@ -1,12 +1,15 @@
 import { Worker } from "bullmq";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
-  scoreQueue,
   createWorkerConnection,
 } from "@/lib/queue";
+import { enqueuePostIngestFlow } from "@/lib/queue/flows";
 import { db } from "@/lib/db";
 import { articles, sources, summaries } from "@/lib/db/schema";
 import { calculateImportanceScore } from "@/domain/ranking/score";
+import { hashContent } from "@/domain/articles/normalize";
+import { parseFeed, type FeedItem } from "./jobs/parseFeed";
+import { callAISummary } from "./jobs/summarize";
 import { determineContentAvailability } from "./jobs/determineContentAvailability";
 import { syncSchedulers } from "./jobs/scheduler";
 import { publishCacheInvalidation } from "./lib/cacheInvalidation";
@@ -20,24 +23,6 @@ const CONCURRENCY = {
 } as const;
 
 // ─── INGEST WORKER ───────────────────────────────────────────────────────────
-interface FeedItem {
-  title: string;
-  excerpt?: string;
-  body?: string;
-  url: string;
-  publishedAt?: Date;
-}
-
-function parseFeed(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _content: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _feedType: string
-): FeedItem[] {
-  // Simplified feed parser — in production, use a proper library
-  // like `feedparser` for RSS/Atom or `fast-xml-parser` for XML
-  return [];
-}
 
 async function processIngestJob(job: {
   data: { sourceId: string; schedulerId: string };
@@ -69,11 +54,13 @@ async function processIngestJob(job: {
     }
 
     const feedContent = await response.text();
-    const parsedItems = parseFeed(feedContent, source.feedFormat);
+    // parseFeed is async (rss-parser uses async XML parsing)
+    const parsedItems: FeedItem[] = await parseFeed(feedContent, source.feedFormat);
     let newArticlesCount = 0;
+    const newArticleIds: string[] = [];
 
     for (const item of parsedItems) {
-      // Skip if no title
+      // Skip if no title (parseFeed already filters, but defensive guard)
       if (!item.title) continue;
 
       // Determine content availability
@@ -83,7 +70,16 @@ async function processIngestJob(job: {
         body: item.body,
       });
 
-      // Upsert article (idempotent via canonicalUrl)
+      const contentHash = hashContent(
+        item.title,
+        item.publishedAt ?? new Date()
+      );
+
+      // Upsert article (idempotent via canonicalUrl).
+      // On conflict (existing canonicalUrl), update title/excerpt/body/contentHash
+      // ONLY IF the content hash changed (detect content updates).
+      // The `(xmax = 0)` trick returns true for newly INSERTed rows and false
+      // for UPDATEd rows — used to determine whether to enqueue scoring.
       const result = await db
         .insert(articles)
         .values({
@@ -91,18 +87,36 @@ async function processIngestJob(job: {
           categoryId: source.categoryId,
           title: item.title,
           excerpt: item.excerpt ?? null,
+          body: item.body ?? null,
           canonicalUrl: item.url,
-          contentHash: `${item.title}-${item.publishedAt?.toISOString() ?? "no-date"}`,
+          contentHash,
           contentAvailability,
           publishedAt: item.publishedAt ?? new Date(),
         })
-        .onConflictDoNothing({ target: articles.canonicalUrl })
-        .returning({ id: articles.id });
+        .onConflictDoUpdate({
+          target: articles.canonicalUrl,
+          set: {
+            title: item.title,
+            excerpt: item.excerpt ?? null,
+            body: item.body ?? null,
+            contentHash,
+          },
+          where: sql`${articles.contentHash} != excluded.content_hash`,
+        })
+        .returning({
+          id: articles.id,
+          isNew: sql<boolean>`(xmax = 0)`,
+        });
 
-      if (result[0]) {
-        newArticlesCount++;
-        // Enqueue scoring job for new article
-        await scoreQueue.add("score", { articleId: result[0].id });
+      const row = result[0];
+      if (row) {
+        // row.isNew is true for INSERT, false for UPDATE (or null if the
+        // WHERE clause filtered out the update — meaning content unchanged).
+        // We enqueue scoring for both new articles AND content-updated articles.
+        if (row.isNew) {
+          newArticlesCount++;
+          newArticleIds.push(row.id);
+        }
       }
     }
 
@@ -115,9 +129,16 @@ async function processIngestJob(job: {
       })
       .where(eq(sources.id, sourceId));
 
-    // Invalidate feed cache if new articles were ingested
-    if (newArticlesCount > 0 && source.categoryId) {
-      await publishCacheInvalidation(`feed:${source.categoryId}`);
+    // Enqueue atomic post-ingest flow: score all new articles, then refresh
+    // the feed-slice cache. The FlowProducer guarantees the parent
+    // (refresh-feed-slice) runs only after ALL children (score-article) complete.
+    // This replaces the previous pattern of individual scoreQueue.add() calls
+    // plus a separate publishCacheInvalidation() — those were not atomic.
+    if (newArticleIds.length > 0 && source.categoryId) {
+      await enqueuePostIngestFlow({
+        newArticleIds,
+        categoryId: source.categoryId,
+      });
     }
 
     return { status: "success", newArticlesCount };
@@ -140,43 +161,29 @@ async function processIngestJob(job: {
 }
 
 // ─── SUMMARIZE WORKER ────────────────────────────────────────────────────────
-interface SummaryData {
-  summaryText: string;
-  keyPoints: string[];
-  sourcesCited: Array<{ url: string; title: string }>;
-  model: string;
-  tokensUsed: number;
-  aiStatement: string;
-  coveragePercentage: number;
-}
-
-async function callAISummary(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _article: {
-  title: string;
-  excerpt: string | null;
-  body: string | null;
-}): Promise<SummaryData> {
-  // Simplified AI call — real implementation uses Vercel AI SDK
-  // with Anthropic primary and OpenAI fallback
-  return {
-    summaryText: "Summary placeholder",
-    keyPoints: ["Point 1", "Point 2"],
-    sourcesCited: [{ url: "https://example.com", title: "Example" }],
-    model: "claude-haiku-4-5",
-    tokensUsed: 100,
-    aiStatement: "AI-generated summary",
-    coveragePercentage: 80,
-  };
-}
 
 async function processSummarizeJob(job: { data: { articleId: string } }) {
   const { articleId } = job.data;
 
-  const article = await db.query.articles.findFirst({
-    where: eq(articles.id, articleId),
-  });
+  // Fetch article with source name (innerJoin per PAD §5.6 JOIN contract).
+  // Source name + URL are needed as citation context for the AI prompt.
+  const rows = await db
+    .select({
+      id: articles.id,
+      title: articles.title,
+      excerpt: articles.excerpt,
+      body: articles.body,
+      canonicalUrl: articles.canonicalUrl,
+      contentAvailability: articles.contentAvailability,
+      sourceName: sources.name,
+      sourceUrl: sources.url,
+    })
+    .from(articles)
+    .innerJoin(sources, eq(articles.sourceId, sources.id))
+    .where(eq(articles.id, articleId))
+    .limit(1);
 
+  const article = rows[0];
   if (!article) {
     throw new Error(`Article ${articleId} not found`);
   }
@@ -199,7 +206,9 @@ async function processSummarizeJob(job: { data: { articleId: string } }) {
     const summary = await callAISummary({
       title: article.title,
       excerpt: article.excerpt,
-      body: null, // Body not stored in articles table (content availability used instead)
+      body: article.body,
+      sourceName: article.sourceName,
+      sourceUrl: article.sourceUrl,
     });
 
     // Insert summary

@@ -12,9 +12,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 //   - publishCacheInvalidation() writes to Redis channel
 //   - Handles Redis connection errors gracefully
 //   - Channel format: cache:invalidate:<tag>
+//   - Reuses a single Redis publisher (singleton) across calls (Phase 13)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Mock Redis using a proper class mock
+// Track instantiation count to verify singleton behavior.
+let instantiationCount = 0;
 const mockPublish = vi.fn().mockResolvedValue(1);
 const mockQuit = vi.fn().mockResolvedValue(undefined);
 
@@ -22,6 +24,9 @@ vi.mock("ioredis", () => {
   class MockRedis {
     publish = mockPublish;
     quit = mockQuit;
+    constructor() {
+      instantiationCount++;
+    }
   }
   return { Redis: MockRedis };
 });
@@ -38,6 +43,9 @@ describe("cacheInvalidation", () => {
     // Reset mocks before each test
     mockPublish.mockClear();
     mockQuit.mockClear();
+    instantiationCount = 0;
+    // Reset the module singleton so each test starts fresh.
+    vi.resetModules();
   });
 
   describe("publishCacheInvalidation", () => {
@@ -74,6 +82,25 @@ describe("cacheInvalidation", () => {
         "cache:invalidate:topic-shell",
         expect.any(String)
       );
+    });
+
+    it("reuses the same Redis publisher across multiple calls (singleton)", async () => {
+      const { publishCacheInvalidation } = await import("./cacheInvalidation");
+
+      // Call publishCacheInvalidation 5 times.
+      await publishCacheInvalidation("feed:tech");
+      await publishCacheInvalidation("feed:finance");
+      await publishCacheInvalidation("topic-shell");
+      await publishCacheInvalidation("feed:politics");
+      await publishCacheInvalidation("feed:local");
+
+      // Only ONE Redis instance should have been created (singleton reuse).
+      // Before the Phase 13 refactor, each call created a new Redis + quit —
+      // that caused connection churn under high ingest load.
+      expect(instantiationCount).toBe(1);
+
+      // And quit should NOT have been called (singleton stays alive).
+      expect(mockQuit).not.toHaveBeenCalled();
     });
   });
 });
