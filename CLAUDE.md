@@ -242,6 +242,12 @@ pnpm test
 | `??=` for test env vars (Phase 13) | Shell env may contain values that fail Zod schema (e.g., SQLite `DATABASE_URL`) | Use direct `=` assignment in `src/test/setup.ts` |
 | `vi.fn(() => mockInstance)` for constructors | `new` on vi.fn returns empty object, ignoring return value | Use `class MockX { ... }` in the mock factory |
 | `clientSegmentCache` flag (Next.js 16.2.9) | Not in `ExperimentalConfig` type; produces `TS2353` | Document as deferred in `next.config.ts`; re-enable when upstream type includes it |
+| `hashContent` without body (Phase 14) | Content-only updates (same title+date, different body) silently dropped | Include body in SHA-256: `hashContent(title, body, publishedAt)` |
+| Leftmost `x-forwarded-for` IP behind CDN (Phase 14) | Spoofable — attacker can bypass rate limiting | Use `TRUSTED_PROXY=true` env var to switch to rightmost IP |
+| `keys: { p256dh: encryptedEnvelope, auth: "encrypted" }` (Phase 14) | Semantically misleading schema convention | Use dedicated `encryptedKeys` text column |
+| `summaryStatus: "none"` after all retries exhausted (Phase 14) | No observability — failed summaries invisible | Set `summaryStatus: "needs_review"` via `getSummaryFailureState()` |
+| Hardcoded SHA-256 vector in test (Phase 14) | Brittle — fails if delimiter/date format changes | Property-based test: compute expected via `node:crypto` inline |
+| E2E tests in vitest (Phase 14) | `@playwright/test` not installed in vitest env → import errors | Exclude `e2e/` from `vitest.config.ts`, `eslint.config.mjs`, `tsconfig.json` |
 
 ---
 
@@ -275,7 +281,8 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
-| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG, `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick (**212 tests across 40 suites**) |
+| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG, `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick |
+| **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test, `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh`), article detail page with real data + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review`), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
 
 ---
 
@@ -469,6 +476,13 @@ actionlint .github/workflows/ci.yml
 | Commit Mono Font | `public/fonts/commit-mono-400.woff2` |
 | Test Setup | `src/test/setup.ts` |
 | Vitest Config | `vitest.config.ts` |
+| Article Detail Queries | `src/features/articles/queries.ts` (Phase 14) |
+| Article Detail Component | `src/features/articles/components/ArticleData.tsx` (Phase 14) |
+| Summary Failure State | `src/workers/jobs/summarizeFailure.ts` (Phase 14) |
+| Pipeline Integration Test | `src/workers/pipeline.integration.test.ts` (Phase 14) |
+| Push Subscribe Route | `src/app/api/push/subscribe/route.ts` |
+| Playwright Config | `playwright.config.ts` (Phase 14) |
+| E2E Smoke Tests | `e2e/smoke.spec.ts` (Phase 14) |
 
 ---
 
@@ -631,7 +645,7 @@ export default async function HomePage() {
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
 - **Last Updated**: June 18, 2026
-- **Total Tests**: 212 across 40 suites (Phase 13)
+- **Total Tests**: 251 across 45 suites + 10 Playwright E2E (Phase 14)
 - **Quality Gate**: `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) — all green
 
 ---
@@ -766,10 +780,6 @@ Combined with `WHERE content_hash != excluded.content_hash`, this detects conten
 
 ---
 
-**Prevention**: Add a lint rule or pre-commit hook that flags non-ASCII characters in className strings. Consider a visual regression test that verifies metadata text renders in Commit Mono.
-
----
-
 ## Latest Lessons Learned (Phase 14)
 
 ### 1. `hashContent` Must Include Body for Content Change Detection
@@ -835,4 +845,3 @@ Combined with `WHERE content_hash != excluded.content_hash`, this detects conten
 **Fix**: Self-referential mock: `leftJoinResult.leftJoin = leftJoin` so the second `leftJoin` returns the same object (which has `where`).
 
 **Lesson**: Drizzle's query builder is deeply chainable. Self-referential mocks (`result.method = method`) handle arbitrary chaining depth.
-

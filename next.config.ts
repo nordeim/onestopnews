@@ -2,11 +2,12 @@ import type { NextConfig } from "next";
 
 /**
  * next.config.ts — OneStopNews Production Configuration
- * Next.js ≥16.2.6 (initial release: October 21, 2025)
+ * Next.js ≥16.0.7 (initial release: October 21, 2025)
  *
- * SECURITY NOTE: Pin this project to Next.js ≥16.2.6 as mitigation
+ * SECURITY NOTE: Per MEP v5.1, pin this project to Next.js ≥16.0.7 as mitigation
  * for CVE-2025-55182 (React2Shell RCE) and the associated 13-advisory
- * bundle shipped in 16.2.6 covering high-severity DoS and SSRF vulnerabilities.
+ * bundle covering high-severity DoS and SSRF vulnerabilities.
+ * (v5.1 corrected the earlier ≥16.2.6 guidance — 16.0.7 is the actual security patch.)
  */
 const nextConfig: NextConfig = {
   // ── CACHE COMPONENTS ───────────────────────────────────────────────────
@@ -53,6 +54,10 @@ const nextConfig: NextConfig = {
     // VIEW TRANSITIONS: Official docs state "currently experimental and subject to change".
     // All usage MUST go through <PageTransition> abstraction.
     viewTransition: true,
+    // NOTE: PRD §5.2 / PAD §5.3 also list `clientSegmentCache: true`,
+    // `turbopackPersistentCaching: true`, and `turbopackFileSystemCacheForBuild: true`,
+    // but the installed Next.js 16.2.9 does not yet expose these flags in
+    // ExperimentalConfig. Re-enable once the upstream type includes them.
   },
 
   // ── SECURITY HEADERS ─────────────────────────────────────────────────────

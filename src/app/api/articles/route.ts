@@ -27,13 +27,30 @@ const RATE_LIMIT_WINDOW_SEC = 1;
 
 /**
  * Extracts and validates the client IP from request headers.
- * Falls back to "unknown" if no forwarding headers are present.
+ *
+ * IP extraction strategy:
+ *   - If TRUSTED_PROXY env var is set ("true"), the app is behind a trusted
+ *     reverse proxy / CDN. Use the RIGHTMOST IP in x-forwarded-for (the
+ *     trusted proxy's view of the client). This prevents spoofing because
+ *     only the trusted proxy can set the header.
+ *   - Otherwise (default, no proxy), use the LEFTMOST IP in x-forwarded-for
+ *     (the client-supplied value). This is spoofable but documented —
+ *     suitable for development or direct-exposure deployments.
+ *   - If x-forwarded-for is absent, fall back to x-real-ip.
+ *   - If no IP headers present, return "unknown".
+ *
+ * @param request — The NextRequest to extract the client IP from
+ * @returns The client IP string (or "unknown")
  */
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
-    // x-forwarded-for can be a comma-separated list; first entry is the client.
-    return forwarded.split(",")[0]?.trim() ?? "unknown";
+    const ips = forwarded.split(",").map((ip) => ip.trim());
+    // When behind a trusted proxy, use the rightmost (last) IP — the proxy's
+    // view of the client. Otherwise use the leftmost (first) IP.
+    const isTrustedProxy = process.env.TRUSTED_PROXY === "true";
+    const ip = isTrustedProxy ? ips[ips.length - 1] : ips[0];
+    return ip ?? "unknown";
   }
   return request.headers.get("x-real-ip") ?? "unknown";
 }

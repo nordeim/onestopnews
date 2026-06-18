@@ -58,6 +58,8 @@ tsconfig.json	Exclude e2e/ + playwright.config.ts from tsc
         src/workers/jobs/summarizeFailure.test.ts
         src/workers/jobs/summarizeFailure.ts
         src/workers/pipeline.integration.test.ts
+        drizzle/0004_smiling_newton_destine.sql
+        drizzle/meta/0004_snapshot.json
 
 ---
 
@@ -999,3 +1001,120 @@ index 2ff7bf8..4615dcb 100644
        ],
      },
      setupFiles: ["./src/test/setup.ts"],
+
+---
+
+diff --git a/src/app/api/articles/route.ts b/src/app/api/articles/route.ts
+index 1e35ee0..93e741e 100644
+--- a/src/app/api/articles/route.ts
++++ b/src/app/api/articles/route.ts
+@@ -27,13 +27,30 @@ const RATE_LIMIT_WINDOW_SEC = 1;
+ 
+ /**
+  * Extracts and validates the client IP from request headers.
+- * Falls back to "unknown" if no forwarding headers are present.
++ *
++ * IP extraction strategy:
++ *   - If TRUSTED_PROXY env var is set ("true"), the app is behind a trusted
++ *     reverse proxy / CDN. Use the RIGHTMOST IP in x-forwarded-for (the
++ *     trusted proxy's view of the client). This prevents spoofing because
++ *     only the trusted proxy can set the header.
++ *   - Otherwise (default, no proxy), use the LEFTMOST IP in x-forwarded-for
++ *     (the client-supplied value). This is spoofable but documented —
++ *     suitable for development or direct-exposure deployments.
++ *   - If x-forwarded-for is absent, fall back to x-real-ip.
++ *   - If no IP headers present, return "unknown".
++ *
++ * @param request — The NextRequest to extract the client IP from
++ * @returns The client IP string (or "unknown")
+  */
+ function getClientIp(request: NextRequest): string {
+   const forwarded = request.headers.get("x-forwarded-for");
+   if (forwarded) {
+-    // x-forwarded-for can be a comma-separated list; first entry is the client.
+-    return forwarded.split(",")[0]?.trim() ?? "unknown";
++    const ips = forwarded.split(",").map((ip) => ip.trim());
++    // When behind a trusted proxy, use the rightmost (last) IP — the proxy's
++    // view of the client. Otherwise use the leftmost (first) IP.
++    const isTrustedProxy = process.env.TRUSTED_PROXY === "true";
++    const ip = isTrustedProxy ? ips[ips.length - 1] : ips[0];
++    return ip ?? "unknown";
+   }
+   return request.headers.get("x-real-ip") ?? "unknown";
+ }
+
+---
+
+$ git diff .github/workflows/ci.yml
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index cda3e73..4743174 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -37,7 +37,7 @@ jobs:
+       - name: Setup Node
+         uses: actions/setup-node@v4
+         with:
+-          node-version: '22.x'
++          node-version: '24.x'
+       - name: Setup pnpm
+         uses: pnpm/action-setup@v3
+         with:
+@@ -49,8 +49,21 @@ jobs:
+       - name: Run Unit Tests
+         run: pnpm run test
+       - name: Run TypeScript Check
+-        run: pnpm run check-types
++        run: pnpm run check
+       - name: Build
+         run: pnpm run build
+     env:
++      # All env vars required by src/lib/env/index.ts must be present at
++      # module load time, even for lint/test/build steps. Use CI-safe dummy
++      # values — these never touch real external services.
+       DATABASE_URL: "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
++      REDIS_URL: "redis://localhost:6379"
++      AUTH_SECRET: "ci-dummy-secret-at-least-32-characters-long-xxx"
++      AUTH_URL: "http://localhost:3000"
++      ANTHROPIC_API_KEY: "sk-ant-ci-dummy-key-not-real"
++      OPENAI_API_KEY: "sk-ci-dummy-key-not-real"
++      NEXT_PUBLIC_VAPID_PUBLIC_KEY: "ci-dummy-vapid-public-key-not-real"
++      VAPID_PRIVATE_KEY: "ci-dummy-vapid-private-key-not-real"
++      VAPID_SUBJECT: "mailto:ci@onestopnews.com"
++      PUSH_KEY_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
++      NODE_ENV: "test"
+(venv) pete@pop-os:/home/project/onestopnews
+$ git diff .github/workflows/e2e.yml
+diff --git a/.github/workflows/e2e.yml b/.github/workflows/e2e.yml
+index 81fae10..a2332f9 100644
+--- a/.github/workflows/e2e.yml
++++ b/.github/workflows/e2e.yml
+@@ -15,7 +15,7 @@ jobs:
+       - name: Setup Node
+         uses: actions/setup-node@v4
+         with:
+-          node-version: '22.x'
++          node-version: '24.x'
+       - name: Setup pnpm
+         uses: pnpm/action-setup@v3
+         with:
+(venv) pete@pop-os:/home/project/onestopnews
+$ git diff drizzle/meta/_journal.json
+diff --git a/drizzle/meta/_journal.json b/drizzle/meta/_journal.json
+index 66e4ab3..16f8ab3 100644
+--- a/drizzle/meta/_journal.json
++++ b/drizzle/meta/_journal.json
+@@ -29,6 +29,13 @@
+       "when": 1781745098302,
+       "tag": "0003_strong_mac_gargan",
+       "breakpoints": true
++    },
++    {
++      "idx": 4,
++      "version": "7",
++      "when": 1781760294316,
++      "tag": "0004_smiling_newton_destine",
++      "breakpoints": true
+     }
+   ]
+ }
+

@@ -430,6 +430,12 @@ Must pass before any PR is merged. No exceptions.
 | `??=` for test env vars (Phase 13) | Shell env may contain values that fail Zod schema (e.g., SQLite `DATABASE_URL`) | Use direct `=` assignment in `src/test/setup.ts` |
 | `vi.fn(() => mockInstance)` for constructors (Phase 13) | `new` on vi.fn returns empty object, ignoring return value | Use `class MockX { ... }` in the mock factory |
 | `clientSegmentCache` flag (Next.js 16.2.9) (Phase 13) | Not in `ExperimentalConfig` type; produces `TS2353` | Document as deferred in `next.config.ts`; re-enable when upstream type includes it |
+| `hashContent` without body (Phase 14) | Content-only updates (same title+date, different body) silently dropped by `onConflictDoUpdate WHERE` | Include body in SHA-256: `hashContent(title, body, publishedAt)` |
+| Leftmost `x-forwarded-for` IP behind CDN (Phase 14) | Spoofable — attacker can bypass rate limiting by forging header | Use `TRUSTED_PROXY=true` env var to switch to rightmost IP (trusted proxy's client) |
+| `keys: { p256dh: encryptedEnvelope, auth: "encrypted" }` (Phase 14) | Semantically misleading — schema type says `{ p256dh, auth }` but p256dh holds entire envelope | Use dedicated `encryptedKeys` text column; old `keys` column deprecated |
+| `summaryStatus: "none"` after all BullMQ retries exhausted (Phase 14) | No observability — failed summaries invisible, appear as "no summary" | Use `getSummaryFailureState()` → sets `needs_review` when `attemptsMade >= maxAttempts` |
+| Hardcoded SHA-256 vector in test (Phase 14) | Brittle — fails if delimiter or date format changes | Property-based test: compute expected via `node:crypto` inline |
+| E2E tests scanned by vitest (Phase 14) | `@playwright/test` not installed in vitest env → import errors | Exclude `e2e/` + `playwright.config.ts` from `vitest.config.ts`, `eslint.config.mjs`, `tsconfig.json` |
 
 ---
 
@@ -969,6 +975,28 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `.github/workflows/e2e.yml` (modified) | 13 | Node 22→24 |
 | `src/test/setup.ts` (modified) | 13 | Sets all required env vars with direct assignment (not `??=`) for test isolation |
 | `src/features/feed/queries.test.ts` (modified) | 13 | Updated to handle `cacheLife` error in vitest (no Next.js runtime) |
+| `src/features/articles/queries.ts` | 14 | `getArticleWithSummary(id)` — 4-way JOIN (articles + sources + categories + summaries) |
+| `src/features/articles/queries.test.ts` | 14 | 4 TDD tests (null, with summary, without summary, needs_review filtering) |
+| `src/features/articles/components/ArticleData.tsx` (modified) | 14 | Full rewrite: real data fetch + SummaryPanel + 404 state (was placeholder) |
+| `src/features/articles/components/ArticleData.test.tsx` | 14 | 8 TDD tests (title/source/date, body, SummaryPanel states, 404, back link, category) |
+| `src/app/article/[id]/page.tsx` (modified) | 14 | Added `generateMetadata()` for 3-layer provenance + OpenGraph + Twitter cards |
+| `src/workers/jobs/summarizeFailure.ts` | 14 | `getSummaryFailureState(attemptsMade, maxAttempts)` — permanent failure → `needs_review` |
+| `src/workers/jobs/summarizeFailure.test.ts` | 14 | 6 TDD tests (retry vs permanent, attempt count, custom maxAttempts) |
+| `src/workers/pipeline.integration.test.ts` | 14 | 8 integration tests (parseFeed → determineContentAvailability → hashContent → change detection) |
+| `src/app/api/push/subscribe/route.ts` (modified) | 14 | Stores encrypted envelope in `encryptedKeys` column (not `keys.p256dh`) |
+| `src/app/api/push/subscribe/route.test.ts` | 14 | 6 TDD tests (encryptedKeys storage, validation, error handling) |
+| `src/lib/db/schema.ts` (modified) | 14 | Added `encryptedKeys` column; `keys` column now nullable (deprecated) |
+| `drizzle/0004_smiling_newton_destine.sql` | 14 | Migration: ADD COLUMN encrypted_keys; DROP NOT NULL on keys |
+| `src/domain/articles/normalize.ts` (modified) | 14 | `hashContent` signature: added `body` parameter for content change detection |
+| `src/domain/articles/normalize.test.ts` (modified) | 14 | Updated for new signature + property-based `node:crypto` SHA-256 verification |
+| `src/workers/index.ts` (modified) | 14 | Pass body to `hashContent`; use `getSummaryFailureState` in catch block |
+| `src/app/api/articles/route.ts` (modified) | 14 | `getClientIp` supports `TRUSTED_PROXY` env var (rightmost IP for CDN) |
+| `src/app/api/articles/route.test.ts` (modified) | 14 | 5 new tests for trusted proxy IP extraction |
+| `playwright.config.ts` | 14 | Playwright E2E config (Chromium/Firefox/WebKit, auto-start dev server) |
+| `e2e/smoke.spec.ts` | 14 | 10 E2E smoke tests (homepage, feed, article, search, category nav, a11y) |
+| `vitest.config.ts` (modified) | 14 | Exclude `e2e/` + `playwright.config.ts` from vitest |
+| `eslint.config.mjs` (modified) | 14 | Exclude `e2e/` + `playwright.config.ts` from ESLint |
+| `tsconfig.json` (modified) | 14 | Exclude `e2e/` + `playwright.config.ts` from tsc |
 
 ---
 
@@ -1283,7 +1311,8 @@ pnpm dev
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page (NewsTicker, Masthead, LeadStory, AI Nutrition Label, Stats, FAQ, Newsletter), design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, added `.reveal` scroll animations, resolved `next-prerender-current-time` via client-side footer, fixed hydration mismatch on above-the-fold elements, wrapped `Footer` in `Suspense`, converted `ArticleCard` to client component |
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | Installed `@tailwindcss/postcss@4.3.1`, created `postcss.config.mjs`, added Commit Mono woff2 via `next/font/local`, enhanced `.font-editorial` block, cleared `.next` cache |
-| **Phase 13** — Critical Gaps Remediation (RSS + AI + FlowProducer + Rate Limiting) | **COMPLETE** | Real RSS/Atom/JSON parser via `rss-parser`, real AI summarization via Vercel AI SDK (Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick (**212 tests across 40 suites**) |
+| **Phase 13** — Critical Gaps Remediation (RSS + AI + FlowProducer + Rate Limiting) | **COMPLETE** | Real RSS/Atom/JSON parser via `rss-parser`, real AI summarization via Vercel AI SDK (Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick |
+| **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test, `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh`), article detail page with real data + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review`), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
 
 ---
 
@@ -1363,8 +1392,6 @@ vi.mock("ioredis", () => ({
 **Issue:** PRD §5.2 / PAD §5.3 list `experimental.clientSegmentCache: true`, `turbopackPersistentCaching: true`, and `turbopackFileSystemCacheForBuild: true`. The installed Next.js 16.2.9 does not expose these flags in `ExperimentalConfig` — adding them produces `TS2353: Object literal may only specify known properties`.
 
 **Fix:** Document the flags as deferred in `next.config.ts` with a comment explaining they'll be re-enabled once the upstream type includes them. Only `viewTransition: true` is currently enabled.
-
----
 
 ### Phase 13 Recommendations
 

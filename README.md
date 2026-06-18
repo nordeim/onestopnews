@@ -369,7 +369,7 @@ pnpm worker
 | `curl -H "x-forwarded-for: 1.2.3.4" "http://localhost:3000/api/articles?cursor=invalid"` | `400` with `{ error: "Invalid cursor format..." }` |
 | BullMQ dashboard at `http://localhost:3001` | Active queues: `ingest`, `summarize`, `score`, `feed-slice` |
 | `pnpm tsc --noEmit` | Zero type errors |
-| `pnpm test` | All 212 tests pass across 40 suites |
+| `pnpm test` | All 251 tests pass across 45 suites |
 
 ---
 
@@ -408,6 +408,13 @@ PUSH_KEY_ENCRYPTION_KEY=
 # ── Node Environment ──────────────────────────────────────
 NODE_ENV=development  # development | production | test
 
+# ── Rate Limiting (Optional) ─────────────────────────────
+# Set to "true" when behind a trusted reverse proxy / CDN (Cloudflare, Nginx).
+# When true, the rate limiter uses the rightmost IP from x-forwarded-for
+# (the proxy's view of the client), preventing spoofing.
+# When unset (default), uses the leftmost IP (client-supplied, spoofable).
+TRUSTED_PROXY=  # "true" | unset
+
 # ── Observability (Optional) ──────────────────────────────
 SENTRY_DSN=
 AXIOM_TOKEN=
@@ -426,11 +433,12 @@ AXIOM_TOKEN=
 | `/api/categories` | `GET` | Public | All categories (id, slug, name). Cached 5min at CDN. (Phase 13) |
 | `/api/health` | `GET` | Public | DB + Redis health check. Returns `200 { status: "ok" }` or `503 { status: "degraded" }`. |
 | `/api/summarize/[id]` | `POST` | Session | Enqueue summarisation job for article `id`. Returns `202` with job ID. Content availability guard enforced. |
-| `/api/push/subscribe` | `POST` | Session | Web Push subscription. Encrypts p256dh/auth keys with AES-256-GCM before storage. (Phase 7) |
+| `/api/push/subscribe` | `POST` | Session | Web Push subscription. Encrypts p256dh/auth keys with AES-256-GCM before storage (Phase 14: stored in `encryptedKeys` column). |
+| `/article/[id]` | `GET` | Public | Article detail page. Emits 3-layer AI provenance via `generateMetadata()` when summary exists. (Phase 14) |
 | `/admin/sources` | `GET/POST` | Admin | Source management dashboard + CRUD. |
-| `/admin/summaries` | `GET` | Admin | Summary review queue for flagged content. |
+| `/admin/summaries` | `GET` | Admin | Summary review queue for flagged content (incl. AI-failed summaries after Phase 14). |
 
-**Rate Limiting (Phase 13):** `GET /api/articles` is rate-limited to 20 requests/second per IP via Redis fixed-window counter (`src/lib/rateLimit.ts`). Exceeding the limit returns `429 Too Many Requests` with `Retry-After` and `X-RateLimit-Remaining` headers.
+**Rate Limiting (Phase 13+14):** `GET /api/articles` is rate-limited to 20 requests/second per IP via Redis fixed-window counter (`src/lib/rateLimit.ts`). Exceeding the limit returns `429 Too Many Requests` with `Retry-After` and `X-RateLimit-Remaining` headers. Set `TRUSTED_PROXY=true` when behind a CDN to use the rightmost IP from `x-forwarded-for` (prevents spoofing).
 
 **Cursor Validation (Phase 13):** The `cursor` query parameter must be a valid ISO 8601 date string (e.g., `2026-06-10T12:00:00Z`). Invalid cursors return `400 Bad Request` with `{ error: "Invalid cursor format..." }`.
 
@@ -814,8 +822,11 @@ Check BullMQ dashboard for the `score` queue — if jobs are appearing there but
 | **Push key encryption** | VAPID keys encrypted at rest with AES-256-GCM. `PUSH_KEY_ENCRYPTION_KEY` is 64-char hex (32-byte), validated at module load. |
 | **Accessibility** | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely. |
 | **DB connections** | Lazy Proxy connection (defers until first query). `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
-| **Content hashing** | `articles.contentHash` uses SHA-256 (via `node:crypto`) of `title|publishedAt.toISOString()`. Used for change detection in ingest upserts (Phase 13). |
+| **Content hashing** | `articles.contentHash` uses SHA-256 (via `node:crypto`) of `title|body|publishedAt.toISOString()`. Includes body so content-only updates are detected. (Phase 14) |
 | **Env validation** | All required env vars validated by Zod at module load (`src/lib/env/index.ts`). Fails fast with descriptive error if any are missing/invalid. |
+| **Push key storage** | Encrypted envelope stored in dedicated `encryptedKeys` column (Phase 14). Old `keys` column retained for backward compat but deprecated. |
+| **Trusted proxy** | `TRUSTED_PROXY=true` env var makes rate limiter use rightmost IP from `x-forwarded-for` (prevents spoofing behind CDN). (Phase 14) |
+| **AI failure observability** | After 3 BullMQ retries, failed summaries set `summaryStatus: "needs_review"` — visible in admin review queue. (Phase 14) |
 
 ---
 
@@ -1017,9 +1028,9 @@ if (!result.success) {
 
 6. **Zod Schema Evolution**: As LLM capabilities improve, schema constraints may need adjustment. Keep the Zod schema and tests version-controlled. Changes to `summaryText` min/max lengths or `keyPoints` count should be accompanied by new tests.
 
-7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI. Note: the article detail page (`/article/[id]`) is still a placeholder and does not yet emit provenance — wiring this up is the next milestone.
+7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI. The article detail page (`/article/[id]`) now emits all 3 layers via `generateMetadata()` when a summary exists (Phase 14).
 
-8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests (parseFeed: 13, summarize: 8, flows: 6, rateLimit: 7, /api/articles route: 8, /api/categories route: 5, plus updates to existing suites). Current total: **212 tests across 40 suites**. Monitor test duration — currently ~11s; if it exceeds 30s, investigate slow tests.
+8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests; Phase 14 added 39 tests (article queries: 4, ArticleData component: 8, push subscribe: 6, rate limiter IP: 5, hashContent body: 3, summarizeFailure: 6, pipeline integration: 8, minus removed hardcoded vector: -1). Current total: **251 tests across 45 suites** + 10 Playwright E2E tests. Monitor test duration — currently ~13s; if it exceeds 30s, investigate slow tests.
 
 9. **BM25 Search Tuning**: The `ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...)` weights may need adjustment based on real user queries. Consider A/B testing different weight configurations.
 
@@ -1053,17 +1064,19 @@ if (!result.success) {
 
 **Status**: RESOLVED. Phase 13 integrated the Vercel AI SDK (`ai@6`, `@ai-sdk/anthropic@3`, `@ai-sdk/openai@3`) in `src/workers/jobs/summarize.ts`. Calls Claude 4.5 Haiku as primary with GPT-5 Mini fallback, using `generateObject()` with the Zod-validated `summarisationOutputSchema`. Token usage is tracked per summary.
 
-### Article Detail Page (Next Milestone)
+### ~~Article Detail Page~~ (RESOLVED — Phase 14)
 
-**Impact**: High — The article detail page (`src/app/article/[id]/page.tsx` + `ArticleData.tsx`) is still a placeholder rendering hardcoded mock data. It does not yet fetch real articles, render `NutritionLabel`, or emit the 3-layer provenance (JSON-LD / `X-AI-Provenance` header / `<meta name="ai-provenance">`).
+**Status**: RESOLVED. Phase 14 implemented the full article detail page:
+- `getArticleWithSummary(id)` query with 4-way JOIN (articles + sources + categories + summaries)
+- `ArticleData.tsx` fetches real article data, renders title/excerpt/body/source/category
+- Renders `SummaryPanel` (5-state machine) with real `initialStatus` + `summary` props
+- `generateMetadata()` emits 3-layer AI provenance (JSON-LD + `X-AI-Provenance` header + `<meta name="ai-provenance">`) when summary exists
+- Also emits OpenGraph + Twitter card metadata
+- Renders 404 "Article not found" when article is null
 
-**Planned Fix**: Wire `ArticleData.tsx` to fetch via `getArticleWithSummary(id)`, render `SummaryPanel` + `NutritionLabel`, and call `generateProvenanceMetadata()` in `generateMetadata()` to emit all three provenance layers.
+### ~~RSS Ingestion End-to-End Test~~ (RESOLVED — Phase 14)
 
-### RSS Ingestion End-to-End Test (Future)
-
-**Impact**: Low — Phase 13 implemented `parseFeed` with unit tests covering RSS 2.0, Atom, and JSON Feed formats, but no integration test verifies the full ingest pipeline (fetch → parse → upsert → score → cache invalidation) against a real RSS feed.
-
-**Planned Fix**: Add an integration test that mocks `fetch` returning a sample RSS feed, runs `processIngestJob`, and verifies articles are inserted + scoring flow is enqueued.
+**Status**: RESOLVED. Phase 14 created `src/workers/pipeline.integration.test.ts` (8 tests) that exercises the full pipeline: `parseFeed → determineContentAvailability → hashContent → content change detection`. Also created `playwright.config.ts` + `e2e/smoke.spec.ts` (10 E2E tests) for browser-level verification.
 
 ### Test Flakiness Risk
 
@@ -1089,7 +1102,8 @@ if (!result.success) {
 | **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page, design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
 | **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, `.reveal` scroll animations, `next-prerender-current-time` fix, `ArticleCard` client conversion |
 | **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | `@tailwindcss/postcss` + `postcss.config.mjs`, Commit Mono via `next/font/local`, `.font-editorial` enhancement, `.next` cache clear |
-| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes, `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts (**212 tests across 40 suites**) |
+| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes, `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts |
+| **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test (replaced hardcoded vector), `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh` convention), article detail page with real data fetch + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E smoke tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review` after 3 retries), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
 
 ---
 
