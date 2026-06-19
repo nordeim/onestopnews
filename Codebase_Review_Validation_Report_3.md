@@ -777,5 +777,79 @@ All 4 batches executed via TDD discipline, one commit per batch, on `main` branc
 
 Everything is committed and the working tree is clean (only `tsconfig.tsbuildinfo` shows as modified, which is a benign side-effect of `tsc --noEmit` and isn't part of any commit). The remediation is complete and verified.
 
+---
+
+I'll execute this meticulously: first read the existing skill files for reference, then audit the actual codebase to extract exact details, then synthesize a comprehensive new `onestopnews_SKILL.md`.
+
+## Phase 1: ANALYZE — Plan + Audit Existing Artifacts
+Two existing skill files (3060 + 2218 lines). They're pre-Phase-16. I'll create a fresh, comprehensive one. Let me read the config files + design system first (most critical for tokens), then launch parallel subagents for the rest:
+Excellent — I have the complete design system + config. Now let me launch parallel subagents to extract details from the remaining file groups:
+I now have exhaustive details from all 4 parallel subagents covering UI components, feature components, lib/infra layer, and workers/routes. Combined with the config files I read directly, I have everything needed to write the comprehensive SKILL.md.
+## Phase 2: IMPLEMENT — Write the Comprehensive SKILL.md
+
+Given the size (will be a large file with 20 sections), I'll write it in multiple passes to avoid JSON validation issues:
+The SKILL.md is written. Now verify pnpm check still green (the file is Markdown, so shouldn't affect anything, but let's confirm) and commit:
+**SKILL.md written: 2746 lines. `pnpm check` clean. `pnpm test` 292/52 green.** Now commit:
+**SKILL.md committed** (`ae60d21`). Let me do a final verification:
+---
+
+# OneStopNews SKILL.md — Complete
+
+## Summary
+
+The comprehensive `onestopnews_SKILL.md` has been created, distilling all project knowledge into a single reference file for coding agents.
+
+### Deliverable
+
+| Property | Value |
+|---|---|
+| **File** | `/home/z/my-project/onestopnews/onestopnews_SKILL.md` |
+| **Size** | 2746 lines |
+| **Sections** | 21 main sections + 2 appendices (24 `##` headers total) |
+| **Commit** | `ae60d21` — `docs: create comprehensive onestopnews_SKILL.md (2746 lines, 21 sections)` |
+| **Net change** | +1899 insertions, -2213 deletions (replaced the old 2218-line v1 with a comprehensive 2746-line version) |
+
+### Methodology Executed
+
+1. **ANALYZE** — Verified repo state at HEAD `ea96e76` (all 5 Phase 16 commits present). Checked existing skill files (`onestopnews_SKILL.md` 3060 lines, `onestopnews_SKILL-v1.md` 2218 lines — both pre-Phase-16).
+
+2. **Read config files directly** — `package.json`, `next.config.ts`, `tsconfig.json`, `postcss.config.mjs`, `globals.css` (full 319-line design system), `layout.tsx` (font loading). Extracted exact versions, flag placements, all `@theme` tokens, all custom CSS classes, all keyframe animations.
+
+3. **Launched 4 parallel Explore subagents** to extract verbatim implementation details from:
+   - **15 UI/layout/auth/primitive components** (Button cva+Slot pattern, Badge, Skeleton with `motion-safe:animate-pulse`, Accordion with Radix, Header with `usePathname` + Radix Dialog, Footer, Masthead with `fontVariationSettings`, NewsTicker, RevealProvider with IntersectionObserver, AdminGuard async Server Component, AdminGuardSkeleton, PageTransition with `document.startViewTransition`, utils with `cn`+`formatTimeAgo`)
+   - **20 feature components** (FeedContainer with 5 `useState`+`useCallback`, FeedData async RSC, FeedGrid CSS Subgrid parent, ArticleCard CSS Subgrid child with stretched-link, LoadMoreButton with "absence IS empty state", LeadStory 7:5 grid, NutritionLabel, SummaryPanel 5-state machine with `useOptimistic`, DisclosureBadge, NutritionLabelDemo, summariseSchema Zod constraints, summaries actions with Content Guard, queries, articles queries 4-way JOIN, search queries BM25 `ts_rank_cd`, SearchBar with `⌘K` shortcut)
+   - **18 lib/infra files** (schema.ts 11 tables + 4 enums + all indexes, lazy Proxy DB pattern, Auth.js v5 config, dal.ts `cache()`+`redirect()`, providers.ts conditional OAuth, env Zod schema all 16 fields, encrypt.ts module-load validation, rateLimit.ts singleton Redis, queue split connections, flows.ts FlowProducer DAG, provenance.ts 3-layer disclosure, prompts.ts AI templates, proxy.ts Layer 0, normalize.ts SHA-256, types.ts, score.ts algorithm)
+   - **23 worker/route files** (workers/index.ts 4 workers + graceful shutdown, parseFeed Atom detection + field extraction, summarize Anthropic+OpenAI fallback, summarizeFailure, determineContentAvailability, scheduler upsertJobScheduler, cacheInvalidation singleton, isWithinQuietHours luxon, 6 API routes with exact status codes, admin layout with AdminGuard, article page generateMetadata, SignInClient, useDebounce, useReducedMotion)
+
+4. **Synthesized** all extracted details into 21 sections covering: Project Identity, Tech Stack, Bootstrapping, Design System (code-first), Component Architecture, Custom Hooks, Content Management, Accessibility, Anti-Patterns, Debugging Guide, Pre-Ship Checklist, Lessons Learnt, Pitfalls, Best Practices, Coding Patterns, Coding Anti-Patterns, Responsive Breakpoints, Z-Index Map, Color Reference, TypeScript Interface Reference, and the Meticulous Approach workflow.
+
+5. **VERIFY** — `pnpm check` green (0 TS errors, 0 lint warnings), `pnpm test` green (292/52 unchanged — doc-only edit).
+
+### What the SKILL.md Covers (validation against your 10-point checklist)
+
+1. ✅ **Tech stack versions match** — exact versions from `package.json` (Next.js ^16.2.9, React ^19.2.7, TypeScript ^5.7.0, etc.)
+2. ✅ **Configuration files match** — `next.config.ts` flags with exact placement, `tsconfig.json` with all 4 critical flags, `postcss.config.mjs`
+3. ✅ **Design system tokens match** — all `@theme` tokens verbatim from `globals.css` (ink/paper/dispatch scales, font stacks)
+4. ✅ **Component architecture matches** — 5-layer model, full component inventory with directives + patterns, AdminGuard, SummaryPanel 5-state machine
+5. ✅ **Hooks implementation matches** — `useDebounce<T>` and `useReducedMotion` verbatim code
+6. ✅ **Content ingestion patterns match** — `parseFeed` Atom detection regex, field extraction by format, Content Guard, `hashContent` SHA-256, FlowProducer DAG, worker concurrency matrix
+7. ✅ **Accessibility implementation matches** — WCAG AAA, color contrast ratios, focus states, triple-defense reduced motion, ARIA patterns table
+8. ✅ **Anti-patterns documented correctly** — 50+ anti-patterns across 7 categories (Phase 16, Next.js 16, Drizzle, Worker/Cache, Testing, Docker, CSS)
+9. ✅ **Color references match** — complete color reference with hex/RGB/usage for all tokens + category mapping + status mapping + opacity modifiers
+10. ✅ **TypeScript interfaces match** — 14 subsections of verbatim interfaces from schema, domain, search, feed, summary, provenance, rate-limit, queue, encryption, worker, domain logic, component props, API responses, env schema
+
+### Commit Log (6 commits ahead of origin/main)
+
+| Commit | Type | Summary |
+|---|---|---|
+| `822f5d0` | fix | Batch 1: AdminGuard (HIGH security) |
+| `17998ce` | fix | Batch 2: TRUSTED_PROXY in Zod schema |
+| `aaa3eac` | fix | Batch 3: PUSH_KEY_ENCRYPTION_KEY module-load validation |
+| `62752f4` | fix | Batch 4: Prod Redis + deploy.sh + CI gate |
+| `ea96e76` | docs | Align README/CLAUDE/AGENTS with Phase 16 |
+| `ae60d21` | docs | **Create comprehensive onestopnews_SKILL.md** |
+
+The SKILL.md is now the definitive reference for any coding agent (or senior engineer) who needs to extend, debug, or replicate the OneStopNews codebase. Every section is grounded in the actual source code at HEAD `ea96e76`.
+
 # https://chat.z.ai/s/132fcc7d-1842-46e1-b961-db78cfb5f7e5
 

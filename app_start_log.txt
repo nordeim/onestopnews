@@ -1,8 +1,7 @@
-$ rm -rf .next/
+$ rm -rf .next
 (venv) pete@pop-os:/home/project/onestopnews
 $ pnpm install
 Lockfile is up to date, resolution step is skipped
-Already up to date
 
    ╭──────────────────────────────────────────────────────────────────╮
    │                                                                  │
@@ -12,8 +11,10 @@ Already up to date
    │                                                                  │
    ╰──────────────────────────────────────────────────────────────────╯
 
-Done in 10.5s
-(venv) pete@pop-os:/home/project/onestopnews
+Already up to date
+
+Done in 22.5s
+
 $ pnpm check
 
 > onestopnews@0.1.0 check /home/project/onestopnews
@@ -23,7 +24,6 @@ $ pnpm check
 > onestopnews@0.1.0 lint /home/project/onestopnews
 > eslint . --max-warnings 0
 
-(venv) pete@pop-os:/home/project/onestopnews
 $ pnpm build
 
 > onestopnews@0.1.0 build /home/project/onestopnews
@@ -36,11 +36,11 @@ $ pnpm build
   ✓ viewTransition
 
   Creating an optimized production build ...
-✓ Compiled successfully in 14.0s
-✓ Finished TypeScript in 11.1s    
-✓ Collecting page data using 3 workers in 1806ms    
-✓ Generating static pages using 3 workers (15/15) in 797ms
-✓ Finalizing page optimization in 8.1s    
+✓ Compiled successfully in 39.7s
+✓ Finished TypeScript in 15.6s    
+✓ Collecting page data using 3 workers in 4.3s    
+✓ Generating static pages using 3 workers (15/15) in 1749ms
+✓ Finalizing page optimization in 8.5s    
 
 Route (app)                    Revalidate  Expire
 ┌ ○ /                                  2m     10m
@@ -57,8 +57,8 @@ Route (app)                    Revalidate  Expire
 ├ ○ /auth-error
 ├ ◐ /search
 ├ ○ /sign-in
-├ ◐ /sources
-├ ◐ /summaries
+├ ◐ /sources                           2m     10m
+├ ◐ /summaries                         2m     10m
 └ ◐ /topics/[category]
   └ /topics/[category]
 
@@ -67,34 +67,6 @@ Route (app)                    Revalidate  Expire
 ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
 ƒ  (Dynamic)            server-rendered on demand
 
-(venv) pete@pop-os:/home/project/onestopnews
-$ pnpm db:migrate
-
-> onestopnews@0.1.0 db:migrate /home/project/onestopnews
-> drizzle-kit migrate
-
-No config path provided, using default 'drizzle.config.ts'
-Reading config file '/home/project/onestopnews/drizzle.config.ts'
-Using 'postgres' driver for database querying
-[⣷] applying migrations...{
-  severity_local: 'NOTICE',
-  severity: 'NOTICE',
-  code: '42P06',
-  message: 'schema "drizzle" already exists, skipping',
-  file: 'schemacmds.c',
-  line: '132',
-  routine: 'CreateSchemaCommand'
-}
-[⣯] applying migrations...{
-  severity_local: 'NOTICE',
-  severity: 'NOTICE',
-  code: '42P07',
-  message: 'relation "__drizzle_migrations" already exists, skipping',
-  file: 'parse_utilcmd.c',
-  line: '207',
-  routine: 'transformCreateStmt'
-}
-[✓] migrations applied successfully!(venv) pete@pop-os:/home/project/onestopnews
 $ pnpm dev
 
 > onestopnews@0.1.0 dev /home/project/onestopnews
@@ -104,7 +76,7 @@ $ pnpm dev
 - Local:         http://localhost:3000
 - Network:       http://192.168.2.132:3000
 - Environments: .env.local, .env
-✓ Ready in 448ms
+✓ Ready in 1055ms
 - Cache Components enabled
 - Experiments (use with caution):
   ✓ viewTransition
@@ -113,6 +85,7 @@ $ pnpm dev
 Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 5.7s (next.js: 4.5s, application-code: 1219ms)
-
+ GET / 200 in 8.2s (next.js: 6.8s, application-code: 1407ms)
+ Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
+ GET / 200 in 449ms (next.js: 6ms, application-code: 442ms)
 
