@@ -31,6 +31,11 @@ process.env.GOOGLE_CLIENT_ID = "test-google-client-id";
 process.env.GOOGLE_CLIENT_SECRET = "test-google-client-secret";
 process.env.GITHUB_CLIENT_ID = "test-github-client-id";
 process.env.GITHUB_CLIENT_SECRET = "test-github-client-secret";
+// TRUSTED_PROXY is optional in env/index.ts. Set to "true" so the
+// /api/articles route test (which exercises the trusted-proxy IP-extraction
+// path) has the var available at module load time. Individual tests override
+// this via the mocked env object (see route.test.ts).
+process.env.TRUSTED_PROXY = "true";
 // NODE_ENV is set by vitest to "test" — no need to set it manually.
 // If a test needs a different NODE_ENV, use vi.stubEnv("NODE_ENV", value).
 

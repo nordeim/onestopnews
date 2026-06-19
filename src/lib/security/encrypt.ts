@@ -1,14 +1,33 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 
+/**
+ * encrypt.ts — AES-256-GCM push key encryption.
+ *
+ * The PUSH_KEY_ENCRYPTION_KEY env var is validated AT MODULE LOAD (not
+ * lazily inside encrypt/decrypt). This makes the worker / web server
+ * fail fast at boot if the env var is missing or invalid — the
+ * documented contract per src/lib/env/index.ts and AGENTS.md §Auth.
+ *
+ * Previously this module validated lazily inside getKey(), which meant
+ * an unset/invalid key would only surface as a 500 on the first push
+ * operation (deferred-failure pattern). Hoisting the validation to
+ * module scope matches the pattern in env/index.ts and the documented
+ * "validated at module load" contract.
+ */
+
 const ALGORITHM = "aes-256-gcm";
 
-function getKey(): string {
-  const key = process.env.PUSH_KEY_ENCRYPTION_KEY;
-  if (!key || key.length !== 64) {
-    throw new Error("PUSH_KEY_ENCRYPTION_KEY must be a 32-byte (64 hex char) string");
-  }
-  return key;
+// ─── Module-load validation ────────────────────────────────────────────────
+// Read + validate the env var ONCE at import time. Cache the Buffer so
+// encrypt/decrypt don't re-validate or re-allocate on every call.
+const PUSH_KEY_HEX = process.env.PUSH_KEY_ENCRYPTION_KEY;
+if (!PUSH_KEY_HEX || PUSH_KEY_HEX.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(PUSH_KEY_HEX)) {
+  throw new Error(
+    "PUSH_KEY_ENCRYPTION_KEY must be a 32-byte (64 hex char) string. " +
+      "Generate one with: openssl rand -hex 32"
+  );
 }
+const KEY_BUFFER = Buffer.from(PUSH_KEY_HEX, "hex");
 
 /**
  * encryptPushKeys — Encrypts Web Push subscription keys with AES-256-GCM.
@@ -16,13 +35,12 @@ function getKey(): string {
  * Uses a random 16-byte IV and produces the format:
  *   ${iv}:${authTag}:${encryptedData} (all hex-encoded)
  *
- * @param pushKeys — { p256dh, auth } from the PushSubscription keys
+ * @param keys — { p256dh, auth } from the PushSubscription keys
  * @returns Hex-encoded encrypted string
  */
 export function encryptPushKeys(keys: { p256dh: string; auth: string }): string {
-  const key = getKey();
   const iv = randomBytes(16);
-  const cipher = createCipheriv(ALGORITHM, Buffer.from(key, "hex"), iv);
+  const cipher = createCipheriv(ALGORITHM, KEY_BUFFER, iv);
 
   let encrypted = cipher.update(JSON.stringify(keys), "utf8", "hex");
   encrypted += cipher.final("hex");
@@ -45,10 +63,9 @@ export function decryptPushKeys(encryptedString: string): { p256dh: string; auth
     throw new Error("Invalid encrypted push key format");
   }
 
-  const key = getKey();
   const decipher = createDecipheriv(
     ALGORITHM,
-    Buffer.from(key, "hex"),
+    KEY_BUFFER,
     Buffer.from(ivHex, "hex")
   );
 

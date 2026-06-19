@@ -3,9 +3,11 @@
  *
  * Separates data fetching from the page to enable <Suspense> wrapping
  * in Next.js 16 with cacheComponents enabled.
+ *
+ * NOTE: Admin authorization is enforced at the (admin)/layout.tsx boundary
+ * via <AdminGuard>. No per-page guard needed here.
  */
 
-import { verifyAdminSession } from "@/lib/auth/dal";
 import { getAllSources, getCategoryMap } from "@/features/sources/queries";
 
 /** Source item as returned by the database query. */
@@ -51,8 +53,6 @@ function SourceTable({ sources, categoryMap }: { sources: SourceRow[]; categoryM
 }
 
 export async function SourcesData() {
-  await verifyAdminSession();
-
   const sources = await getAllSources();
   const categoryMap = await getCategoryMap();
 

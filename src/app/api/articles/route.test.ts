@@ -37,6 +37,15 @@ vi.mock("@/lib/rateLimit", () => ({
   }),
 }));
 
+// Mock the env module so we can control env.TRUSTED_PROXY at test time.
+// The route reads TRUSTED_PROXY via the typed `env` export (not process.env)
+// so that typos are caught at boot by the Zod schema. Tests control the
+// value by mutating this mock object directly.
+const mockEnv = { TRUSTED_PROXY: undefined as string | undefined };
+vi.mock("@/lib/env", () => ({
+  env: mockEnv,
+}));
+
 // Import after mocks are registered.
 const { GET, OPTIONS } = await import("./route");
 const { getFeedArticles } = await import("@/features/feed/queries");
@@ -57,6 +66,8 @@ beforeEach(() => {
     remaining: 20,
     resetAt: Date.now() + 1000,
   });
+  // Reset TRUSTED_PROXY to default (unset = leftmost-IP / spoofable mode).
+  mockEnv.TRUSTED_PROXY = undefined;
 });
 
 describe("GET /api/articles — cursor validation", () => {
@@ -146,24 +157,24 @@ describe("GET /api/articles — rate limiting", () => {
   });
 
   it("uses rightmost IP from x-forwarded-for when TRUSTED_PROXY=true (behind CDN)", async () => {
-    // When TRUSTED_PROXY is set, the app trusts the proxy chain and uses
-    // the rightmost IP (the trusted proxy's view of the client).
-    // This prevents spoofing because only the trusted proxy can set the header.
-    vi.stubEnv("TRUSTED_PROXY", "true");
-    try {
-      const req = new NextRequest("http://localhost:3000/api/articles", {
-        headers: { "x-forwarded-for": "1.2.3.4, 10.0.0.1, 192.168.1.1" },
-      });
-      await GET(req);
-      // Rightmost (last) IP after trimming — the trusted proxy's client
-      expect(checkRateLimit).toHaveBeenCalledWith(
-        "api:articles:192.168.1.1",
-        expect.any(Number),
-        expect.any(Number)
-      );
-    } finally {
-      vi.unstubAllEnvs();
-    }
+    // When TRUSTED_PROXY is set to "true", the app trusts the proxy chain
+    // and uses the rightmost IP (the trusted proxy's view of the client).
+    // This prevents spoofing because only the trusted proxy can set the
+    // header. We control the value via the mocked env object (not
+    // vi.stubEnv) because the route reads env.TRUSTED_PROXY, which is
+    // computed at module load — direct mutation of the mock is the only
+    // way to test different values without re-importing the module.
+    mockEnv.TRUSTED_PROXY = "true";
+    const req = new NextRequest("http://localhost:3000/api/articles", {
+      headers: { "x-forwarded-for": "1.2.3.4, 10.0.0.1, 192.168.1.1" },
+    });
+    await GET(req);
+    // Rightmost (last) IP after trimming — the trusted proxy's client
+    expect(checkRateLimit).toHaveBeenCalledWith(
+      "api:articles:192.168.1.1",
+      expect.any(Number),
+      expect.any(Number)
+    );
   });
 
   it("falls back to x-real-ip when x-forwarded-for is absent", async () => {

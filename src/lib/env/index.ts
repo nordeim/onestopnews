@@ -70,6 +70,17 @@ export const envSchema = z.object({
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
 
+  // ── Trusted Proxy (optional) ────────────────────────────────────────────
+  // When set to "true", the rate limiter (src/lib/rateLimit.ts consumer
+  // in /api/articles) uses the RIGHTMOST IP from x-forwarded-for — the
+  // trusted proxy's view of the client. This prevents IP spoofing behind
+  // a CDN/reverse proxy. Default (unset) uses the leftmost IP, which is
+  // spoofable but acceptable for direct-exposure deployments.
+  // The string is intentionally permissive (z.string().optional()) rather
+  // than a boolean enum so any truthy string can be set; the route handler
+  // checks === "true" specifically.
+  TRUSTED_PROXY: z.string().optional(),
+
   // ── Node Environment ────────────────────────────────────────────────────
   NODE_ENV: z
     .enum(["development", "production", "test"])

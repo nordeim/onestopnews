@@ -34,6 +34,34 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Validate Shell Scripts & Docker Compose Configs
+        # Fail-fast gate: catch malformed shebangs, syntax errors in shell
+        # scripts, and invalid YAML in docker-compose files BEFORE the
+        # expensive pnpm install / build steps. This is the "no TDD" gate
+        # for infra-only changes (shell scripts, docker-compose, etc.)
+        # that don't have unit tests.
+        #
+        # Checks:
+        #   1. bash -n on all .sh files — catches syntax errors
+        #   2. Shebang must be exactly #!/bin/bash or #!/usr/bin/env bash
+        #      (no concatenated comment text after the shebang on line 1)
+        #   3. Python yaml.safe_load on all docker-compose*.yml files —
+        #      catches malformed YAML and structural errors
+        run: |
+          set -euo pipefail
+          echo "-- bash -n + shebang check on all .sh files --"
+          find scripts -name '*.sh' -type f -print0 | while IFS= read -r -d '' f; do
+            echo "  checking: $f"
+            bash -n "$f"
+            first_line=$(head -1 "$f")
+            if [[ ! "$first_line" =~ ^#!/(bin/bash|usr/bin/env\ bash)$ ]]; then
+              echo "ERROR: $f has malformed shebang: '$first_line'"
+              echo "  Expected: #!/bin/bash OR #!/usr/bin/env bash (no trailing text)"
+              exit 1
+            fi
+          done
+          echo "-- YAML validation on docker-compose files --"
+          python3 scripts/validate-compose.py
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -73,4 +101,9 @@ jobs:
       GOOGLE_CLIENT_SECRET: "ci-dummy-google-client-secret"
       GITHUB_CLIENT_ID: "ci-dummy-github-client-id"
       GITHUB_CLIENT_SECRET: "ci-dummy-github-client-secret"
+      # TRUSTED_PROXY is optional in env/index.ts. CI sets it to "true" so
+      # the route test that exercises the trusted-proxy IP-extraction path
+      # has the var available at module load time (the route reads it via
+      # the typed `env` export, not process.env directly).
+      TRUSTED_PROXY: "true"
       NODE_ENV: "test"

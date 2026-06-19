@@ -4,14 +4,15 @@
  * Fetches flagged summaries and renders the review table.
  * Wrapped in <Suspense> by the parent page to prevent blocking-route
  * errors in Next.js 16 with cacheComponents enabled.
+ *
+ * NOTE: Admin authorization is enforced at the (admin)/layout.tsx boundary
+ * via <AdminGuard>. No per-page guard needed here. The layout's guard runs
+ * before this component renders, so we can safely fetch data directly.
  */
 
-import { verifyAdminSession } from "@/lib/auth/dal";
 import { getFlaggedSummaries } from "@/features/summaries/queries";
 
 export async function SummariesData() {
-  await verifyAdminSession();
-
   const flaggedSummaries = await getFlaggedSummaries();
 
   return (

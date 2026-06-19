@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchArticles } from "@/features/search/queries";
 import { getFeedArticles } from "@/features/feed/queries";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { env } from "@/lib/env";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +49,10 @@ function getClientIp(request: NextRequest): string {
     const ips = forwarded.split(",").map((ip) => ip.trim());
     // When behind a trusted proxy, use the rightmost (last) IP — the proxy's
     // view of the client. Otherwise use the leftmost (first) IP.
-    const isTrustedProxy = process.env.TRUSTED_PROXY === "true";
+    // TRUSTED_PROXY is declared in the Zod env schema (src/lib/env/index.ts)
+    // and validated at module load. We read it via the typed `env` export
+    // (not process.env directly) so typos are caught at boot.
+    const isTrustedProxy = env.TRUSTED_PROXY === "true";
     const ip = isTrustedProxy ? ips[ips.length - 1] : ips[0];
     return ip ?? "unknown";
   }

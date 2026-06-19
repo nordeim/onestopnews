@@ -2,10 +2,22 @@
  * layout.tsx — Admin route group layout.
  *
  * Design system: Editorial Dispatch — Ink-900 dark surface, Paper-50 UI.
- * NOTE: This layout is kept synchronous. Auth verification is performed
- * inside the individual page data components (wrapped in <Suspense>)
- * to satisfy Next.js 16 cacheComponents requirements.
+ *
+ * Auth boundary: AdminGuard wraps {children} inside <Suspense> to satisfy
+ * Next.js 16 cacheComponents requirements. AdminGuard calls
+ * verifyAdminSession() (memoized via React.cache() in dal.ts) so the
+ * guard runs ONCE per request, at the LAYOUT boundary — any future admin
+ * page added under (admin)/ is automatically protected without needing
+ * its own per-page guard.
+ *
+ * If verifyAdminSession() finds a non-admin or no session, it calls
+ * redirect() internally (see dal.ts). The Suspense fallback
+ * (AdminGuardSkeleton) renders during the async guard evaluation.
  */
+
+import { Suspense } from "react";
+import { AdminGuard } from "@/shared/components/auth/AdminGuard";
+import { AdminGuardSkeleton } from "@/shared/components/auth/AdminGuardSkeleton";
 
 export default function AdminLayout({
   children,
@@ -40,9 +52,11 @@ export default function AdminLayout({
           </ul>
         </nav>
 
-        {/* Main content */}
+        {/* Main content — wrapped in AdminGuard via Suspense */}
         <main className="flex-1 p-8">
-          {children}
+          <Suspense fallback={<AdminGuardSkeleton />}>
+            <AdminGuard>{children}</AdminGuard>
+          </Suspense>
         </main>
       </div>
     </div>

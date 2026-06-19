@@ -449,6 +449,12 @@ Must pass before any PR is merged. No exceptions.
 | Accessing `provider.id` without type narrowing (Phase 15) | Auth.js v5 `Provider` type is a union (object form + function form) — `TS2339: Property 'id' does not exist` | Use `'id' in p ? p.id : "unknown"` narrowing in test helpers |
 | Direct `<FeedGrid>` rendering in `FeedData` (Phase 15) | No "Load More" pagination — users see only the initial 6 articles, no way to fetch more | Render `<FeedContainer>` which manages article list + load more state; pass `initialNextCursor` + `initialHasMore` |
 | Stale file paths in docs (Phase 15) | `Masthead.tsx`/`NewsTicker.tsx` listed under `src/features/feed/components/` but actually in `src/shared/components/layout/`; `Stats.tsx`/`FAQ.tsx`/`Newsletter.tsx` listed under non-existent `src/features/feed/{stats,faq,newsletter}/` | Verify file paths against actual filesystem before documenting; use `find src -name "*.tsx"` to audit |
+| Admin auth only in per-page data components (Phase 16) | Latent security gap — any new admin page that forgets to call `verifyAdminSession()` is publicly accessible | Centralize via `<AdminGuard>` async Server Component in `(admin)/layout.tsx` wrapped in `<Suspense>`; remove per-page guards |
+| `TRUSTED_PROXY` read via `process.env` (Phase 16) | Bypasses Zod env schema; typos can't be caught at boot | Declare `TRUSTED_PROXY: z.string().optional()` in envSchema; read via typed `env.TRUSTED_PROXY` export |
+| `PUSH_KEY_ENCRYPTION_KEY` validated lazily in `getKey()` (Phase 16) | Boot succeeds with missing/invalid key; first push operation 500s (deferred failure) | Hoist validation to module scope; cache `KEY_BUFFER` so boot fails fast |
+| Prod Redis without `--maxmemory-policy noeviction --appendonly yes` (Phase 16) | Default policy is noeviction but undocumented; no AOF = jobs lost on Redis restart | Add explicit `command:` block to `docker-compose.prod.yml` redis service |
+| `#!/bin/bash.# comment` concatenated shebang (Phase 16) | Kernel tries to exec `/bin/bash.#` which doesn't exist; `./deploy.sh` fails with "cannot execute" | Shebang must be on its own line: `#!/bin/bash` then `# comment` on line 2 |
+| `"DOCKER_REGISTRY/path"` without `$` prefix (Phase 16) | Literal string passed to command; variable never interpolated | Use `"${DOCKER_REGISTRY}/path"` with `$` prefix |
 
 ---
 
@@ -1005,6 +1011,24 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 | `src/domain/articles/normalize.test.ts` (modified) | 14 | Updated for new signature + property-based `node:crypto` SHA-256 verification |
 | `src/workers/index.ts` (modified) | 14 | Pass body to `hashContent`; use `getSummaryFailureState` in catch block |
 | `src/app/api/articles/route.ts` (modified) | 14 | `getClientIp` supports `TRUSTED_PROXY` env var (rightmost IP for CDN) |
+| `src/app/api/articles/route.ts` (modified) | 16 | Switched from `process.env.TRUSTED_PROXY` to typed `env.TRUSTED_PROXY` |
+| `src/lib/env/index.ts` (modified) | 16 | Added `TRUSTED_PROXY: z.string().optional()` to Zod env schema |
+| `src/lib/env/index.test.ts` (new) | 16 | 4 tests for TRUSTED_PROXY field (accepts 'true', 'false', absence, arbitrary string) |
+| `src/lib/security/encrypt.ts` (modified) | 16 | Hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load; cached `KEY_BUFFER`; removed `getKey()` |
+| `src/lib/security/encrypt.test.ts` (modified) | 16 | +4 module-load validation tests using `vi.resetModules()` + dynamic `import()` |
+| `src/shared/components/auth/AdminGuard.tsx` (new) | 16 | Async Server Component calling `verifyAdminSession()`, renders children on success |
+| `src/shared/components/auth/AdminGuardSkeleton.tsx` (new) | 16 | Suspense fallback for AdminGuard (dark sidebar skeleton) |
+| `src/shared/components/auth/AdminGuard.test.tsx` (new) | 16 | 4 tests: renders children for admin; redirects non-admin; redirects no-session; invokes guard once |
+| `src/app/(admin)/layout.tsx` (modified) | 16 | Wraps children in `<Suspense><AdminGuard>{children}</AdminGuard></Suspense>` |
+| `src/app/(admin)/layout.test.tsx` (new) | 16 | 1 test asserting layout wraps children in AdminGuard |
+| `src/features/summaries/components/SummariesData.tsx` (modified) | 16 | Removed redundant `verifyAdminSession()` call (now handled by layout) |
+| `src/features/sources/components/SourcesData.tsx` (modified) | 16 | Removed redundant `verifyAdminSession()` call (now handled by layout) |
+| `docker-compose.prod.yml` (modified) | 16 | Added `command:` block to redis service (`--maxmemory 1gb --maxmemory-policy noeviction --appendonly yes --save 60 1000 --loglevel warning`) |
+| `scripts/deploy.sh` (modified) | 16 | Fixed shebang (split from comment) + `$DOCKER_REGISTRY` variable interpolation |
+| `scripts/validate-compose.py` (new) | 16 | Python YAML validator for all docker-compose*.yml files (used by CI gate) |
+| `.github/workflows/ci.yml` (modified) | 16 | Added "Validate Shell Scripts & Docker Compose Configs" step (runs before `pnpm install`) + `TRUSTED_PROXY: "true"` in env block |
+| `.env.example` (modified) | 16 | Added commented `# TRUSTED_PROXY=true` placeholder with explanation |
+| `src/test/setup.ts` (modified) | 16 | Added `process.env.TRUSTED_PROXY = "true"` for test isolation |
 | `src/app/api/articles/route.test.ts` (modified) | 14 | 5 new tests for trusted proxy IP extraction |
 | `playwright.config.ts` | 14 | Playwright E2E config (Chromium/Firefox/WebKit, auto-start dev server) |
 | `e2e/smoke.spec.ts` | 14 | 10 E2E smoke tests (homepage, feed, article, search, category nav, a11y) |
@@ -1368,6 +1392,7 @@ pnpm dev
 | **Phase 13** — Critical Gaps Remediation (RSS + AI + FlowProducer + Rate Limiting) | **COMPLETE** | Real RSS/Atom/JSON parser via `rss-parser`, real AI summarization via Vercel AI SDK (Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes (`font浃着`→`font-mono`, `Monad`→`font-mono`), `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts via `(xmax = 0)` trick |
 | **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test, `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh`), article detail page with real data + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review`), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
 | **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth) | **COMPLETE** | Pinned Dockerfiles to `node:24-alpine` + `output: "standalone"` in `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent scripts/paths); cursor-based "Load More" pagination (`FeedContainer` + `LoadMoreButton` client components); dropped deprecated `push_subscriptions.keys` column (migration `0005_neat_wolverine.sql`); added Google + GitHub OAuth providers (conditional on env vars, backward-compatible); created `/sign-in` + `/auth-error` pages (previously missing); added OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + CI + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E) |
+| **Phase 16** — Remediation Batches 1-4 (AdminGuard, TRUSTED_PROXY, Push Key Validation, Prod Redis + Deploy + CI Gate) | **COMPLETE** | Centralized admin auth via `AdminGuard` async Server Component in `(admin)/layout.tsx` wrapped in `<Suspense>` (HIGH security fix — any future admin page is now automatically protected); removed redundant `verifyAdminSession()` calls from `SummariesData` + `SourcesData`; added `TRUSTED_PROXY: z.string().optional()` to Zod env schema + switched `/api/articles` route to typed `env.TRUSTED_PROXY`; hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load in `encrypt.ts` (fail-fast at boot, cached `KEY_BUFFER`); hardened prod Redis (`--maxmemory-policy noeviction --appendonly yes --save 60 1000 --maxmemory 1gb`); fixed `deploy.sh` shebang (`#!/bin/bash` on its own line) + `$DOCKER_REGISTRY` variable interpolation; added CI "Validate Shell Scripts & Docker Compose Configs" gate (runs before `pnpm install` — `bash -n` + shebang regex + `validate-compose.py`); created `scripts/validate-compose.py` YAML validator (**292 tests across 52 suites** + 10 E2E) |
 
 ---
 
@@ -1634,6 +1659,71 @@ vi.mock("ioredis", () => ({
 7. **Run E2E Tests After Phase 15:** Run `pnpm test:e2e` (requires `pnpm dev` running or auto-start via `webServer` config) to verify the 10 Playwright E2E smoke tests still pass with the new sign-in page available. Consider adding E2E tests for the sign-in flow itself.
 
 8. **Audit Docs Against Filesystem:** Periodically run `find src -name "*.tsx" -o -name "*.ts" | sort` and compare against the file paths cited in README.md, CLAUDE.md, and AGENTS.md. Consider adding a CI check that verifies doc-cited paths exist.
+
+---
+
+## Phase 16: Remediation Batches 1-4 — Lessons Learned
+
+Phase 16 addressed 1 HIGH + 4 MEDIUM severity issues identified in a codebase review. Each fix was TDD-driven (RED → GREEN → REFACTOR → COMMIT) and shipped as a separate commit. Total: +13 tests, +3 suites (279/49 → 292/52).
+
+### Phase 16 Gotchas Discovered
+
+#### 1. Admin Auth Guard Centralization (Batch 1 — HIGH Security)
+
+**Issue**: `(admin)/layout.tsx` was synchronous (a `cacheComponents` workaround) and did NOT call `verifyAdminSession()`. The guard ran inside per-page data components (`SummariesData.tsx:13`, `SourcesData.tsx:54`). This created a latent security gap: any new admin page added without a Suspense-wrapped data component that calls `verifyAdminSession()` would be publicly accessible.
+
+**Fix**: Introduced `AdminGuard` async Server Component (`src/shared/components/auth/AdminGuard.tsx`) that calls `verifyAdminSession()` and renders children on success. The `(admin)/layout.tsx` now composes it inside `<Suspense fallback={<AdminGuardSkeleton />}><AdminGuard>{children}</AdminGuard></Suspense>`. The guard runs at the LAYOUT boundary — any future admin page is automatically protected. Redundant `verifyAdminSession()` calls removed from `SummariesData` + `SourcesData` (safe due to `cache()` memoization in `dal.ts`).
+
+**Lesson**: Next.js 16 `cacheComponents` rejects synchronous layouts that perform async work, but the fix is NOT to push auth into per-page components (fragile — relies on every page author remembering). The correct pattern is an async Server Component guard wrapped in `<Suspense>` inside the layout. Centralize security at boundaries, not at leaves.
+
+#### 2. `TRUSTED_PROXY` in Zod Env Schema (Batch 2 — MEDIUM Security)
+
+**Issue**: `TRUSTED_PROXY` was added in Phase 14 but read directly via `process.env.TRUSTED_PROXY` in `/api/articles/route.ts:51`, bypassing the Zod env schema. This violated the "all env vars declared in Zod" principle — typos couldn't be caught at boot.
+
+**Fix**: Added `TRUSTED_PROXY: z.string().optional()` to `envSchema` in `src/lib/env/index.ts`. Switched the route from `process.env.TRUSTED_PROXY` to typed `env.TRUSTED_PROXY`. Updated `.env.example`, `ci.yml`, `src/test/setup.ts` to declare the var.
+
+**Lesson**: The `env` export is a frozen, validated object computed at module load. Tests can't use `vi.stubEnv` to change it dynamically — the pattern from `cacheInvalidation.test.ts` (mock `@/lib/env` with a mutable `mockEnv` object that tests control via direct property assignment) is the correct approach. Always declare EVERY env var in the Zod schema, even optional ones — typos in `process.env.MY_VAR` are silently `undefined` and impossible to debug.
+
+#### 3. `PUSH_KEY_ENCRYPTION_KEY` Module-Load Validation (Batch 3 — MEDIUM Security)
+
+**Issue**: `encrypt.ts` validated the env var lazily inside `getKey()`, called from `encryptPushKeys()`/`decryptPushKeys()`. Boot succeeded even if the env var was missing/invalid — the failure only surfaced as a 500 on the first push operation (deferred-failure pattern).
+
+**Fix**: Hoisted validation to module scope: `const PUSH_KEY_HEX = process.env.PUSH_KEY_ENCRYPTION_KEY; if (!PUSH_KEY_HEX || !/^[0-9a-fA-F]{64}$/.test(PUSH_KEY_HEX)) throw new Error(...); const KEY_BUFFER = Buffer.from(PUSH_KEY_HEX, "hex");`. Removed `getKey()` function. `encryptPushKeys`/`decryptPushKeys` use the cached `KEY_BUFFER`.
+
+**Lesson**: Security-critical env vars must be validated at module load (fail-fast at boot), not lazily on first use. The pattern matches `env/index.ts:109` (`export const env = validateEnv();`). Tests for module-load behavior require `vi.resetModules()` + dynamic `import()` to re-trigger the module load with controlled env state — the cached module won't re-evaluate.
+
+#### 4. Prod Redis Hardening + Deploy Script + CI Gate (Batch 4 — MEDIUM Infra)
+
+**Issue (4a — Redis)**: `docker-compose.prod.yml` redis service had NO `command:` block — only `docker-compose-dev.yml:51-57` had `--maxmemory-policy noeviction --appendonly yes`. Default Redis policy is `noeviction` but undocumented; without `--appendonly yes` there's no AOF persistence — BullMQ jobs can be lost on Redis restart.
+
+**Issue (4b — deploy.sh shebang)**: Line 1 was `#!/bin/bash.# Deployment script...` (shebang concatenated with comment). The kernel tried to exec `/bin/bash.#` which doesn't exist; `./deploy.sh` failed with "cannot execute: required file not found". `bash -n` didn't catch this because bash treats the malformed shebang as a comment line.
+
+**Issue (4c — deploy.sh var interpolation)**: Lines 20-21 used `"DOCKER_REGISTRY/onestopnews-web:$IMAGE_TAG"` — missing `$` prefix on `DOCKER_REGISTRY` meant the literal string was passed to `docker tag`/`docker push`.
+
+**Fix**: Added `command:` block to prod redis mirroring dev (with `--maxmemory 1gb` for prod). Split deploy.sh shebang onto its own line. Fixed var interpolation to `"${DOCKER_REGISTRY}/onestopnews-web:${IMAGE_TAG}"`. Added new CI step "Validate Shell Scripts & Docker Compose Configs" that runs BEFORE `pnpm install` (fail-fast gate): `bash -n` on all `.sh` files, shebang regex check (must be exactly `#!/bin/bash` or `#!/usr/bin/env bash` with no trailing text), and `python3 scripts/validate-compose.py` on all docker-compose files. Created `scripts/validate-compose.py` YAML validator.
+
+**Lesson**: `bash -n` is permissive — it treats shebang lines as comments and won't catch malformed shebangs. The only way to catch the `#!/bin/bash.#` bug is a regex check on line 1, OR attempting to execute the script directly (`./script.sh`). The CI gate uses the regex approach because it's faster and doesn't require execution. Always validate infra-only changes (shell scripts, YAML, Dockerfiles) in CI — they don't have unit tests, so a dedicated gate is the only safety net.
+
+### Phase 16 Recommendations
+
+1. **Push commits to remote**: The 4 Phase 16 commits (`822f5d0`, `17998ce`, `aaa3eac`, `62752f4`) must be pushed to `origin/main` for CI to run. If credentials aren't configured, push from a machine with GitHub access.
+
+2. **Verify CI passes on GitHub**: The new "Validate Shell Scripts & Docker Compose Configs" step runs for the first time on the next push. It passed locally (including a negative test that confirmed the gate catches the shebang bug), so it should pass on GitHub Actions.
+
+3. **Run E2E tests after Phase 16**: Run `pnpm test:e2e` to verify the 10 Playwright E2E smoke tests still pass with the new `AdminGuard` wrapper in `(admin)/layout.tsx`. The admin pages now render inside `<Suspense fallback={<AdminGuardSkeleton />}>` which may affect E2E timing.
+
+4. **Outstanding LOW severity items (Batch 5 — deferred)**: The following LOW severity items were identified but NOT fixed in Phase 16. Consider addressing them in a future batch:
+   - 9 deps use `"latest"` instead of pinned versions in `package.json` (`ai`, `bullmq`, `ioredis`, `zod`, `tailwindcss`, `vitest`, `postgres`, `luxon`, `drizzle-orm`)
+   - `@auth/core`, `@playwright/test`, `@axe-core/playwright` not declared as direct deps (transitive only)
+   - 2 hand-written enum types in `score.ts:16` and `seed.ts` (should derive via `typeof enum.enumValues[number]`)
+   - `db:push` script still in `package.json` despite "no push in prod" rule
+   - `fastupdate=off` GIN index commented out in `custom-indexes.sql`
+   - `.number-counter` CSS class referenced in README but missing from `globals.css`
+   - `docker-compose-sample.yml` is stale (different Redis policy, non-existent paths)
+
+5. **Update `Codebase_Review_Validation_Report_2.md` and `Codebase_Review_Validation_Report_3.md`**: Both are now stale — they reference the pre-Phase-16 state. Update them to reflect the 4 remediation batches (now 292 tests / 52 suites).
+
+6. **Deploy validation**: When ready to deploy, run `docker compose -f docker-compose.prod.yml config` to verify the prod compose renders correctly with the new Redis `command:` block. Verify `./scripts/deploy.sh` executes directly (no "cannot execute" error).
 
 ---
 

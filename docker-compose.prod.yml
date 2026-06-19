@@ -70,6 +70,25 @@ services:
 
   redis:
     image: redis:7-alpine
+    # Production Redis hardening per MEP §4 / docker-compose-dev.yml pattern:
+    #   - noeviction policy: BullMQ jobs are NEVER evicted (BullMQ requires
+    #     this; without it, Redis returns OOM errors under memory pressure
+    #     and jobs are lost). The default Redis policy is noeviction, but
+    #     we set it explicitly to document intent and protect against
+    #     future Redis defaults changes.
+    #   - appendonly yes: AOF persistence so jobs survive Redis restarts.
+    #     Without AOF, jobs in memory are lost on restart (RDB snapshots
+    #     only run periodically and can lose up to 60s of data).
+    #   - save 60 1000: RDB snapshot every 60s if 1000+ keys changed
+    #     (belt-and-suspenders alongside AOF).
+    #   - maxmemory 1gb: production-appropriate limit (dev uses 512mb).
+    command: >
+      redis-server
+      --maxmemory 1gb
+      --maxmemory-policy noeviction
+      --appendonly yes
+      --save 60 1000
+      --loglevel warning
     volumes:
       - redis_data:/data
     healthcheck:
