@@ -62,7 +62,13 @@ export async function generateMetadata({
     },
   };
 
-  // Emit 3-layer provenance when an approved summary exists
+  // Emit 3-layer provenance when an approved summary exists.
+  // Layer 1 (JSON-LD <script>) is rendered directly in ArticleData.tsx body
+  // (NOT via metadata.other — Next.js renders metadata.other keys as <meta>
+  // tags, not <script> tags, so JSON-LD via metadata.other is semantically
+  // wrong and was never actually emitted as a script tag).
+  // Layer 2 (HTTP header X-AI-Provenance) + Layer 3 (<meta name="ai-provenance">)
+  // are emitted here via metadata.other.
   if (article.summary && article.summary.status === "ok") {
     const provenance = generateProvenanceMetadata({
       summary: {
@@ -82,7 +88,6 @@ export async function generateMetadata({
     metadata.other = {
       "ai-provenance": provenance.metaTag,
       "X-AI-Provenance": provenance.httpHeader,
-      "json-ld-provenance": provenance.jsonLd,
     };
   }
 
@@ -95,9 +100,11 @@ export default function ArticlePage({ params }: ArticlePageProps) {
       <Suspense fallback={null}>
         <Header />
       </Suspense>
-      <Suspense fallback={<ArticleSkeleton />}>
-        <ArticleData params={params} />
-      </Suspense>
+      <main id="main-content">
+        <Suspense fallback={<ArticleSkeleton />}>
+          <ArticleData params={params} />
+        </Suspense>
+      </main>
     </div>
   );
 }

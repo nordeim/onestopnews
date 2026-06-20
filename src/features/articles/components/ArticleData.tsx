@@ -2,8 +2,18 @@
  * ArticleData.tsx — Server Component for article detail page.
  *
  * Phase 14 (MEDIUM-3): Fetches real article data via getArticleWithSummary(),
- * renders the article with SummaryPanel for AI summaries, and emits 3-layer
- * provenance via generateMetadata() in the parent page.tsx.
+ * renders the article with SummaryPanel for AI summaries.
+ *
+ * 3-Layer AI Provenance (EU AI Act Art. 50):
+ *   - Layer 1 (JSON-LD <script>): Rendered HERE in the page body when
+ *     summary status is 'ok'. Next.js's metadata.other API renders keys
+ *     as <meta> tags (NOT <script> tags), so JSON-LD MUST be a direct
+ *     <script> element in the body. React 19 supports this in Server
+ *     Components; the `key` prop deduplicates across renders.
+ *   - Layer 2 (HTTP header X-AI-Provenance): Emitted via metadata.other
+ *     in page.tsx generateMetadata().
+ *   - Layer 3 (<meta name="ai-provenance">): Emitted via metadata.other
+ *     in page.tsx generateMetadata().
  *
  * Wrapped in <Suspense> by the parent to prevent blocking-route errors
  * in Next.js 16 with cacheComponents enabled.
@@ -12,6 +22,7 @@
 import { Footer } from "@/shared/components/layout/Footer";
 import { SummaryPanel } from "@/features/summaries/components/SummaryPanel";
 import { getArticleWithSummary } from "@/features/articles/queries";
+import { generateProvenanceMetadata } from "@/lib/ai/provenance";
 import Link from "next/link";
 import { formatTimeAgo } from "@/shared/lib/utils";
 
@@ -26,7 +37,7 @@ export async function ArticleData({ params }: ArticleDataProps) {
 
   if (!article) {
     return (
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl mx-auto py-24 text-center">
           <span className="block w-1.5 h-1.5 rounded-full bg-dispatch-ember mx-auto mb-4" aria-hidden="true" />
           <p className="font-mono text-[11px] uppercase tracking-widest text-ink-300 mb-2">
@@ -45,13 +56,42 @@ export async function ArticleData({ params }: ArticleDataProps) {
             ← Back to Top Stories
           </Link>
         </div>
-      </main>
+      </div>
     );
   }
 
+  // Layer 1: JSON-LD <script> tag — only emitted when summary is approved.
+  // Rendered in the body (not via metadata.other) because Next.js renders
+  // metadata.other keys as <meta> tags, NOT <script> tags.
+  const jsonLdScript =
+    article.summary && article.summary.status === "ok"
+      ? generateProvenanceMetadata({
+          summary: {
+            summaryText: article.summary.summaryText,
+            keyPoints: article.summary.keyPoints,
+            sourcesCited: article.summary.sourcesCited,
+            aiStatement: article.summary.aiStatement,
+            coveragePercentage: article.summary.coveragePercentage,
+          },
+          articleId: article.id,
+          articleUrl: article.canonicalUrl,
+          articleTitle: article.title,
+          model: article.summary.model,
+          generatedAt: article.summary.generatedAt.toISOString(),
+        }).jsonLd
+      : null;
+
   return (
     <>
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {jsonLdScript && (
+        <script
+          type="application/ld+json"
+          // `key` deduplicates the script across re-renders (React 19)
+          key={`provenance-jsonld-${article.id}`}
+          dangerouslySetInnerHTML={{ __html: jsonLdScript }}
+        />
+      )}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <article className="max-w-3xl mx-auto">
           {/* Header */}
           <header className="mb-8">
@@ -125,7 +165,7 @@ export async function ArticleData({ params }: ArticleDataProps) {
             </Link>
           </div>
         </article>
-      </main>
+      </div>
       <Footer />
     </>
   );

@@ -51,6 +51,17 @@ export const summaryStatusEnum = pgEnum("summary_status", [
   "disabled",
 ]);
 
+// ─── Derived Types (Single Source of Truth) ───────────────────────────────
+// All consumers MUST import these types instead of hand-writing union
+// literals. Deriving via `typeof enum.enumValues[number]` guarantees the
+// type stays in sync with the schema — if the enum changes, every consumer
+// gets a compile error pointing to the divergence.
+export type UserRole = (typeof userRoleEnum.enumValues)[number];
+export type FeedFormat = (typeof feedFormatEnum.enumValues)[number];
+export type ContentAvailability =
+  (typeof contentAvailabilityEnum.enumValues)[number];
+export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
+
 // ─── Tables ───────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),

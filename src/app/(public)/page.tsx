@@ -34,7 +34,7 @@ export default function HomePage() {
       </section>
 
       {/* 5. Feed Section */}
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main id="main-content" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <section className="mb-12">
           <h2 className="font-editorial text-4xl text-ink-900 mb-4">
             Top Stories

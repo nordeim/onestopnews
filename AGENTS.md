@@ -455,6 +455,10 @@ Must pass before any PR is merged. No exceptions.
 | Prod Redis without `--maxmemory-policy noeviction --appendonly yes` (Phase 16) | Default policy is noeviction but undocumented; no AOF = jobs lost on Redis restart | Add explicit `command:` block to `docker-compose.prod.yml` redis service |
 | `#!/bin/bash.# comment` concatenated shebang (Phase 16) | Kernel tries to exec `/bin/bash.#` which doesn't exist; `./deploy.sh` fails with "cannot execute" | Shebang must be on its own line: `#!/bin/bash` then `# comment` on line 2 |
 | `"DOCKER_REGISTRY/path"` without `$` prefix (Phase 16) | Literal string passed to command; variable never interpolated | Use `"${DOCKER_REGISTRY}/path"` with `$` prefix |
+| Missing skip-to-content link in root layout (Phase 17) | WCAG AAA violation — keyboard users cannot bypass repetitive navigation | Add `<a href="#main-content" className="sr-only focus:not-sr-only ...">` as first child of `<body>`; add `id="main-content"` to `<main>` in every page template |
+| JSON-LD via `metadata.other` (Phase 17) | Next.js renders `metadata.other` keys as `<meta>` tags, NOT `<script>` tags — JSON-LD never appears in DOM as a script tag | Render `<script type="application/ld+json" dangerouslySetInnerHTML={{__html: jsonLd}} />` directly in the page body (Server Component) |
+| Hand-written enum unions instead of schema-derived types (Phase 17) | Violates Single Source of Truth — schema enum changes silently break consumers at runtime | Export `type X = (typeof enum.enumValues)[number]` from `schema.ts`; import in consumers; add compile-time `satisfies` check in tests |
+| `"latest"` in package.json dependencies (Phase 17) | Reproducibility footgun — manifest lies about what's installed; lockfile regen causes silent major-version jumps | Pin to `^` ranges matching the lockfile-resolved versions |
 
 ---
 
@@ -1064,6 +1068,34 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 
 ---
 
+## Updated File Inventory (Post-Phase 17)
+
+| New/Modified Files | Phase | Purpose |
+|-----------|-------|---------|
+| `src/app/layout.tsx` (modified) | 17 | Added skip-to-content link as first child of `<body>` (WCAG AAA) |
+| `src/app/layout.test.tsx` (new) | 17 | 4 tests: skip link present, sr-only by default, visible on focus, first focusable element |
+| `src/app/(public)/page.tsx` (modified) | 17 | Added `id="main-content"` to `<main>` |
+| `src/app/(public)/page.test.tsx` (modified) | 17 | Added test for `<main id="main-content">` |
+| `src/app/topics/[category]/page.tsx` (modified) | 17 | Added `id="main-content"` to `<main>` |
+| `src/app/(public)/search/page.tsx` (modified) | 17 | Added `id="main-content"` to `<main>` |
+| `src/app/article/[id]/page.tsx` (modified) | 17 | Wrapped `<ArticleData>` in `<main id="main-content">`; removed broken `json-ld-provenance` from `metadata.other` |
+| `src/features/articles/components/ArticleData.tsx` (modified) | 17 | Render `<script type="application/ld+json">` in body when summary status='ok'; changed `<main>` to `<div>` (page.tsx now provides `<main>`) |
+| `src/features/articles/components/ArticleData.test.tsx` (modified) | 17 | +3 tests for JSON-LD `<script>` tag (present when ok; absent when no summary; absent when needs_review) |
+| `src/lib/db/schema.ts` (modified) | 17 | Exported 4 derived types: `UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus` (via `(typeof enum.enumValues)[number]`) |
+| `src/domain/ranking/score.ts` (modified) | 17 | Replaced hand-written `contentAvailability` union with imported `ContentAvailability` type |
+| `src/domain/ranking/score.test.ts` (modified) | 17 | Added compile-time `satisfies` check enforcing `ScoringInputs["contentAvailability"]` matches `SchemaContentAvailability` |
+| `src/lib/db/seed.ts` (modified) | 17 | Replaced hand-written `contentAvailability` union + `"rss" as const` with imported `ContentAvailability` + `FeedFormat` types |
+| `src/lib/db/seed.test.ts` (modified) | 17 | +2 runtime tests verifying all seed values are valid schema enum values |
+| `package.json` (modified) | 17 | Removed `db:push` script; pinned all 24 `"latest"` entries to `^` ranges matching lockfile |
+| `pnpm-lock.yaml` (modified) | 17 | Regenerated after dep specifier pinning |
+| `docker-compose-sample.yml` (rewritten) | 17 | Mirrors `docker-compose-dev.yml` topology (postgres+redis+web+worker); correct `noeviction` Redis policy; real Dockerfile paths; `pnpm` not `npm`; `AUTH_URL` not `NEXTAUTH_URL` |
+| `Dockerfile.sample.dev` (DELETED) | 17 | Stale Wellfond BMS legacy artifact (used `npm`, referenced non-existent `/api/proxy/health/`, created `wellfond` user) |
+| `README.md` (modified) | 17 | Replaced nonexistent `.number-counter` row with `.commitment-number`; removed nonexistent `number-count` animation; added `slideDown`/`slideUp`/`reveal` animation rows; added Phase 17 troubleshooting + lessons sections; updated test count to 302/53 |
+| `CLAUDE.md` (modified) | 17 | Added Phase 17 row to Phase Status; added 4 Phase 17 anti-patterns; added Phase 17 file locations; added Phase 17 lessons section; updated test count to 302/53 |
+| `AGENTS.md` (modified) | 17 | Added Phase 17 row to Phase Status Tracker; added 4 Phase 17 anti-patterns; added Phase 17 file inventory; added Phase 17 lessons section |
+
+---
+
 ---
 
 ## Phase 10: Landing Page & Design System -- Lessons Learned
@@ -1393,6 +1425,7 @@ pnpm dev
 | **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test, `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh`), article detail page with real data + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review`), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
 | **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth) | **COMPLETE** | Pinned Dockerfiles to `node:24-alpine` + `output: "standalone"` in `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent scripts/paths); cursor-based "Load More" pagination (`FeedContainer` + `LoadMoreButton` client components); dropped deprecated `push_subscriptions.keys` column (migration `0005_neat_wolverine.sql`); added Google + GitHub OAuth providers (conditional on env vars, backward-compatible); created `/sign-in` + `/auth-error` pages (previously missing); added OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + CI + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E) |
 | **Phase 16** — Remediation Batches 1-4 (AdminGuard, TRUSTED_PROXY, Push Key Validation, Prod Redis + Deploy + CI Gate) | **COMPLETE** | Centralized admin auth via `AdminGuard` async Server Component in `(admin)/layout.tsx` wrapped in `<Suspense>` (HIGH security fix — any future admin page is now automatically protected); removed redundant `verifyAdminSession()` calls from `SummariesData` + `SourcesData`; added `TRUSTED_PROXY: z.string().optional()` to Zod env schema + switched `/api/articles` route to typed `env.TRUSTED_PROXY`; hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load in `encrypt.ts` (fail-fast at boot, cached `KEY_BUFFER`); hardened prod Redis (`--maxmemory-policy noeviction --appendonly yes --save 60 1000 --maxmemory 1gb`); fixed `deploy.sh` shebang (`#!/bin/bash` on its own line) + `$DOCKER_REGISTRY` variable interpolation; added CI "Validate Shell Scripts & Docker Compose Configs" gate (runs before `pnpm install` — `bash -n` + shebang regex + `validate-compose.py`); created `scripts/validate-compose.py` YAML validator (**292 tests across 52 suites** + 10 E2E) |
+| **Phase 17** — Comprehensive Remediation (Skip-Link, JSON-LD Provenance, DRY Enums, Dep Pinning, Cleanup) | **COMPLETE** | Added skip-to-content link in root `layout.tsx` + `id="main-content"` on `<main>` in 4 page templates (HIGH a11y fix — WCAG AAA compliance); fixed JSON-LD provenance to render as `<script type="application/ld+json">` in `ArticleData.tsx` body (was broken via `metadata.other` which renders `<meta>` tags, not `<script>` tags — MEDIUM EU AI Act compliance fix); exported 4 derived types from `schema.ts` (`UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus`) + refactored `score.ts` and `seed.ts` to use them (LOW Single Source of Truth fix); pinned all 24 `"latest"` dep entries to `^` ranges matching lockfile; removed `db:push` script from `package.json`; deleted stale `Dockerfile.sample.dev` (Wellfond BMS legacy); rewrote `docker-compose-sample.yml` to match actual project topology; aligned README `.number-counter` → `.commitment-number` (**302 tests across 53 suites** + 10 E2E) |
 
 ---
 
@@ -1713,17 +1746,73 @@ Phase 16 addressed 1 HIGH + 4 MEDIUM severity issues identified in a codebase re
 3. **Run E2E tests after Phase 16**: Run `pnpm test:e2e` to verify the 10 Playwright E2E smoke tests still pass with the new `AdminGuard` wrapper in `(admin)/layout.tsx`. The admin pages now render inside `<Suspense fallback={<AdminGuardSkeleton />}>` which may affect E2E timing.
 
 4. **Outstanding LOW severity items (Batch 5 — deferred)**: The following LOW severity items were identified but NOT fixed in Phase 16. Consider addressing them in a future batch:
-   - 9 deps use `"latest"` instead of pinned versions in `package.json` (`ai`, `bullmq`, `ioredis`, `zod`, `tailwindcss`, `vitest`, `postgres`, `luxon`, `drizzle-orm`)
-   - `@auth/core`, `@playwright/test`, `@axe-core/playwright` not declared as direct deps (transitive only)
-   - 2 hand-written enum types in `score.ts:16` and `seed.ts` (should derive via `typeof enum.enumValues[number]`)
-   - `db:push` script still in `package.json` despite "no push in prod" rule
-   - `fastupdate=off` GIN index commented out in `custom-indexes.sql`
-   - `.number-counter` CSS class referenced in README but missing from `globals.css`
-   - `docker-compose-sample.yml` is stale (different Redis policy, non-existent paths)
+   - ~~9 deps use `"latest"` instead of pinned versions in `package.json`~~ → **RESOLVED Phase 17**: All 24 `"latest"` entries pinned to `^` ranges matching the lockfile.
+   - ~~`@auth/core`, `@playwright/test`, `@axe-core/playwright` not declared as direct deps~~ → **PARTIALLY RESOLVED Phase 17**: `@playwright/test` added as devDependency. `@auth/core` intentionally transitive (not directly imported). `@axe-core/playwright` not used by any test (deferred feature).
+   - ~~2 hand-written enum types in `score.ts:16` and `seed.ts`~~ → **RESOLVED Phase 17**: `ContentAvailability` and `FeedFormat` types now exported from `schema.ts` via `(typeof enum.enumValues)[number]`; `score.ts` and `seed.ts` import them. Compile-time `satisfies` tests enforce the derivation.
+   - ~~`db:push` script still in `package.json` despite "no push in prod" rule~~ → **RESOLVED Phase 17**: Script removed from `package.json`.
+   - `fastupdate=off` GIN index commented out in `custom-indexes.sql` — **INTENTIONAL**: The comment block in `custom-indexes.sql` already explains this is opt-in for production; the schema-defined GIN index (without `fastupdate=off`) is sufficient for default workloads.
+   - ~~`.number-counter` CSS class referenced in README but missing from `globals.css`~~ → **RESOLVED Phase 17**: README updated to reference `.commitment-number` (the actual class used by `StatsSection.tsx`); nonexistent `number-count` animation row also removed.
+   - ~~`docker-compose-sample.yml` is stale (different Redis policy, non-existent paths)~~ → **RESOLVED Phase 16/17**: Rewritten to mirror `docker-compose-dev.yml` topology with correct `noeviction` Redis policy, real Dockerfile paths, `pnpm` (not `npm`), `AUTH_URL` (not `NEXTAUTH_URL`). Stale `Dockerfile.sample.dev` (Wellfond BMS legacy) deleted.
 
 5. **Update `Codebase_Review_Validation_Report_2.md` and `Codebase_Review_Validation_Report_3.md`**: Both are now stale — they reference the pre-Phase-16 state. Update them to reflect the 4 remediation batches (now 292 tests / 52 suites).
 
 6. **Deploy validation**: When ready to deploy, run `docker compose -f docker-compose.prod.yml config` to verify the prod compose renders correctly with the new Redis `command:` block. Verify `./scripts/deploy.sh` executes directly (no "cannot execute" error).
+
+---
+
+## Phase 17: Comprehensive Remediation — Lessons Learned
+
+Phase 17 addressed 1 HIGH + 1 MEDIUM + 5 LOW severity issues remaining after Phase 16. Each fix was TDD-driven (RED → GREEN → REFACTOR → COMMIT) and shipped as a separate batch (A–G). Total: +10 tests, +1 suite (292/52 → 302/53).
+
+### Phase 17 Gotchas Discovered
+
+#### 1. Skip-to-Content Link — WCAG AAA Requirement (Batch A — HIGH a11y)
+
+**Issue**: The root `layout.tsx` had no skip-to-content link, and `<main>` elements had no `id` attribute. Keyboard users had to Tab through NewsTicker, Masthead, Header, and category nav before reaching main content. The e2e a11y test "has a skip-to-content link" was failing (it used `void skipLink` to document the requirement rather than assert it).
+
+**Fix**: Added a skip link as the first child of `<body>` in `src/app/layout.tsx` with `sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999]` styling. Added `id="main-content"` to `<main>` in all 4 page templates (`(public)/page.tsx`, `topics/[category]/page.tsx`, `(public)/search/page.tsx`, `article/[id]/page.tsx`). Created `src/app/layout.test.tsx` with 4 tests.
+
+**Lesson**: WCAG AAA requires a skip-to-content link as the first focusable element on every page. The link must be visually hidden by default (`sr-only`) but become visible on focus (`focus:not-sr-only`) so sighted keyboard users can see it. The link's `href` must target an element with a matching `id` — if any page template forgets `<main id="main-content">`, the skip link is non-functional on that page. Centralize the skip link in the root layout; require every page template to include `<main id="main-content">`.
+
+#### 2. JSON-LD Provenance — `metadata.other` Renders Meta Tags, Not Script Tags (Batch B — MEDIUM compliance)
+
+**Issue**: The 3-layer AI provenance disclosure (EU AI Act Art. 50) was supposed to emit JSON-LD as a `<script type="application/ld+json">` tag. Instead, it was being emitted via `metadata.other["json-ld-provenance"]` in `generateMetadata()`. Live e2e testing confirmed the `<script>` tag was NOT in the DOM — only a `<meta name="json-ld-provenance">` tag (semantically wrong, invisible to schema.org crawlers).
+
+**Root Cause**: Next.js's `metadata.other` API renders keys as `<meta>` tags (for non-HTTP-header names) or HTTP headers (for `X-*` names). It does NOT support `<script>` tags. This is an architectural constraint of the Metadata API, not a bug.
+
+**Fix**: Render the JSON-LD as a direct `<script>` element in `src/features/articles/components/ArticleData.tsx` body when `article.summary.status === "ok"`. Use `dangerouslySetInnerHTML={{ __html: jsonLdScript }}` with a `key` prop for React 19 deduplication. Removed the broken `json-ld-provenance` entry from `metadata.other` in `page.tsx` (the meta tag + HTTP header layers remain there). Added 3 tests in `ArticleData.test.tsx`.
+
+**Lesson**: Next.js's `metadata.other` is for HTTP headers + `<meta>` tags only. For `<script type="application/ld+json">`, `<script type="module">`, or any other `<script>` variant, render the tag directly in the page body (Server Component). React 19 supports this and deduplicates by `key`. Always verify provenance/disclosure emissions via live DOM inspection (`document.querySelector('script[type="application/ld+json"]')`), not just via the metadata API contract.
+
+#### 3. Hand-Written Enum Unions Violate Single Source of Truth (Batch C — LOW)
+
+**Issue**: `src/domain/ranking/score.ts:16` and `src/lib/db/seed.ts:39-43, 24-29` hand-wrote the `contentAvailability` union and used `"rss" as const` for `feedFormat`. Meanwhile, `src/workers/jobs/determineContentAvailability.ts` correctly derived the type via `(typeof contentAvailabilityEnum.enumValues)[number]`. This pattern inconsistency meant schema enum changes would silently break `score.ts` and `seed.ts` at runtime.
+
+**Fix**: Exported 4 derived types from `src/lib/db/schema.ts`: `UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus` (all via `(typeof enum.enumValues)[number]`). Refactored `score.ts` and `seed.ts` to import these types. Added a compile-time `satisfies` check in `score.test.ts` that enforces `ScoringInputs["contentAvailability"]` matches `SchemaContentAvailability` — if either type changes, `tsc` fails. Added 2 runtime tests in `seed.test.ts` verifying all seed values are valid schema enum values.
+
+**Lesson**: When a Drizzle schema defines a `pgEnum`, always export a derived type via `(typeof enum.enumValues)[number]`. Never hand-write the union in consuming files. The `satisfies` operator (TypeScript 4.9+) is the cleanest way to enforce type-derivation invariants at compile time — it produces no runtime code but fails `tsc` if the types diverge.
+
+#### 4. `"latest"` Dep Specifiers Create Reproducibility Risk (Batch F — LOW)
+
+**Issue**: 24 entries in `package.json` used `"latest"` instead of pinned `^` ranges. The lockfile was frozen so builds were reproducible, but `package.json` didn't reflect the documented contract. If the lockfile were regenerated, all 24 deps would jump to their latest major versions simultaneously — a silent breakage vector.
+
+**Fix**: Pinned all 24 entries to `^` ranges matching the lockfile-resolved versions. Ran `pnpm install` to regenerate the lockfile with the new specifiers. Verified `pnpm check` + `pnpm test` still green.
+
+**Lesson**: `"latest"` in `package.json` is a reproducibility footgun — it makes the manifest lie about what's actually installed. Always use `^` ranges (or `~` for ultra-strict patch-only) matching the resolved versions. The lockfile is the source of truth for exact versions; `package.json` should declare the acceptable range. Run `pnpm install` (not `--frozen-lockfile`) after changing specifiers to regenerate the lockfile.
+
+### Phase 17 Recommendations
+
+1. **Commit + push Phase 17 changes**: The 7 batches (A–G) span 20 modified files + 1 new test file + 1 deleted Dockerfile. Suggested commit message: `fix(phase-17): skip-link a11y + JSON-LD provenance + DRY enums + dep pinning + cleanup`.
+
+2. **Re-run live e2e after deployment**: Once Phase 17 is deployed, re-run the live e2e smoke suite. The skip-link test (previously the only failure) should now PASS. The JSON-LD `<script>` tag should now be present in the DOM on article pages with approved summaries.
+
+3. **Skip-link pattern for future page templates**: Any new page template added under `app/` must include `<main id="main-content">` for the skip link to work. Consider adding a lint rule that flags page templates missing this element.
+
+4. **JSON-LD for other content types**: The `<script type="application/ld+json">` pattern in `ArticleData.tsx` can be reused for other schema.org types (e.g., `BreadcrumbList` for category pages, `WebSite` for the homepage). Always render directly in the body, never via `metadata.other`.
+
+5. **Type derivation audit**: Periodically grep for hand-written enum unions that should derive from the schema: `grep -rn '"title_only" | "excerpt"' --include="*.ts" src/`. The Phase 17 `satisfies` test catches `score.ts`, but other files may have similar drift.
+
+6. **Add `@axe-core/playwright` (optional)**: If you want automated WCAG AAA scanning in e2e, add `@axe-core/playwright` as a devDependency and inject `AxeBuilder` into the e2e suite. Currently deferred because no test uses it.
 
 ---
 

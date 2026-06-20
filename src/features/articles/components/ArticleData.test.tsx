@@ -179,4 +179,64 @@ describe("ArticleData", () => {
 
     expect(screen.getByText("Finance")).toBeDefined();
   });
+
+  // ─── JSON-LD Provenance (Layer 1 of 3-layer EU AI Act Art. 50 disclosure) ───
+  //
+  // The article page must emit a <script type="application/ld+json"> tag
+  // containing schema.org/CreativeWork structured data when the article has
+  // an approved (status='ok') AI summary. This is layer 1 of the 3-layer
+  // provenance disclosure; layers 2 (HTTP header) and 3 (meta tag) are
+  // emitted via generateMetadata() in page.tsx.
+  //
+  // NOTE: Next.js's metadata.other API renders keys as <meta> tags, NOT
+  // <script> tags. So JSON-LD MUST be rendered directly in the page body
+  // as a <script> element (React 19 supports this in Server Components).
+
+  it("renders JSON-LD <script> tag when article has summary status 'ok'", async () => {
+    vi.mocked(getArticleWithSummary).mockResolvedValue(mockArticleWithSummary);
+
+    const result = await ArticleData({ params: mockParams("art-1") });
+    const { container } = render(result);
+
+    const jsonLdScript = container.querySelector(
+      'script[type="application/ld+json"]'
+    );
+    expect(jsonLdScript).not.toBeNull();
+
+    // The script content must parse as valid JSON
+    const parsed = JSON.parse(jsonLdScript?.textContent ?? "{}");
+    expect(parsed["@context"]).toBe("https://schema.org");
+    expect(parsed["@type"]).toBe("CreativeWork");
+    expect(parsed.name).toBe("Global Markets Rally as G7 Inflation Cools");
+    expect(parsed.accountablePerson.name).toBe("AI System: claude-haiku-4-5");
+    expect(parsed.additionalProperty).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "compliance", value: "eu-ai-act-art50" }),
+      ])
+    );
+  });
+
+  it("does NOT render JSON-LD <script> tag when summary is missing", async () => {
+    vi.mocked(getArticleWithSummary).mockResolvedValue(mockArticleWithoutSummary);
+
+    const result = await ArticleData({ params: mockParams("art-2") });
+    const { container } = render(result);
+
+    const jsonLdScript = container.querySelector(
+      'script[type="application/ld+json"]'
+    );
+    expect(jsonLdScript).toBeNull();
+  });
+
+  it("does NOT render JSON-LD <script> tag when summary status is 'needs_review'", async () => {
+    vi.mocked(getArticleWithSummary).mockResolvedValue(mockArticleNeedsReview);
+
+    const result = await ArticleData({ params: mockParams("art-3") });
+    const { container } = render(result);
+
+    const jsonLdScript = container.querySelector(
+      'script[type="application/ld+json"]'
+    );
+    expect(jsonLdScript).toBeNull();
+  });
 });

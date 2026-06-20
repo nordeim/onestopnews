@@ -7,6 +7,7 @@
 
 import { db } from "./index";
 import { categories, sources, articles, summaries } from "./schema";
+import type { ContentAvailability, FeedFormat } from "./schema";
 
 // ─── Categories ───────────────────────────────────────────────────────────
 export const seedCategories = [
@@ -20,27 +21,33 @@ export const seedCategories = [
 ];
 
 // ─── Sources ───────────────────────────────────────────────────────────────
-export const seedSources = [
-  { name: "Reuters", url: "https://reuters.com", feedUrl: "https://reuters.com/feed", feedFormat: "rss" as const, priority: 1 },
-  { name: "AP News", url: "https://apnews.com", feedUrl: "https://apnews.com/feed", feedFormat: "rss" as const, priority: 1 },
-  { name: "Bloomberg", url: "https://bloomberg.com", feedUrl: "https://bloomberg.com/feed", feedFormat: "rss" as const, priority: 2 },
-  { name: "The Verge", url: "https://theverge.com", feedUrl: "https://theverge.com/feed", feedFormat: "rss" as const, priority: 2 },
-  { name: "Straits Times", url: "https://straitstimes.com", feedUrl: "https://straitstimes.com/feed", feedFormat: "rss" as const, priority: 3 },
-  { name: "CNA", url: "https://channelnewsasia.com", feedUrl: "https://channelnewsasia.com/feed", feedFormat: "rss" as const, priority: 3 },
-  { name: "TechCrunch", url: "https://techcrunch.com", feedUrl: "https://techcrunch.com/feed", feedFormat: "rss" as const, priority: 2 },
+// feedFormat uses the schema-derived FeedFormat type (Single Source of Truth)
+// instead of `"rss" as const` — if the schema enum changes, this stays in sync.
+export const seedSources: Array<{
+  name: string;
+  url: string;
+  feedUrl: string;
+  feedFormat: FeedFormat;
+  priority: number;
+}> = [
+  { name: "Reuters", url: "https://reuters.com", feedUrl: "https://reuters.com/feed", feedFormat: "rss", priority: 1 },
+  { name: "AP News", url: "https://apnews.com", feedUrl: "https://apnews.com/feed", feedFormat: "rss", priority: 1 },
+  { name: "Bloomberg", url: "https://bloomberg.com", feedUrl: "https://bloomberg.com/feed", feedFormat: "rss", priority: 2 },
+  { name: "The Verge", url: "https://theverge.com", feedUrl: "https://theverge.com/feed", feedFormat: "rss", priority: 2 },
+  { name: "Straits Times", url: "https://straitstimes.com", feedUrl: "https://straitstimes.com/feed", feedFormat: "rss", priority: 3 },
+  { name: "CNA", url: "https://channelnewsasia.com", feedUrl: "https://channelnewsasia.com/feed", feedFormat: "rss", priority: 3 },
+  { name: "TechCrunch", url: "https://techcrunch.com", feedUrl: "https://techcrunch.com/feed", feedFormat: "rss", priority: 2 },
 ];
 
 // ─── Articles (30) ─────────────────────────────────────────────────────────
+// contentAvailability uses the schema-derived ContentAvailability type
+// (Single Source of Truth) instead of a hand-written union.
 export const seedArticles: Array<{
   title: string;
   excerpt: string;
   canonicalUrl: string;
   contentHash: string;
-  contentAvailability:
-    | "title_only"
-    | "excerpt"
-    | "partial_text"
-    | "full_text";
+  contentAvailability: ContentAvailability;
   importanceScore: number;
   hasSummary: boolean;
   publishedAt: Date;

@@ -1,20 +1,5 @@
 $ rm -rf .next
 (venv) pete@pop-os:/home/project/onestopnews
-$ pnpm install
-Lockfile is up to date, resolution step is skipped
-
-   ╭──────────────────────────────────────────────────────────────────╮
-   │                                                                  │
-   │                Update available! 9.15.0 → 11.8.0.                │
-   │   Changelog: https://github.com/pnpm/pnpm/releases/tag/v11.8.0   │
-   │                Run "pnpm add -g pnpm" to update.                 │
-   │                                                                  │
-   ╰──────────────────────────────────────────────────────────────────╯
-
-Already up to date
-
-Done in 22.5s
-
 $ pnpm check
 
 > onestopnews@0.1.0 check /home/project/onestopnews
@@ -24,6 +9,7 @@ $ pnpm check
 > onestopnews@0.1.0 lint /home/project/onestopnews
 > eslint . --max-warnings 0
 
+(venv) pete@pop-os:/home/project/onestopnews
 $ pnpm build
 
 > onestopnews@0.1.0 build /home/project/onestopnews
@@ -36,11 +22,11 @@ $ pnpm build
   ✓ viewTransition
 
   Creating an optimized production build ...
-✓ Compiled successfully in 39.7s
-✓ Finished TypeScript in 15.6s    
-✓ Collecting page data using 3 workers in 4.3s    
-✓ Generating static pages using 3 workers (15/15) in 1749ms
-✓ Finalizing page optimization in 8.5s    
+✓ Compiled successfully in 11.4s
+✓ Finished TypeScript in 14.6s    
+✓ Collecting page data using 3 workers in 1247ms    
+✓ Generating static pages using 3 workers (15/15) in 899ms
+✓ Finalizing page optimization in 2.1s    
 
 Route (app)                    Revalidate  Expire
 ┌ ○ /                                  2m     10m
@@ -67,6 +53,7 @@ Route (app)                    Revalidate  Expire
 ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
 ƒ  (Dynamic)            server-rendered on demand
 
+(venv) pete@pop-os:/home/project/onestopnews
 $ pnpm dev
 
 > onestopnews@0.1.0 dev /home/project/onestopnews
@@ -76,7 +63,9 @@ $ pnpm dev
 - Local:         http://localhost:3000
 - Network:       http://192.168.2.132:3000
 - Environments: .env.local, .env
-✓ Ready in 1055ms
+✓ Ready in 484ms
+⚠ Slow filesystem detected. The benchmark took 202ms. If /home/project/onestopnews/.next/dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development
 - Cache Components enabled
 - Experiments (use with caution):
   ✓ viewTransition
@@ -85,7 +74,5 @@ $ pnpm dev
 Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 8.2s (next.js: 6.8s, application-code: 1407ms)
- Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 449ms (next.js: 6ms, application-code: 442ms)
+ GET / 200 in 5.8s (next.js: 4.6s, application-code: 1228ms)
 

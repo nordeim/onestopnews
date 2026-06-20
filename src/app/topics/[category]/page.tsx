@@ -25,7 +25,7 @@ export default function CategoryPage({
       <Suspense fallback={null}>
         <Header />
       </Suspense>
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main id="main-content" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Suspense fallback={<FeedSkeleton />}>
           <FeedData params={params} searchParams={searchParams} limit={6} />
         </Suspense>

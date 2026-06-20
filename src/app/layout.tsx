@@ -39,6 +39,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${newsreader.variable} ${instrumentSans.variable} ${commitMono.variable}`} suppressHydrationWarning>
       <body className="bg-paper-50 text-ink-600 font-ui antialiased">
+        {/* Skip-to-content link — first focusable element for keyboard users (WCAG AAA).
+            Visually hidden by default via `sr-only`; becomes visible on focus via
+            `focus:not-sr-only`. The href targets the <main id="main-content"> element
+            rendered by each page. Pages without a <main id="main-content"> will leave
+            the skip link non-functional — every page template that renders body content
+            must include <main id="main-content">. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-ink-900 focus:text-paper-50 focus:font-ui focus:text-sm focus:rounded focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-dispatch-ember"
+        >
+          Skip to content
+        </a>
         <RevealProvider>
           {children}
         </RevealProvider>

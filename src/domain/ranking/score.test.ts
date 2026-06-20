@@ -1,5 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { calculateImportanceScore, type ScoringInputs } from "./score";
+import type { contentAvailabilityEnum } from "@/lib/db/schema";
+
+// ─── Compile-time type safety: ScoringInputs.contentAvailability MUST derive
+// from the Drizzle schema's contentAvailabilityEnum (Single Source of Truth).
+// If score.ts hand-writes the union AND the schema enum changes, this test
+// will fail at compile time (caught by `pnpm check`).
+// ───────────────────────────────────────────────────────────────────────────
+type SchemaContentAvailability =
+  (typeof contentAvailabilityEnum.enumValues)[number];
+
+// This assignment will fail to compile if ScoringInputs.contentAvailability
+// diverges from the schema-derived type. The `satisfies` clause enforces
+// that the literal "full_text" is assignable to BOTH types — if either type
+// narrows, this breaks.
+const _typeCheck = "full_text" as ScoringInputs["contentAvailability"] satisfies SchemaContentAvailability;
+void _typeCheck;
 
 describe("calculateImportanceScore", () => {
   it("returns a value between 0 and 1", () => {

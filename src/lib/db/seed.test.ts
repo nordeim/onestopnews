@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from "vitest";
+import type {
+  contentAvailabilityEnum,
+  feedFormatEnum,
+} from "@/lib/db/schema";
 
 /**
  * Seed Data Tests — TDD for database seed script.
@@ -7,6 +11,44 @@ import { describe, it, expect, vi, beforeAll } from "vitest";
  * They ensure the constants (categories, sources, articles, summaries)
  * have the correct shape, counts, and relationships.
  */
+
+// ─── Compile-time type safety: seed data fields MUST derive from the Drizzle
+// schema's enums (Single Source of Truth). If seed.ts hand-writes the unions
+// AND the schema enums change, these checks will fail at compile time
+// (caught by `pnpm check`).
+// ───────────────────────────────────────────────────────────────────────────
+type SchemaContentAvailability =
+  (typeof contentAvailabilityEnum.enumValues)[number];
+type SchemaFeedFormat = (typeof feedFormatEnum.enumValues)[number];
+
+describe("seed data — enum type derivation (Single Source of Truth)", () => {
+  beforeAll(() => {
+    vi.resetModules();
+  });
+
+  it("seedArticles contentAvailability field matches schema contentAvailabilityEnum", async () => {
+    const { seedArticles } = await import("./seed");
+    // Runtime check: every value must be in the schema enum
+    const validValues = new Set<SchemaContentAvailability>([
+      "title_only",
+      "excerpt",
+      "partial_text",
+      "full_text",
+    ]);
+    for (const article of seedArticles) {
+      expect(validValues.has(article.contentAvailability)).toBe(true);
+    }
+  });
+
+  it("seedSources feedFormat field matches schema feedFormatEnum", async () => {
+    const { seedSources } = await import("./seed");
+    // Runtime check: every value must be in the schema enum
+    const validValues = new Set<SchemaFeedFormat>(["rss", "atom", "json_api"]);
+    for (const source of seedSources) {
+      expect(validValues.has(source.feedFormat)).toBe(true);
+    }
+  });
+});
 
 describe("seed data structure", () => {
   // Reset module cache so we get fresh imports

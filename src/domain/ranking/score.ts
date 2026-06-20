@@ -5,6 +5,8 @@
  * MEP v5.1: "calculateImportanceScore returns float [0.0, 1.0] not 0–100"
  */
 
+import type { ContentAvailability } from "@/lib/db/schema";
+
 export interface ScoringInputs {
   /** Age in hours since publication (0 = just published) */
   ageInHours: number;
@@ -12,8 +14,8 @@ export interface ScoringInputs {
   hasSummary: boolean;
   /** Source priority (lower is better, typically 1–5) */
   sourcePriority: number;
-  /** Content availability level */
-  contentAvailability: "title_only" | "excerpt" | "partial_text" | "full_text";
+  /** Content availability level — derived from Drizzle schema (Single Source of Truth) */
+  contentAvailability: ContentAvailability;
 }
 
 /**
