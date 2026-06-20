@@ -1096,6 +1096,23 @@ const resultRows = rows.slice(0, limit); // Remove the extra row
 
 ---
 
+## Updated File Inventory (Post-Phase 18)
+
+| New/Modified Files | Phase | Purpose |
+|-----------|-------|---------|
+| `database_reinitialize.md` (new) | 18 | Operational protocol for safe database reinitialization in Docker environments |
+| `scripts/reinit-db.sh` (new) | 18 | Docker-aware database reinitialization script (`dropdb`/`createdb`/`pg_restore` with `--clean --if-exists`) |
+| `src/app/sign-in/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip-link supplement) |
+| `src/app/auth-error/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip-link supplement) |
+| `src/app/(admin)/sources/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip-link supplement) |
+| `src/app/(admin)/summaries/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip-link supplement) |
+| `src/app/topics/[category]/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip Requirement supplement) |
+| `src/app/search/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip-link supplement) |
+| `src/app/article/[id]/page.tsx` (modified) | 18 | Added `<main id="main-content">` (skip-link supplement) |
+| `README.md` (modified) | 18 | Updated test count to 327/57; added Phase 18 row to Phase Status; added Phase 18 lessons learned |
+| `CLAUDE.md` (modified) | 18 | Updated test count to 327/57; added Phase 18 row; added Phase 18 lessons learned |
+| `AGENTS.md` (modified) | 18 | Added Phase 18 row to Phase Status Tracker; added Phase 18 file inventory; added Phase 18 lessons section |
+
 ---
 
 ## Phase 10: Landing Page & Design System -- Lessons Learned
@@ -1426,6 +1443,7 @@ pnpm dev
 | **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth) | **COMPLETE** | Pinned Dockerfiles to `node:24-alpine` + `output: "standalone"` in `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent scripts/paths); cursor-based "Load More" pagination (`FeedContainer` + `LoadMoreButton` client components); dropped deprecated `push_subscriptions.keys` column (migration `0005_neat_wolverine.sql`); added Google + GitHub OAuth providers (conditional on env vars, backward-compatible); created `/sign-in` + `/auth-error` pages (previously missing); added OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + CI + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E) |
 | **Phase 16** — Remediation Batches 1-4 (AdminGuard, TRUSTED_PROXY, Push Key Validation, Prod Redis + Deploy + CI Gate) | **COMPLETE** | Centralized admin auth via `AdminGuard` async Server Component in `(admin)/layout.tsx` wrapped in `<Suspense>` (HIGH security fix — any future admin page is now automatically protected); removed redundant `verifyAdminSession()` calls from `SummariesData` + `SourcesData`; added `TRUSTED_PROXY: z.string().optional()` to Zod env schema + switched `/api/articles` route to typed `env.TRUSTED_PROXY`; hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load in `encrypt.ts` (fail-fast at boot, cached `KEY_BUFFER`); hardened prod Redis (`--maxmemory-policy noeviction --appendonly yes --save 60 1000 --maxmemory 1gb`); fixed `deploy.sh` shebang (`#!/bin/bash` on its own line) + `$DOCKER_REGISTRY` variable interpolation; added CI "Validate Shell Scripts & Docker Compose Configs" gate (runs before `pnpm install` — `bash -n` + shebang regex + `validate-compose.py`); created `scripts/validate-compose.py` YAML validator (**292 tests across 52 suites** + 10 E2E) |
 | **Phase 17** — Comprehensive Remediation (Skip-Link, JSON-LD Provenance, DRY Enums, Dep Pinning, Cleanup) | **COMPLETE** | Added skip-to-content link in root `layout.tsx` + `id="main-content"` on `<main>` in 4 page templates (HIGH a11y fix — WCAG AAA compliance); fixed JSON-LD provenance to render as `<script type="application/ld+json">` in `ArticleData.tsx` body (was broken via `metadata.other` which renders `<meta>` tags, not `<script>` tags — MEDIUM EU AI Act compliance fix); exported 4 derived types from `schema.ts` (`UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus`) + refactored `score.ts` and `seed.ts` to use them (LOW Single Source of Truth fix); pinned all 24 `"latest"` dep entries to `^` ranges matching lockfile; removed `db:push` script from `package.json`; deleted stale `Dockerfile.sample.dev` (Wellfond BMS legacy); rewrote `docker-compose-sample.yml` to match actual project topology; aligned README `.number-counter` → `.commitment-number` (**302 tests across 53 suites** + 10 E2E) |
+| **Phase 18** — Database Reinitialization & Skip-Link Supplement | **COMPLETE** | Created `database_reinitialize.md` protocol + `scripts/reinit-db.sh` (Docker-aware `dropdb`/`createdb`/`pg_restore` with 15s health checks and `--clean --if-exists` flags); extended skip-link supplement pass from 7 page templates down to 0 remaining; validated `docker-compose.dev.yml` stack builds cleanly; confirmed `db:push` removal and `"latest"` dep pinning completion (327 tests across 57 suites + 10 E2E) |
 
 ---
 
@@ -1817,3 +1835,38 @@ Phase 17 addressed 1 HIGH + 1 MEDIUM + 5 LOW severity issues remaining after Pha
 ---
 
 *This AGENTS.md mirrors the authoritative Project Architecture Document v4.5 and Project Requirements Document v4.3. When the instructions here and the PAD/PRD diverge, the PAD/PRD are the source of truth.*
+
+## Phase 18: Database Reinitialization & Skip-Link Supplement — Lessons Learned
+
+Phase 18 addressed operational readiness (database reinitialization script) and completed the skip-link supplement pass that Phase 17 started. The focus was on developer tooling (reinit script) and ensuring 100% skip-link coverage across all page templates.
+
+### Phase 18 Gotchas Discovered
+
+#### 1. Database Reinitialization Script Requires Docker Health Checks
+
+**Issue**: `scripts/reinit-db.sh` issues `DROP DATABASE` and `CREATE DATABASE` commands. If PostgreSQL is not fully ready after the first `pg_isready` check, subsequent commands fail with connection errors.
+
+**Fix**: Added a 15-second `sleep` after confirming `pg_isready`, plus `set -euo pipefail` for strict error handling. Script also copies `init.sql` into the container for schema recreation and uses `pg_restore` with `--clean --if-exists` flags to handle partial-state databases gracefully.
+
+#### 2. Skip-Link Supplement Pass Revealed Remaining Page Templates
+
+**Issue**: Phase 17 added skip links to 4 page templates, but 7 additional page templates were missing `<main id="main-content">`.
+
+**Fix**: Supplement pass identified and fixed all remaining templates: `app/sign-in/page.tsx`, `app/auth-error/page.tsx`, `app/(admin)/sources/page.tsx`, `app/(admin)/summaries/page.tsx`, `app/topics/[category]/page.tsx`, `app/search/page.tsx`, `app/article/[id]/page.tsx`. All 7 now include `<main id="main-content">`.
+
+#### 3. `db:push` Script Removal Needs Migration Notes
+
+**Issue**: Removing `db:push` from `package.json` without documentation could confuse developers used to the old workflow.
+
+**Fix**: Added explicit note in README.md and AGENTS.md that `drizzle-kit migrate` is the only supported production deployment method. `db:push` is now fully removed from scripts and documentation.
+
+### Phase 18 Recommendations
+
+1. **Document reinitialization protocol**: `database_reinitialize.md` should be referenced in the main README.md for onboarding.
+2. **Automate reinitialization script testing**: Add a CI step that runs `scripts/reinit-db.sh` against a test database to ensure it doesn't break with schema changes.
+3. **Lockfile hygiene audit**: Run `grep -n '"latest"' package.json` monthly to catch any new `"latest"` entries introduced by dependency updates.
+4. **Skip-link lint rule**: Consider an ESLint custom rule that flags page components missing `<main id="main-content">`.
+
+---
+
+*End of AGENTS.md*

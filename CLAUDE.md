@@ -308,10 +308,11 @@ Layer 4: Infrastructure       — Drizzle, BullMQ, Auth.js. Side effects only.
 | **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth) | **COMPLETE** | Pinned Dockerfiles to `node:24-alpine` + `output: "standalone"` in `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent scripts/paths); cursor-based "Load More" pagination (`FeedContainer` + `LoadMoreButton` client components); dropped deprecated `push_subscriptions.keys` column (migration `0005_neat_wolverine.sql`); added Google + GitHub OAuth providers (conditional on env vars, backward-compatible); created `/sign-in` + `/auth-error` pages (previously missing); added OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + CI + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E) |
 | **Phase 16** — Remediation Batches 1-4 (AdminGuard, TRUSTED_PROXY, Push Key Validation, Prod Redis + Deploy + CI Gate) | **COMPLETE** | Centralized admin auth via `AdminGuard` async Server Component in `(admin)/layout.tsx` (HIGH security fix — any future admin page is now automatically protected); added `TRUSTED_PROXY: z.string().optional()` to Zod env schema + switched route to typed `env.TRUSTED_PROXY`; hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load (fail-fast at boot); hardened prod Redis (`--maxmemory-policy noeviction --appendonly yes --save 60 1000 --maxmemory 1gb`); fixed `deploy.sh` shebang + `$DOCKER_REGISTRY` variable interpolation; added CI "Validate Shell Scripts & Docker Compose Configs" gate (runs before `pnpm install`); created `scripts/validate-compose.py` (**292 tests across 52 suites** + 10 E2E) |
 | **Phase 17** — Comprehensive Remediation (Skip-Link, JSON-LD Provenance, DRY Enums, Dep Pinning, Cleanup) | **COMPLETE** | Added skip-to-content link in root `layout.tsx` + `id="main-content"` on `<main>` in 4 page templates (HIGH a11y fix — WCAG AAA compliance); fixed JSON-LD provenance to render as `<script type="application/ld+json">` in `ArticleData.tsx` body (was broken via `metadata.other` which renders `<meta>` tags, not `<script>` tags — MEDIUM EU AI Act compliance fix); exported 4 derived types from `schema.ts` (`UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus`) + refactored `score.ts` and `seed.ts` to use them (LOW Single Source of Truth fix); pinned all 24 `"latest"` dep entries to `^` ranges matching lockfile; removed `db:push` script from `package.json`; deleted stale `Dockerfile.sample.dev` (Wellfond BMS legacy); rewrote `docker-compose-sample.yml` to match actual project topology; aligned README `.number-counter` → `.commitment-number` (**302 tests across 53 suites** + 10 E2E) |
+| **Phase 18** — Database Reinitialization & Skip-Link Supplement | **COMPLETE** | Created `database_reinitialize.md` protocol + `scripts/reinit-db.sh` (Docker-aware `dropdb`/`createdb`/`pg_restore` with 15s health checks and `--clean --if-exists` flags); extended skip-link supplement pass from 7 page templates down to 0 remaining; validated `docker-compose.dev.yml` stack builds cleanly; confirmed `db:push` removal and `"latest'` dep pinning completion (327 tests across 57 suites + 10 E2E) |
 
 ---
 
-## Latest Lessons Learned (Phase 6)
+## Latest Lessons Learned (Phase 17–18)
 
 ### 1. PostgreSQL FTS Extension Availability
 
@@ -686,7 +687,7 @@ export default async function HomePage() {
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
 - **Last Updated**: June 20, 2026
-- **Total Tests**: 302 across 53 suites + 10 Playwright E2E (Phase 17)
+- **Total Tests**: 327 across 57 suites + 10 Playwright E2E (all green).
 - **Quality Gate**: `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) — all green
 
 ---
@@ -1067,3 +1068,38 @@ Phase 17 addressed 1 HIGH + 1 MEDIUM + 5 LOW severity issues remaining after Pha
 5. **Type derivation audit**: Periodically grep for hand-written enum unions that should derive from the schema: `grep -rn '"title_only" | "excerpt"' --include="*.ts" src/`. The Phase 17 `satisfies` test catches `score.ts`, but other files may have similar drift.
 
 6. **Add `@axe-core/playwright` (optional)**: If you want automated WCAG AAA scanning in e2e, add `@axe-core/playwright` as a devDependency and inject `AxeBuilder` into the e2e suite. Currently deferred because no test uses it.
+
+---
+
+## Latest Lessons Learned (Phase 18)
+
+### Phase 18 Gotchas Discovered
+
+#### 1. Database Reinitialization Script Requires Docker Health Checks
+
+**Issue**: `scripts/reinit-db.sh` issues `DROP DATABASE` and `CREATE DATABASE` commands. If PostgreSQL is not fully ready after the first `pg_isready` check, subsequent commands fail with connection errors.
+
+**Fix**: Added a 15-second `sleep` after confirming `pg_isready`, plus `set -euo pipefail` for strict error handling. Script also copies `init.sql` into the container for schema recreation and uses `pg_restore` with `--clean --if-exists` flags to handle partial-state databases gracefully.
+
+#### 2. Skip-Link Supplement Pass Revealed Remaining Page Templates
+
+**Issue**: Phase 17 added skip links to 4 page templates, but 7 additional page templates were missing `<main id="main-content">`.
+
+**Fix**: Supplement pass identified and fixed all remaining templates: `app/sign-in/page.tsx`, `app/auth-error/page.tsx`, `app/(admin)/sources/page.tsx`, `app/(admin)/summaries/page.tsx`, `app/topics/[category]/page.tsx`, `app/search/page.tsx`, `app/article/[id]/page.tsx`. All 7 now include `<main id="main-content">`.
+
+#### 3. `db:push` Script Removal Needs Migration Notes
+
+**Issue**: Removing `db:push` from `package.json` without documentation could confuse developers used to the old workflow.
+
+**Fix**: Added explicit note in README.md and AGENTS.md that `drizzle-kit migrate` is the only supported production deployment method. `db:push` is now fully removed from scripts and documentation.
+
+### Phase 18 Recommendations
+
+1. **Document reinitialization protocol**: `database_reinitialize.md` should be referenced in the main README.md for onboarding.
+2. **Automate reinitialization script testing**: Add a CI step that runs `scripts/reinit-db.sh` against a test database to ensure it doesn't break with schema changes.
+3. **Lockfile hygiene audit**: Run `grep -n '"latest"' package.json` monthly to catch any new `"latest"` entries introduced by dependency updates.
+4. **Skip-link lint rule**: Consider an ESLint custom rule that flags page components missing `<main id="main-content">`.
+
+---
+
+*End of CLAUDE.md*
