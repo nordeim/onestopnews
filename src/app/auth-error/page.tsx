@@ -24,7 +24,7 @@ export default function AuthErrorPage() {
       <Suspense fallback={null}>
         <Header />
       </Suspense>
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main id="main-content" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl mx-auto py-24 text-center">
           <span
             className="block w-1.5 h-1.5 rounded-full bg-dispatch-ember mx-auto mb-4"

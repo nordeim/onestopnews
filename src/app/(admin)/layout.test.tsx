@@ -49,4 +49,19 @@ describe("(admin)/layout.tsx", () => {
     // And the children must have been passed through
     expect(screen.getByText("Page Content")).toBeDefined();
   });
+
+  it("renders a <main> element with id='main-content' as the skip-link target", async () => {
+    // The skip-to-content link in the root layout.tsx targets #main-content.
+    // Every page template (including admin pages) must render <main id="main-content">
+    // for the skip link to have a valid target.
+    const { default: AdminLayout } = await import("./layout");
+    const child = React.createElement("p", null, "Admin Content");
+
+    const { container } = render(
+      React.createElement(AdminLayout, { children: child })
+    );
+
+    const main = container.querySelector("main#main-content");
+    expect(main).not.toBeNull();
+  });
 });

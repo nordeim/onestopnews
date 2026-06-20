@@ -53,7 +53,7 @@ export default function AdminLayout({
         </nav>
 
         {/* Main content — wrapped in AdminGuard via Suspense */}
-        <main className="flex-1 p-8">
+        <main id="main-content" className="flex-1 p-8">
           <Suspense fallback={<AdminGuardSkeleton />}>
             <AdminGuard>{children}</AdminGuard>
           </Suspense>

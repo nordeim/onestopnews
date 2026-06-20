@@ -69,4 +69,13 @@ describe("SignInClient", () => {
     expect(homeLink).toBeDefined();
     expect(homeLink.getAttribute("href")).toBe("/");
   });
+
+  it("renders a <main> element with id='main-content' as the skip-link target", () => {
+    // The skip-to-content link in layout.tsx targets #main-content.
+    // Every page template must render <main id="main-content"> for the
+    // skip link to have a valid target on that page.
+    const { container } = render(<SignInClient showGoogle={false} showGithub={false} />);
+    const main = container.querySelector("main#main-content");
+    expect(main).not.toBeNull();
+  });
 });

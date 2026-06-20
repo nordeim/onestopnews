@@ -25,7 +25,7 @@ interface SignInClientProps {
 
 export function SignInClient({ showGoogle, showGithub }: SignInClientProps) {
   return (
-    <main className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16">
+    <main id="main-content" className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
         {/* Heading */}
         <header className="text-center mb-10">

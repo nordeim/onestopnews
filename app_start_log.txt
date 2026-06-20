@@ -1,4 +1,4 @@
-$ rm -rf .next
+ rm -rf .next/
 (venv) pete@pop-os:/home/project/onestopnews
 $ pnpm check
 
@@ -22,11 +22,11 @@ $ pnpm build
   ✓ viewTransition
 
   Creating an optimized production build ...
-✓ Compiled successfully in 11.4s
-✓ Finished TypeScript in 14.6s    
-✓ Collecting page data using 3 workers in 1247ms    
-✓ Generating static pages using 3 workers (15/15) in 899ms
-✓ Finalizing page optimization in 2.1s    
+✓ Compiled successfully in 12.1s
+✓ Finished TypeScript in 14.7s    
+✓ Collecting page data using 3 workers in 1323ms    
+✓ Generating static pages using 3 workers (15/15) in 871ms
+✓ Finalizing page optimization in 5.1s    
 
 Route (app)                    Revalidate  Expire
 ┌ ○ /                                  2m     10m
@@ -63,9 +63,7 @@ $ pnpm dev
 - Local:         http://localhost:3000
 - Network:       http://192.168.2.132:3000
 - Environments: .env.local, .env
-✓ Ready in 484ms
-⚠ Slow filesystem detected. The benchmark took 202ms. If /home/project/onestopnews/.next/dev is a network drive, consider moving it to a local folder.
-See more: https://nextjs.org/docs/app/guides/local-development
+✓ Ready in 468ms
 - Cache Components enabled
 - Experiments (use with caution):
   ✓ viewTransition
@@ -74,5 +72,19 @@ See more: https://nextjs.org/docs/app/guides/local-development
 Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 5.8s (next.js: 4.6s, application-code: 1228ms)
+ GET / 200 in 5.6s (next.js: 4.4s, application-code: 1251ms)
+ Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
+ GET / 200 in 495ms (next.js: 6ms, application-code: 490ms)
+⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from "onestopnews.jesspete.shop".
+Cross-origin access to Next.js dev resources is blocked by default for safety.
+
+To allow this host in development, add it to "allowedDevOrigins" in next.config.js and restart the dev server:
+
+// next.config.js
+module.exports = {
+  allowedDevOrigins: ['onestopnews.jesspete.shop'],
+}
+
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+
 
