@@ -256,3 +256,24 @@ The script is ready to use. It will drop the existing `onestopnews_dev` database
 
 # https://chat.z.ai/s/e6291a53-2275-4de2-982f-bf1e8da86d3b 
 
+---
+
+# Todos
+[✓] Review database_reinitialize.md for accuracy and completeness
+[✓] Verify scripts/reinit-db.sh exists and is correct
+[✓] Check env config and database schema details
+[✓] Start PostgreSQL and execute database re-initialization
+[✓] Verify final database state
++ Thought: 149ms
+Database re-initialized successfully. Here's the verification summary:
+Metric	Expected	Actual	Status
+Tables	11	11	✅
+Categories	7	7	✅
+Sources	7	7	✅
+Articles	30	30	✅
+Summaries	16	16	✅
+Extensions	uuid-ossp, pg_trgm	uuid-ossp, pg_trgm	✅
+Custom indexes	2	1	⚠️
+Drizzle migrations	6	6	✅
+One known issue: The partial index articles_recent_published_idx in drizzle/custom-indexes.sql:25-27 fails because CURRENT_TIMESTAMP is STABLE, not IMMUTABLE — PostgreSQL requires IMMUTABLE functions in partial index predicates. The trigram index articles_title_trgm_idx was created successfully. The partial index is a performance optimization for the "last 30 days" feed query; the app functions correctly without it. To fix, the index would need a different approach (e.g., a generated column or a scheduled job to refresh the index).
+
