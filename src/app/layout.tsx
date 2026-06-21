@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Newsreader, Instrument_Sans } from "next/font/google";
 import localFont from "next/font/local";
+import { SessionProvider } from "next-auth/react";
 import { RevealProvider } from "@/shared/components/providers/RevealProvider";
 import "./globals.css";
 
@@ -27,7 +28,10 @@ const commitMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { template: "%s — OneStopNews", default: "OneStopNews — Your Briefing Room" },
+  title: {
+    template: "%s — OneStopNews",
+    default: "OneStopNews — Your Briefing Room",
+  },
   description:
     "Topic-first news aggregation with source-cited AI summaries. Every story, organized by what it's about — not who published it.",
   metadataBase: new URL("http://localhost:3000"),
@@ -37,7 +41,11 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${newsreader.variable} ${instrumentSans.variable} ${commitMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${newsreader.variable} ${instrumentSans.variable} ${commitMono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="bg-paper-50 text-ink-600 font-ui antialiased">
         {/* Skip-to-content link — first focusable element for keyboard users (WCAG AAA).
             Visually hidden by default via `sr-only`; becomes visible on focus via
@@ -52,7 +60,10 @@ export default function RootLayout({
           Skip to content
         </a>
         <RevealProvider>
-          {children}
+          {/* Phase 19 (H2): SessionProvider enables useSession() in client
+              components like <UserMenu> in the Header. Required for the
+              sign-in/sign-out button to work. */}
+          <SessionProvider>{children}</SessionProvider>
         </RevealProvider>
       </body>
     </html>

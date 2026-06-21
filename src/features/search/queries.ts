@@ -1,19 +1,28 @@
 /**
  * queries.ts — Search data access layer.
  *
- * PRD §6: Full-text search with pg_textsearch BM25 ranking.
- * PAD §3 (ADR-005): PostgreSQL FTS + pg_textsearch BM25.
+ * PRD §6: Full-text search with ts_rank_cd BM25-style ranking.
+ * PAD §3 (ADR-005): PostgreSQL native FTS (ts_rank_cd is built-in).
  * MEP v5.1: LIMIT 31 pattern for cursor pagination.
  *
  * Uses native PostgreSQL FTS:
  * - websearch_to_tsquery() for query parsing
  * - ts_rank_cd() for BM25 relevance ranking
  * - pg_trgm for autocomplete suggestions
+ *
+ * Phase 19 (M4): Added "use cache" + cacheLife("reference") so repeat
+ * searches within the cache window are served from the Next.js cache
+ * instead of re-running the FTS query. Search results change slowly
+ * (new articles arrive every 15 min via ingest), so a 5-min stale +
+ * 1-hour revalidate profile is appropriate.
  */
+
+"use cache";
 
 import { desc, eq, and, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { articles, sources } from "@/lib/db/schema";
+import { cacheLife } from "next/cache";
 import type { ArticleWithSource } from "@/domain/articles/types";
 import type { SearchParams, SearchPage, SearchResult } from "./types";
 
@@ -25,7 +34,14 @@ const SEARCH_PAGE_SIZE = 31;
  * Uses PostgreSQL native FTS via Drizzle sql template literal.
  * ts_rank_cd weights: title(A) = 1.0, excerpt(B) = 0.4
  */
-export async function searchArticles(params: SearchParams): Promise<SearchPage> {
+export async function searchArticles(
+  params: SearchParams,
+): Promise<SearchPage> {
+  // Phase 19 (M4): Cache search results at the reference profile (1h stale,
+  // 1d revalidate, 7d expire). Repeat searches within the window are served
+  // from cache, dramatically reducing FTS query load on the DB.
+  cacheLife("reference");
+
   const { query, cursor, limit = SEARCH_PAGE_SIZE } = params;
 
   if (!query.trim()) {
@@ -37,7 +53,7 @@ export async function searchArticles(params: SearchParams): Promise<SearchPage> 
 
   const whereClause = and(
     sql`${articles.searchVector} @@ ${tsQuery}`,
-    cursor ? sql`${articles.publishedAt} < ${cursor}` : undefined
+    cursor ? sql`${articles.publishedAt} < ${cursor}` : undefined,
   );
 
   const rows = await db
@@ -80,7 +96,7 @@ export async function searchArticles(params: SearchParams): Promise<SearchPage> 
   }));
 
   const nextCursor = hasMore
-    ? resultRows[resultRows.length - 1]?.publishedAt.toISOString() ?? null
+    ? (resultRows[resultRows.length - 1]?.publishedAt.toISOString() ?? null)
     : null;
 
   return { results, nextCursor, hasMore };

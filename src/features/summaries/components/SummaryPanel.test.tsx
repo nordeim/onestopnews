@@ -13,8 +13,16 @@ const mockSummary = {
 
 describe("SummaryPanel", () => {
   it("renders 'Request AI Summary' button for none status", () => {
-    render(<SummaryPanel articleId="123" initialStatus="none" onRequestSummary={vi.fn()} />);
-    expect(screen.getByText("No AI summary is available for this article yet.")).toBeDefined();
+    render(
+      <SummaryPanel
+        articleId="123"
+        initialStatus="none"
+        onRequestSummary={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByText("No AI summary is available for this article yet."),
+    ).toBeDefined();
     expect(screen.getByText("Request AI Summary")).toBeDefined();
   });
 
@@ -24,7 +32,9 @@ describe("SummaryPanel", () => {
   });
 
   it("renders NutritionLabel for ok status with summary", () => {
-    render(<SummaryPanel articleId="123" initialStatus="ok" summary={mockSummary} />);
+    render(
+      <SummaryPanel articleId="123" initialStatus="ok" summary={mockSummary} />,
+    );
     expect(screen.getByText(mockSummary.summaryText)).toBeDefined();
   });
 
@@ -34,14 +44,77 @@ describe("SummaryPanel", () => {
   });
 
   it("renders null for disabled status", () => {
-    const { container } = render(<SummaryPanel articleId="123" initialStatus="disabled" />);
+    const { container } = render(
+      <SummaryPanel articleId="123" initialStatus="disabled" />,
+    );
     expect(container.firstChild).toBeNull();
   });
 
   it("calls onRequestSummary when button clicked", () => {
     const handleRequest = vi.fn();
-    render(<SummaryPanel articleId="123" initialStatus="none" onRequestSummary={handleRequest} />);
+    render(
+      <SummaryPanel
+        articleId="123"
+        initialStatus="none"
+        onRequestSummary={handleRequest}
+      />,
+    );
     fireEvent.click(screen.getByText("Request AI Summary"));
+    expect(handleRequest).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── Phase 19 (High H4): Error state when summary request fails ──────────────
+// Previously, onRequestSummary was fire-and-forget. If the underlying server
+// action failed, useOptimistic stayed on "pending" indefinitely — the user
+// was stuck on "Generating AI summary..." with no way to retry and no error
+// feedback. Now must:
+//   1. Accept an optional onError callback prop
+//   2. When called, the panel rolls back from "pending" to an error UI
+//   3. The error UI offers a "Try Again" button
+
+describe("SummaryPanel — error state (Phase 19 / H4)", () => {
+  it("accepts an onError callback prop (component accepts the prop without breaking)", () => {
+    // Sanity: the component still renders normally when onError is provided.
+    render(
+      <SummaryPanel
+        articleId="123"
+        initialStatus="none"
+        onRequestSummary={vi.fn()}
+        onError={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("Request AI Summary")).toBeDefined();
+  });
+
+  it("renders an error UI when status is set to a new 'error' value", () => {
+    // The new error state is reachable via onError — but for unit testing
+    // we verify the render branch directly via the initialStatus prop.
+    // The component now accepts an additional `error` prop OR a status
+    // value of 'error' that renders an error UI with a Try Again button.
+    render(
+      <SummaryPanel
+        articleId="123"
+        initialStatus="none"
+        onRequestSummary={vi.fn()}
+        error="Failed to generate summary. Please try again."
+      />,
+    );
+    expect(screen.getByText(/failed to generate summary/i)).toBeDefined();
+    expect(screen.getByRole("button", { name: /try again/i })).toBeDefined();
+  });
+
+  it("Try Again button calls onRequestSummary", () => {
+    const handleRequest = vi.fn();
+    render(
+      <SummaryPanel
+        articleId="123"
+        initialStatus="none"
+        onRequestSummary={handleRequest}
+        error="Failed to generate summary. Please try again."
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /try again/i }));
     expect(handleRequest).toHaveBeenCalledTimes(1);
   });
 });

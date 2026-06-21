@@ -11,7 +11,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-Proprietary-red)](./LICENSE)
 
-*Every story, organized by what it's about — not who published it.*
+_Every story, organized by what it's about — not who published it._
 
 </div>
 
@@ -27,22 +27,22 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 
 ## Key Features
 
-| Feature | Description |
-| :--- | :--- |
-| 🗂️ **Topic-first feed** | Stories grouped by subject across all sources — not siloed by publisher. Two-level category/subcategory hierarchy. |
-| 🤖 **AI Nutrition Label** | Source-cited summaries with a human-readable transparency panel: model, temperature, coverage %, citations, compliance statement. |
-| 📡 **3-layer AI disclosure** | JSON-LD (`schema.org/CreativeWork`), `X-AI-Provenance` HTTP header, and `<meta name="ai-provenance">` — EU AI Act Art. 50 compliant. |
-| ⚡ **PPR + Cache Components** | Pre-rendered static shells served from CDN edge (TTFB < 50ms), dynamic content streamed into Suspense boundaries. Opt-in caching via `"use cache"`. |
-| 🏗️ **CSS Subgrid feed** | Headline / Excerpt / Metadata rows align across cards without fixed heights or JavaScript measurement. |
-| 🔄 **View Transitions** | Smooth topic-to-topic navigation via experimental `<PageTransition>` abstraction. Gracefully degrades on unsupported browsers. |
-| 🔍 **BM25 Full-Text Search** | PostgreSQL-native FTS with GIN-indexed `tsvector` + `ts_rank_cd()` relevance ranking. No Elasticsearch cluster. `pg_trgm` for autocomplete. |
-| 🔔 **AI-summarised push** | Web Push notifications with 1-sentence AI summaries, quiet hours, and AES-256-GCM key encryption. |
-| 📊 **BullMQ ingestion pipeline** | Scheduled RSS polling, prioritised summarisation jobs, atomic DAG flows (`ingest → score → refresh-feed-slice`). |
-| 🛡️ **Admin Interface** | Protected admin routes for source management (`/admin/sources`) and summary review (`/admin/summaries`). |
-| 🌐 **Public REST API** | `/api/articles` — unified feed + search endpoint with CORS, cursor pagination, and `Cache-Control`. |
-| 🏠 **10-Section Landing Page** | NewsTicker, Masthead, LeadStory, Feed, AI Nutrition Label, Stats, FAQ, Newsletter with "Editorial Dispatch" design system |
-| 🎨 **Design System Tokens** | Custom Tailwind classes: `cat-label`, `cat-label-wide`, `btn-ember`, `pulse-dot`, `commitment-number`. WCAG AAA accessibility, `prefers-reduced-motion` support. |
-| 🌱 **Database Seeding** | `db:seed` script for sample articles, categories, and sources. Idempotent, safe to run multiple times. |
+| Feature                          | Description                                                                                                                                                      |
+| :------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🗂️ **Topic-first feed**          | Stories grouped by subject across all sources — not siloed by publisher. Two-level category/subcategory hierarchy.                                               |
+| 🤖 **AI Nutrition Label**        | Source-cited summaries with a human-readable transparency panel: model, temperature, coverage %, citations, compliance statement.                                |
+| 📡 **3-layer AI disclosure**     | JSON-LD (`schema.org/CreativeWork`), `X-AI-Provenance` HTTP header, and `<meta name="ai-provenance">` — EU AI Act Art. 50 compliant.                             |
+| ⚡ **PPR + Cache Components**    | Pre-rendered static shells served from CDN edge (TTFB < 50ms), dynamic content streamed into Suspense boundaries. Opt-in caching via `"use cache"`.              |
+| 🏗️ **CSS Subgrid feed**          | Headline / Excerpt / Metadata rows align across cards without fixed heights or JavaScript measurement.                                                           |
+| 🔄 **View Transitions**          | Smooth topic-to-topic navigation via experimental `<PageTransition>` abstraction. Gracefully degrades on unsupported browsers.                                   |
+| 🔍 **BM25 Full-Text Search**     | PostgreSQL-native FTS with GIN-indexed `tsvector` + `ts_rank_cd()` relevance ranking. No Elasticsearch cluster. `pg_trgm` for autocomplete.                      |
+| 🔔 **AI-summarised push**        | Web Push notifications with 1-sentence AI summaries, quiet hours, and AES-256-GCM key encryption.                                                                |
+| 📊 **BullMQ ingestion pipeline** | Scheduled RSS polling, prioritised summarisation jobs, atomic DAG flows (`ingest → score → refresh-feed-slice`).                                                 |
+| 🛡️ **Admin Interface**           | Protected admin routes for source management (`/admin/sources`) and summary review (`/admin/summaries`).                                                         |
+| 🌐 **Public REST API**           | `/api/articles` — unified feed + search endpoint with CORS, cursor pagination, and `Cache-Control`.                                                              |
+| 🏠 **10-Section Landing Page**   | NewsTicker, Masthead, LeadStory, Feed, AI Nutrition Label, Stats, FAQ, Newsletter with "Editorial Dispatch" design system                                        |
+| 🎨 **Design System Tokens**      | Custom Tailwind classes: `cat-label`, `cat-label-wide`, `btn-ember`, `pulse-dot`, `commitment-number`. WCAG AAA accessibility, `prefers-reduced-motion` support. |
+| 🌱 **Database Seeding**          | `db:seed` script for sample articles, categories, and sources. Idempotent, safe to run multiple times.                                                           |
 
 ---
 
@@ -50,28 +50,28 @@ The platform targets three distinct personas: **daily scanners** who need a fast
 
 ### Tech Stack
 
-| Layer | Technology | Version | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Web Framework** | Next.js | ≥16.0.7 (installed 16.2.9) | App Router, PPR, Cache Components, `proxy.ts`. Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182. |
-| **UI Runtime** | React | 19.2 (stable) | View Transitions, `<Activity>` for zero-shift summary loading |
-| **Language** | TypeScript | 5.x (Strict) | Zero `any`. Type inference preferred. `noUncheckedIndexedAccess` + `erasableSyntaxOnly` + `verbatimModuleSyntax` enabled. |
-| **Styling** | Tailwind CSS | v4 (4.3.0) | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment. |
-| **PostCSS** | `@tailwindcss/postcss` | 4.3.1 | Mandatory PostCSS plugin for Tailwind v4 utility class generation. |
-| **Components** | Shadcn UI + Radix | Latest | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds. |
-| **ORM** | Drizzle ORM | 0.45+ | TypeScript-native, SQL-fluent, lazy proxy connection pattern. |
-| **Validation** | Zod | 4.x (installed 4.4.3) | Schema-first, composable. Enforces AI output constraints. |
-| **Auth** | Auth.js | 5.0.0-beta.31 | HttpOnly session cookies, Drizzle adapter. Pinned exact beta. Next-auth aligns with `@auth/drizzle-adapter` on `@auth/core@0.41.2`. |
-| **Database** | PostgreSQL | 17 | Primary datastore. GIN FTS + `ts_rank_cd` BM25. |
-| **Search** | `tsvector` + `ts_rank_cd` | Built-in | BM25 relevance ranking natively in Postgres. `pg_trgm` for autocomplete. |
-| **Job Queue** | BullMQ | 5.78+ | Job graphs (Flows via `FlowProducer`), priorities, built-in monitoring dashboard. |
-| **Queue Backend** | Redis (Upstash) | 7.x | AOF persistence, `noeviction`, `maxRetriesPerRequest: null`. |
-| **Worker Runtime** | Node.js | 24 LTS ("Krypton") | BullMQ-native. LTS through April 2028. |
-| **AI SDK** | Vercel AI SDK | `ai@6` + `@ai-sdk/anthropic@3` + `@ai-sdk/openai@3` | `generateObject()` with Zod schema validation. Anthropic primary, OpenAI fallback. |
-| **AI (Primary)** | Claude 4.5 Haiku | `claude-haiku-4-5` | $1/$5 per M tokens. Best cost/quality for news summarisation. |
-| **AI (Fallback)** | GPT-5 Mini | `gpt-5-mini` | Validated cost/quality fallback model. |
-| **RSS Parsing** | `rss-parser` | 3.13+ | RSS 2.0 + Atom 1.0 parsing. JSON Feed parsed natively. |
-| **Rate Limiting** | `ioredis` (fixed-window) | 5.11+ | Redis `INCR` + `EXPIRE` pattern. 20 req/s per IP on `/api/articles`. |
-| **Bundler** | Turbopack | Next.js 16 default | 5–10× faster Fast Refresh. Stable since 16.0. |
+| Layer              | Technology                | Version                                             | Purpose                                                                                                                             |
+| :----------------- | :------------------------ | :-------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| **Web Framework**  | Next.js                   | ≥16.0.7 (installed 16.2.9)                          | App Router, PPR, Cache Components, `proxy.ts`. Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182.                                      |
+| **UI Runtime**     | React                     | 19.2 (stable)                                       | View Transitions, `<Activity>` for zero-shift summary loading                                                                       |
+| **Language**       | TypeScript                | 5.x (Strict)                                        | Zero `any`. Type inference preferred. `noUncheckedIndexedAccess` + `erasableSyntaxOnly` + `verbatimModuleSyntax` enabled.           |
+| **Styling**        | Tailwind CSS              | v4 (4.3.0)                                          | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment.                                                                 |
+| **PostCSS**        | `@tailwindcss/postcss`    | 4.3.1                                               | Mandatory PostCSS plugin for Tailwind v4 utility class generation.                                                                  |
+| **Components**     | Shadcn UI + Radix         | Latest                                              | Accessible primitives, wrapped for bespoke aesthetic. No custom rebuilds.                                                           |
+| **ORM**            | Drizzle ORM               | 0.45+                                               | TypeScript-native, SQL-fluent, lazy proxy connection pattern.                                                                       |
+| **Validation**     | Zod                       | 4.x (installed 4.4.3)                               | Schema-first, composable. Enforces AI output constraints.                                                                           |
+| **Auth**           | Auth.js                   | 5.0.0-beta.31                                       | HttpOnly session cookies, Drizzle adapter. Pinned exact beta. Next-auth aligns with `@auth/drizzle-adapter` on `@auth/core@0.41.2`. |
+| **Database**       | PostgreSQL                | 17                                                  | Primary datastore. GIN FTS + `ts_rank_cd` BM25.                                                                                     |
+| **Search**         | `tsvector` + `ts_rank_cd` | Built-in                                            | BM25 relevance ranking natively in Postgres. `pg_trgm` for autocomplete.                                                            |
+| **Job Queue**      | BullMQ                    | 5.78+                                               | Job graphs (Flows via `FlowProducer`), priorities, built-in monitoring dashboard.                                                   |
+| **Queue Backend**  | Redis (Upstash)           | 7.x                                                 | AOF persistence, `noeviction`, `maxRetriesPerRequest: null`.                                                                        |
+| **Worker Runtime** | Node.js                   | 24 LTS ("Krypton")                                  | BullMQ-native. LTS through April 2028.                                                                                              |
+| **AI SDK**         | Vercel AI SDK             | `ai@6` + `@ai-sdk/anthropic@3` + `@ai-sdk/openai@3` | `generateObject()` with Zod schema validation. Anthropic primary, OpenAI fallback.                                                  |
+| **AI (Primary)**   | Claude 4.5 Haiku          | `claude-haiku-4-5`                                  | $1/$5 per M tokens. Best cost/quality for news summarisation.                                                                       |
+| **AI (Fallback)**  | GPT-5 Mini                | `gpt-5-mini`                                        | Validated cost/quality fallback model.                                                                                              |
+| **RSS Parsing**    | `rss-parser`              | 3.13+                                               | RSS 2.0 + Atom 1.0 parsing. JSON Feed parsed natively.                                                                              |
+| **Rate Limiting**  | `ioredis` (fixed-window)  | 5.11+                                               | Redis `INCR` + `EXPIRE` pattern. 20 req/s per IP on `/api/articles`.                                                                |
+| **Bundler**        | Turbopack                 | Next.js 16 default                                  | 5–10× faster Fast Refresh. Stable since 16.0.                                                                                       |
 
 ### System Topology
 
@@ -136,13 +136,13 @@ flowchart TB
 
 Every request passes through exactly these layers. Deviating from this order creates security and consistency bugs.
 
-| Layer | Component | Role | Rule |
-| :--- | :--- | :--- | :--- |
-| **0** | `proxy.ts` | Network boundary | Optimistic cookie check only. No DB calls. No business logic. Redirects only. |
-| **1** | App Router | Route structure, metadata, PPR, Suspense | Layouts must not fetch data. Pages are the data-fetching boundary. |
-| **2** | Feature Modules | UI composition, data binding, mutations | All data access through `queries.ts`. No direct DB calls. |
-| **3** | Domain Services | Pure business logic | No Next.js imports. No DB client imports. Pure TypeScript. |
-| **4** | Infrastructure | Side-effecting operations | All DB access via Drizzle. All queries parameterized. |
+| Layer | Component       | Role                                     | Rule                                                                          |
+| :---- | :-------------- | :--------------------------------------- | :---------------------------------------------------------------------------- |
+| **0** | `proxy.ts`      | Network boundary                         | Optimistic cookie check only. No DB calls. No business logic. Redirects only. |
+| **1** | App Router      | Route structure, metadata, PPR, Suspense | Layouts must not fetch data. Pages are the data-fetching boundary.            |
+| **2** | Feature Modules | UI composition, data binding, mutations  | All data access through `queries.ts`. No direct DB calls.                     |
+| **3** | Domain Services | Pure business logic                      | No Next.js imports. No DB client imports. Pure TypeScript.                    |
+| **4** | Infrastructure  | Side-effecting operations                | All DB access via Drizzle. All queries parameterized.                         |
 
 ---
 
@@ -306,27 +306,27 @@ The visual identity is not a skin or an afterthought — it is architectural. Ev
 
 ### Typography
 
-| Role | Typeface | Weight | Fallback |
-| :--- | :--- | :--- | :--- |
-| **Headlines** | Newsreader (variable) | 800 (display) | Georgia, serif |
-| **UI / Body** | Instrument Sans (variable) | 400–600 | system-ui, sans-serif |
-| **Metadata** | Commit Mono | 400 | Fira Code, monospace |
+| Role          | Typeface                   | Weight        | Fallback              |
+| :------------ | :------------------------- | :------------ | :-------------------- |
+| **Headlines** | Newsreader (variable)      | 800 (display) | Georgia, serif        |
+| **UI / Body** | Instrument Sans (variable) | 400–600       | system-ui, sans-serif |
+| **Metadata**  | Commit Mono                | 400           | Fira Code, monospace  |
 
 ### Colour Tokens
 
-| Token | Hex | Usage |
-| :--- | :--- | :--- |
-| `--color-ink-900` | `#1a1a18` | Letterpress black — headings |
-| `--color-ink-600` | `#3d3d3a` | Body text — WCAG AAA on `paper-50` |
-| `--color-ink-300` | `#8a8a83` | Muted / metadata — use sparingly |
-| `--color-ink-100` | `#e8e8e4` | Dividers / borders |
-| `--color-paper-50` | `#fafaf8` | Newsprint off-white — page background |
-| `--color-paper-100` | `#f2f2ee` | Card surface |
-| `--color-dispatch-ember` | `#c7513f` | Breaking news — coral-red accent |
-| `--color-dispatch-sage` | `#6b8f71` | Finance / positive accent |
-| `--color-dispatch-slate` | `#5a6b7a` | Tech / neutral accent |
-| `--color-dispatch-clay` | `#8b6d5a` | Local / politics accent |
-| `--color-dispatch-violet` | `#7a6b8f` | Culture / creative accent |
+| Token                     | Hex       | Usage                                 |
+| :------------------------ | :-------- | :------------------------------------ |
+| `--color-ink-900`         | `#1a1a18` | Letterpress black — headings          |
+| `--color-ink-600`         | `#3d3d3a` | Body text — WCAG AAA on `paper-50`    |
+| `--color-ink-300`         | `#8a8a83` | Muted / metadata — use sparingly      |
+| `--color-ink-100`         | `#e8e8e4` | Dividers / borders                    |
+| `--color-paper-50`        | `#fafaf8` | Newsprint off-white — page background |
+| `--color-paper-100`       | `#f2f2ee` | Card surface                          |
+| `--color-dispatch-ember`  | `#c7513f` | Breaking news — coral-red accent      |
+| `--color-dispatch-sage`   | `#6b8f71` | Finance / positive accent             |
+| `--color-dispatch-slate`  | `#5a6b7a` | Tech / neutral accent                 |
+| `--color-dispatch-clay`   | `#8b6d5a` | Local / politics accent               |
+| `--color-dispatch-violet` | `#7a6b8f` | Culture / creative accent             |
 
 ### CSS Subgrid Feed Architecture
 
@@ -334,22 +334,22 @@ The feed grid uses `grid-rows-subgrid` to force Headline, Excerpt, and Metadata 
 
 ### Custom Utility Classes
 
-| Class | Definition | Usage |
-| :--- | :--- | :--- |
-| `.cat-label` | `@apply uppercase tracking-widest font-mono text-[10px] text-center;` | Category labels, metadata tags |
-| `.cat-label-wide` | `@apply uppercase tracking-widest font-mono text-[10px] text-center px-4 py-1.5;` | Wide category labels with padding |
-| `.btn-ember` | `@apply bg-dispatch-ember text-white transition-all duration-200;` | Primary CTA buttons |
-| `.pulse-dot` | `@apply w-1.5 h-1.5 rounded-full bg-dispatch-ember animate-pulse;` | Live indicator badges |
+| Class                | Definition                                                                                          | Usage                                         |
+| :------------------- | :-------------------------------------------------------------------------------------------------- | :-------------------------------------------- |
+| `.cat-label`         | `@apply uppercase tracking-widest font-mono text-[10px] text-center;`                               | Category labels, metadata tags                |
+| `.cat-label-wide`    | `@apply uppercase tracking-widest font-mono text-[10px] text-center px-4 py-1.5;`                   | Wide category labels with padding             |
+| `.btn-ember`         | `@apply bg-dispatch-ember text-white transition-all duration-200;`                                  | Primary CTA buttons                           |
+| `.pulse-dot`         | `@apply w-1.5 h-1.5 rounded-full bg-dispatch-ember animate-pulse;`                                  | Live indicator badges                         |
 | `.commitment-number` | Large faded editorial numerals (`font-editorial`, `4.5rem`, `opacity: 0.08`, absolutely positioned) | Decorative background numbers in StatsSection |
 
 ### Custom Animation Tokens
 
-| Animation | Keyframes | Usage |
-| :--- | :--- | :--- |
-| `ticker-scroll` | `translateX(0) → translateX(-100%)` | NewsTicker marquee |
-| `pulse-dot` | `scale(1) → scale(1.2) → scale(1)` | Live status indicators |
-| `slideDown` / `slideUp` | `height: 0 → var(--radix-accordion-content-height)` (and reverse) | Radix Accordion expand/collapse |
-| `reveal` / `reveal.visible` | `opacity: 0, translateY(24px) → opacity: 1, translateY(0)` | Scroll-triggered entrance (IntersectionObserver) |
+| Animation                   | Keyframes                                                         | Usage                                            |
+| :-------------------------- | :---------------------------------------------------------------- | :----------------------------------------------- |
+| `ticker-scroll`             | `translateX(0) → translateX(-100%)`                               | NewsTicker marquee                               |
+| `pulse-dot`                 | `scale(1) → scale(1.2) → scale(1)`                                | Live status indicators                           |
+| `slideDown` / `slideUp`     | `height: 0 → var(--radix-accordion-content-height)` (and reverse) | Radix Accordion expand/collapse                  |
+| `reveal` / `reveal.visible` | `opacity: 0, translateY(24px) → opacity: 1, translateY(0)`        | Scroll-triggered entrance (IntersectionObserver) |
 
 **Accessibility**: All animations respect `prefers-reduced-motion: reduce`. Use `motion-safe:` and `motion-reduce:` Tailwind variants.
 
@@ -418,17 +418,17 @@ pnpm worker
 
 ### 6. Verify setup
 
-| Check | Expected |
-| :--- | :--- |
-| `curl http://localhost:3000` | HTML response with PPR shell |
-| `curl http://localhost:3000/api/articles?category=tech` | JSON array of articles with `source` objects |
-| `curl "http://localhost:3000/api/articles?q=AI+regulation"` | JSON array of search results with `rank` |
-| `curl http://localhost:3000/api/categories` | JSON `{ categories: [...] }` with id/slug/name per category |
-| `curl http://localhost:3000/api/health` | `{ status: "ok", deps: { db: "connected", redis: "connected" } }` |
-| `curl -H "x-forwarded-for: 1.2.3.4" "http://localhost:3000/api/articles?cursor=invalid"` | `400` with `{ error: "Invalid cursor format..." }` |
-| BullMQ dashboard at `http://localhost:3001` | Active queues: `ingest`, `summarize`, `score`, `feed-slice` |
-| `pnpm tsc --noEmit` | Zero type errors |
-| `pnpm test` | All 327 tests pass across 57 suites |
+| Check                                                                                    | Expected                                                          |
+| :--------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
+| `curl http://localhost:3000`                                                             | HTML response with PPR shell                                      |
+| `curl http://localhost:3000/api/articles?category=tech`                                  | JSON array of articles with `source` objects                      |
+| `curl "http://localhost:3000/api/articles?q=AI+regulation"`                              | JSON array of search results with `rank`                          |
+| `curl http://localhost:3000/api/categories`                                              | JSON `{ categories: [...] }` with id/slug/name per category       |
+| `curl http://localhost:3000/api/health`                                                  | `{ status: "ok", deps: { db: "connected", redis: "connected" } }` |
+| `curl -H "x-forwarded-for: 1.2.3.4" "http://localhost:3000/api/articles?cursor=invalid"` | `400` with `{ error: "Invalid cursor format..." }`                |
+| BullMQ dashboard at `http://localhost:3001`                                              | Active queues: `ingest`, `summarize`, `score`, `feed-slice`       |
+| `pnpm tsc --noEmit`                                                                      | Zero type errors                                                  |
+| `pnpm test`                                                                              | All 327 tests pass across 57 suites                               |
 
 ---
 
@@ -500,25 +500,26 @@ AXIOM_TOKEN=
 
 ## API Reference
 
-| Endpoint | Method | Auth | Description |
-| :--- | :--- | :--- | :--- |
-| `/api/articles` | `GET` | Public (rate limited) | Feed articles with cursor pagination. Query: `?category=tech&cursor=2026-06-10T12:00:00Z&limit=31` |
-| `/api/articles` | `GET` | Public (rate limited) | Full-text search. Query: `?q=AI+regulation&category=tech` |
-| `/api/categories` | `GET` | Public | All categories (id, slug, name). Cached 5min at CDN. (Phase 13) |
-| `/api/health` | `GET` | Public | DB + Redis health check. Returns `200 { status: "ok" }` or `503 { status: "degraded" }`. |
-| `/api/summarize/[id]` | `POST` | Session | Enqueue summarisation job for article `id`. Returns `202` with job ID. Content availability guard enforced. |
-| `/api/push/subscribe` | `POST` | Session | Web Push subscription. Encrypts p256dh/auth keys with AES-256-GCM before storage (Phase 14: stored in `encryptedKeys` column). |
-| `/article/[id]` | `GET` | Public | Article detail page. Emits 3-layer AI provenance via `generateMetadata()` when summary exists. (Phase 14) |
-| `/admin/sources` | `GET/POST` | Admin | Source management dashboard + CRUD. |
-| `/admin/summaries` | `GET` | Admin | Summary review queue for flagged content (incl. AI-failed summaries after Phase 14). |
-| `/sign-in` | `GET` | Public | Sign-in page with Credentials form + conditional Google/GitHub OAuth buttons (Phase 15). |
-| `/auth-error` | `GET` | Public | Auth error landing page (referenced by Auth.js `pages.error`). |
+| Endpoint              | Method     | Auth                  | Description                                                                                                                    |
+| :-------------------- | :--------- | :-------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `/api/articles`       | `GET`      | Public (rate limited) | Feed articles with cursor pagination. Query: `?category=tech&cursor=2026-06-10T12:00:00Z&limit=31`                             |
+| `/api/articles`       | `GET`      | Public (rate limited) | Full-text search. Query: `?q=AI+regulation&category=tech`                                                                      |
+| `/api/categories`     | `GET`      | Public                | All categories (id, slug, name). Cached 5min at CDN. (Phase 13)                                                                |
+| `/api/health`         | `GET`      | Public                | DB + Redis health check. Returns `200 { status: "ok" }` or `503 { status: "degraded" }`.                                       |
+| `/api/summarize/[id]` | `POST`     | Session               | Enqueue summarisation job for article `id`. Returns `202` with job ID. Content availability guard enforced.                    |
+| `/api/push/subscribe` | `POST`     | Session               | Web Push subscription. Encrypts p256dh/auth keys with AES-256-GCM before storage (Phase 14: stored in `encryptedKeys` column). |
+| `/article/[id]`       | `GET`      | Public                | Article detail page. Emits 3-layer AI provenance via `generateMetadata()` when summary exists. (Phase 14)                      |
+| `/admin/sources`      | `GET/POST` | Admin                 | Source management dashboard + CRUD.                                                                                            |
+| `/admin/summaries`    | `GET`      | Admin                 | Summary review queue for flagged content (incl. AI-failed summaries after Phase 14).                                           |
+| `/sign-in`            | `GET`      | Public                | Sign-in page with Credentials form + conditional Google/GitHub OAuth buttons (Phase 15).                                       |
+| `/auth-error`         | `GET`      | Public                | Auth error landing page (referenced by Auth.js `pages.error`).                                                                 |
 
 **Rate Limiting (Phase 13+14):** `GET /api/articles` is rate-limited to 20 requests/second per IP via Redis fixed-window counter (`src/lib/rateLimit.ts`). Exceeding the limit returns `429 Too Many Requests` with `Retry-After` and `X-RateLimit-Remaining` headers. Set `TRUSTED_PROXY=true` when behind a CDN to use the rightmost IP from `x-forwarded-for` (prevents spoofing).
 
 **Cursor Validation (Phase 13):** The `cursor` query parameter must be a valid ISO 8601 date string (e.g., `2026-06-10T12:00:00Z`). Invalid cursors return `400 Bad Request` with `{ error: "Invalid cursor format..." }`.
 
 **Public API Response Shape:**
+
 ```json
 {
   "articles": [...],
@@ -528,6 +529,7 @@ AXIOM_TOKEN=
 ```
 
 **Headers on success:**
+
 - `Cache-Control: public, max-age=60, stale-while-revalidate=300`
 - `X-RateLimit-Remaining: <count>`
 - CORS headers (`Access-Control-Allow-Origin: *`)
@@ -563,12 +565,13 @@ pnpm lint
 
 Two workflows run on every push/PR to `main`:
 
-| Workflow | Trigger | Jobs |
-| :--- | :--- | :--- |
-| `ci.yml` | push, pull_request | **Validate Shell Scripts & Docker Compose** (Phase 16, fail-fast gate before `pnpm install`), TypeScript check, lint, unit tests, build |
-| `e2e.yml` | push, pull_request | Playwright tests on Chromium, Firefox, WebKit |
+| Workflow  | Trigger            | Jobs                                                                                                                                    |
+| :-------- | :----------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`  | push, pull_request | **Validate Shell Scripts & Docker Compose** (Phase 16, fail-fast gate before `pnpm install`), TypeScript check, lint, unit tests, build |
+| `e2e.yml` | push, pull_request | Playwright tests on Chromium, Firefox, WebKit                                                                                           |
 
 **Phase 16 CI Gate** (`ci.yml` only): The "Validate Shell Scripts & Docker Compose Configs" step runs BEFORE `pnpm install` to catch infra-only bugs early. It performs three checks:
+
 1. `bash -n` on all `scripts/*.sh` files (catches shell syntax errors)
 2. Shebang regex check (first line must be exactly `#!/bin/bash` or `#!/usr/bin/env bash` — catches the `#!/bin/bash.# comment` concatenation bug)
 3. `python3 scripts/validate-compose.py` on all `docker-compose*.yml` files (catches malformed YAML and missing `services` key)
@@ -639,7 +642,13 @@ export default function HomePage() {
 export function LiveDate() {
   const [date, setDate] = useState("");
   useEffect(() => {
-    setDate(new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }));
+    setDate(
+      new Date().toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    );
   }, []);
   return <span>{date}</span>;
 }
@@ -815,6 +824,7 @@ cp node_modules/@fontsource/commit-mono/files/commit-mono-400-normal.woff2 publi
 **Cause 3**: The feed format detection failed. `parseFeed` detects Atom feeds by checking for `<feed` in the raw XML; if the XML has unusual whitespace or encoding, detection may fail and the feed is treated as RSS.
 
 **Fix**: Validate the feed URL with `curl -s <feed-url> | head -20` to inspect the raw XML. Test parsing in isolation:
+
 ```bash
 npx tsx -e "import { parseFeed } from './src/workers/jobs/parseFeed'; fetch('<feed-url>').then(r => r.text()).then(t => parseFeed(t, 'rss').then(items => console.log(items.length, 'items')))";
 ```
@@ -828,6 +838,7 @@ npx tsx -e "import { parseFeed } from './src/workers/jobs/parseFeed'; fetch('<fe
 **Cause**: The `callAISummary` function in `src/workers/jobs/summarize.ts` is being shadowed by an older stub. This can happen if you have uncommitted changes or are on a branch predating Phase 13.
 
 **Fix**: Verify the worker is using the real implementation:
+
 ```bash
 grep -n "Summary placeholder" src/workers/
 # Should return NO matches. If it matches, the stub is still present.
@@ -844,10 +855,12 @@ grep -n "Summary placeholder" src/workers/
 **Cause 2**: The Redis key `ratelimit:api:articles:<ip>` has a stale TTL. This shouldn't happen (TTL is set on first INCR), but a Redis restart mid-window could leave a key without expiry.
 
 **Fix**: Check the current count and TTL in Redis:
+
 ```bash
 redis-cli get ratelimit:api:articles:1.2.3.4
 redis-cli ttl ratelimit:api:articles:1.2.3.4
 ```
+
 If the count is stuck high with a long TTL, delete the key: `redis-cli del ratelimit:api:articles:1.2.3.4`.
 
 **Prevention**: The rate limiter uses a 1-second window, so counts reset quickly. For production behind a CDN, consider using a signed CDN IP header instead of `x-forwarded-for`.
@@ -859,6 +872,7 @@ If the count is stuck high with a long TTL, delete the key: `redis-cli del ratel
 **Cause**: The old FNV-1a implementation is still present. Phase 13 migrated `hashContent` to SHA-256, but if you're on a branch predating Phase 13, the old implementation returns 8-char hashes.
 
 **Fix**: Verify the implementation:
+
 ```bash
 grep -n "createHash\|FNV\|2166136261" src/domain/articles/normalize.ts
 # Should show createHash("sha256"). If it shows 2166136261 (FNV-1a seed), the old impl is present.
@@ -873,6 +887,7 @@ grep -n "createHash\|FNV\|2166136261" src/domain/articles/normalize.ts
 **Cause**: The `enqueuePostIngestFlow` function in `src/lib/queue/flows.ts` may be failing silently, OR the ingest worker is using the old per-article `scoreQueue.add()` pattern instead of the atomic flow.
 
 **Fix**: Verify the ingest worker calls `enqueuePostIngestFlow`:
+
 ```bash
 grep -n "enqueuePostIngestFlow\|scoreQueue.add" src/workers/index.ts
 # Should show enqueuePostIngestFlow. If it shows scoreQueue.add, the old pattern is present.
@@ -894,22 +909,22 @@ Check BullMQ dashboard for the `score` queue — if jobs are appearing there but
 
 ## Security & Compliance
 
-| Concern | Posture |
-| :--- | :--- |
-| **Next.js version** | Pinned to ≥16.0.7 (installed 16.2.9). Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182 (React2Shell RCE) and the 13-advisory DoS/SSRF bundle. (Earlier docs cited ≥16.2.6; MEP v5.1 corrected this — 16.0.7 is the actual security patch.) |
-| **AI Disclosure** | 3-layer machine-readable: JSON-LD + HTTP header + HTML meta. C2PA explicitly rejected (no text standard exists). EU AI Act Art. 50 compliant. |
-| **Authentication** | Auth.js v5 with HttpOnly session cookies. No JWT tokens in localStorage. |
-| **Network boundary** | `proxy.ts` provides optimistic UX redirects. Real auth enforcement in `(admin)/layout.tsx` via `<AdminGuard>` (Phase 16). |
-| **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. Enforced at both Server Action and API Route layers. |
-| **Rate limiting** | `GET /api/articles` rate-limited to 20 req/s per IP via Redis fixed-window counter (Phase 13). Returns `429` with `Retry-After` header. |
-| **Push key encryption** | VAPID keys encrypted at rest with AES-256-GCM. `PUSH_KEY_ENCRYPTION_KEY` is 64-char hex (32-byte), validated at module load. |
-| **Accessibility** | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely. |
-| **DB connections** | Lazy Proxy connection (defers until first query). `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor. |
-| **Content hashing** | `articles.contentHash` uses SHA-256 (via `node:crypto`) of `title|body|publishedAt.toISOString()`. Includes body so content-only updates are detected. (Phase 14) |
-| **Env validation** | All required env vars validated by Zod at module load (`src/lib/env/index.ts`). Fails fast with descriptive error if any are missing/invalid. |
-| **Push key storage** | Encrypted envelope stored in dedicated `encryptedKeys` column (Phase 14). Old `keys` column retained for backward compat but deprecated. |
-| **Trusted proxy** | `TRUSTED_PROXY=true` env var makes rate limiter use rightmost IP from `x-forwarded-for` (prevents spoofing behind CDN). (Phase 14) |
-| **AI failure observability** | After 3 BullMQ retries, failed summaries set `summaryStatus: "needs_review"` — visible in admin review queue. (Phase 14) |
+| Concern                        | Posture                                                                                                                                                                                                                                  |
+| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------ |
+| **Next.js version**            | Pinned to ≥16.0.7 (installed 16.2.9). Per MEP v5.1, ≥16.0.7 mitigates CVE-2025-55182 (React2Shell RCE) and the 13-advisory DoS/SSRF bundle. (Earlier docs cited ≥16.2.6; MEP v5.1 corrected this — 16.0.7 is the actual security patch.) |
+| **AI Disclosure**              | 3-layer machine-readable: JSON-LD + HTTP header + HTML meta. C2PA explicitly rejected (no text standard exists). EU AI Act Art. 50 compliant.                                                                                            |
+| **Authentication**             | Auth.js v5 with HttpOnly session cookies. No JWT tokens in localStorage.                                                                                                                                                                 |
+| **Network boundary**           | `proxy.ts` provides optimistic UX redirects. Real auth enforcement in `(admin)/layout.tsx` via `<AdminGuard>` (Phase 16).                                                                                                                |
+| **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. Enforced at both Server Action and API Route layers.                                                           |
+| **Rate limiting**              | `GET /api/articles` rate-limited to 20 req/s per IP via Redis fixed-window counter (Phase 13). Returns `429` with `Retry-After` header.                                                                                                  |
+| **Push key encryption**        | VAPID keys encrypted at rest with AES-256-GCM. `PUSH_KEY_ENCRYPTION_KEY` is 64-char hex (32-byte), validated at module load.                                                                                                             |
+| **Accessibility**              | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely.                                                                                                              |
+| **DB connections**             | Lazy Proxy connection (defers until first query). `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor.                                                                                                        |
+| **Content hashing**            | `articles.contentHash` uses SHA-256 (via `node:crypto`) of `title                                                                                                                                                                        | body | publishedAt.toISOString()`. Includes body so content-only updates are detected. (Phase 14) |
+| **Env validation**             | All required env vars validated by Zod at module load (`src/lib/env/index.ts`). Fails fast with descriptive error if any are missing/invalid.                                                                                            |
+| **Push key storage**           | Encrypted envelope stored in dedicated `encryptedKeys` column (Phase 14). Old `keys` column retained for backward compat but deprecated.                                                                                                 |
+| **Trusted proxy**              | `TRUSTED_PROXY=true` env var makes rate limiter use rightmost IP from `x-forwarded-for` (prevents spoofing behind CDN). (Phase 14)                                                                                                       |
+| **AI failure observability**   | After 3 BullMQ retries, failed summaries set `summaryStatus: "needs_review"` — visible in admin review queue. (Phase 14)                                                                                                                 |
 
 ---
 
@@ -929,7 +944,8 @@ Check BullMQ dashboard for the `score` queue — if jobs are appearing there but
 
 **Issue**: The `searchVector` column in `schema.ts` must use `.notNull()` to match the generated column contract. Omitting it causes type mismatches.
 
-**Fix**: 
+**Fix**:
+
 ```typescript
 searchVector: tsvector("search_vector")
   .generatedAlwaysAs(sql`...`)
@@ -943,6 +959,7 @@ searchVector: tsvector("search_vector")
 **Lesson**: `verifyAdminSession()` belongs in the Layout (Layer 1), not `proxy.ts` (Layer 0). `proxy.ts` is UX-only and has no DB access.
 
 **Implementation**:
+
 ```typescript
 // src/app/(admin)/layout.tsx
 export default async function AdminLayout({ children }) {
@@ -958,6 +975,7 @@ export default async function AdminLayout({ children }) {
 **Lesson**: Use a Server Component for the page to fetch initial results, and a Client Component wrapper (`SearchPageClient`) for interactivity. The `SearchBar` is `'use client'`; `SearchResults` can be RSC.
 
 **Pattern**:
+
 ```
 page.tsx (Server) → fetches initial results
   └── SearchPageClient (Client) → manages state, debounce, URL sync
@@ -995,18 +1013,20 @@ page.tsx (Server) → fetches initial results
 
 **Issue**: LLM output is unpredictable. How to validate structured AI output reliably?
 
-**Solution**: 
+**Solution**:
+
 1. Define strict Zod schema with `min()` / `max()` constraints
 2. Use `safeParse()` in production, not `parse()`
 3. Map `result.error.issues` to user-friendly error messages
 
 **Key pattern**:
+
 ```typescript
 const result = summarisationOutputSchema.safeParse(rawOutput);
 if (!result.success) {
-  return { 
-    success: false, 
-    error: result.error.issues.map(i => i.message).join("; ")
+  return {
+    success: false,
+    error: result.error.issues.map((i) => i.message).join("; "),
   };
 }
 ```
@@ -1064,11 +1084,12 @@ pnpm why @auth/core
 **Cause**: The Zod `safeParse()` result type is `SafeParseReturnType`, not a direct `ZodError`. You must access `result.error.issues` only when `result.success` is `false`.
 
 **Fix**:
+
 ```typescript
 const result = summarisationOutputSchema.safeParse(raw);
 if (!result.success) {
   // result.error is ZodError here, which has .issues
-  return result.error.issues.map(i => i.message).join("; ");
+  return result.error.issues.map((i) => i.message).join("; ");
 }
 ```
 
@@ -1112,9 +1133,11 @@ if (!result.success) {
 **Cause**: `next.config.ts` doesn't have `output: "standalone"` set, so Next.js doesn't generate the standalone directory during `next build`.
 
 **Fix**: Phase 15 added `output: "standalone"` to `next.config.ts` (top-level, alongside `cacheComponents: true`). Verify it's present:
+
 ```bash
 grep 'output: "standalone"' next.config.ts
 ```
+
 If missing, add it and rebuild.
 
 ### OAuth Sign-In Button Not Appearing on /sign-in Page (Phase 15)
@@ -1124,12 +1147,14 @@ If missing, add it and rebuild.
 **Cause**: The OAuth env vars (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`) are not set in the environment. The sign-in page uses `showGoogle`/`showGithub` props derived from env var presence.
 
 **Fix**: Set the env vars in `.env.local` (or your deployment env):
+
 ```bash
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GITHUB_CLIENT_ID=your-github-client-id
 GITHUB_CLIENT_SECRET=your-github-client-secret
 ```
+
 Then restart the dev server. The buttons will appear automatically.
 
 **Note**: Both `CLIENT_ID` AND `CLIENT_SECRET` must be set for a given provider. Setting only one will NOT enable the provider (defensive — partial config is silently ignored).
@@ -1141,6 +1166,7 @@ Then restart the dev server. The buttons will appear automatically.
 **Cause**: The OAuth provider's configured redirect URI doesn't match `${AUTH_URL}/api/auth/callback/google`.
 
 **Fix**: In the Google Cloud Console (or GitHub OAuth Apps), set the authorized redirect URI to exactly:
+
 - Google: `${AUTH_URL}/api/auth/callback/google` (e.g., `http://localhost:3000/api/auth/callback/google`)
 - GitHub: `${AUTH_URL}/api/auth/callback/github`
 
@@ -1163,9 +1189,11 @@ The `AUTH_URL` env var must match the URL users actually visit (including scheme
 **Cause**: Line 1 of `deploy.sh` was `#!/bin/bash.# Deployment script...` (shebang concatenated with a comment). The kernel tried to exec `/bin/bash.#` which doesn't exist. `bash -n` didn't catch this because bash treats the malformed shebang as a comment line.
 
 **Fix**: Phase 16 split the shebang onto its own line. Verify line 1 is exactly `#!/bin/bash`:
+
 ```bash
 head -1 scripts/deploy.sh
 ```
+
 If it shows `#!/bin/bash.#...`, update to the Phase 16 version: `git checkout scripts/deploy.sh`.
 
 **Prevention**: The Phase 16 CI gate ("Validate Shell Scripts & Docker Compose Configs") runs a shebang regex check on all `scripts/*.sh` files. It catches this exact bug — first line must be exactly `#!/bin/bash` or `#!/usr/bin/env bash` with no trailing text.
@@ -1177,9 +1205,11 @@ If it shows `#!/bin/bash.#...`, update to the Phase 16 version: `git checkout sc
 **Cause**: Lines 20-21 used `"DOCKER_REGISTRY/onestopnews-web:$IMAGE_TAG"` — missing `$` prefix on `DOCKER_REGISTRY` meant the literal string was passed.
 
 **Fix**: Phase 16 fixed the interpolation to `"${DOCKER_REGISTRY}/onestopnews-web:${IMAGE_TAG}"`. Verify:
+
 ```bash
 grep 'DOCKER_REGISTRY' scripts/deploy.sh
 ```
+
 Should show `"${DOCKER_REGISTRY}/onestopnews-web:${IMAGE_TAG}"` (with `$` and braces).
 
 ### Production Redis Loses BullMQ Jobs on Restart (Phase 16)
@@ -1189,6 +1219,7 @@ Should show `"${DOCKER_REGISTRY}/onestopnews-web:${IMAGE_TAG}"` (with `$` and br
 **Cause**: The `docker-compose.prod.yml` redis service had NO `command:` block, so Redis ran with defaults: no `--appendonly yes` (no AOF persistence) and undocumented eviction policy. RDB snapshots only run periodically and can lose up to 60s of data.
 
 **Fix**: Phase 16 added an explicit `command:` block to the prod redis service mirroring `docker-compose-dev.yml`:
+
 ```yaml
 redis:
   image: redis:7-alpine
@@ -1200,9 +1231,11 @@ redis:
     --save 60 1000
     --loglevel warning
 ```
+
 The `--maxmemory-policy noeviction` is mandatory for BullMQ (evicting jobs causes OOM errors). The `--appendonly yes` enables AOF persistence so jobs survive Redis restarts.
 
 **Verification**: After deploying, verify the policy is active:
+
 ```bash
 docker compose -f docker-compose.prod.yml exec redis redis-cli CONFIG GET maxmemory-policy
 # Should return: "noeviction"
@@ -1215,11 +1248,13 @@ docker compose -f docker-compose.prod.yml exec redis redis-cli CONFIG GET maxmem
 **Cause**: Pre-Phase-16, `encrypt.ts` validated the env var lazily inside `getKey()`, called from `encryptPushKeys()`/`decryptPushKeys()`. This is a deferred-failure pattern — boot succeeds, first push 500s.
 
 **Fix**: Phase 16 hoisted the validation to module scope. Now if `PUSH_KEY_ENCRYPTION_KEY` is missing or not a 64-char hex string, the worker/web server fails fast at boot with a descriptive error:
+
 ```
 Error: PUSH_KEY_ENCRYPTION_KEY must be a 32-byte (64 hex char) string. Generate one with: openssl rand -hex 32
 ```
 
 **Verification**: Test by unsetting the env var and starting the worker:
+
 ```bash
 unset PUSH_KEY_ENCRYPTION_KEY
 pnpm worker
@@ -1243,6 +1278,7 @@ pnpm worker
 **Cause**: Pre-Phase-17, the root `layout.tsx` had no skip link, and the `<main>` elements in page templates had no `id` attribute for the link to target. This is a WCAG AAA violation.
 
 **Fix**: Phase 17 added a skip link as the first child of `<body>` in `src/app/layout.tsx`:
+
 ```tsx
 <a
   href="#main-content"
@@ -1251,6 +1287,7 @@ pnpm worker
   Skip to content
 </a>
 ```
+
 Every page template that renders body content must include `<main id="main-content">` so the skip link has a valid target. The 4 page templates are: `(public)/page.tsx`, `topics/[category]/page.tsx`, `(public)/search/page.tsx`, `article/[id]/page.tsx`.
 
 **Verification**: The layout test at `src/app/layout.test.tsx` has 4 tests verifying the skip link is present, visually hidden by default, visible on focus, and the first focusable element. The page test at `src/app/(public)/page.test.tsx` verifies `<main id="main-content">` exists.
@@ -1262,15 +1299,19 @@ Every page template that renders body content must include `<main id="main-conte
 **Cause**: Pre-Phase-17, the JSON-LD was emitted via `metadata.other["json-ld-provenance"]` in `generateMetadata()` (in `src/app/article/[id]/page.tsx`). **Next.js's `metadata.other` API renders keys as `<meta>` tags, NOT `<script>` tags.** So the JSON-LD was being rendered as `<meta name="json-ld-provenance" content="...">` — semantically wrong and invisible to schema.org crawlers.
 
 **Fix**: Phase 17 renders the JSON-LD as a direct `<script>` element in `src/features/articles/components/ArticleData.tsx` body when `article.summary.status === "ok"`:
+
 ```tsx
-{jsonLdScript && (
-  <script
-    type="application/ld+json"
-    key={`provenance-jsonld-${article.id}`}
-    dangerouslySetInnerHTML={{ __html: jsonLdScript }}
-  />
-)}
+{
+  jsonLdScript && (
+    <script
+      type="application/ld+json"
+      key={`provenance-jsonld-${article.id}`}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript }}
+    />
+  );
+}
 ```
+
 The `key` prop deduplicates the script across re-renders (React 19 supports `<script>` in Server Components). The broken `json-ld-provenance` entry was removed from `metadata.other` in `page.tsx` (the meta tag + HTTP header layers remain there via `metadata.other`).
 
 **Verification**: The ArticleData test at `src/features/articles/components/ArticleData.test.tsx` has 3 tests verifying the `<script>` tag is present when status='ok', absent when no summary, and absent when status='needs_review'. The test also parses the JSON content and asserts `@type: "CreativeWork"` + `accountablePerson.name: "AI System: ${model}"`.
@@ -1284,12 +1325,15 @@ The `key` prop deduplicates the script across re-renders (React 19 supports `<sc
 **Cause**: Pre-Phase-17, `src/domain/ranking/score.ts:16` and `src/lib/db/seed.ts:39-43` hand-wrote the enum unions (`"title_only" | "excerpt" | "partial_text" | "full_text"` and `"rss" as const`) instead of deriving them from the schema. If the schema enum changed, these would silently drift.
 
 **Fix**: Phase 17 exported 4 derived types from `src/lib/db/schema.ts`:
+
 ```typescript
 export type UserRole = (typeof userRoleEnum.enumValues)[number];
 export type FeedFormat = (typeof feedFormatEnum.enumValues)[number];
-export type ContentAvailability = (typeof contentAvailabilityEnum.enumValues)[number];
+export type ContentAvailability =
+  (typeof contentAvailabilityEnum.enumValues)[number];
 export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
 ```
+
 `score.ts` and `seed.ts` now import these types. A compile-time `satisfies` check in `score.test.ts` enforces that `ScoringInputs["contentAvailability"]` matches `SchemaContentAvailability` — if either type changes, `tsc` fails.
 
 **Verification**: Run `pnpm check` — the `satisfies` check is compile-time. The seed test at `src/lib/db/seed.test.ts` has 2 runtime tests verifying all seed values are valid schema enum values.
@@ -1349,6 +1393,7 @@ export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
 ### ~~Article Detail Page~~ (RESOLVED — Phase 14, refined Phase 17)
 
 **Status**: RESOLVED. Phase 14 implemented the full article detail page:
+
 - `getArticleWithSummary(id)` query with 4-way JOIN (articles + sources + categories + summaries)
 - `ArticleData.tsx` fetches real article data, renders title/excerpt/body/source/category
 - Renders `SummaryPanel` (5-state machine) with real `initialStatus` + `summary` props
@@ -1399,26 +1444,27 @@ export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
 
 ## Project Status
 
-| Phase | Status | Key Deliverables |
-| :--- | :--- | :--- |
-| **Phase 1** — Foundation & Configuration | **COMPLETE** | next.config.ts, proxy.ts, tsconfig.json, docker-compose |
-| **Phase 2** — Database Schema & Infrastructure | **COMPLETE** | Drizzle schema (11 tables: 8 business + 3 Auth.js adapter), lazy DB client, Auth.js v5, BullMQ queues |
-| **Phase 3** — Design System & Shared Components | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition |
-| **Phase 4** — Core Feed Feature | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes |
-| **Phase 5** — AI Summarisation Pipeline | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API endpoint |
-| **Phase 6** — Search, Admin & Public API | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`) |
-| **Phase 7** — Worker Service, Push & Observability | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API |
-| **Phase 8** — Testing, CI/CD & Deployment | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script |
-| **Phase 9** — Blocking Route Fix & Suspense | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support |
-| **Phase 10** — Landing Page & Design System | **COMPLETE** | 10-section landing page, design system tokens (cat-label, btn-ember, animations), db:seed, test mocking |
-| **Phase 11** — Landing Page Bug Fixes & SSR Remediation | **COMPLETE** | Fixed CSS merge artifact, `.reveal` scroll animations, `next-prerender-current-time` fix, `ArticleCard` client conversion |
-| **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix | **COMPLETE** | `@tailwindcss/postcss` + `postcss.config.mjs`, Commit Mono via `next/font/local`, `.font-editorial` enhancement, `.next` cache clear |
-| **Phase 13** — Critical Gaps Remediation | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes, `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts |
-| **Phase 14** — Validated Gaps Closure | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test (replaced hardcoded vector), `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh` convention), article detail page with real data fetch + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E smoke tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review` after 3 retries), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E) |
-| **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth) | **COMPLETE** | Pinned both production Dockerfiles to `node:24-alpine` + added `output: "standalone"` to `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent `worker:build` script + missing `dist/`); fixed `Dockerfile.dev`/`Dockerfile.worker.dev` (removed non-existent `packages/` copy + corrected script names); cursor-based "Load More" pagination on home feed (`FeedContainer` + `LoadMoreButton` client components using existing `Button` primitive); dropped deprecated `push_subscriptions.keys` column via migration `0005_neat_wolverine.sql`; added Google + GitHub OAuth providers (conditional on env vars, Credentials-only fallback preserved); created `/sign-in` and `/auth-error` pages (previously referenced in `pages.signIn`/`pages.error` but missing); added optional OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + `.github/workflows/ci.yml` + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E) |
-| **Phase 16** — Remediation Batches 1-4 (AdminGuard, TRUSTED_PROXY, Push Key Validation, Prod Redis + Deploy + CI Gate) | **COMPLETE** | Centralized admin auth via `AdminGuard` async Server Component in `(admin)/layout.tsx` wrapped in `<Suspense>` (HIGH security fix — any future admin page is now automatically protected); removed redundant `verifyAdminSession()` calls from `SummariesData` + `SourcesData`; added `TRUSTED_PROXY: z.string().optional()` to Zod env schema + switched `/api/articles` route to typed `env.TRUSTED_PROXY`; hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load in `encrypt.ts` (fail-fast at boot, cached `KEY_BUFFER`); hardened prod Redis (`--maxmemory-policy noeviction --appendonly yes --save 60 1000 --maxmemory 1gb`); fixed `deploy.sh` shebang (`#!/bin/bash` on its own line) + `$DOCKER_REGISTRY` variable interpolation; added CI "Validate Shell Scripts & Docker Compose Configs" gate (runs before `pnpm install` — `bash -n` + shebang regex + `validate-compose.py`); created `scripts/validate-compose.py` YAML validator (**292 tests across 52 suites** + 10 E2E) |
-| **Phase 17** — Comprehensive Remediation (Skip-Link, JSON-LD Provenance, DRY Enums, Dep Pinning, Cleanup) | **COMPLETE** | Added skip-to-content link in root `layout.tsx` + `id="main-content"` on `<main>` in 4 page templates (HIGH a11y fix — WCAG AAA compliance); fixed JSON-LD provenance to render as `<script type="application/ld+json">` in `ArticleData.tsx` body (was broken via `metadata.other` which renders `<meta>` tags, not `<script>` tags — MEDIUM EU AI Act compliance fix); exported 4 derived types from `schema.ts` (`UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus`) + refactored `score.ts` and `seed.ts` to use them (LOW Single Source of Truth fix); pinned all 24 `"latest"` dep entries to `^` ranges matching lockfile; removed `db:push` script from `package.json`; deleted stale `Dockerfile.sample.dev` (Wellfond BMS legacy); rewrote `docker-compose-sample.yml` to match actual project topology; aligned README `.number-counter` → `.commitment-number` (**302 tests across 53 suites** + 10 E2E) |
-| **Phase 18** — Database Reinitialization & Skip-Link Supplement | **COMPLETE** | Created `database_reinitialize.md` protocol + `scripts/reinit-db.sh` (Docker-aware `dropdb`/`createdb`/`pg_restore` with 15s health checks and `--clean --if-exists` flags); extended skip-link supplement pass from 7 page templates down to 0 remaining; validated `docker-compose.dev.yml` stack builds cleanly; confirmed `db:push` removal and `"latest'` dep pinning completion (327 tests across 57 suites + 10 E2E) |
+| Phase                                                                                                                  | Status       | Key Deliverables                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| :--------------------------------------------------------------------------------------------------------------------- | :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phase 1** — Foundation & Configuration                                                                               | **COMPLETE** | next.config.ts, proxy.ts, tsconfig.json, docker-compose                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Phase 2** — Database Schema & Infrastructure                                                                         | **COMPLETE** | Drizzle schema (11 tables: 8 business + 3 Auth.js adapter), lazy DB client, Auth.js v5, BullMQ queues                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Phase 3** — Design System & Shared Components                                                                        | **COMPLETE** | Button, Badge, Skeleton, Header, Footer, useDebounce, useReducedMotion, PageTransition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Phase 4** — Core Feed Feature                                                                                        | **COMPLETE** | Domain layer, feed queries, FeedGrid, ArticleCard, home/topic/article routes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Phase 5** — AI Summarisation Pipeline                                                                                | **COMPLETE** | Zod schema, prompts, 3-layer provenance, NutritionLabel, SummaryPanel, actions, API endpoint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **Phase 6** — Search, Admin & Public API                                                                               | **COMPLETE** | FTS search with BM25 (`ts_rank_cd`), admin routes (`/admin/sources`, `/admin/summaries`), public REST API (`/api/articles`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Phase 7** — Worker Service, Push & Observability                                                                     | **COMPLETE** | 4 BullMQ workers, scheduler, content guard, AES-256-GCM push encryption, DST-safe quiet hours, cache invalidation, push subscribe API                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Phase 8** — Testing, CI/CD & Deployment                                                                              | **COMPLETE** | GitHub Actions CI/E2E pipelines, multi-stage Dockerfiles (web + worker), docker-compose.prod.yml, Lighthouse CI, Vitest coverage thresholds, deployment script                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Phase 9** — Blocking Route Fix & Suspense                                                                            | **COMPLETE** | FeedData.tsx/FeedSkeleton.tsx Server Components, key-ed Suspense, async params support                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Phase 10** — Landing Page & Design System                                                                            | **COMPLETE** | 10-section landing page, design system tokens (cat-label, btn-ember, animations), db:seed, test mocking                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **Phase 11** — Landing Page Bug Fixes & SSR Remediation                                                                | **COMPLETE** | Fixed CSS merge artifact, `.reveal` scroll animations, `next-prerender-current-time` fix, `ArticleCard` client conversion                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **Phase 12** — Tailwind v4 PostCSS & Commit Mono Font Fix                                                              | **COMPLETE** | `@tailwindcss/postcss` + `postcss.config.mjs`, Commit Mono via `next/font/local`, `.font-editorial` enhancement, `.next` cache clear                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Phase 13** — Critical Gaps Remediation                                                                               | **COMPLETE** | Real RSS/Atom/JSON parser (`rss-parser`), real AI summarization (Vercel AI SDK: Anthropic primary + OpenAI fallback), `FlowProducer` atomic DAG (ingest → score → refresh-feed-slice), `/api/articles` cursor validation + Redis rate limiting (20 req/s per IP), `hashContent` upgraded to SHA-256, `/api/categories` endpoint, `cacheInvalidation` singleton publisher, CI workflow fixed (Node 24 + all env vars), UI CSS class corruption fixes, `accountablePerson.name` provenance fidelity, `body` column added to articles schema, content-change-detection upserts                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Phase 14** — Validated Gaps Closure                                                                                  | **COMPLETE** | `hashContent` includes body (content-only updates detected), rate limiter `TRUSTED_PROXY` env var (rightmost IP for CDN), property-based `node:crypto` SHA-256 test (replaced hardcoded vector), `pushSubscriptions.encryptedKeys` column (replaced misleading `keys.p256dh` convention), article detail page with real data fetch + `SummaryPanel` + 3-layer provenance via `generateMetadata()`, Playwright config + 10 E2E smoke tests, 8 pipeline integration tests, `getSummaryFailureState` (permanent failure → `needs_review` after 3 retries), `e2e/` excluded from vitest/ESLint/tsc (**251 tests across 45 suites** + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **Phase 15** — Production Readiness (Dockerfiles, Load More, Drop keys, OAuth)                                         | **COMPLETE** | Pinned both production Dockerfiles to `node:24-alpine` + added `output: "standalone"` to `next.config.ts`; rewrote `Dockerfile.worker` to run `tsx src/workers/index.ts` directly (fixing malformed lines + non-existent `worker:build` script + missing `dist/`); fixed `Dockerfile.dev`/`Dockerfile.worker.dev` (removed non-existent `packages/` copy + corrected script names); cursor-based "Load More" pagination on home feed (`FeedContainer` + `LoadMoreButton` client components using existing `Button` primitive); dropped deprecated `push_subscriptions.keys` column via migration `0005_neat_wolverine.sql`; added Google + GitHub OAuth providers (conditional on env vars, Credentials-only fallback preserved); created `/sign-in` and `/auth-error` pages (previously referenced in `pages.signIn`/`pages.error` but missing); added optional OAuth env vars to `env/index.ts` + `.env.example` + `src/test/setup.ts` + `.github/workflows/ci.yml` + `docker-compose.prod.yml` (**279 tests across 49 suites** + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Phase 16** — Remediation Batches 1-4 (AdminGuard, TRUSTED_PROXY, Push Key Validation, Prod Redis + Deploy + CI Gate) | **COMPLETE** | Centralized admin auth via `AdminGuard` async Server Component in `(admin)/layout.tsx` wrapped in `<Suspense>` (HIGH security fix — any future admin page is now automatically protected); removed redundant `verifyAdminSession()` calls from `SummariesData` + `SourcesData`; added `TRUSTED_PROXY: z.string().optional()` to Zod env schema + switched `/api/articles` route to typed `env.TRUSTED_PROXY`; hoisted `PUSH_KEY_ENCRYPTION_KEY` validation to module load in `encrypt.ts` (fail-fast at boot, cached `KEY_BUFFER`); hardened prod Redis (`--maxmemory-policy noeviction --appendonly yes --save 60 1000 --maxmemory 1gb`); fixed `deploy.sh` shebang (`#!/bin/bash` on its own line) + `$DOCKER_REGISTRY` variable interpolation; added CI "Validate Shell Scripts & Docker Compose Configs" gate (runs before `pnpm install` — `bash -n` + shebang regex + `validate-compose.py`); created `scripts/validate-compose.py` YAML validator (**292 tests across 52 suites** + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Phase 17** — Comprehensive Remediation (Skip-Link, JSON-LD Provenance, DRY Enums, Dep Pinning, Cleanup)              | **COMPLETE** | Added skip-to-content link in root `layout.tsx` + `id="main-content"` on `<main>` in 4 page templates (HIGH a11y fix — WCAG AAA compliance); fixed JSON-LD provenance to render as `<script type="application/ld+json">` in `ArticleData.tsx` body (was broken via `metadata.other` which renders `<meta>` tags, not `<script>` tags — MEDIUM EU AI Act compliance fix); exported 4 derived types from `schema.ts` (`UserRole`, `FeedFormat`, `ContentAvailability`, `SummaryStatus`) + refactored `score.ts` and `seed.ts` to use them (LOW Single Source of Truth fix); pinned all 24 `"latest"` dep entries to `^` ranges matching lockfile; removed `db:push` script from `package.json`; deleted stale `Dockerfile.sample.dev` (Wellfond BMS legacy); rewrote `docker-compose-sample.yml` to match actual project topology; aligned README `.number-counter` → `.commitment-number` (**302 tests across 53 suites** + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **Phase 18** — Database Reinitialization & Skip-Link Supplement                                                        | **COMPLETE** | Created `database_reinitialize.md` protocol + `scripts/reinit-db.sh` (Docker-aware `dropdb`/`createdb`/`pg_restore` with 15s health checks and `--clean --if-exists` flags); extended skip-link supplement pass from 7 page templates down to 0 remaining; validated `docker-compose.dev.yml` stack builds cleanly; confirmed `db:push` removal and `"latest'` dep pinning completion (327 tests across 57 suites + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Phase 19** — Comprehensive Code Audit & Remediation                                                                  | **COMPLETE** | Conducted systematic 7-dimension code audit (security, frontend, DB/worker/API, CI/ops/testing) against the codebase. Identified 47 validated gaps with root-cause analysis. Applied TDD-driven fixes across 5 batches: **Critical (5)** — CI redness from vendored `skills/` (C1: tsconfig/eslint exclude), rate limiting on `/api/summarize/[id]` (C2: per-user 5/min), `requestSummary` Server Action auth (C3), FlowProducer resilience to Redis failures via scoreQueue fallback (C4), SummariesData Approve/Disable button wiring via form actions + new `approveSummary` action (C5). **High UX (5)** — Accordion focus rings (H1), Header sign-in/out button via `<UserMenu>` + `SessionProvider` (H2), Search error state with Retry (H3), SummaryPanel error state with Try Again (H4), branded `error.tsx`/`not-found.tsx`/`global-error.tsx` (H5). **High Data (7)** — `@vitest/coverage-v8` installed + CI coverage gate (H6), `deploy.sh` zero-downtime + rollback trap + removed `\|\| true` (H7), created missing `nginx/nginx.conf` (H8), replaced regex HTML stripper with `cheerio` (H9), `needs_review` alerting via `checkNeedsReviewAlert` (H10), cross-field search migration `0006` adding `body` (weight C) + denormalized `sourceName` (weight D) to `searchVector` (H11), eliminated all `process.env.*` direct reads in favor of typed `env` export (H12). **Medium (15 of 19)** — HSTS + CSP headers (M1), `TRUSTED_PROXY_CIDRS` env + boot warning (M2), paginated sources query (M3), search result caching via `"use cache"` + `cacheLife("reference")` (M4), `@axe-core/playwright` + `e2e/a11y.spec.ts` (M5), actionable `OAuthAccountNotLinked` error message via `AuthErrorMessage` (M6), hardened worker shutdown with 25s timeout + `Promise.allSettled` (M7), `fastupdate=off` GIN index activated (M8), Dockerfile HEALTHCHECK on web + worker (M9), husky + lint-staged pre-commit hooks (M10), INP budget in `lighthouserc.js` (M11), SourcesData empty state (M13), design tokens `dispatch-warning`/`dispatch-danger` replacing `amber-*`/`red-*` defaults (M15), `npx tsx` → bare `tsx` (M16), dropped legacy `version: '3.8'` (M17), search queries header corrected (M18), `no-explicit-any` promoted to `error` (M19). **Deferred (4 Medium + 8 Low)**: M12 testcontainers (needs Docker), M14 (covered by C5), full TRUSTED_PROXY_CIDR chain walking, OAuth account-linking UI flow, JSON-LD BreadcrumbList/WebSite, RevealProvider activation decision, AGENTS.md/CLAUDE.md consolidation, stale `Codebase_Review_Validation_Report_2.md`/`_3.md` archive. **Final test count: 392 tests across 63 suites** + 10 Playwright E2E (was 312/56 at audit start — +80 tests, +7 suites). `pnpm check` and `pnpm lint` both green (was red at audit start due to vendored `skills/`). |
 
 ---
 
@@ -1456,15 +1502,15 @@ pnpm test          # Run affected test suites
 
 Key ADRs are documented in the [Project Architecture Document (PAD) v4.5](./docs/Project_Architecture_Document_v4.5.md):
 
-| ADR | Decision | Core Rationale |
-| :--- | :--- | :--- |
-| ADR-001 | Next.js 16 App Router | Opt-in Cache Components eliminates v13/14 caching footguns. PPR + `proxy.ts` for edge prerendering. |
-| ADR-002 | BullMQ v5 on Redis | Job priorities, parent-child Flows, built-in monitoring dashboard. No SQS or pg-boss. |
-| ADR-003 | Drizzle ORM with Lazy Proxy | Zero runtime overhead. Lazy connection prevents Next.js build-time crashes. |
-| ADR-004 | Auth.js v5 (pinned beta) | Native App Router, HttpOnly cookies, Drizzle adapter. Strict PRD v4.3 alignment. |
-| ADR-005 | PostgreSQL FTS + `ts_rank_cd` BM25 | Search inside Postgres. No Elasticsearch operational burden. `pg_trgm` for autocomplete. |
-| ADR-006 | Modular Monolith + Separate Worker | AI summarisation (2–10s) must not block HTTP handling. No microservices complexity. |
-| ADR-007 | Turbopack as default bundler | 5–10× faster HMR. Fully compatible with all dependencies. |
+| ADR     | Decision                           | Core Rationale                                                                                      |
+| :------ | :--------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| ADR-001 | Next.js 16 App Router              | Opt-in Cache Components eliminates v13/14 caching footguns. PPR + `proxy.ts` for edge prerendering. |
+| ADR-002 | BullMQ v5 on Redis                 | Job priorities, parent-child Flows, built-in monitoring dashboard. No SQS or pg-boss.               |
+| ADR-003 | Drizzle ORM with Lazy Proxy        | Zero runtime overhead. Lazy connection prevents Next.js build-time crashes.                         |
+| ADR-004 | Auth.js v5 (pinned beta)           | Native App Router, HttpOnly cookies, Drizzle adapter. Strict PRD v4.3 alignment.                    |
+| ADR-005 | PostgreSQL FTS + `ts_rank_cd` BM25 | Search inside Postgres. No Elasticsearch operational burden. `pg_trgm` for autocomplete.            |
+| ADR-006 | Modular Monolith + Separate Worker | AI summarisation (2–10s) must not block HTTP handling. No microservices complexity.                 |
+| ADR-007 | Turbopack as default bundler       | 5–10× faster HMR. Fully compatible with all dependencies.                                           |
 
 ---
 
@@ -1483,7 +1529,13 @@ Key ADRs are documented in the [Project Architecture Document (PAD) v4.5](./docs
 export function LiveDate() {
   const [date, setDate] = useState("");
   useEffect(() => {
-    setDate(new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }));
+    setDate(
+      new Date().toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
+    );
   }, []);
   return <span>{date}</span>;
 }
@@ -1539,7 +1591,9 @@ global.IntersectionObserver = class {
 } as unknown as typeof IntersectionObserver;
 
 global.Intl.DateTimeFormat = class {
-  format() { return "10 June 2026"; }
+  format() {
+    return "10 June 2026";
+  }
 } as unknown as typeof Intl.DateTimeFormat;
 ```
 
@@ -1575,12 +1629,14 @@ export default function HomePage() {
 ### 1. RSS Parser Selection — `rss-parser` Field Conflation
 
 **Issue**: `rss-parser` conflates several source fields into its built-in `content` property:
+
 - For RSS 2.0: `content` = `<content:encoded>` if present, else `<description>`
 - For Atom: `content` = `<content>` if present, else `<summary>`
 
 This makes it impossible to distinguish "body" from "excerpt" using `content` alone.
 
 **Fix**: Read fields explicitly by feed type:
+
 - RSS: use `content:encoded` (custom field) for body, `contentSnippet` for excerpt
 - Atom: detect via root element `<feed>` in raw XML, use `content` for body, `summary` for excerpt
 
@@ -1591,9 +1647,11 @@ This makes it impossible to distinguish "body" from "excerpt" using `content` al
 **Issue**: `rss-parser` documentation suggests `parsed.feedType` returns `"rss"` | `"atom"` | `"rdf"`. In practice (v3.13.0), `feedType` is `undefined` for Atom feeds.
 
 **Fix**: Detect feed type by inspecting the raw XML root element:
+
 ```typescript
-const isAtom = /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
-               /^\s*<feed[\s>]/i.test(content.trim());
+const isAtom =
+  /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
+  /^\s*<feed[\s>]/i.test(content.trim());
 ```
 
 ### 3. Vercel AI SDK v6 — `generateObject` Returns `result.object`, Not `result`
@@ -1601,9 +1659,19 @@ const isAtom = /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
 **Issue**: The AI SDK v6 `generateObject()` returns `{ object, usage, ... }` — the validated output is in `result.object`, not `result` directly.
 
 **Fix**: Spread `result.object` and add `model` + `tokensUsed` from `result.usage`:
+
 ```typescript
-const result = await generateObject({ model, schema, messages, temperature: 0.1 });
-return { ...result.object, model: PRIMARY_MODEL, tokensUsed: result.usage?.totalTokens ?? 0 };
+const result = await generateObject({
+  model,
+  schema,
+  messages,
+  temperature: 0.1,
+});
+return {
+  ...result.object,
+  model: PRIMARY_MODEL,
+  tokensUsed: result.usage?.totalTokens ?? 0,
+};
 ```
 
 ### 4. `articles.body` Column — Schema Design Gap
@@ -1617,6 +1685,7 @@ return { ...result.object, model: PRIMARY_MODEL, tokensUsed: result.usage?.total
 **Issue**: When mocking classes like `Redis` or `FlowProducer` that are called with `new`, `vi.fn(() => mockInstance)` doesn't work — `new` on a vi.fn returns an empty object, ignoring the return value.
 
 **Fix**: Use a real class in the mock factory:
+
 ```typescript
 vi.mock("ioredis", () => ({
   Redis: class MockRedis {
@@ -1650,12 +1719,14 @@ vi.mock("ioredis", () => ({
 **Issue**: When using `onConflictDoUpdate`, how do you distinguish a newly INSERTed row from an UPDATEd row?
 
 **Fix**: Use the PostgreSQL system column `xmax` in the RETURNING clause:
+
 ```typescript
 .returning({
   id: articles.id,
   isNew: sql<boolean>`(xmax = 0)`,  // true for INSERT, false for UPDATE
 })
 ```
+
 `xmax = 0` is true only for newly inserted rows (no transaction ID to delete). For updated rows, `xmax` is non-zero. Combined with a `WHERE content_hash != excluded.content_hash` clause, this lets you detect content changes and only enqueue scoring for genuinely new articles.
 
 ### 10. Singleton Publisher Pattern for Cache Invalidation
@@ -1663,15 +1734,20 @@ vi.mock("ioredis", () => ({
 **Issue**: The original `cacheInvalidation.ts` created a new Redis connection per call (`new Redis(...)` + `redis.quit()` in finally). Under high ingest load (50 concurrent workers), this caused connection churn.
 
 **Fix**: Module-level singleton publisher:
+
 ```typescript
 let _publisher: Redis | null = null;
 function getPublisher(): Redis {
   if (!_publisher) {
-    _publisher = new Redis(env.REDIS_URL, { maxRetriesPerRequest: 3, connectTimeout: 5000 });
+    _publisher = new Redis(env.REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      connectTimeout: 5000,
+    });
   }
   return _publisher;
 }
 ```
+
 The publisher stays alive for the process lifetime. The `flows.ts` FlowProducer uses the same singleton pattern.
 
 ---

@@ -68,6 +68,13 @@ const nextConfig: NextConfig = {
   },
 
   // ── SECURITY HEADERS ─────────────────────────────────────────────────────
+  // Phase 19 (M1): Added HSTS and CSP. Previously these were missing — the
+  // app relied on the upstream CDN/reverse proxy to set them, which left
+  // the app exposed if deployed without a CDN. HSTS forces HTTPS for 2 years;
+  // CSP restricts script/style/img/connect sources to 'self' (with
+  // 'unsafe-inline' for scripts/styles as a transitional measure until
+  // nonce-based CSP is implemented — Next.js inline scripts and Tailwind
+  // runtime require this in development).
   async headers() {
     return [
       {
@@ -87,8 +94,33 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value:
-              "geolocation=(), microphone=(), camera=()",
+            value: "geolocation=(), microphone=(), camera=()",
+          },
+          // HSTS — tells browsers to only use HTTPS for 2 years (with
+          // subdomains and preload list eligibility). If deploying behind
+          // a CDN that also sets HSTS, the browser uses the longer of the
+          // two max-age values, so this is safe to set here even with a CDN.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          // Content-Security-Policy — restricts resource loading to trusted
+          // sources. The 'unsafe-inline' for scripts and styles is a
+          // transitional measure; production should migrate to nonce-based
+          // CSP via Next.js 16's headers() nonce pattern.
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' https: data:",
+              "font-src 'self' data:",
+              "connect-src 'self'",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
           },
         ],
       },

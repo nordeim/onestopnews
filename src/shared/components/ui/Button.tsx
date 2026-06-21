@@ -14,8 +14,8 @@ import { cn } from "@/shared/lib/utils";
 const buttonVariants = cva(
   /* Base styles — shared across all variants */
   "inline-flex items-center justify-center gap-2 rounded-sm font-ui font-medium text-sm transition-all duration-150 ease-out " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 " +
-  "disabled:pointer-events-none disabled:opacity-50",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 " +
+    "disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -31,9 +31,9 @@ const buttonVariants = cva(
         /* Ghost — no border, minimal */
         ghost:
           "bg-transparent text-ink-600 hover:bg-paper-100 hover:text-ink-900",
-        /* Destructive — for dangerous actions */
+        /* Destructive — for dangerous actions (Phase 19 / M15: design-system danger tokens) */
         destructive:
-          "bg-red-600 text-paper-50 hover:bg-red-700 active:scale-[0.98]",
+          "bg-dispatch-danger text-paper-50 hover:bg-dispatch-danger-dark active:scale-[0.98]",
       },
       size: {
         sm: "h-8 px-3 text-xs",
@@ -46,7 +46,7 @@ const buttonVariants = cva(
       variant: "primary",
       size: "md",
     },
-  }
+  },
 );
 
 /* ─── Spinner Sub-component ─────────────────────────────────────────────── */
@@ -78,7 +78,8 @@ function ButtonSpinner({ className }: { className?: string }) {
 
 /* ─── Component Interface ─────────────────────────────────────────────── */
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   isLoading?: boolean;
@@ -97,7 +98,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const Comp = asChild ? Slot : "button";
 
@@ -112,7 +113,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {children}
       </Comp>
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

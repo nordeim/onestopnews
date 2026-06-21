@@ -7,6 +7,7 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/shared/lib/utils";
 import { Search } from "lucide-react";
+import { UserMenu } from "./UserMenu";
 
 /**
  * Header — Sticky editorial masthead with category navigation.
@@ -21,13 +22,48 @@ import { Search } from "lucide-react";
 
 /* ─── Category Configuration ───────────────────────────────────────────── */
 export const CATEGORIES = [
-  { slug: "top-stories",  name: "Top Stories",  colourClass: "bg-dispatch-ember",  activeBorder: "border-dispatch-ember" },
-  { slug: "local",        name: "Local",        colourClass: "bg-dispatch-clay",   activeBorder: "border-dispatch-clay" },
-  { slug: "tech",         name: "Tech",         colourClass: "bg-dispatch-slate",  activeBorder: "border-dispatch-slate" },
-  { slug: "global",       name: "Global",       colourClass: "bg-dispatch-slate",  activeBorder: "border-dispatch-slate" },
-  { slug: "finance",      name: "Finance",      colourClass: "bg-dispatch-sage",   activeBorder: "border-dispatch-sage" },
-  { slug: "politics",     name: "Politics",     colourClass: "bg-dispatch-clay",   activeBorder: "border-dispatch-clay" },
-  { slug: "culture",      name: "Culture",      colourClass: "bg-dispatch-violet", activeBorder: "border-dispatch-violet" },
+  {
+    slug: "top-stories",
+    name: "Top Stories",
+    colourClass: "bg-dispatch-ember",
+    activeBorder: "border-dispatch-ember",
+  },
+  {
+    slug: "local",
+    name: "Local",
+    colourClass: "bg-dispatch-clay",
+    activeBorder: "border-dispatch-clay",
+  },
+  {
+    slug: "tech",
+    name: "Tech",
+    colourClass: "bg-dispatch-slate",
+    activeBorder: "border-dispatch-slate",
+  },
+  {
+    slug: "global",
+    name: "Global",
+    colourClass: "bg-dispatch-slate",
+    activeBorder: "border-dispatch-slate",
+  },
+  {
+    slug: "finance",
+    name: "Finance",
+    colourClass: "bg-dispatch-sage",
+    activeBorder: "border-dispatch-sage",
+  },
+  {
+    slug: "politics",
+    name: "Politics",
+    colourClass: "bg-dispatch-clay",
+    activeBorder: "border-dispatch-clay",
+  },
+  {
+    slug: "culture",
+    name: "Culture",
+    colourClass: "bg-dispatch-violet",
+    activeBorder: "border-dispatch-violet",
+  },
 ];
 
 /* ─── Component Interface ─────────────────────────────────────────────── */
@@ -38,7 +74,10 @@ export interface HeaderProps {
 }
 
 /* ─── Component ───────────────────────────────────────────────────────── */
-export function Header({ activeCategory: activeCategoryProp, className }: HeaderProps) {
+export function Header({
+  activeCategory: activeCategoryProp,
+  className,
+}: HeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
@@ -54,7 +93,7 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
     <header
       className={cn(
         "sticky top-0 z-40 bg-paper-50/95 backdrop-blur-sm border-b border-paper-200",
-        className
+        className,
       )}
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,6 +116,9 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
             >
               <Search className="h-4 w-4" aria-hidden="true" />
             </Link>
+            {/* Phase 19 (H2): Auth-aware user menu — Sign In link when
+                unauthenticated, Sign Out button when authenticated. */}
+            <UserMenu />
           </div>
 
           {/* Mobile hamburger */}
@@ -86,8 +128,18 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
             aria-label="Open menu"
             aria-expanded={mobileOpen}
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
         </div>
@@ -108,13 +160,16 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
                   "flex items-center gap-2 px-3 py-1.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors duration-150 rounded-t-sm",
                   isActive
                     ? `${cat.activeBorder} text-ink-900 bg-dispatch-ember-light/40`
-                    : "border-transparent text-ink-600 hover:text-ink-900 hover:bg-paper-100"
+                    : "border-transparent text-ink-600 hover:text-ink-900 hover:bg-paper-100",
                 )}
                 role="tab"
                 aria-selected={isActive}
               >
                 <span
-                  className={cn("w-2 h-2 rounded-full shrink-0", cat.colourClass)}
+                  className={cn(
+                    "w-2 h-2 rounded-full shrink-0",
+                    cat.colourClass,
+                  )}
                   aria-hidden="true"
                 />
                 {cat.name}
@@ -141,8 +196,18 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
                   className="inline-flex h-9 w-9 items-center justify-center rounded-sm text-ink-400 hover:bg-paper-100 hover:text-ink-900 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50"
                   aria-label="Close menu"
                 >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </Dialog.Close>
@@ -160,11 +225,14 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
                       "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-sm transition-colors duration-150",
                       isActive
                         ? "bg-dispatch-ember-light/40 text-ink-900"
-                        : "text-ink-600 hover:bg-paper-100 hover:text-ink-900"
+                        : "text-ink-600 hover:bg-paper-100 hover:text-ink-900",
                     )}
                   >
                     <span
-                      className={cn("w-2 h-2 rounded-full shrink-0", cat.colourClass)}
+                      className={cn(
+                        "w-2 h-2 rounded-full shrink-0",
+                        cat.colourClass,
+                      )}
                       aria-hidden="true"
                     />
                     {cat.name}
@@ -182,6 +250,10 @@ export function Header({ activeCategory: activeCategoryProp, className }: Header
                 <Search className="h-4 w-4" aria-hidden="true" />
                 Search
               </Link>
+              {/* Phase 19 (H2): Auth-aware user menu in mobile drawer too. */}
+              <div className="mt-2">
+                <UserMenu />
+              </div>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

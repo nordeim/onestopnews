@@ -24,7 +24,13 @@ vi.mock("@/shared/components/layout/Footer", () => ({
 
 // Mock SummaryPanel (Client Component — uses useOptimistic)
 vi.mock("@/features/summaries/components/SummaryPanel", () => ({
-  SummaryPanel: ({ initialStatus, summary }: { initialStatus: string; summary?: unknown }) => (
+  SummaryPanel: ({
+    initialStatus,
+    summary,
+  }: {
+    initialStatus: string;
+    summary?: unknown;
+  }) => (
     <div data-testid="summary-panel" data-status={initialStatus}>
       {summary ? "Summary loaded" : "No summary"}
     </div>
@@ -52,6 +58,7 @@ const mockArticleWithSummary = {
   title: "Global Markets Rally as G7 Inflation Cools",
   excerpt: "Benchmark indices posted gains after synchronized inflation data.",
   body: "Full article body content here with sufficient text for the article detail page.",
+  sourceName: "Bloomberg", // Phase 19 (H11): denormalized source name (nullable in schema, populated here)
   canonicalUrl: "https://example.com/article/1",
   contentHash: "hash1",
   contentAvailability: "full_text" as const,
@@ -109,7 +116,9 @@ describe("ArticleData", () => {
     const result = await ArticleData({ params: mockParams("art-1") });
     const { container } = render(result);
 
-    expect(screen.getByText("Global Markets Rally as G7 Inflation Cools")).toBeDefined();
+    expect(
+      screen.getByText("Global Markets Rally as G7 Inflation Cools"),
+    ).toBeDefined();
     expect(screen.getByText("Bloomberg")).toBeDefined();
     expect(container.querySelector("time")).toBeDefined();
   });
@@ -130,17 +139,23 @@ describe("ArticleData", () => {
     render(result);
 
     expect(screen.getByTestId("summary-panel")).toBeDefined();
-    expect(screen.getByTestId("summary-panel").getAttribute("data-status")).toBe("ok");
+    expect(
+      screen.getByTestId("summary-panel").getAttribute("data-status"),
+    ).toBe("ok");
   });
 
   it("renders SummaryPanel with 'none' status when no summary exists", async () => {
-    vi.mocked(getArticleWithSummary).mockResolvedValue(mockArticleWithoutSummary);
+    vi.mocked(getArticleWithSummary).mockResolvedValue(
+      mockArticleWithoutSummary,
+    );
 
     const result = await ArticleData({ params: mockParams("art-2") });
     render(result);
 
     expect(screen.getByTestId("summary-panel")).toBeDefined();
-    expect(screen.getByTestId("summary-panel").getAttribute("data-status")).toBe("none");
+    expect(
+      screen.getByTestId("summary-panel").getAttribute("data-status"),
+    ).toBe("none");
   });
 
   it("renders 'not found' message when article is null", async () => {
@@ -159,7 +174,9 @@ describe("ArticleData", () => {
     render(result);
 
     expect(screen.getByTestId("summary-panel")).toBeDefined();
-    expect(screen.getByTestId("summary-panel").getAttribute("data-status")).toBe("needs_review");
+    expect(
+      screen.getByTestId("summary-panel").getAttribute("data-status"),
+    ).toBe("needs_review");
   });
 
   it("renders 'Back to Top Stories' link", async () => {
@@ -199,7 +216,7 @@ describe("ArticleData", () => {
     const { container } = render(result);
 
     const jsonLdScript = container.querySelector(
-      'script[type="application/ld+json"]'
+      'script[type="application/ld+json"]',
     );
     expect(jsonLdScript).not.toBeNull();
 
@@ -211,19 +228,24 @@ describe("ArticleData", () => {
     expect(parsed.accountablePerson.name).toBe("AI System: claude-haiku-4-5");
     expect(parsed.additionalProperty).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: "compliance", value: "eu-ai-act-art50" }),
-      ])
+        expect.objectContaining({
+          name: "compliance",
+          value: "eu-ai-act-art50",
+        }),
+      ]),
     );
   });
 
   it("does NOT render JSON-LD <script> tag when summary is missing", async () => {
-    vi.mocked(getArticleWithSummary).mockResolvedValue(mockArticleWithoutSummary);
+    vi.mocked(getArticleWithSummary).mockResolvedValue(
+      mockArticleWithoutSummary,
+    );
 
     const result = await ArticleData({ params: mockParams("art-2") });
     const { container } = render(result);
 
     const jsonLdScript = container.querySelector(
-      'script[type="application/ld+json"]'
+      'script[type="application/ld+json"]',
     );
     expect(jsonLdScript).toBeNull();
   });
@@ -235,7 +257,7 @@ describe("ArticleData", () => {
     const { container } = render(result);
 
     const jsonLdScript = container.querySelector(
-      'script[type="application/ld+json"]'
+      'script[type="application/ld+json"]',
     );
     expect(jsonLdScript).toBeNull();
   });

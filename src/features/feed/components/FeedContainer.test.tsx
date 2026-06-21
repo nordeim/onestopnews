@@ -12,6 +12,7 @@ function makeArticle(id: string, title: string): ArticleWithSource {
     title,
     excerpt: `Excerpt for ${title}.`,
     body: null,
+    sourceName: null, // Phase 19 (H11): denormalized source name (nullable)
     canonicalUrl: `https://example.com/${id}`,
     publishedAt: new Date(`2024-06-${id.padStart(2, "0")}T00:00:00Z`),
     hasSummary: false,
@@ -61,7 +62,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor={null}
         initialHasMore={false}
-      />
+      />,
     );
     expect(screen.getByText("First Article")).toBeDefined();
     expect(screen.getByText("Second Article")).toBeDefined();
@@ -73,7 +74,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor={null}
         initialHasMore={false}
-      />
+      />,
     );
     expect(screen.queryByRole("button", { name: /load more/i })).toBeNull();
   });
@@ -84,7 +85,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor="2024-06-01T00:00:00.000Z"
         initialHasMore={true}
-      />
+      />,
     );
     expect(screen.getByRole("button", { name: /load more/i })).toBeDefined();
   });
@@ -104,7 +105,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor="2024-06-01T00:00:00.000Z"
         initialHasMore={true}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /load more/i }));
@@ -139,7 +140,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor="2024-06-01T00:00:00.000Z"
         initialHasMore={true}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /load more/i }));
@@ -161,7 +162,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor="2024-06-01T00:00:00.000Z"
         initialHasMore={true}
-      />
+      />,
     );
 
     const button = screen.getByRole("button", { name: /load more/i });
@@ -180,7 +181,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor="2024-06-01T00:00:00.000Z"
         initialHasMore={true}
-      />
+      />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: /load more/i }));
@@ -207,7 +208,7 @@ describe("FeedContainer", () => {
         initialArticles={initialArticles}
         initialNextCursor="2024-06-01T00:00:00.000Z"
         initialHasMore={true}
-      />
+      />,
     );
 
     // First click fails

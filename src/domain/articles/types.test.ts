@@ -8,6 +8,7 @@ describe("ArticleWithSource", () => {
       title: "Test Article",
       excerpt: "A brief excerpt.",
       body: null,
+      sourceName: null, // Phase 19 (H11): denormalized source name (nullable)
       canonicalUrl: "https://example.com/article",
       contentHash: "abc123",
       contentAvailability: "full_text",
@@ -40,6 +41,7 @@ describe("ArticleWithSummary", () => {
       title: "Test Article",
       excerpt: null,
       body: null,
+      sourceName: null, // Phase 19 (H11): denormalized source name (nullable)
       canonicalUrl: "https://example.com/article",
       contentHash: "abc123",
       contentAvailability: "full_text",

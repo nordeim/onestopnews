@@ -10,6 +10,7 @@ const mockArticles: ArticleWithSource[] = [
     title: "Test Article 1",
     excerpt: "A brief excerpt.",
     body: null,
+    sourceName: null, // Phase 19 (H11): denormalized source name (nullable)
     canonicalUrl: "https://example.com/1",
     publishedAt: new Date("2024-06-01T00:00:00Z"),
     hasSummary: false,
@@ -34,6 +35,7 @@ const mockArticles: ArticleWithSource[] = [
     title: "Test Article 2",
     excerpt: "Another excerpt.",
     body: null,
+    sourceName: null, // Phase 19 (H11): denormalized source name (nullable)
     canonicalUrl: "https://example.com/2",
     publishedAt: new Date("2024-06-02T00:00:00Z"),
     hasSummary: true,

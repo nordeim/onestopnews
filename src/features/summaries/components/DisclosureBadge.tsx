@@ -65,9 +65,10 @@ function getStatusConfig(status: SummaryStatus): {
     case "needs_review":
       return {
         label: "Under Review",
-        dotColor: "bg-amber-500",
+        // Phase 19 (M15): Use design-system warning tokens.
+        dotColor: "bg-dispatch-warning",
         className:
-          "text-amber-700 bg-amber-50 hover:bg-amber-100",
+          "text-dispatch-warning bg-dispatch-warning-light hover:bg-dispatch-warning-light/70",
       };
     default:
       return {

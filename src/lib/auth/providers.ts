@@ -21,6 +21,10 @@ import type { Provider } from "next-auth/providers/index";
 
 import { db } from "@/lib/db";
 import * as schema from "@/lib/db/schema";
+// Phase 19 (H12): Read all env vars via the typed `env` export (validated
+// by Zod at module load) instead of process.env.* directly. This catches
+// typos like GOOGLE_CLIENTID at boot and centralizes the source of truth.
+import { env } from "@/lib/env";
 
 // ─── Credentials Provider (always present) ─────────────────────────────────
 
@@ -88,25 +92,26 @@ const credentialsProvider = Credentials({
 export function buildProviders(): Provider[] {
   const providers: Provider[] = [credentialsProvider];
 
-  const hasGoogle =
-    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+  // Phase 19 (H12): Read OAuth creds via the typed `env` export. The Zod
+  // schema in src/lib/env/index.ts declares these as optional strings, so
+  // typos like GOOGLE_CLIENTID (missing S) would be caught at boot.
+  const hasGoogle = env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET;
   if (hasGoogle) {
     providers.push(
       Google({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+      }),
     );
   }
 
-  const hasGitHub =
-    process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET;
+  const hasGitHub = env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET;
   if (hasGitHub) {
     providers.push(
       GitHub({
-        clientId: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      })
+        clientId: env.GITHUB_CLIENT_ID,
+        clientSecret: env.GITHUB_CLIENT_SECRET,
+      }),
     );
   }
 

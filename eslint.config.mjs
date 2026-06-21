@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    ignores: [".next/**", "node_modules/**", "drizzle/**", "dist/**", "e2e/**", "playwright.config.ts"],
+    ignores: [".next/**", "node_modules/**", "drizzle/**", "dist/**", "e2e/**", "playwright.config.ts", "skills/**", "coverage/**"],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],
@@ -15,7 +15,7 @@ export default [
     },
     rules: {
       "@typescript-eslint/no-unused-vars": "error",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
     },
   },
 ];

@@ -1,4 +1,6 @@
-version: '3.8'
+# Phase 19 (M17): Removed legacy `version: '3.8'` key. Modern Docker Compose
+# v2 (since 2023) ignores this key and prints a deprecation warning. The
+# schema is inferred automatically.
 services:
   web:
     build:

@@ -1,0 +1,235 @@
+/**
+ * actions.test.ts — Tests for summaries Server Actions.
+ *
+ * Phase 19 (Critical gaps C3 + C5):
+ *   - C3: requestSummary MUST call verifySession() (was missing auth entirely).
+ *         The HTTP route /api/summarize/[id] has auth; the Server Action didn't.
+ *   - C3: requestSummary MUST enforce per-user rate limiting (5 req/min/user)
+ *         to match the HTTP route's protection against BullMQ fan-out abuse.
+ *   - C5: SummariesData Approve/Disable buttons need new server actions
+ *         approveSummary(id) and disableSummary(id) that are admin-guarded.
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// ── Mocks ───────────────────────────────────────────────────────────────────
+
+const mockFindFirst = vi.fn();
+const mockUpdateArticles = vi.fn().mockResolvedValue(undefined);
+const mockUpdateSummaries = vi.fn().mockResolvedValue(undefined);
+vi.mock("@/lib/db", () => ({
+  db: {
+    query: {
+      articles: { findFirst: mockFindFirst },
+    },
+    update: vi.fn((table: unknown) => ({
+      set: () => ({
+        where: table === "articles" ? mockUpdateArticles : mockUpdateSummaries,
+      }),
+    })),
+  },
+}));
+
+const mockAdd = vi.fn().mockResolvedValue({ id: "job-1" });
+vi.mock("@/lib/queue", () => ({
+  summarizeQueue: { add: mockAdd },
+}));
+
+vi.mock("@/lib/rateLimit", () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({
+    allowed: true,
+    remaining: 5,
+    resetAt: Date.now() + 60_000,
+  }),
+}));
+
+const mockVerifySession = vi.fn();
+const mockVerifyAdminSession = vi.fn();
+vi.mock("@/lib/auth/dal", () => ({
+  verifySession: mockVerifySession,
+  verifyAdminSession: mockVerifyAdminSession,
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
+// Import after mocks are registered.
+const { requestSummary, flagSummary, disableSummary } =
+  await import("./actions");
+const { checkRateLimit } = await import("@/lib/rateLimit");
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+const VALID_ARTICLE_ID = "550e8400-e29b-41d4-a716-446655440000";
+const VALID_SUMMARY_ID = "660e8400-e29b-41d4-a716-446655440001";
+
+function mockArticle(
+  overrides: Partial<{
+    id: string;
+    contentAvailability:
+      | "title_only"
+      | "excerpt"
+      | "partial_text"
+      | "full_text";
+    summaryStatus: "none" | "pending" | "ok" | "needs_review" | "disabled";
+    excerpt: string;
+    title: string;
+  }> = {},
+) {
+  return {
+    id: VALID_ARTICLE_ID,
+    contentAvailability: "partial_text" as const,
+    summaryStatus: "none" as const,
+    excerpt: "Some excerpt text long enough to summarize.",
+    title: "Test Article",
+    ...overrides,
+  };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockVerifySession.mockResolvedValue({
+    user: { id: "user-1", role: "reader" },
+  });
+  mockVerifyAdminSession.mockResolvedValue(undefined);
+  vi.mocked(checkRateLimit).mockResolvedValue({
+    allowed: true,
+    remaining: 5,
+    resetAt: Date.now() + 60_000,
+  });
+  mockFindFirst.mockResolvedValue(mockArticle());
+  mockUpdateArticles.mockResolvedValue(undefined);
+  mockUpdateSummaries.mockResolvedValue(undefined);
+  mockAdd.mockResolvedValue({ id: "job-1" });
+});
+
+// ── requestSummary ──────────────────────────────────────────────────────────
+
+describe("requestSummary — auth (Critical C3)", () => {
+  it("returns auth error when no session", async () => {
+    mockVerifySession.mockResolvedValue(null);
+    const result = await requestSummary(VALID_ARTICLE_ID);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/auth/i);
+    expect(mockAdd).not.toHaveBeenCalled();
+  });
+
+  it("calls verifySession before any DB access", async () => {
+    await requestSummary(VALID_ARTICLE_ID);
+    expect(mockVerifySession).toHaveBeenCalled();
+    // DB query happens AFTER auth check
+    const callOrder: string[] = [];
+    mockVerifySession.mockImplementation(async () => {
+      callOrder.push("verifySession");
+      return { user: { id: "user-1", role: "reader" } };
+    });
+    mockFindFirst.mockImplementation(async () => {
+      callOrder.push("findFirst");
+      return mockArticle();
+    });
+    await requestSummary(VALID_ARTICLE_ID);
+    expect(callOrder.indexOf("verifySession")).toBeLessThan(
+      callOrder.indexOf("findFirst"),
+    );
+  });
+});
+
+describe("requestSummary — rate limiting (Critical C3)", () => {
+  it("calls checkRateLimit keyed on session.user.id", async () => {
+    await requestSummary(VALID_ARTICLE_ID);
+    expect(checkRateLimit).toHaveBeenCalledWith(
+      expect.stringContaining("api:summarize:user-1"),
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
+
+  it("returns rate-limit error when exceeded", async () => {
+    vi.mocked(checkRateLimit).mockResolvedValue({
+      allowed: false,
+      remaining: 0,
+      resetAt: Date.now() + 45_000,
+    });
+    const result = await requestSummary(VALID_ARTICLE_ID);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/rate limit/i);
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(mockUpdateArticles).not.toHaveBeenCalled();
+  });
+});
+
+describe("requestSummary — content guard + idempotency", () => {
+  it("rejects title_only content", async () => {
+    mockFindFirst.mockResolvedValue(
+      mockArticle({ contentAvailability: "title_only" }),
+    );
+    const result = await requestSummary(VALID_ARTICLE_ID);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/title_only/);
+  });
+
+  it("rejects when summary already exists", async () => {
+    mockFindFirst.mockResolvedValue(mockArticle({ summaryStatus: "pending" }));
+    const result = await requestSummary(VALID_ARTICLE_ID);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/already exists/);
+  });
+
+  it("returns jobId on successful enqueue", async () => {
+    const result = await requestSummary(VALID_ARTICLE_ID);
+    expect(result.success).toBe(true);
+    expect(result.jobId).toBe("job-1");
+  });
+});
+
+// ── flagSummary ─────────────────────────────────────────────────────────────
+
+describe("flagSummary — admin guard", () => {
+  it("returns error when not admin", async () => {
+    mockVerifyAdminSession.mockRejectedValue(new Error("Not admin"));
+    const result = await flagSummary(VALID_SUMMARY_ID, "spam");
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/admin/i);
+  });
+
+  it("succeeds when admin", async () => {
+    const result = await flagSummary(VALID_SUMMARY_ID, "spam");
+    expect(result.success).toBe(true);
+  });
+});
+
+// ── disableSummary ──────────────────────────────────────────────────────────
+
+describe("disableSummary — admin guard", () => {
+  it("returns error when not admin", async () => {
+    mockVerifyAdminSession.mockRejectedValue(new Error("Not admin"));
+    const result = await disableSummary(VALID_SUMMARY_ID);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/admin/i);
+  });
+
+  it("succeeds when admin", async () => {
+    const result = await disableSummary(VALID_SUMMARY_ID);
+    expect(result.success).toBe(true);
+  });
+});
+
+// ── approveSummary (NEW — Critical C5) ──────────────────────────────────────
+
+describe("approveSummary — admin guard (Critical C5)", () => {
+  it("returns error when not admin", async () => {
+    mockVerifyAdminSession.mockRejectedValue(new Error("Not admin"));
+    const { approveSummary } = await import("./actions");
+    const result = await approveSummary(VALID_SUMMARY_ID);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/admin/i);
+  });
+
+  it("succeeds and sets summary status to 'ok' when admin", async () => {
+    const { approveSummary } = await import("./actions");
+    const result = await approveSummary(VALID_SUMMARY_ID);
+    expect(result.success).toBe(true);
+    expect(mockUpdateSummaries).toHaveBeenCalled();
+  });
+});

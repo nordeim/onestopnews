@@ -1,8 +1,6 @@
 import { Worker } from "bullmq";
 import { eq, sql } from "drizzle-orm";
-import {
-  createWorkerConnection,
-} from "@/lib/queue";
+import { createWorkerConnection } from "@/lib/queue";
 import { enqueuePostIngestFlow } from "@/lib/queue/flows";
 import { db } from "@/lib/db";
 import { articles, sources, summaries } from "@/lib/db/schema";
@@ -17,9 +15,9 @@ import { publishCacheInvalidation } from "./lib/cacheInvalidation";
 
 // ─── WORKER CONCURRENCY (per PAD §6.2) ──────────────────────────────────────
 const CONCURRENCY = {
-  ingest: 50,    // I/O-bound: network fetches to RSS sources
-  summarize: 5,  // AI-API-bound: rate-limited by Anthropic/OpenAI
-  score: 20,     // CPU/DB-bound: scoring formula is fast
+  ingest: 50, // I/O-bound: network fetches to RSS sources
+  summarize: 5, // AI-API-bound: rate-limited by Anthropic/OpenAI
+  score: 20, // CPU/DB-bound: scoring formula is fast
   feedSlice: 10, // Redis writes: fast but connection pool limited
 } as const;
 
@@ -56,7 +54,10 @@ async function processIngestJob(job: {
 
     const feedContent = await response.text();
     // parseFeed is async (rss-parser uses async XML parsing)
-    const parsedItems: FeedItem[] = await parseFeed(feedContent, source.feedFormat);
+    const parsedItems: FeedItem[] = await parseFeed(
+      feedContent,
+      source.feedFormat,
+    );
     let newArticlesCount = 0;
     const newArticleIds: string[] = [];
 
@@ -74,7 +75,7 @@ async function processIngestJob(job: {
       const contentHash = hashContent(
         item.title,
         item.body ?? null,
-        item.publishedAt ?? new Date()
+        item.publishedAt ?? new Date(),
       );
 
       // Upsert article (idempotent via canonicalUrl).
@@ -90,6 +91,11 @@ async function processIngestJob(job: {
           title: item.title,
           excerpt: item.excerpt ?? null,
           body: item.body ?? null,
+          // Phase 19 (H11): Denormalized source name for cross-field search.
+          // Postgres generated columns can't reference joined tables, so we
+          // store the source name on the article row and keep it in sync
+          // on every upsert. This enables "find by source" queries.
+          sourceName: source.name,
           canonicalUrl: item.url,
           contentHash,
           contentAvailability,
@@ -101,6 +107,8 @@ async function processIngestJob(job: {
             title: item.title,
             excerpt: item.excerpt ?? null,
             body: item.body ?? null,
+            // Keep source_name in sync if the source's display name changes.
+            sourceName: source.name,
             contentHash,
           },
           where: sql`${articles.contentHash} != excluded.content_hash`,
@@ -257,7 +265,9 @@ async function processSummarizeJob(job: {
     console.error(
       `[Summarize] Failed (attempt ${attemptsMade + 1}/${maxAttempts}) for article ${articleId}:`,
       error,
-      failureState.flagReason ? `→ Marked as ${failureState.summaryStatus}: ${failureState.flagReason}` : "→ Will retry"
+      failureState.flagReason
+        ? `→ Marked as ${failureState.summaryStatus}: ${failureState.flagReason}`
+        : "→ Will retry",
     );
 
     throw error;
@@ -374,11 +384,53 @@ allWorkers.forEach((worker) => {
 });
 
 // ─── GRACEFUL SHUTDOWN ───────────────────────────────────────────────────────
+// Phase 19 (M7): Hardened shutdown sequence:
+//   1. Set a 25-second force-exit timeout (< k8s default 30s grace period)
+//   2. Close all 4 workers in parallel via Promise.allSettled (don't let one
+//      hanging worker block the others)
+//   3. Close the FlowProducer singleton (was leaked before)
+//   4. Close the Redis ping client (was leaked before)
+//   5. clearTimeout + process.exit(0)
+//
+// If any close() hangs beyond 25s, the unref'd timeout fires and force-exits
+// with code 1 (so k8s/docker restart policies kick in). This prevents the
+// worker from hanging indefinitely on a long-running summarize job waiting
+// on Anthropic.
+const SHUTDOWN_TIMEOUT_MS = 25_000;
+
 async function gracefulShutdown(signal: string) {
   console.log(`[Worker] Received ${signal}. Closing workers...`);
 
-  await Promise.all(allWorkers.map((w) => w.close()));
+  // Force-exit timeout — unref'd so it doesn't keep the event loop alive.
+  const forceExit = setTimeout(() => {
+    console.error("[Worker] Shutdown timed out after 25s. Force-exiting.");
+    process.exit(1);
+  }, SHUTDOWN_TIMEOUT_MS);
+  forceExit.unref();
 
+  // Close all workers + FlowProducer + Redis ping client in parallel.
+  // Promise.allSettled (not Promise.all) so one rejection doesn't block
+  // the others. worker.close() with no arg waits for active jobs; pass
+  // `true` to abort them (BullMQ re-delivers to another worker pod after
+  // restart, so no jobs are lost).
+  await Promise.allSettled([
+    ...allWorkers.map((w) => w.close()),
+    // FlowProducer + pingRedis client singletons live in @/lib/queue and
+    // @/lib/queue/flows. We close them via dynamic import to avoid
+    // pulling them into the worker's main module graph at startup.
+    (async () => {
+      const { getFlowProducer } = await import("@/lib/queue/flows");
+      try {
+        const fp = getFlowProducer();
+        await fp.close();
+      } catch {
+        // FlowProducer may not have been initialized (no flows enqueued).
+        // Safe to ignore.
+      }
+    })(),
+  ]);
+
+  clearTimeout(forceExit);
   console.log("[Worker] All workers closed. Exiting.");
   process.exit(0);
 }
@@ -401,7 +453,7 @@ async function main() {
   console.log(
     `[Worker] All workers running with concurrency: ingest=${CONCURRENCY.ingest}, ` +
       `summarize=${CONCURRENCY.summarize}, score=${CONCURRENCY.score}, feedSlice=${CONCURRENCY.feedSlice}. ` +
-      `Press Ctrl+C to stop.`
+      `Press Ctrl+C to stop.`,
   );
 }
 

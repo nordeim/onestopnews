@@ -27,7 +27,11 @@ export const tsvector = customType<{ data: string }>({
 
 // ─── Enums ────────────────────────────────────────────────────────────────
 export const userRoleEnum = pgEnum("user_role", ["reader", "admin"]);
-export const feedFormatEnum = pgEnum("feed_format", ["rss", "atom", "json_api"]);
+export const feedFormatEnum = pgEnum("feed_format", [
+  "rss",
+  "atom",
+  "json_api",
+]);
 
 /**
  * contentAvailabilityEnum — Controls whether an article is eligible for AI summarisation.
@@ -94,9 +98,9 @@ export const subcategories = pgTable(
   (table) => ({
     categorySlugIdx: uniqueIndex("subcategories_category_slug_idx").on(
       table.categoryId,
-      table.slug
+      table.slug,
     ),
-  })
+  }),
 );
 
 export const sources = pgTable("sources", {
@@ -134,8 +138,20 @@ export const articles = pgTable(
      *
      * Used by the summarize worker as input to AI summarization when
      * contentAvailability is 'partial_text' or 'full_text'.
+     *
+     * Phase 19 (H11): Now also indexed in the searchVector generated column
+     * with weight C, so articles can be found by searching for body-only terms.
      */
     body: text("body"),
+    /**
+     * Denormalized source name for cross-field search.
+     *
+     * Phase 19 (H11): Postgres generated columns cannot reference joined
+     * tables, so we denormalize the source name onto the article row. The
+     * ingest worker keeps this in sync on every upsert. Indexed in the
+     * searchVector with weight D.
+     */
+    sourceName: text("source_name"),
     canonicalUrl: text("canonical_url").notNull(),
     contentHash: text("content_hash").notNull(),
     contentAvailability: contentAvailabilityEnum("content_availability")
@@ -143,34 +159,53 @@ export const articles = pgTable(
       .notNull(),
     importanceScore: real("importance_score").default(0.5).notNull(),
     hasSummary: boolean("has_summary").default(false).notNull(),
-    summaryStatus: summaryStatusEnum("summary_status").default("none").notNull(),
+    summaryStatus: summaryStatusEnum("summary_status")
+      .default("none")
+      .notNull(),
     politicalLeaning: text("political_leaning"),
     publishedAt: timestamp("published_at").notNull(),
     ingestedAt: timestamp("ingested_at").defaultNow().notNull(),
+    /**
+     * Full-text search vector with weighted fields.
+     *
+     * Phase 19 (H11): Previously only title (A) and excerpt (B) were indexed.
+     * Now includes body (C) and source_name (D) for cross-field search:
+     *   - title        → weight A (highest relevance)
+     *   - excerpt      → weight B
+     *   - body         → weight C
+     *   - source_name  → weight D (lowest, but enables "find by source")
+     *
+     * ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...) in queries.ts uses these
+     * weights to rank results — title matches outrank body matches, etc.
+     */
     searchVector: tsvector("search_vector")
       .generatedAlwaysAs(
         sql`
           setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-          setweight(to_tsvector('english', coalesce(excerpt, '')), 'B')
-        `
+          setweight(to_tsvector('english', coalesce(excerpt, '')), 'B') ||
+          setweight(to_tsvector('english', coalesce(body, '')), 'C') ||
+          setweight(to_tsvector('english', coalesce(source_name, '')), 'D')
+        `,
       )
       .notNull(),
   },
   (table) => ({
-    canonicalUrlIdx: uniqueIndex("articles_canonical_url_idx").on(table.canonicalUrl),
+    canonicalUrlIdx: uniqueIndex("articles_canonical_url_idx").on(
+      table.canonicalUrl,
+    ),
     categoryPublishedIdx: index("articles_category_published_idx").on(
       table.categoryId,
-      table.publishedAt
+      table.publishedAt,
     ),
     subcategoryPublishedIdx: index("articles_subcategory_published_idx").on(
       table.subcategoryId,
-      table.publishedAt
+      table.publishedAt,
     ),
     searchVectorIdx: index("articles_search_vector_gin_idx").using(
       "gin",
-      table.searchVector
+      table.searchVector,
     ),
-  })
+  }),
 );
 
 export const summaries = pgTable("summaries", {
@@ -222,10 +257,16 @@ export const userPreferences = pgTable("user_preferences", {
     .references(() => users.id, { onDelete: "cascade" })
     .notNull()
     .unique(),
-  favoriteCategories: jsonb("favorite_categories").$type<string[]>().default([]).notNull(),
+  favoriteCategories: jsonb("favorite_categories")
+    .$type<string[]>()
+    .default([])
+    .notNull(),
   mutedSources: jsonb("muted_sources").$type<string[]>().default([]).notNull(),
   pushEnabled: boolean("push_enabled").default(false).notNull(),
-  pushCategories: jsonb("push_categories").$type<string[]>().default([]).notNull(),
+  pushCategories: jsonb("push_categories")
+    .$type<string[]>()
+    .default([])
+    .notNull(),
   pushQuietStart: time("push_quiet_start"),
   pushQuietEnd: time("push_quiet_end"),
   pushMaxPerDay: integer("push_max_per_day").default(10).notNull(),
@@ -257,9 +298,9 @@ export const accounts = pgTable(
   (table) => ({
     providerAccountIdx: uniqueIndex("accounts_provider_account_idx").on(
       table.provider,
-      table.providerAccountId
+      table.providerAccountId,
     ),
-  })
+  }),
 );
 
 export const sessions = pgTable("sessions", {

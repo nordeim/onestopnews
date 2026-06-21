@@ -15,6 +15,15 @@
  */
 
 import Parser from "rss-parser";
+// Phase 19 (H9): cheerio replaces the regex-based HTML stripper.
+// cheerio uses a real HTML parser (parse5 under the hood), which correctly
+// handles:
+//   - Numeric character references (e.g., &#8217; for right single quote)
+//   - CDATA sections
+//   - <script>/<style> tag content (which the regex leaked into summaries)
+//   - Nested tags with attributes
+//   - Malformed HTML
+import * as cheerio from "cheerio";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -89,7 +98,7 @@ interface JsonFeedItem {
  */
 export async function parseFeed(
   content: string,
-  feedFormat: FeedFormat
+  feedFormat: FeedFormat,
 ): Promise<FeedItem[]> {
   if (feedFormat === "json_api") {
     return parseJsonFeed(content);
@@ -109,8 +118,9 @@ async function parseXmlFeed(content: string): Promise<FeedItem[]> {
     // in some versions). We detect by inspecting the raw XML root element:
     //   - <feed ...> → Atom
     //   - <rss ...> or <rdf:RDF ...> → RSS
-    const isAtom = /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
-                   /^\s*<feed[\s>]/i.test(content.trim());
+    const isAtom =
+      /^\s*<\?xml[^>]*\?>\s*<feed[\s>]/i.test(content) ||
+      /^\s*<feed[\s>]/i.test(content.trim());
 
     const items: FeedItem[] = [];
     for (const raw of rawItems) {
@@ -172,7 +182,9 @@ function parseJsonFeed(content: string): FeedItem[] {
       if (!raw.url) continue;
 
       // Body: prefer content_text (plain), fall back to content_html (strip tags)
-      const body = raw.content_text ?? (raw.content_html ? stripHtml(raw.content_html) : undefined);
+      const body =
+        raw.content_text ??
+        (raw.content_html ? stripHtml(raw.content_html) : undefined);
 
       const publishedAt = parseDate(raw.date_published);
 
@@ -196,24 +208,31 @@ function parseJsonFeed(content: string): FeedItem[] {
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 /**
- * Strips HTML tags from a string, returning plain text.
+ * Strips HTML tags and decodes entities, returning plain text.
+ *
+ * Phase 19 (H9): Replaced the regex-based stripper with cheerio. The regex
+ * approach (/<[^>]*>/g + 6 hand-listed entities) missed:
+ *   - Numeric character references (e.g., &#8217; for ')
+ *   - CDATA sections
+ *   - <script>/<style> content (which leaked into AI summaries)
+ *   - Nested tags with attributes
+ *
+ * cheerio uses parse5 (a real browser-grade HTML parser) under the hood,
+ * handling all of these correctly. This prevents malformed/malicious HTML
+ * from corrupting AI summarization prompts.
+ *
  * Used to normalize content:encoded (RSS) and content_html (JSON) into
  * plain text suitable for AI summarization.
  */
 function stripHtml(html: string): string {
-  // Simple HTML tag stripper — handles <p>, <br>, <a>, etc.
-  // For production-grade extraction, consider a library like `sanitize-html`,
-  // but for AI summarization input, plain text is sufficient and lighter.
-  return html
-    .replace(/<[^>]*>/g, " ") // strip all tags
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, " ") // collapse whitespace
-    .trim();
+  const $ = cheerio.load(html);
+  // Remove non-content tags entirely — their text content should NOT appear
+  // in the stripped output (e.g., <script>alert('evil')</script> must not
+  // leak "alert('evil')" into the AI prompt).
+  $("script, style, noscript, iframe, object, embed").remove();
+  // $.text() concatenates the text content of all remaining nodes, decoding
+  // all entity types (named, decimal, hex) along the way.
+  return $.text().replace(/\s+/g, " ").trim();
 }
 
 /**

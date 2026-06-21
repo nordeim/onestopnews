@@ -7,6 +7,12 @@
 
 import { describe, it, expect, vi } from "vitest";
 
+// Phase 19 (M4): Mock next/cache so cacheLife() doesn't throw outside a
+// Next.js cache context (the test env doesn't have one).
+vi.mock("next/cache", () => ({
+  cacheLife: vi.fn(),
+}));
+
 // Mock the DB before importing queries
 vi.mock("@/lib/db", () => ({
   db: {

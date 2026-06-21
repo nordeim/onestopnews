@@ -59,7 +59,7 @@ export default function FaqAccordion() {
             value={`item-${index}`}
             className="border-b border-paper-200"
           >
-            <AccordionPrimitive.Trigger className="w-full flex items-center justify-between py-5 text-left group focus-visible:outline-none">
+            <AccordionPrimitive.Trigger className="w-full flex items-center justify-between py-5 text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 rounded-sm">
               <span className="font-editorial text-lg sm:text-xl font-[700] text-ink-900 leading-snug pr-4">
                 {item.question}
               </span>

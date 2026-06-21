@@ -28,6 +28,16 @@
   --color-dispatch-violet: #7a6b8f;
   --color-dispatch-violet-light: #e8e4ef;
 
+  /* ── Semantic State Tokens (Phase 19 / M15) ─────────────── */
+  /* Previously the SummaryPanel (needs_review state) and Button destructive
+     variant used Tailwind's default amber-* / red-* palette because no
+     matching semantic tokens existed. These tokens align the warning and
+     danger states with the design system. */
+  --color-dispatch-warning: #b45309;        /* amber-700 equivalent */
+  --color-dispatch-warning-light: #fef3c7;  /* amber-50 equivalent */
+  --color-dispatch-danger: #dc2626;         /* red-600 equivalent */
+  --color-dispatch-danger-dark: #b91c1c;    /* red-700 equivalent */
+
   /* ── Typography Stack ── */
   --font-editorial: "Newsreader", Georgia, "Times New Roman", serif;
   --font-ui: "Instrument Sans", system-ui, -apple-system, sans-serif;

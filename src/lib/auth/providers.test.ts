@@ -1,4 +1,45 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+/**
+ * Phase 19 (H12): providers.ts now reads OAuth env vars via the typed `env`
+ * export (validated by Zod at module load) instead of process.env.* directly.
+ * This means tests can't mutate process.env to control provider selection —
+ * we must mock the `@/lib/env` module and provide a mutable `env` object.
+ *
+ * The mock object is reset before each test to ensure isolation.
+ *
+ * Note: vi.mock() factories are hoisted to the top of the file by Vitest,
+ * so we use vi.hoisted() to declare the mockEnv object before the mock
+ * factory. Otherwise the factory would reference mockEnv before it's
+ * initialized (ReferenceError: Cannot access 'mockEnv' before initialization).
+ */
+
+// vi.hoisted() runs before vi.mock() factory — declares a mutable mock env.
+const { mockEnv } = vi.hoisted(() => ({
+  mockEnv: {} as {
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
+    GITHUB_CLIENT_ID?: string;
+    GITHUB_CLIENT_SECRET?: string;
+  },
+}));
+
+vi.mock("@/lib/env", () => ({
+  env: mockEnv,
+}));
+
+// Mock the DB so the Credentials provider's authorize() doesn't try to
+// query Postgres during these unit tests.
+vi.mock("@/lib/db", () => ({
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({ limit: vi.fn(() => Promise.resolve([])) })),
+      })),
+    })),
+  },
+}));
+
 import { buildProviders } from "./providers";
 
 /**
@@ -14,19 +55,12 @@ function providerIds(providers: ReturnType<typeof buildProviders>): string[] {
 }
 
 describe("buildProviders", () => {
-  const originalEnv = { ...process.env };
-
   beforeEach(() => {
-    // Reset OAuth env vars before each test
-    delete process.env.GOOGLE_CLIENT_ID;
-    delete process.env.GOOGLE_CLIENT_SECRET;
-    delete process.env.GITHUB_CLIENT_ID;
-    delete process.env.GITHUB_CLIENT_SECRET;
-  });
-
-  afterEach(() => {
-    // Restore original env
-    process.env = { ...originalEnv };
+    // Reset all OAuth env vars before each test
+    delete mockEnv.GOOGLE_CLIENT_ID;
+    delete mockEnv.GOOGLE_CLIENT_SECRET;
+    delete mockEnv.GITHUB_CLIENT_ID;
+    delete mockEnv.GITHUB_CLIENT_SECRET;
   });
 
   it("returns only the credentials provider when no OAuth env vars are set", () => {
@@ -36,8 +70,8 @@ describe("buildProviders", () => {
   });
 
   it("includes Google provider when GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set", () => {
-    process.env.GOOGLE_CLIENT_ID = "google-id-123";
-    process.env.GOOGLE_CLIENT_SECRET = "google-secret-456";
+    mockEnv.GOOGLE_CLIENT_ID = "google-id-123";
+    mockEnv.GOOGLE_CLIENT_SECRET = "google-secret-456";
 
     const providers = buildProviders();
     const ids = providerIds(providers);
@@ -46,8 +80,8 @@ describe("buildProviders", () => {
   });
 
   it("includes GitHub provider when GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are set", () => {
-    process.env.GITHUB_CLIENT_ID = "github-id-123";
-    process.env.GITHUB_CLIENT_SECRET = "github-secret-456";
+    mockEnv.GITHUB_CLIENT_ID = "github-id-123";
+    mockEnv.GITHUB_CLIENT_SECRET = "github-secret-456";
 
     const providers = buildProviders();
     const ids = providerIds(providers);
@@ -56,10 +90,10 @@ describe("buildProviders", () => {
   });
 
   it("includes all three providers when all OAuth env vars are set", () => {
-    process.env.GOOGLE_CLIENT_ID = "google-id-123";
-    process.env.GOOGLE_CLIENT_SECRET = "google-secret-456";
-    process.env.GITHUB_CLIENT_ID = "github-id-123";
-    process.env.GITHUB_CLIENT_SECRET = "github-secret-456";
+    mockEnv.GOOGLE_CLIENT_ID = "google-id-123";
+    mockEnv.GOOGLE_CLIENT_SECRET = "google-secret-456";
+    mockEnv.GITHUB_CLIENT_ID = "github-id-123";
+    mockEnv.GITHUB_CLIENT_SECRET = "github-secret-456";
 
     const providers = buildProviders();
     const ids = providerIds(providers).sort();
@@ -67,7 +101,7 @@ describe("buildProviders", () => {
   });
 
   it("does NOT include Google provider if only GOOGLE_CLIENT_ID is set (missing secret)", () => {
-    process.env.GOOGLE_CLIENT_ID = "google-id-123";
+    mockEnv.GOOGLE_CLIENT_ID = "google-id-123";
     // GOOGLE_CLIENT_SECRET intentionally not set
 
     const providers = buildProviders();
@@ -78,7 +112,7 @@ describe("buildProviders", () => {
 
   it("does NOT include GitHub provider if only GITHUB_CLIENT_SECRET is set (missing id)", () => {
     // GITHUB_CLIENT_ID intentionally not set
-    process.env.GITHUB_CLIENT_SECRET = "github-secret-456";
+    mockEnv.GITHUB_CLIENT_SECRET = "github-secret-456";
 
     const providers = buildProviders();
     const ids = providerIds(providers);

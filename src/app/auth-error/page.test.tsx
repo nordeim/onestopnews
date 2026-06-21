@@ -20,6 +20,13 @@ vi.mock("@/shared/components/layout/Header", () => ({
   Header: () => <header data-testid="header">Header</header>,
 }));
 
+// Phase 19 (M6): Mock AuthErrorMessage so the test doesn't need a
+// NextNavigationProvider wrapper (useSearchParams requires it). The
+// AuthErrorMessage component is tested separately.
+vi.mock("./AuthErrorMessage", () => ({
+  AuthErrorMessage: () => <p>Mocked error message</p>,
+}));
+
 const { default: AuthErrorPage } = await import("./page");
 
 describe("AuthErrorPage", () => {
@@ -32,7 +39,7 @@ describe("AuthErrorPage", () => {
   it("renders the 'Sign-in failed' heading", () => {
     render(<AuthErrorPage />);
     expect(
-      screen.getByRole("heading", { name: /sign-in failed/i })
+      screen.getByRole("heading", { name: /sign-in failed/i }),
     ).toBeDefined();
   });
 

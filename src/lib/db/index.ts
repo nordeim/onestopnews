@@ -1,6 +1,12 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "./schema";
+// Phase 19 (H12): Read env vars via the typed `env` export (validated by
+// Zod at module load) instead of process.env.* directly. The lazy proxy
+// pattern below defers the actual connection until first query, but the
+// env reads happen at module load — using `env` ensures typos are caught
+// at boot rather than silently returning undefined.
+import { env } from "@/lib/env";
 
 // ─── Lazy Proxy Connection ───────────────────────────────────────────────────
 // [CRITICAL] Never eagerly create the database connection.
@@ -14,7 +20,7 @@ import * as schema from "./schema";
 
 function createClient(url: string) {
   return postgres(url, {
-    max: process.env.NODE_ENV === "production" ? 10 : 3,
+    max: env.NODE_ENV === "production" ? 10 : 3,
     idle_timeout: 20,
     connect_timeout: 10,
   });
@@ -27,7 +33,7 @@ function createClient(url: string) {
 function createDb(client: ReturnType<typeof postgres>) {
   return drizzle(client, {
     schema,
-    logger: process.env.NODE_ENV === "development",
+    logger: env.NODE_ENV === "development",
   });
 }
 
@@ -37,13 +43,9 @@ let _client: ReturnType<typeof postgres> | null = null;
 function getDb() {
   if (_db) return _db;
 
-  const url = process.env.DATABASE_URL;
-
-  if (!url) {
-    throw new Error(
-      "[DB] DATABASE_URL is not set. Database queries will fail."
-    );
-  }
+  // Phase 19 (H12): Read via the typed `env` export. The Zod schema
+  // already validates this is a non-empty string starting with postgres://.
+  const url = env.DATABASE_URL;
 
   _client = createClient(url);
   _db = createDb(_client);

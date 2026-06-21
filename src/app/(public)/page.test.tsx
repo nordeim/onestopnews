@@ -1,6 +1,25 @@
 import * as React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
+
+// Mock next-auth/react so UserMenu (rendered inside Header) doesn't throw
+// "useSession must be wrapped in <SessionProvider>" during unit tests.
+// In production, SessionProvider wraps the entire app in layout.tsx.
+vi.mock("next-auth/react", () => ({
+  useSession: vi
+    .fn()
+    .mockReturnValue({ data: null, status: "unauthenticated" }),
+  signOut: vi.fn(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
+
+// Mock FeedData to avoid DB access during the unit test.
+vi.mock("@/features/feed/components/FeedData", () => ({
+  FeedData: () => <div data-testid="feed-data-mock" />,
+}));
+
 import HomePage from "./page";
 
 describe("HomePage", () => {

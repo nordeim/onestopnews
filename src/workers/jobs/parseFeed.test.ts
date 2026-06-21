@@ -198,4 +198,103 @@ describe("parseFeed", () => {
       expect(items).toEqual([]);
     });
   });
+
+  // ── Phase 19 (H9): HTML stripping edge cases (cheerio replaces regex) ────
+  // Previously stripHtml used a single regex (/<[^>]*>/g) + 6 hand-listed
+  // entities. It missed:
+  //   - Numeric character references (e.g., &#8217; for right single quote)
+  //   - CDATA sections
+  //   - <script>/<style> content (which leaked into summaries)
+  //   - Nested tags with attributes
+  // Now uses cheerio, which handles all of these correctly via the browser-
+  // grade HTML parser.
+  describe("HTML stripping edge cases (Phase 19 / H9)", () => {
+    it("decodes numeric character references (e.g., &#8217; for ')", async () => {
+      const xml = `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Test</title>
+    <item>
+      <title>Numeric Entity Test</title>
+      <link>https://example.com/entity</link>
+      <description>Excerpt</description>
+      <content:encoded>&lt;p&gt;It&amp;#8217;s a test&lt;/p&gt;</content:encoded>
+      <pubDate>Mon, 10 Jun 2024 13:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+      const items = await parseFeed(xml, "rss");
+      const body = items[0]?.body;
+      // cheerio decodes &#8217; to the right single quotation mark (U+2019, ')
+      expect(body).toContain("\u2019s a test");
+    });
+
+    it("removes <script> tag content entirely (no JS leaks into summary)", async () => {
+      const xml = `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Test</title>
+    <item>
+      <title>Script Tag Test</title>
+      <link>https://example.com/script</link>
+      <description>Excerpt</description>
+      <content:encoded>&lt;p&gt;Hello&lt;/p&gt;&lt;script&gt;alert(&amp;quot;evil&amp;quot;);&lt;/script&gt;&lt;p&gt;World&lt;/p&gt;</content:encoded>
+      <pubDate>Mon, 10 Jun 2024 13:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+      const items = await parseFeed(xml, "rss");
+      const body = items[0]?.body ?? "";
+      // The script content must NOT appear in the stripped body.
+      expect(body).not.toContain("alert");
+      expect(body).not.toContain("evil");
+      // But the <p> contents should remain.
+      expect(body).toContain("Hello");
+      expect(body).toContain("World");
+    });
+
+    it("removes <style> tag content entirely (no CSS leaks into summary)", async () => {
+      const xml = `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Test</title>
+    <item>
+      <title>Style Tag Test</title>
+      <link>https://example.com/style</link>
+      <description>Excerpt</description>
+      <content:encoded>&lt;style&gt;.x { color: red; }&lt;/style&gt;&lt;p&gt;Content&lt;/p&gt;</content:encoded>
+      <pubDate>Mon, 10 Jun 2024 13:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+      const items = await parseFeed(xml, "rss");
+      const body = items[0]?.body ?? "";
+      expect(body).not.toContain("color");
+      expect(body).not.toContain("red");
+      expect(body).toContain("Content");
+    });
+
+    it("handles nested tags with attributes", async () => {
+      const xml = `<?xml version="1.0"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Test</title>
+    <item>
+      <title>Nested Tags Test</title>
+      <link>https://example.com/nested</link>
+      <description>Excerpt</description>
+      <content:encoded>&lt;div class=&quot;wrapper&quot;&gt;&lt;a href=&quot;https://example.com&quot; onclick=&quot;track()&quot;&gt;Link text&lt;/a&gt;&lt;/div&gt;</content:encoded>
+      <pubDate>Mon, 10 Jun 2024 13:30:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>`;
+      const items = await parseFeed(xml, "rss");
+      const body = items[0]?.body ?? "";
+      // Only the link text should remain — no attributes, no tag names.
+      expect(body).toContain("Link text");
+      expect(body).not.toContain("href");
+      expect(body).not.toContain("onclick");
+      expect(body).not.toContain("class");
+    });
+  });
 });
