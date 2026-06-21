@@ -43,7 +43,6 @@ export function UserMenu() {
   return (
     <form
       action={async () => {
-        "use server";
         await signOut({ redirectTo: "/" });
       }}
     >
