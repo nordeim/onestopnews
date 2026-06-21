@@ -51,8 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        token.role = (user as any).role ?? "reader";
+        token.role = user.role ?? "reader";
       }
       if (trigger === "update" && session?.name) {
         token.name = session.name;
@@ -61,10 +60,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     session({ session, token }) {
       if (token && session.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).id = token.id as string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).role = token.role as string;
+        session.user.id = token.id ?? "";
+        session.user.role = token.role ?? "reader";
       }
       return session;
     },

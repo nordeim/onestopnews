@@ -86,7 +86,7 @@ export async function getArticleWithSummary(
   const row = rows[0];
   if (!row) return null;
 
-  // Cast to ArticleWithSummary — Drizzle's leftJoin types the summary as
-  // potentially null, which matches our ArticleWithSummary interface.
-  return row as unknown as ArticleWithSummary;
+  // Structural cast — Drizzle's leftJoin result shape matches
+  // ArticleWithSummary exactly, so a single assertion is sufficient.
+  return row as ArticleWithSummary;
 }

@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import { env } from "@/lib/env";
+import type { Redis } from "ioredis";
 
 // ── Redis Connection Factories ──────────────────────────────────────────────
 // Per MEP v5.1: Worker and Queue (producer) connections have different configs.
@@ -69,14 +70,44 @@ export const feedSliceQueue = new Queue("feed-slice", {
 });
 
 // ── Redis Ping Utility (for health checks) ──────────────────────────────────
+let _pingRedisClient: Redis | null = null;
+
+/**
+ * Ping Redis using a singleton client.
+ *
+ * Reuses a single connection across calls to avoid socket/TCP churn.
+ * On ping failure, disconnects and nullifies the client so the next
+ * call will attempt to reconnect.
+ */
 export async function pingRedis(): Promise<boolean> {
-  const { Redis } = await import("ioredis");
-  const redis = new Redis(getRedisUrlParts());
   try {
-    await redis.ping();
-    await redis.quit();
+    if (!_pingRedisClient) {
+      const { Redis } = await import("ioredis");
+      const { host, port } = getRedisUrlParts();
+      _pingRedisClient = new Redis({
+        host,
+        port,
+        maxRetriesPerRequest: 3,
+        connectTimeout: 5000,
+        enableOfflineQueue: false,
+      });
+
+      _pingRedisClient.on("error", (err: Error) => {
+        console.warn("[Redis Ping Client] Error encountered:", err.message);
+      });
+    }
+
+    await _pingRedisClient.ping();
     return true;
   } catch {
+    if (_pingRedisClient) {
+      try {
+        _pingRedisClient.disconnect();
+      } catch {
+        // Best-effort disconnect — ignore errors during cleanup.
+      }
+      _pingRedisClient = null;
+    }
     return false;
   }
 }
