@@ -1,5 +1,5 @@
-$ rm -rf .next/
-
+$ rm -rf .next
+(venv) pete@pop-os:/home/project/onestopnews
 $ pnpm check
 
 > onestopnews@0.1.0 check /home/project/onestopnews
@@ -9,6 +9,7 @@ $ pnpm check
 > onestopnews@0.1.0 lint /home/project/onestopnews
 > eslint . --max-warnings 0
 
+(venv) pete@pop-os:/home/project/onestopnews
 $ pnpm build
 
 > onestopnews@0.1.0 build /home/project/onestopnews
@@ -21,11 +22,35 @@ $ pnpm build
   ✓ viewTransition
 
   Creating an optimized production build ...
-✓ Compiled successfully in 11.5s
-✓ Finished TypeScript in 14.3s    
-✓ Collecting page data using 3 workers in 1219ms    
-✓ Generating static pages using 3 workers (15/15) in 1028ms
-✓ Finalizing page optimization in 1392ms    
+✓ Compiled successfully in 21.1s
+✓ Finished TypeScript in 12.3s    
+  Collecting page data using 3 workers  ...[env] WARNING: NODE_ENV=production but TRUSTED_PROXY is not set to 'true'.
+  The rate limiter will use the leftmost (client-supplied) X-Forwarded-For IP,
+  which is spoofable. Set TRUSTED_PROXY=true if behind a CDN/reverse proxy.
+  For finer-grained control, also set TRUSTED_PROXY_CIDRS to walk the proxy chain.
+[env] WARNING: NODE_ENV=production but TRUSTED_PROXY is not set to 'true'.
+  The rate limiter will use the leftmost (client-supplied) X-Forwarded-For IP,
+  which is spoofable. Set TRUSTED_PROXY=true if behind a CDN/reverse proxy.
+  For finer-grained control, also set TRUSTED_PROXY_CIDRS to walk the proxy chain.
+  Collecting page data using 3 workers  .[env] WARNING: NODE_ENV=production but TRUSTED_PROXY is not set to 'true'.
+  The rate limiter will use the leftmost (client-supplied) X-Forwarded-For IP,
+  which is spoofable. Set TRUSTED_PROXY=true if behind a CDN/reverse proxy.
+  For finer-grained control, also set TRUSTED_PROXY_CIDRS to walk the proxy chain.
+  Collecting page data using 3 workers  ..[env] WARNING: NODE_ENV=production but TRUSTED_PROXY is not set to 'true'.
+  The rate limiter will use the leftmost (client-supplied) X-Forwarded-For IP,
+  which is spoofable. Set TRUSTED_PROXY=true if behind a CDN/reverse proxy.
+  For finer-grained control, also set TRUSTED_PROXY_CIDRS to walk the proxy chain.
+  Collecting page data using 3 workers  ...[env] WARNING: NODE_ENV=production but TRUSTED_PROXY is not set to 'true'.
+  The rate limiter will use the leftmost (client-supplied) X-Forwarded-For IP,
+  which is spoofable. Set TRUSTED_PROXY=true if behind a CDN/reverse proxy.
+  For finer-grained control, also set TRUSTED_PROXY_CIDRS to walk the proxy chain.
+[env] WARNING: NODE_ENV=production but TRUSTED_PROXY is not set to 'true'.
+  The rate limiter will use the leftmost (client-supplied) X-Forwarded-For IP,
+  which is spoofable. Set TRUSTED_PROXY=true if behind a CDN/reverse proxy.
+  For finer-grained control, also set TRUSTED_PROXY_CIDRS to walk the proxy chain.
+✓ Collecting page data using 3 workers in 1906ms    
+✓ Generating static pages using 3 workers (15/15) in 1572ms
+✓ Finalizing page optimization in 1875ms    
 
 Route (app)                    Revalidate  Expire
 ┌ ○ /                                  2m     10m
@@ -52,6 +77,7 @@ Route (app)                    Revalidate  Expire
 ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
 ƒ  (Dynamic)            server-rendered on demand
 
+
 $ pnpm dev
 
 > onestopnews@0.1.0 dev /home/project/onestopnews
@@ -61,7 +87,9 @@ $ pnpm dev
 - Local:         http://localhost:3000
 - Network:       http://192.168.2.132:3000
 - Environments: .env.local, .env
-✓ Ready in 459ms
+✓ Ready in 466ms
+⚠ Slow filesystem detected. The benchmark took 258ms. If /home/project/onestopnews/.next/dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development
 - Cache Components enabled
 - Experiments (use with caution):
   ✓ viewTransition
@@ -70,9 +98,19 @@ $ pnpm dev
 Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 5.6s (next.js: 4.4s, application-code: 1236ms)
+ GET / 200 in 6.6s (next.js: 5.3s, application-code: 1317ms)
  Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 368ms (next.js: 5ms, application-code: 363ms)
+ GET / 200 in 439ms (next.js: 5ms, application-code: 434ms)
+ GET /api/auth/session 200 in 3.2s (next.js: 3.2s, application-code: 40ms)
+ GET /api/auth/session 200 in 65ms (next.js: 55ms, application-code: 9ms)
+ Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
+ GET / 200 in 390ms (next.js: 4ms, application-code: 386ms)
+ GET /api/auth/session 200 in 81ms (next.js: 65ms, application-code: 15ms)
+ GET /api/auth/session 200 in 18ms (next.js: 6ms, application-code: 12ms)
+ GET /sign-in 200 in 797ms (next.js: 716ms, application-code: 81ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior
+ Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
+ GET / 200 in 446ms (next.js: 4ms, application-code: 441ms)
 ⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from "onestopnews.jesspete.shop".
 Cross-origin access to Next.js dev resources is blocked by default for safety.
 
@@ -84,7 +122,9 @@ module.exports = {
 }
 
 Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
- Cache  Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."canonical_url", "articles"."published_at", "articles"."has_summary", "articles"."summary_status", "sources"."id", "sources"."name", "sources"."url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" order by "articles"."published_at" desc limit $1 -- params: [7]
- GET / 200 in 439ms (next.js: 5ms, application-code: 434ms)
+Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."body", "articles"."canonical_url", "articles"."content_hash", "articles"."content_availability", "articles"."importance_score", "articles"."has_summary", "articles"."summary_status", "articles"."political_leaning", "articles"."published_at", "articles"."ingested_at", "articles"."search_vector", "articles"."source_id", "articles"."category_id", "articles"."subcategory_id", "sources"."id", "sources"."name", "sources"."url", "categories"."id", "categories"."name", "categories"."slug", "summaries"."id", "summaries"."article_id", "summaries"."summary_text", "summaries"."key_points", "summaries"."sources_cited", "summaries"."model", "summaries"."tokens_used", "summaries"."generated_at", "summaries"."status", "summaries"."flag_reason", "summaries"."ai_statement", "summaries"."compliance_statement", "summaries"."coverage_percentage", "summaries"."original_article_url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" left join "categories" on "articles"."category_id" = "categories"."id" left join "summaries" on "articles"."id" = "summaries"."article_id" where "articles"."id" = $1 limit $2 -- params: ["1a34fe3e-c107-45c2-a773-e22b021c26ec", 1]
+Query: select "articles"."id", "articles"."title", "articles"."excerpt", "articles"."body", "articles"."canonical_url", "articles"."content_hash", "articles"."content_availability", "articles"."importance_score", "articles"."has_summary", "articles"."summary_status", "articles"."political_leaning", "articles"."published_at", "articles"."ingested_at", "articles"."search_vector", "articles"."source_id", "articles"."category_id", "articles"."subcategory_id", "sources"."id", "sources"."name", "sources"."url", "categories"."id", "categories"."name", "categories"."slug", "summaries"."id", "summaries"."article_id", "summaries"."summary_text", "summaries"."key_points", "summaries"."sources_cited", "summaries"."model", "summaries"."tokens_used", "summaries"."generated_at", "summaries"."status", "summaries"."flag_reason", "summaries"."ai_statement", "summaries"."compliance_statement", "summaries"."coverage_percentage", "summaries"."original_article_url" from "articles" inner join "sources" on "articles"."source_id" = "sources"."id" left join "categories" on "articles"."category_id" = "categories"."id" left join "summaries" on "articles"."id" = "summaries"."article_id" where "articles"."id" = $1 limit $2 -- params: ["1a34fe3e-c107-45c2-a773-e22b021c26ec", 1]
+ GET /article/1a34fe3e-c107-45c2-a773-e22b021c26ec 200 in 2.3s (next.js: 1384ms, generate-params: 634ms, application-code: 949ms)
+ GET /search 200 in 998ms (next.js: 775ms, application-code: 223ms)
 
 
