@@ -105,9 +105,12 @@ const nextConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           // Content-Security-Policy — restricts resource loading to trusted
-          // sources. The 'unsafe-inline' for scripts and styles is a
-          // transitional measure; production should migrate to nonce-based
-          // CSP via Next.js 16's headers() nonce pattern.
+          // sources. S4 fix: Removed 'unsafe-eval' (no code in src/ uses
+          // eval() or new Function() — verified by grep). 'unsafe-inline'
+          // remains as a transitional measure for Next.js inline scripts;
+          // production should migrate to nonce-based CSP via Next.js 16's
+          // headers() nonce pattern.
+	  // "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
           {
             key: "Content-Security-Policy",
             value: [

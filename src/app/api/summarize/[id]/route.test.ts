@@ -47,10 +47,13 @@ vi.mock("@/lib/rateLimit", () => ({
   }),
 }));
 
-// Mock the auth DAL — tests control session presence per scenario.
-const mockVerifySession = vi.fn();
-vi.mock("@/lib/auth/dal", () => ({
-  verifySession: mockVerifySession,
+// Mock the auth module — tests control session presence per scenario.
+// API routes use auth() directly (not verifySession) because they need to
+// return 401 JSON, not redirect. verifySession() calls redirect() which
+// throws NEXT_REDIRECT — inappropriate for JSON API responses.
+const mockAuth = vi.fn();
+vi.mock("@/lib/auth", () => ({
+  auth: mockAuth,
 }));
 
 // Import after mocks are registered.
@@ -93,8 +96,8 @@ function mockArticle(
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: authenticated, allowed by rate limiter, valid article ready to summarize.
-  mockVerifySession.mockResolvedValue({
-    user: { id: "user-1", role: "reader" },
+  mockAuth.mockResolvedValue({
+    user: { id: "user-1", role: "reader", email: "user@test.com" },
   });
   vi.mocked(checkRateLimit).mockResolvedValue({
     allowed: true,
@@ -109,8 +112,12 @@ beforeEach(() => {
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe("POST /api/summarize/[id] — auth", () => {
-  it("returns 401 when no session", async () => {
-    mockVerifySession.mockResolvedValue(null);
+  it("returns 401 when no session (uses auth() not verifySession)", async () => {
+    // API routes use auth() directly — it returns null when unauthenticated
+    // (no redirect). The route returns 401 JSON. This is the correct pattern
+    // for API routes: verifySession() would redirect (throw NEXT_REDIRECT),
+    // which is inappropriate for JSON API responses.
+    mockAuth.mockResolvedValue(null);
     const response = await POST(makeRequest(), {
       params: Promise.resolve({ id: VALID_ARTICLE_ID }),
     });

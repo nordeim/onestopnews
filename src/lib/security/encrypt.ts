@@ -61,8 +61,17 @@ const KEY_BUFFER = Buffer.from(
 /**
  * encryptPushKeys — Encrypts Web Push subscription keys with AES-256-GCM.
  *
- * Uses a random 16-byte IV and produces the format:
+ * S5 fix: Uses a random 12-byte IV per NIST SP 800-38D recommendation for
+ * GCM mode (96-bit IV is the optimal length — avoids additional GHASH
+ * computation required for non-96-bit IVs). The previous 16-byte IV was
+ * technically valid but non-compliant with best practice.
+ *
+ * Produces the format:
  *   ${iv}:${authTag}:${encryptedData} (all hex-encoded)
+ *
+ * Backward compatibility: decryptPushKeys reads the IV from the stored hex
+ * string and creates a Buffer from it — the length doesn't matter for
+ * decryption. Old data encrypted with 16-byte IVs still decrypts correctly.
  *
  * @param keys — { p256dh, auth } from the PushSubscription keys
  * @returns Hex-encoded encrypted string
@@ -71,7 +80,7 @@ export function encryptPushKeys(keys: {
   p256dh: string;
   auth: string;
 }): string {
-  const iv = randomBytes(16);
+  const iv = randomBytes(12);
   const cipher = createCipheriv(ALGORITHM, KEY_BUFFER, iv);
 
   let encrypted = cipher.update(JSON.stringify(keys), "utf8", "hex");

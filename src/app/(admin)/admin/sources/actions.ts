@@ -66,13 +66,18 @@ export async function pauseSource(id: string) {
 export async function deleteSource(id: string) {
   await verifyAdminSession();
 
-  // Soft delete: set status to disabled
-  const [updated] = await db
-    .update(sources)
-    .set({ isActive: false })
+  // Q3 fix: HARD DELETE — permanently removes the source from the database.
+  // The schema has onDelete: "cascade" on articles.sourceId, so this
+  // cascade-deletes all associated articles too. Use pauseSource() instead
+  // if you only want to temporarily disable ingestion without losing data.
+  //
+  // WARNING: This operation is irreversible. All articles from this source
+  // will be permanently deleted. Use with caution.
+  const [deleted] = await db
+    .delete(sources)
     .where(eq(sources.id, id))
     .returning();
 
   revalidatePath("/admin/sources");
-  return updated;
+  return deleted;
 }

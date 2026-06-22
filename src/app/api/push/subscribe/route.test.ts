@@ -34,17 +34,19 @@ vi.mock("@/lib/security/encrypt", () => ({
   encryptPushKeys: vi.fn().mockReturnValue("encrypted-envelope-string"),
 }));
 
-// Mock the auth DAL — verifySession returns a fake session.
-vi.mock("@/lib/auth/dal", () => ({
-  verifySession: vi.fn().mockResolvedValue({
-    user: { id: "user-123", role: "reader", name: "Test User" },
-    sessionId: "session-123",
+// Mock the auth module — auth() returns a fake session.
+// S3 fix: API routes use auth() directly (not verifySession) because they
+// need to return 401 JSON, not redirect. auth() returns null when
+// unauthenticated, letting the route return a proper 401.
+vi.mock("@/lib/auth", () => ({
+  auth: vi.fn().mockResolvedValue({
+    user: { id: "user-123", role: "reader", name: "Test User", email: "test@test.com" },
   }),
 }));
 
 const { POST, OPTIONS } = await import("./route");
 const { encryptPushKeys } = await import("@/lib/security/encrypt");
-const { verifySession } = await import("@/lib/auth/dal");
+const { auth } = await import("@/lib/auth");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -111,10 +113,13 @@ describe("POST /api/push/subscribe", () => {
     expect(response.status).toBe(500);
   });
 
-  it("returns 401 when verifySession throws (user not signed in)", async () => {
-    vi.mocked(verifySession).mockRejectedValueOnce(
-      new Error("redirect to /sign-in"),
-    );
+  it("returns 401 when auth() returns null (user not signed in)", async () => {
+    // S3 fix: API routes use auth() directly — it returns null when
+    // unauthenticated (no redirect). The route returns 401 JSON.
+    // Cast null to the expected type — the mock's TypeScript type is
+    // NextMiddleware (from Auth.js), but at runtime it's a vi.fn that
+    // can return any value. The cast bypasses the type mismatch.
+    vi.mocked(auth).mockResolvedValueOnce(null as never);
     const response = await POST(makeRequest(validBody));
     expect(response.status).toBe(401);
     const body = await response.json();
@@ -147,9 +152,9 @@ describe("OPTIONS /api/push/subscribe (CORS preflight)", () => {
     );
   });
 
-  it("does not call verifySession (preflight is unauthenticated)", async () => {
+  it("does not call auth (preflight is unauthenticated)", async () => {
     await OPTIONS();
-    expect(verifySession).not.toHaveBeenCalled();
+    expect(auth).not.toHaveBeenCalled();
   });
 
   it("does not call the database (preflight is cheap)", async () => {

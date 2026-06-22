@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { articles } from "@/lib/db/schema";
 import { summarizeQueue } from "@/lib/queue";
-import { verifySession } from "@/lib/auth/dal";
+import { auth } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 /**
@@ -17,6 +17,11 @@ import { checkRateLimit } from "@/lib/rateLimit";
  * keyed on session.user.id (not IP) because the endpoint is authenticated —
  * IP-only would let one user behind NAT burn the budget for everyone, and
  * per-user is more precise for paid AI work.
+ *
+ * S3 fix: Uses auth() directly (not verifySession) because API routes must
+ * return 401 JSON, not redirect. verifySession() calls redirect() which
+ * throws NEXT_REDIRECT — inappropriate for JSON API responses. auth()
+ * returns a session or null, letting the route return a proper 401.
  */
 const SUMMARIZE_RATE_LIMIT_MAX = 5;
 const SUMMARIZE_RATE_LIMIT_WINDOW_SEC = 60;
@@ -25,53 +30,54 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  try {
-    const session = await verifySession();
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
-      );
-    }
-
-    // ── Rate limit check (per user, not per IP) ────────────────────────────
-    // Keyed on session.user.id so an authenticated user cannot fan out
-    // unlimited BullMQ jobs by iterating distinct article UUIDs. Each user
-    // gets 5 summarize requests per minute — sufficient for genuine use
-    // while capping AI spend exposure.
-    const rateLimitResult = await checkRateLimit(
-      `api:summarize:${session.user.id}`,
-      SUMMARIZE_RATE_LIMIT_MAX,
-      SUMMARIZE_RATE_LIMIT_WINDOW_SEC,
+  // ── Auth: use auth() directly for JSON 401 (not verifySession redirect) ──
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
     );
-    if (!rateLimitResult.allowed) {
-      const retryAfterSec = Math.max(
-        1,
-        Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
-      );
-      return NextResponse.json(
-        { error: "Rate limit exceeded. Please retry later." },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(retryAfterSec),
-            "X-RateLimit-Remaining": "0",
-          },
+  }
+
+  // ── Rate limit check (per user, not per IP) ────────────────────────────
+  // Keyed on session.user.id so an authenticated user cannot fan out
+  // unlimited BullMQ jobs by iterating distinct article UUIDs. Each user
+  // gets 5 summarize requests per minute — sufficient for genuine use
+  // while capping AI spend exposure.
+  const rateLimitResult = await checkRateLimit(
+    `api:summarize:${session.user.id}`,
+    SUMMARIZE_RATE_LIMIT_MAX,
+    SUMMARIZE_RATE_LIMIT_WINDOW_SEC,
+  );
+  if (!rateLimitResult.allowed) {
+    const retryAfterSec = Math.max(
+      1,
+      Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
+    );
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Please retry later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfterSec),
+          "X-RateLimit-Remaining": "0",
         },
-      );
-    }
+      },
+    );
+  }
 
-    const { id: articleId } = await params;
+  const { id: articleId } = await params;
 
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(articleId)) {
-      return NextResponse.json(
-        { error: "Invalid article ID format" },
-        { status: 400 },
-      );
-    }
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(articleId)) {
+    return NextResponse.json(
+      { error: "Invalid article ID format" },
+      { status: 400 },
+    );
+  }
 
+  try {
     const article = await db.query.articles.findFirst({
       where: eq(articles.id, articleId),
     });

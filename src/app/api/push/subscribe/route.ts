@@ -3,7 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { pushSubscriptions } from "@/lib/db/schema";
 import { encryptPushKeys } from "@/lib/security/encrypt";
-import { verifySession } from "@/lib/auth/dal";
+import { auth } from "@/lib/auth";
 
 // ─── PUSH SUBSCRIPTION API ─────────────────────────────────────────────────
 //
@@ -14,9 +14,13 @@ import { verifySession } from "@/lib/auth/dal";
 // the subscription in the database.
 //
 // Security:
-//   - Requires authenticated session (via verifySession)
+//   - Requires authenticated session (via auth())
 //   - Encrypts p256dh and auth keys before storage
 //   - Upserts by endpoint (idempotent)
+//
+// S3 fix: Uses auth() directly (not verifySession) because API routes must
+// return 401 JSON, not redirect. verifySession() calls redirect() which
+// throws NEXT_REDIRECT — inappropriate for JSON API responses.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const subscriptionSchema = z.object({
@@ -28,11 +32,9 @@ const subscriptionSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  // Verify user is authenticated
-  let session;
-  try {
-    session = await verifySession();
-  } catch {
+  // ── Auth: use auth() directly for JSON 401 (not verifySession redirect) ──
+  const session = await auth();
+  if (!session?.user?.id) {
     return NextResponse.json(
       { error: "Unauthorized. Sign in to subscribe to push notifications." },
       { status: 401 }

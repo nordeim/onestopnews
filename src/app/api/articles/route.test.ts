@@ -198,6 +198,21 @@ describe("GET /api/articles — rate limiting", () => {
       expect.any(Number)
     );
   });
+
+  it("fails OPEN (returns 200) when Redis is unreachable — not 500", async () => {
+    // S7 fix: When Redis is down, checkRateLimit() throws. The API must
+    // NOT return 500 — that would take down the entire public API during a
+    // Redis outage. Instead, fail OPEN (allow the request, log a warning).
+    // This is the standard pattern for rate limiting: a monitoring outage
+    // should not take down the API. The request proceeds without rate
+    // limiting — a acceptable degradation during Redis outages.
+    vi.mocked(checkRateLimit).mockRejectedValue(
+      new Error("Redis connection refused"),
+    );
+    const response = await GET(makeRequest("/api/articles"));
+    expect(response.status).toBe(200);
+    expect(getFeedArticles).toHaveBeenCalled();
+  });
 });
 
 describe("OPTIONS /api/articles", () => {

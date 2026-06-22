@@ -448,7 +448,7 @@ pnpm worker
 | `curl -H "x-forwarded-for: 1.2.3.4" "http://localhost:3000/api/articles?cursor=invalid"` | `400` with `{ error: "Invalid cursor format..." }`                |
 | BullMQ dashboard at `http://localhost:3001`                                              | Active queues: `ingest`, `summarize`, `score`, `feed-slice`       |
 | `pnpm tsc --noEmit`                                                                      | Zero type errors                                                  |
-| `pnpm test`                                                                              | All 452 tests pass across 66 suites                               |
+| `pnpm test`                                                                              | All 472 tests pass across 67 suites                               |
 
 ---
 
@@ -468,6 +468,8 @@ REDIS_URL=redis://localhost:6379
 
 # ── Authentication (Auth.js v5) ───────────────────────────
 AUTH_SECRET=  # Generate with: openssl rand -base64 33 (min 32 chars)
+               # Phase 21: In production, rejects known-weak values (dev-secret, test-secret,
+               # ci-dummy, change-me, placeholder, etc.) via Zod superRefine.
 AUTH_URL=http://localhost:3000  # Production: your canonical URL
 
 # ── AI Models ─────────────────────────────────────────────
@@ -530,7 +532,9 @@ GITHUB_CLIENT_SECRET=
 
 **Env var count:** 17 total (10 required + 6 optional + 1 with default `NODE_ENV`). Required vars fail fast at module load; optional vars are unset by default.
 
-**CI Note:** All required env vars must be set even for `pnpm lint` and `pnpm test`, because `src/lib/env/index.ts` validates at module load time. See `.github/workflows/ci.yml` for CI-safe dummy values.
+**Phase 21 Security:** `.env`, `.env.docker`, `.env.local` are gitignored (only `.env.example` is tracked). Never commit real secrets. If you accidentally commit `.env*` files, rotate all exposed secrets immediately — git history is forever.
+
+**CI Note:** All required env vars must be set even for `pnpm lint` and `pnpm test`, because `src/lib/env/index.ts` validates at module load time. See `.github/workflows/ci.yml` for CI-safe dummy values. Phase 21 added `pnpm audit --audit-level=high --prod` to CI for dependency vulnerability scanning.
 
 ---
 
@@ -576,7 +580,7 @@ GITHUB_CLIENT_SECRET=
 ## Testing
 
 ```bash
-# Run all unit tests (452 tests across 66 suites, ~30s)
+# Run all unit tests (472 tests across 67 suites, ~30s)
 pnpm test
 
 # Run tests for a specific package
@@ -606,11 +610,11 @@ pnpm check
 
 | Tier        | Command                 | Purpose                                                  | Count                          | Duration                         |
 | :---------- | :---------------------- | :------------------------------------------------------- | :----------------------------- | :------------------------------- |
-| Unit        | `pnpm test`             | Pure logic + mocked deps (vitest, jsdom env)             | 452 tests / 66 suites          | ~30s                             |
+| Unit        | `pnpm test`             | Pure logic + mocked deps (vitest, jsdom env)             | 472 tests / 67 suites          | ~30s                             |
 | Integration | `pnpm test:integration` | Real DB round-trips via testcontainers (requires Docker) | 3 Docker-gated + 1 always-pass | ~10-30s (with container startup) |
 | E2E         | `pnpm test:e2e`         | Browser-level smoke + a11y scans (Playwright)            | 10 smoke + 4 a11y              | ~60s                             |
 
-**Coverage thresholds** (enforced in CI via `pnpm test -- --coverage`): `lines: 80, functions: 80, branches: 70, statements: 80`. Phase 19 calibrated these down to 75/80/65/80 pending additional unit tests; Phase 20 / T7 raised them back to 80/80/70/80 after adding the missing tests (FeedSkeleton, categories OPTIONS, push/subscribe OPTIONS+401, PageTransition clicks+reduced-motion, seed orchestration, queries.ts buildFeedQuery refactor). Current actual coverage: 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements.
+**Coverage thresholds** (enforced in CI via `pnpm test -- --coverage`): `lines: 80, functions: 80, branches: 70, statements: 80`. Phase 19 calibrated these down to 75/80/65/80 pending additional unit tests; Phase 20 / T7 raised them back to 80/80/70/80. Phase 21 added 20 new tests (env weak-secret rejection, IV length, rate limiter fail-open, deleteSource hard delete, redirect propagation). Current actual coverage: 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements.
 
 **Test prerequisites:** PostgreSQL and Redis must be running for unit tests (the env schema validates at module load, but tests mock the DB so no real connection is needed for unit tests). Integration tests (`pnpm test:integration`) require Docker to spin up real containers. E2E tests (`pnpm test:e2e`) require a running dev server (`pnpm dev` in a separate terminal).
 
@@ -973,8 +977,8 @@ Check BullMQ dashboard for the `score` queue — if jobs are appearing there but
 | **Authentication**             | Auth.js v5 with HttpOnly session cookies. No JWT tokens in localStorage.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | **Network boundary**           | `proxy.ts` provides optimistic UX redirects. Real auth enforcement in `(admin)/layout.tsx` via `<AdminGuard>` (Phase 16).                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **Content availability guard** | `contentAvailabilityEnum` prevents AI summarisation of `title_only` or `excerpt` articles — eliminating fabrication risk. Enforced at both Server Action and API Route layers.                                                                                                                                                                                                                                                                                                                                                |
-| **Rate limiting**              | `GET /api/articles` rate-limited to 20 req/s per IP via Redis fixed-window counter (Phase 13). `POST /api/summarize/[id]` + `requestSummary` Server Action rate-limited to 5 req/min/user keyed on `session.user.id` (Phase 19 / C2 + C3). Both return `429` with `Retry-After` header.                                                                                                                                                                                                                                       |
-| **Push key encryption**        | VAPID keys encrypted at rest with AES-256-GCM. `PUSH_KEY_ENCRYPTION_KEY` is 64-char hex (32-byte), validated at module load.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Rate limiting**              | `GET /api/articles` rate-limited to 20 req/s per IP via Redis fixed-window counter (Phase 13). Phase 21: fails OPEN (200+warning) on Redis outage instead of 500 — rate limiting is defense-in-depth, not critical path. `POST /api/summarize/[id]` + `requestSummary` Server Action rate-limited to 5 req/min/user keyed on `session.user.id` (Phase 19 / C2 + C3). Both return `429` with `Retry-After` header.                                                                                                                                                                                                                                       |
+| **Push key encryption**        | VAPID keys encrypted at rest with AES-256-GCM. `PUSH_KEY_ENCRYPTION_KEY` is 64-char hex (32-byte), validated at module load. Phase 21: IV changed from 16 to 12 bytes per NIST SP 800-38D (backward-compatible with legacy data).                                                                                                                                                                                                                                                                                                                                                                                                  |
 | **Accessibility**              | WCAG AAA focus indicators (`focus-visible:ring-dispatch-ember`). `prefers-reduced-motion` disables all animations entirely. Phase 19 / M5 added `@axe-core/playwright` automated WCAG 2.x A/AA/AAA scans in `e2e/a11y.spec.ts`.                                                                                                                                                                                                                                                                                               |
 | **DB connections**             | Lazy Proxy connection (defers until first query). `max: 10` pool for dedicated runtimes; serverless requires PgBouncer/Supavisor.                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Content hashing**            | `articles.contentHash` uses SHA-256 (via `node:crypto`) of `title                                                                                                                                                                                                                                                                                                                                                                                                                                                             | body       | publishedAt.toISOString()`. Includes body so content-only updates are detected. (Phase 14)                                                               |
@@ -982,11 +986,15 @@ Check BullMQ dashboard for the `score` queue — if jobs are appearing there but
 | **Push key storage**           | Encrypted envelope stored in dedicated `encryptedKeys` column (Phase 14). Old `keys` column dropped in Phase 15 migration `0005`.                                                                                                                                                                                                                                                                                                                                                                                             |
 | **Trusted proxy**              | `TRUSTED_PROXY=true` env var makes rate limiter use rightmost IP from `x-forwarded-for` (prevents spoofing behind CDN). (Phase 14) Phase 19 / M2 added `TRUSTED_PROXY_CIDRS` env var for finer-grained CIDR-based proxy-chain walking (full implementation deferred).                                                                                                                                                                                                                                                         |
 | **AI failure observability**   | After 3 BullMQ retries, failed summaries set `summaryStatus: "needs_review"` — visible in admin review queue. (Phase 14) Phase 19 / H10 added `checkNeedsReviewAlert()` function with pluggable alert callback (default `console.warn`; production can swap in email/webhook/Slack).                                                                                                                                                                                                                                          |
-| **Security headers**           | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(), microphone=(), camera=()`. Phase 19 / M1 added `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` (HSTS) and a transitional `Content-Security-Policy` (`default-src 'self'`, `script-src 'self' 'unsafe-inline' 'unsafe-eval'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`). Production should migrate to nonce-based CSP. |
+| **Security headers**           | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: geolocation=(), microphone=(), camera=()`. Phase 19 / M1 added `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` (HSTS) and a transitional `Content-Security-Policy` (`default-src 'self'`, `script-src 'self' 'unsafe-inline'`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`). Phase 21 removed `'unsafe-eval'` (no code uses `eval()`). Production should migrate to nonce-based CSP to also remove `'unsafe-inline'`. |
 | **Error boundaries**           | Phase 19 / H5 added branded `error.tsx` (route-segment), `not-found.tsx` (404), and `global-error.tsx` (root layout fallback). All include `<main id="main-content">` for the skip-to-content link.                                                                                                                                                                                                                                                                                                                           |
 | **FlowProducer resilience**    | Phase 19 / C4 wrapped `enqueuePostIngestFlow` in try/catch with `scoreQueue.add()` fallback per article. Returns status object `{ status: "ok"                                                                                                                                                                                                                                                                                                                                                                                | "degraded" | "skipped", fallbackUsed, fallbackFailures, enqueuedCount }` — never re-throws (prevents silent data loss when Redis is unreachable during ingest burst). |
 | **Worker graceful shutdown**   | Phase 19 / M7 hardened with 25s force-exit timeout (`unref`'d `setTimeout`), `Promise.allSettled` over all 4 workers + FlowProducer singleton close. Prevents worker hang on long-running summarize jobs.                                                                                                                                                                                                                                                                                                                     |
 | **Zero-downtime deploy**       | Phase 19 / H7 rewrote `scripts/deploy.sh` with `--scale web=2` blue-green, health-gated drain, `trap 'rollback' ERR`, and removed `\|\| true` from migrations (fail-fast).                                                                                                                                                                                                                                                                                                                                                    |
+| **Secret hygiene**             | Phase 21: `.env*` files gitignored (only `.env.example` tracked). `AUTH_SECRET` rejects known-weak values in production via Zod `superRefine`. VAPID keys must be rotated if previously committed to git history.                                                                                                                                                                                                                                                                                                            |
+| **Auth pattern**               | Phase 21: Server Components/Actions use `verifySession()`/`verifyAdminSession()` (redirects on failure — never wrap in try/catch). API Routes use `auth()` directly (returns null → 401 JSON).                                                                                                                                                                                                                                                                                                                                |
+| **Admin route protection**     | Phase 21: Fixed route group issue — admin pages moved to `(admin)/admin/sources/` and `(admin)/admin/summaries/` so URLs resolve to `/admin/sources` and `/admin/summaries`. `<AdminGuard>` in `(admin)/layout.tsx` centralizes auth. `proxy.ts` checks `pathname.startsWith("/admin")`.                                                                                                                                                                                                                                     |
+| **CI security audit**          | Phase 21: `pnpm audit --audit-level=high --prod` runs in CI after install (non-blocking initially; promote to hard gate once clean).                                                                                                                                                                                                                                                                                                                                                                                          |
 
 ---
 
@@ -1177,6 +1185,42 @@ if (!result.success) {
 
 **Cause 3**: The `articles.searchVector` GIN index is missing or corrupted.
 **Fix**: Verify the index exists: `SELECT indexname FROM pg_indexes WHERE tablename = 'articles';`.
+
+#### Admin sidebar links return 404 (Phase 21)
+
+**Cause**: Next.js route groups `(name)` don't affect URL structure. If admin pages are at `src/app/(admin)/sources/page.tsx`, the URL is `/sources`, NOT `/admin/sources`.
+
+**Fix**: Ensure admin pages are inside an `admin/` subfolder within the route group: `src/app/(admin)/admin/sources/page.tsx` → URL `/admin/sources`. The route group `(admin)` provides the shared layout (`AdminGuard`); the `admin/` folder provides the URL prefix.
+
+#### `revalidatePath("/admin/sources")` doesn't invalidate cache (Phase 21)
+
+**Cause**: Same route group issue as above. If the page is at `(admin)/sources/` (URL `/sources`), then `revalidatePath("/admin/sources")` targets a non-existent path.
+
+**Fix**: Ensure the page is at `(admin)/admin/sources/` (URL `/admin/sources`), then `revalidatePath("/admin/sources")` works correctly.
+
+#### API returns 500 instead of 401 for unauthenticated requests (Phase 21)
+
+**Cause**: `verifySession()` calls `redirect()` which throws `NEXT_REDIRECT`. If wrapped in try/catch, the redirect is caught and the catch block returns 500 "Internal server error".
+
+**Fix**: API routes should use `auth()` directly (returns null when unauthenticated) instead of `verifySession()` (which redirects). Never wrap `verifySession()` in try/catch. See `src/app/api/summarize/[id]/route.ts` for the correct pattern.
+
+#### Redis outage takes down `/api/articles` (Phase 21)
+
+**Cause**: `checkRateLimit()` throws when Redis is down. If not wrapped in try/catch, the uncaught throw returns HTTP 500.
+
+**Fix**: The rate limiter now fails OPEN (allows request, logs warning) via try/catch. If you see this issue, ensure the `/api/articles` route has the fail-open try/catch around `checkRateLimit()`.
+
+#### `pnpm build` fails: "AUTH_SECRET appears to be a known-weak/placeholder value" (Phase 21)
+
+**Cause**: In production (`NODE_ENV=production`), the Zod env schema rejects `AUTH_SECRET` values matching weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`, etc.).
+
+**Fix**: Generate a strong random secret: `openssl rand -base64 33`. Update your production `.env` or hosting platform's environment variables. Dev/test environments accept weak secrets for convenience.
+
+#### `.env.local` with real secrets accidentally committed (Phase 21)
+
+**Cause**: `.gitignore` previously didn't exclude `.env*` files. Real VAPID keys, API keys, or encryption keys may be in git history.
+
+**Fix**: 1) `.gitignore` now excludes `.env*` (only `.env.example` tracked). 2) `git rm --cached .env .env.docker .env.local` to untrack. 3) **Rotate all exposed secrets** — git history is forever. 4) Consider `git filter-repo` or BFG to purge `.env*` from history.
 
 ### Docker Build Fails with "Cannot find module" or "dist/workers/index.js" (Phase 15)
 
@@ -1460,7 +1504,7 @@ export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
 
 7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI. The article detail page (`/article/[id]`) emits all 3 layers when a summary exists: Layer 1 (JSON-LD `<script>`) is rendered directly in `ArticleData.tsx` body (Phase 17 fix — `metadata.other` renders `<meta>` tags, not `<script>` tags); Layers 2 (HTTP header) + 3 (`<meta>` tag) are emitted via `generateMetadata()` `metadata.other` in `page.tsx`. Verify via live DOM inspection: `document.querySelector('script[type="application/ld+json"]')` and `document.querySelector('meta[name="ai-provenance"]')`.
 
-8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests; Phase 14 added 39 tests; Phase 15 added 28 tests; Phase 16 added 13 tests; Phase 17 added 10 tests; Phase 19 added 80 tests; Phase 20 added 60 tests (FeedSkeleton: 7, categories OPTIONS: 3, push/subscribe OPTIONS+401+invalid JSON: 5, PageTransition clicks+reduced-motion: 6, seed orchestration: 3, queries.ts buildFeedQuery refactor: 11, walkXffChain+getClientIp: 14, /account actions: 11, db-integrity placeholder: 1, minus the 1 placeholder that was always-pass: -1). Current total: **452 tests across 66 suites** + 10 Playwright E2E smoke tests + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass). Monitor test duration — currently ~30s; if it exceeds 40s, investigate slow tests.
+8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests; Phase 14 added 39 tests; Phase 15 added 28 tests; Phase 16 added 13 tests; Phase 17 added 10 tests; Phase 19 added 80 tests; Phase 20 added 60 tests; Phase 21 added 20 tests (env weak-secret rejection: 14, IV length + backward compat: 2, rate limiter fail-open: 1, deleteSource hard delete: 3). Current total: **472 tests across 67 suites** + 10 Playwright E2E smoke tests + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass). Monitor test duration — currently ~30s; if it exceeds 40s, investigate slow tests.
 
 9. **BM25 Search Tuning**: The `ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...)` weights may need adjustment based on real user queries. Consider A/B testing different weight configurations.
 
@@ -1610,6 +1654,7 @@ Items identified during Phase 20 that were not implemented:
 | **Phase 18** — Database Reinitialization & Skip-Link Supplement                                                        | **COMPLETE** | Created `database_reinitialize.md` protocol + `scripts/reinit-db.sh` (Docker-aware `dropdb`/`createdb`/`pg_restore` with 15s health checks and `--clean --if-exists` flags); extended skip-link supplement pass from 7 page templates down to 0 remaining; validated `docker-compose.dev.yml` stack builds cleanly; confirmed `db:push` removal and `"latest'` dep pinning completion (327 tests across 57 suites + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | **Phase 19** — Comprehensive Code Audit & Remediation                                                                  | **COMPLETE** | Conducted systematic 7-dimension code audit (security, frontend, DB/worker/API, CI/ops/testing) against the codebase. Identified 47 validated gaps with root-cause analysis. Applied TDD-driven fixes across 5 batches: **Critical (5)** — CI redness from vendored `skills/` (C1: tsconfig/eslint exclude), rate limiting on `/api/summarize/[id]` (C2: per-user 5/min), `requestSummary` Server Action auth (C3), FlowProducer resilience to Redis failures via scoreQueue fallback (C4), SummariesData Approve/Disable button wiring via form actions + new `approveSummary` action (C5). **High UX (5)** — Accordion focus rings (H1), Header sign-in/out button via `<UserMenu>` + `SessionProvider` (H2), Search error state with Retry (H3), SummaryPanel error state with Try Again (H4), branded `error.tsx`/`not-found.tsx`/`global-error.tsx` (H5). **High Data (7)** — `@vitest/coverage-v8` installed + CI coverage gate (H6), `deploy.sh` zero-downtime + rollback trap + removed `\|\| true` (H7), created missing `nginx/nginx.conf` (H8), replaced regex HTML stripper with `cheerio` (H9), `needs_review` alerting via `checkNeedsReviewAlert` (H10), cross-field search migration `0006` adding `body` (weight C) + denormalized `sourceName` (weight D) to `searchVector` (H11), eliminated all `process.env.*` direct reads in favor of typed `env` export (H12). **Medium (15 of 19)** — HSTS + CSP headers (M1), `TRUSTED_PROXY_CIDRS` env + boot warning (M2), paginated sources query (M3), search result caching via `"use cache"` + `cacheLife("reference")` (M4), `@axe-core/playwright` + `e2e/a11y.spec.ts` (M5), actionable `OAuthAccountNotLinked` error message via `AuthErrorMessage` (M6), hardened worker shutdown with 25s timeout + `Promise.allSettled` (M7), `fastupdate=off` GIN index activated (M8), Dockerfile HEALTHCHECK on web + worker (M9), husky + lint-staged pre-commit hooks (M10), INP budget in `lighthouserc.js` (M11), SourcesData empty state (M13), design tokens `dispatch-warning`/`dispatch-danger` replacing `amber-*`/`red-*` defaults (M15), `npx tsx` → bare `tsx` (M16), dropped legacy `version: '3.8'` (M17), search queries header corrected (M18), `no-explicit-any` promoted to `error` (M19). **Deferred (4 Medium + 8 Low)**: M12 testcontainers (needs Docker), M14 (covered by C5), full TRUSTED_PROXY_CIDR chain walking, OAuth account-linking UI flow, JSON-LD BreadcrumbList/WebSite, RevealProvider activation decision, AGENTS.md/CLAUDE.md consolidation, stale `Codebase_Review_Validation_Report_2.md`/`_3.md` archive. **Final test count: 392 tests across 63 suites** + 10 Playwright E2E (was 312/56 at audit start — +80 tests, +7 suites). `pnpm check` and `pnpm lint` both green (was red at audit start due to vendored `skills/`). |
 | **Phase 20** — Post-Phase-19 Remediation Documentation Alignment                                                       | **COMPLETE** | Closed most Phase 19 deferred items via 4 batches (13 tasks total) with strict TDD discipline. **Batch 1 (Documentation alignment)**: D1 consolidated AGENTS.md + CLAUDE.md (CLAUDE.md reduced to stub; 81-entry File Locations table + Contact & Maintenance footer migrated into AGENTS.md); D2 rewrote `MASTER_EXECUTION_PLAN.md` as v6.0 (19 phases, 12 corrected specs, errata section; v5.1 + `next.md` archived with `.archived` suffix); D3 updated env var docs (added `TRUSTED_PROXY_CIDRS`, marked phantom `SENTRY_DSN`/`AXIOM_TOKEN` as reserved, corrected count 16→17); D4 fixed stale CI comment (80/80/70/80 → 75/80/65/80). **Batch 2 (TDD test additions)**: T1-T6 added 35 tests across 6 files (FeedSkeleton, categories OPTIONS, push/subscribe OPTIONS+401, PageTransition clicks+reduced-motion — fixed production bug: `matchMedia` guard, seed orchestration, queries.ts refactored to extract pure `buildFeedQuery` helper); T7 raised coverage thresholds back to 80/80/70/80. **Batch 3 (Functional features)**: F1 implemented `walkXffChain` + `getClientIpFromHeaders` in new `src/lib/network/getClientIp.ts` (CIDR chain walking via Node's `net.BlockList`); F2 built `/account` page + `linkOAuthProvider` server action + updated `AuthErrorMessage.tsx` to link to `/account`; F3 added testcontainers integration test infrastructure (`vitest.integration.config.ts` + `pipeline.db-integration.test.ts` + `test:integration` script; auto-skips when Docker unavailable). **Batch 4 (Optional hardening)**: H1 added ESLint `no-restricted-imports` rule enforcing domain-layer purity (runtime imports from `@/lib/db*` in `src/domain/**` fail lint; `import type` still allowed); H2 migrated `encrypt.test.ts` to `vi.hoisted()` pattern — fixed production bug: `encrypt.ts` now has belt-and-suspenders `validatePushKeyEncryptionKey()` so error messages are consistent regardless of whether Zod env validation ran; H3 added JSDoc clarifications on cursor types documenting the API-boundary validation contract. **Test progression**: 392/63 → 452/66 (+60 tests, +3 suites). **Coverage**: 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements (above raised 80/80/70/80 thresholds). **2 production bugs fixed**: PageTransition `matchMedia` crash in jsdom/older browsers; encrypt.ts confusing error messages when env is mocked. `pnpm check` + `pnpm test -- --coverage` both green.                                                                                                                                                                                                                                                                                                                                                               |
+| **Phase 21** — Security & Architecture Remediation (Audit-Driven)                                                     | **COMPLETE** | Comprehensive code audit identified 11 Critical/High/Medium findings; all remediated via TDD. **Critical (2)**: S1 `.env*` files untracked from git (`.gitignore` updated, VAPID keys in `.env.local` must be rotated); S2 admin route paths fixed (moved `(admin)/sources/` to `(admin)/admin/sources/` so URLs resolve to `/admin/sources` and `/admin/summaries` - 12 code references were broken). **High (2)**: S3 `verifySession()`/`verifyAdminSession()` redirect swallowed by try/catch in 3 Server Actions + 2 API routes - removed try/catch (Server Actions let redirect propagate) + switched API routes to `auth()` for JSON 401; S4 CSP `unsafe-eval` removed. **Medium (7)**: S5 AES-256-GCM IV 16 to 12 bytes (NIST SP 800-38D); S7 rate limiter fail-open on Redis outage; S8 `AUTH_SECRET` rejects known-weak values in production via `superRefine`; S6 `pnpm audit` added to CI; Q1 dead code `if (!session)` removed; Q3 `deleteSource` changed to hard delete with cascade. **Tests**: 452/66 to 472/67 (+20 tests, +1 suite). All quality gates green. |
 
 ---
 
@@ -2425,6 +2470,112 @@ Then in `beforeEach`, only reset the leaf mock: `mockWhereResult.mockResolvedVal
 
 ---
 
+## Phase 21: Security & Architecture Remediation — Lessons Learned
+
+### Overview
+
+A comprehensive code audit (using the project's own `skills/code-review-and-audit` methodology, deep mode) identified 11 Critical/High/Medium findings that had survived 20 phases of remediation. All were fixed via strict TDD (RED → GREEN → REFACTOR). Test count grew from 452/66 to 472/67 (+20 tests, +1 suite).
+
+### Critical Findings (2)
+
+#### S1: `.env*` Files Committed to Git
+
+**Issue**: `.gitignore` did not exclude `.env`, `.env.docker`, or `.env.local`. All three were tracked by git. `.env.local` contained **real VAPID cryptographic keys** (not dummy placeholders).
+
+**Fix**: Added `.env`, `.env.*`, `!.env.example` to `.gitignore`. Ran `git rm --cached .env .env.docker .env.local` to untrack (files remain on disk). Added a security warning to `.env.example`.
+
+**Action Required**: The exposed VAPID keys are in git history forever. **Rotate them**: generate new keys with `npx web-push generate-vapid-keys` and update all push subscription endpoints. Consider `git filter-repo` or BFG to purge `.env*` from history.
+
+**Lesson**: `.gitignore` should exclude ALL `.env*` files except `.env.example`. The negation pattern `!.env.example` ensures the template stays tracked.
+
+#### S2: Admin Route Paths Broken
+
+**Issue**: Admin pages at `src/app/(admin)/sources/page.tsx` resolved to URL `/sources` (NOT `/admin/sources`). But 12 code references used `/admin/*` paths — sidebar links, `revalidatePath()`, `proxy.ts` admin check, alert messages. All were broken.
+
+**Root Cause**: Next.js route groups `(name)` organize code without affecting URL structure. The `(admin)` route group was used to share a layout (`AdminGuard`), but the URL prefix `/admin/` was expected by the code.
+
+**Fix**: Moved page files into an `admin/` subfolder inside the route group:
+- `src/app/(admin)/sources/page.tsx` → `src/app/(admin)/admin/sources/page.tsx`
+- `src/app/(admin)/summaries/page.tsx` → `src/app/(admin)/admin/summaries/page.tsx`
+
+**Lesson**: Route groups `(name)` are for code organization — they do NOT affect URLs. To get a URL prefix, you need an actual folder. The pattern `(group)/actual-folder/page.tsx` gives you both a shared layout AND the URL prefix.
+
+### High Findings (2)
+
+#### S3: `verifySession()` Redirect Swallowed by try/catch
+
+**Issue**: Three Server Actions (`flagSummary`, `disableSummary`, `approveSummary`) wrapped `verifyAdminSession()` in `try/catch`. Two API routes wrapped `verifySession()` in `try/catch`. The `redirect()` call inside these functions throws `NEXT_REDIRECT`, which was caught — preventing the redirect from propagating.
+
+**Fix — Server Actions**: Removed the try/catch entirely. `verifyAdminSession()` either returns (user is admin) or throws `NEXT_REDIRECT` (redirects). The redirect propagates naturally to the browser.
+
+**Fix — API Routes**: Switched from `verifySession()` (which redirects) to `auth()` (which returns a session or null). API routes should return JSON 401, not redirect.
+
+**Lesson**:
+- **Server Components + Server Actions**: Use `verifySession()` / `verifyAdminSession()` — they redirect.
+- **API Routes (Route Handlers)**: Use `auth()` directly — return 401 JSON, don't redirect.
+- **Never wrap `verifySession()` in try/catch** — it catches the redirect.
+- `verifySession()` NEVER returns null — the `if (!session)` check is dead code.
+
+#### S4: CSP `unsafe-eval` Removed
+
+**Issue**: CSP had `script-src 'self' 'unsafe-inline' 'unsafe-eval'`. The `unsafe-eval` directive allows `eval()`, `Function()` — significant XSS enablers.
+
+**Fix**: Removed `'unsafe-eval'` from the CSP. No code in `src/` uses `eval()` or `new Function()` (verified by grep). Kept `'unsafe-inline'` temporarily (Next.js inline scripts need it; nonce-based CSP is a future migration).
+
+### Medium Findings (7)
+
+#### S5: AES-256-GCM IV Changed to 12 Bytes
+
+**Issue**: `encrypt.ts` used `randomBytes(16)` for the AES-GCM IV. NIST SP 800-38D recommends 96-bit (12-byte) IV for GCM mode.
+
+**Fix**: Changed to `randomBytes(12)`. Decryption reads IV from stored hex — handles any length. Old data with 16-byte IVs still decrypts. Backward-compatible.
+
+#### S7: Rate Limiter Fails-Open on Redis Outage
+
+**Issue**: `checkRateLimit()` threw uncaught when Redis was down. The entire `/api/articles` API returned HTTP 500. A Redis outage took down the public API.
+
+**Fix**: Wrapped `checkRateLimit()` in try/catch. On Redis failure, **fail OPEN** (allow the request, log a warning). Rate limiting is defense-in-depth, not critical path — temporary loss of rate-limiting is better than API downtime.
+
+#### S8: `AUTH_SECRET` Rejects Known-Weak Values
+
+**Issue**: `z.string().min(32)` accepted any 32+ char string, including `dev-secret-do-not-use-in-production` from `.env.example`. If deployed with placeholder, JWT sessions could be forged.
+
+**Fix**: Added `superRefine` to the Zod schema rejecting weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`, etc.) in production only. Used `superRefine` (not `refine`) to access the parsed `NODE_ENV` value.
+
+#### S6: `pnpm audit` Added to CI
+
+**Issue**: CI had no dependency security scanning. Known vulnerabilities in dependencies (especially Auth.js v5 beta) were not caught.
+
+**Fix**: Added `pnpm audit --audit-level=high --prod` step to CI after install, before lint. Initially non-blocking (`|| true`) — promote to hard gate once clean.
+
+#### Q1: Dead Code `if (!session)` Removed
+
+**Issue**: `verifySession()` NEVER returns null — it either returns a session or throws via `redirect()`. The `if (!session)` checks were unreachable dead code.
+
+**Fix**: Removed the dead checks (part of S3 fix).
+
+#### Q3: `deleteSource` Changed to Hard Delete
+
+**Issue**: Both `deleteSource` and `pauseSource` set `isActive: false`. `deleteSource` was a "soft delete" identical to `pauseSource` — misleading API.
+
+**Fix**: Changed `deleteSource` to hard delete (`db.delete` with cascade via `onDelete: "cascade"`). `pauseSource` remains a soft deactivation. Added WARNING comment about cascade deletion.
+
+### Phase 21 Recommendations
+
+1. **Rotate exposed VAPID keys** — they're in git history. Generate new ones with `npx web-push generate-vapid-keys`.
+2. **Migrate to nonce-based CSP** — remove `'unsafe-inline'` using Next.js 16's `headers()` nonce pattern.
+3. **Wire integration tests into CI** — `pnpm test:integration` runs locally but isn't in CI yet.
+4. **Add `pnpm format:check` to CI** — Prettier not enforced (975 files have issues, 0 in `src/`).
+5. **Promote `pnpm audit` to hard gate** — remove `|| true` once no high/critical vulnerabilities.
+6. **Extend ESLint config** — add `eslint-plugin-next`, `eslint-plugin-react-hooks`, `consistent-type-imports`.
+7. **Remove stale artifacts** — 119MB of `.tar.gz` remediation archives + stale `.md` reports in repo root.
+8. **Update MEP to v7.0** — v6.0 describes 19 phases / 392 tests; update to include Phase 20, 21, and 472/67 tests.
+9. **Consider ADRs** — project uses Risk Register (R1-R14) but no Architecture Decision Records.
+10. **Monitor Auth.js v5 stable** — remove 4 `as any` casts in `auth/index.ts` when stable releases.
+
+---
+
 ## License
 
 Proprietary. All rights reserved. See [LICENSE](./LICENSE) for details.
+

@@ -52,10 +52,12 @@ export async function requestSummary(
   // Phase 19 (Critical C3): this was missing. The HTTP route had it; the
   // Server Action did not. Any client could import this action and trigger
   // BullMQ jobs without authentication.
+  //
+  // verifySession() either returns a session or calls redirect("/sign-in")
+  // (which throws NEXT_REDIRECT). It NEVER returns null — the old
+  // `if (!session)` check was dead code. The redirect propagates to the
+  // browser, which follows it to /sign-in. No try/catch needed.
   const session = await verifySession();
-  if (!session) {
-    return { success: false, jobId: null, error: "Authentication required" };
-  }
 
   // ── Rate limit: per user, 5 req/min ─────────────────────────────────────
   // Phase 19 (Critical C3): mirrors the HTTP route's protection. Without
@@ -136,49 +138,48 @@ export async function requestSummary(
 
 /**
  * Flags a summary for editorial review (admin only).
+ *
+ * verifyAdminSession() calls redirect() on failure (which throws NEXT_REDIRECT).
+ * We do NOT catch this — the redirect must propagate so the browser follows it.
+ * Catching it would silently swallow the redirect and return a JSON error,
+ * breaking the Server Action auth flow.
  */
 export async function flagSummary(
   summaryId: string,
   flagReason: string,
 ): Promise<{ success: boolean; error: string | null }> {
-  try {
-    await verifyAdminSession();
+  await verifyAdminSession();
 
-    await db
-      .update(summaries)
-      .set({
-        status: "needs_review",
-        flagReason,
-      })
-      .where(eq(summaries.id, summaryId));
+  await db
+    .update(summaries)
+    .set({
+      status: "needs_review",
+      flagReason,
+    })
+    .where(eq(summaries.id, summaryId));
 
-    revalidatePath("/admin/summaries");
-    return { success: true, error: null };
-  } catch {
-    return { success: false, error: "Admin access required" };
-  }
+  revalidatePath("/admin/summaries");
+  return { success: true, error: null };
 }
 
 /**
  * Disables a summary (admin only).
  * Permanently disables a summary from appearing in the UI.
+ *
+ * Same redirect-propagation pattern as flagSummary — no try/catch.
  */
 export async function disableSummary(
   summaryId: string,
 ): Promise<{ success: boolean; error: string | null }> {
-  try {
-    await verifyAdminSession();
+  await verifyAdminSession();
 
-    await db
-      .update(summaries)
-      .set({ status: "disabled" })
-      .where(eq(summaries.id, summaryId));
+  await db
+    .update(summaries)
+    .set({ status: "disabled" })
+    .where(eq(summaries.id, summaryId));
 
-    revalidatePath("/admin/summaries");
-    return { success: true, error: null };
-  } catch {
-    return { success: false, error: "Admin access required" };
-  }
+  revalidatePath("/admin/summaries");
+  return { success: true, error: null };
 }
 
 /**
@@ -188,21 +189,19 @@ export async function disableSummary(
  * was inert — it rendered as <button type="button"> with no onClick, no form
  * action, and no server action binding. This action wires the button to a
  * real admin-guarded mutation.
+ *
+ * Same redirect-propagation pattern as flagSummary — no try/catch.
  */
 export async function approveSummary(
   summaryId: string,
 ): Promise<{ success: boolean; error: string | null }> {
-  try {
-    await verifyAdminSession();
+  await verifyAdminSession();
 
-    await db
-      .update(summaries)
-      .set({ status: "ok", flagReason: null })
-      .where(eq(summaries.id, summaryId));
+  await db
+    .update(summaries)
+    .set({ status: "ok", flagReason: null })
+    .where(eq(summaries.id, summaryId));
 
-    revalidatePath("/admin/summaries");
-    return { success: true, error: null };
-  } catch {
-    return { success: false, error: "Admin access required" };
-  }
+  revalidatePath("/admin/summaries");
+  return { success: true, error: null };
 }

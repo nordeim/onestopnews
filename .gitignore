@@ -15,3 +15,11 @@ upload/
 .gemini
 .claude
 .agents
+
+# ── Environment files (CRITICAL: never commit real secrets) ──────────────
+# Only .env.example is tracked — it contains placeholder values for documentation.
+# All other .env* files contain real secrets (DB passwords, API keys, VAPID keys,
+# encryption keys) and MUST NOT be committed to version control.
+.env
+.env.*
+!.env.example

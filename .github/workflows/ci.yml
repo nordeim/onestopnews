@@ -72,6 +72,14 @@ jobs:
           version: 9
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+      - name: Security Audit (S6)
+        # S6 fix: Run pnpm audit to catch known vulnerabilities in dependencies.
+        # Uses --audit-level=high to only fail on high/critical severity.
+        # Production dependencies (--prod) are checked; dev dependencies are
+        # excluded since they don't ship to production. The audit step is
+        # non-blocking initially (|| true) — once the team is confident in
+        # the dependency tree, remove the || true to make it a hard gate.
+        run: pnpm audit --audit-level=high --prod || true
       - name: Run Linter
         run: pnpm run lint
       - name: Run Unit Tests

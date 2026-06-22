@@ -26,6 +26,9 @@ export const envSchema = z.object({
     ),
 
   // ── Auth.js ─────────────────────────────────────────────────────────────
+  // S8 fix: AUTH_SECRET uses a basic min(32) check here. The production-only
+  // weak-value rejection is enforced via superRefine below (which has access
+  // to the parsed NODE_ENV value, not process.env.NODE_ENV).
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
   AUTH_URL: z.string().min(1, "AUTH_URL is required"),
 
@@ -95,6 +98,35 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
+}).superRefine((data, ctx) => {
+  // S8 fix: In production, reject known-weak AUTH_SECRET values that are
+  // committed to the public .env.example file or commonly used in dev.
+  // This prevents accidental deployment with a publicly known secret
+  // (which would allow JWT session forgery). In development/test, weak
+  // secrets are allowed for developer convenience.
+  //
+  // Uses superRefine (not per-field refine) because we need access to the
+  // PARSED NODE_ENV value, not process.env.NODE_ENV (which may differ in
+  // tests that call envSchema.safeParse() directly with a custom NODE_ENV).
+  if (data.NODE_ENV === "production") {
+    const weakPatterns = [
+      /dev[-_ ]?secret/i,
+      /test[-_ ]?(secret|ing)/i,
+      /ci[-_ ]?dummy/i,
+      /do[-_ ]?not[-_ ]?use/i,
+      /not[-_ ]?for[-_ ]?production/i,
+      /change[-_ ]?me/i,
+      /placeholder/i,
+    ];
+    if (weakPatterns.some((pattern) => pattern.test(data.AUTH_SECRET))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["AUTH_SECRET"],
+        message:
+          "AUTH_SECRET appears to be a known-weak/placeholder value. Generate a strong random secret with: openssl rand -base64 33",
+      });
+    }
+  }
 });
 
 type Env = z.infer<typeof envSchema>;

@@ -32,14 +32,31 @@ const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_SEC = 1;
 
 export async function GET(request: NextRequest) {
-  // ── Rate limit check ─────────────────────────────────────────────────────
+  // ── Rate limit check (fail-open on Redis outage) ────────────────────────
+  // S7 fix: When Redis is unreachable, checkRateLimit() throws. We catch
+  // this and fail OPEN (allow the request, log a warning) rather than
+  // returning 500. This is the standard pattern for rate limiting: a
+  // monitoring outage should not take down the API. The request proceeds
+  // without rate limiting — an acceptable degradation during Redis outages.
   const ip = getClientIp(request);
-  const rateLimitResult = await checkRateLimit(
-    `api:articles:${ip}`,
-    RATE_LIMIT_MAX,
-    RATE_LIMIT_WINDOW_SEC,
-  );
-  if (!rateLimitResult.allowed) {
+  let rateLimitResult;
+  try {
+    rateLimitResult = await checkRateLimit(
+      `api:articles:${ip}`,
+      RATE_LIMIT_MAX,
+      RATE_LIMIT_WINDOW_SEC,
+    );
+  } catch (rateLimitError) {
+    console.warn(
+      "[API /articles] Rate limiter unavailable (Redis down?), failing open:",
+      rateLimitError,
+    );
+    // Proceed without rate limiting — do NOT return 500.
+    // Skip the rate-limit check and continue to the query logic below.
+    rateLimitResult = null;
+  }
+
+  if (rateLimitResult && !rateLimitResult.allowed) {
     const retryAfterSec = Math.max(
       1,
       Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
@@ -114,7 +131,11 @@ export async function GET(request: NextRequest) {
       headers: {
         ...CORS_HEADERS,
         "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-        "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+        // When rate limiter failed open (Redis down), rateLimitResult is null.
+        // Omit the X-RateLimit-Remaining header in that case.
+        ...(rateLimitResult
+          ? { "X-RateLimit-Remaining": String(rateLimitResult.remaining) }
+          : {}),
       },
     });
   } catch (error) {

@@ -107,11 +107,17 @@ beforeEach(() => {
 // ── requestSummary ──────────────────────────────────────────────────────────
 
 describe("requestSummary — auth (Critical C3)", () => {
-  it("returns auth error when no session", async () => {
-    mockVerifySession.mockResolvedValue(null);
-    const result = await requestSummary(VALID_ARTICLE_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toMatch(/auth/i);
+  it("propagates redirect when no session (does NOT return error JSON)", async () => {
+    // verifySession() calls redirect() which throws NEXT_REDIRECT.
+    // The action must NOT catch this — the redirect must propagate so the
+    // browser follows it to /sign-in. The old code had dead code
+    // `if (!session)` that was unreachable because verifySession never
+    // returns null — it either returns a session or throws via redirect().
+    const redirectError = new Error("NEXT_REDIRECT");
+    mockVerifySession.mockRejectedValue(redirectError);
+    await expect(requestSummary(VALID_ARTICLE_ID)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
     expect(mockAdd).not.toHaveBeenCalled();
   });
 
@@ -186,11 +192,17 @@ describe("requestSummary — content guard + idempotency", () => {
 // ── flagSummary ─────────────────────────────────────────────────────────────
 
 describe("flagSummary — admin guard", () => {
-  it("returns error when not admin", async () => {
-    mockVerifyAdminSession.mockRejectedValue(new Error("Not admin"));
-    const result = await flagSummary(VALID_SUMMARY_ID, "spam");
-    expect(result.success).toBe(false);
-    expect(result.error).toMatch(/admin/i);
+  it("propagates redirect when not admin (does NOT catch redirect)", async () => {
+    // verifyAdminSession() calls redirect() which throws NEXT_REDIRECT.
+    // The action must NOT catch this — the redirect must propagate so the
+    // browser follows it. Catching it would silently swallow the redirect
+    // and return a JSON error, breaking the auth flow.
+    const redirectError = new Error("NEXT_REDIRECT");
+    mockVerifyAdminSession.mockRejectedValue(redirectError);
+    await expect(flagSummary(VALID_SUMMARY_ID, "spam")).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(mockUpdateSummaries).not.toHaveBeenCalled();
   });
 
   it("succeeds when admin", async () => {
@@ -202,11 +214,13 @@ describe("flagSummary — admin guard", () => {
 // ── disableSummary ──────────────────────────────────────────────────────────
 
 describe("disableSummary — admin guard", () => {
-  it("returns error when not admin", async () => {
-    mockVerifyAdminSession.mockRejectedValue(new Error("Not admin"));
-    const result = await disableSummary(VALID_SUMMARY_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toMatch(/admin/i);
+  it("propagates redirect when not admin (does NOT catch redirect)", async () => {
+    const redirectError = new Error("NEXT_REDIRECT");
+    mockVerifyAdminSession.mockRejectedValue(redirectError);
+    await expect(disableSummary(VALID_SUMMARY_ID)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(mockUpdateSummaries).not.toHaveBeenCalled();
   });
 
   it("succeeds when admin", async () => {
@@ -218,12 +232,14 @@ describe("disableSummary — admin guard", () => {
 // ── approveSummary (NEW — Critical C5) ──────────────────────────────────────
 
 describe("approveSummary — admin guard (Critical C5)", () => {
-  it("returns error when not admin", async () => {
-    mockVerifyAdminSession.mockRejectedValue(new Error("Not admin"));
+  it("propagates redirect when not admin (does NOT catch redirect)", async () => {
     const { approveSummary } = await import("./actions");
-    const result = await approveSummary(VALID_SUMMARY_ID);
-    expect(result.success).toBe(false);
-    expect(result.error).toMatch(/admin/i);
+    const redirectError = new Error("NEXT_REDIRECT");
+    mockVerifyAdminSession.mockRejectedValue(redirectError);
+    await expect(approveSummary(VALID_SUMMARY_ID)).rejects.toThrow(
+      "NEXT_REDIRECT",
+    );
+    expect(mockUpdateSummaries).not.toHaveBeenCalled();
   });
 
   it("succeeds and sets summary status to 'ok' when admin", async () => {
