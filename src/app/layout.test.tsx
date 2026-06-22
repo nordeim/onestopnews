@@ -17,14 +17,6 @@ import * as React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-// Mock RevealProvider to avoid IntersectionObserver setup in test env.
-// The provider's children are rendered as-is; we only care about the
-// skip link which is a sibling of <RevealProvider> in the layout.
-vi.mock("@/shared/components/providers/RevealProvider", () => ({
-  RevealProvider: ({ children }: { children: React.ReactNode }) =>
-    React.createElement(React.Fragment, null, children),
-}));
-
 // Mock globals.css import (layout.tsx imports "./globals.css")
 vi.mock("./globals.css", () => ({}));
 
@@ -43,7 +35,7 @@ describe("RootLayout — skip-to-content link", () => {
     render(
       <RootLayout>
         <div>page content</div>
-      </RootLayout>
+      </RootLayout>,
     );
     const skipLink = screen.getByRole("link", { name: /skip to content/i });
     expect(skipLink).toBeDefined();
@@ -55,7 +47,7 @@ describe("RootLayout — skip-to-content link", () => {
     render(
       <RootLayout>
         <div>page content</div>
-      </RootLayout>
+      </RootLayout>,
     );
     const skipLink = screen.getByRole("link", { name: /skip to content/i });
     expect(skipLink.className).toMatch(/\bsr-only\b/);
@@ -66,7 +58,7 @@ describe("RootLayout — skip-to-content link", () => {
     render(
       <RootLayout>
         <div>page content</div>
-      </RootLayout>
+      </RootLayout>,
     );
     const skipLink = screen.getByRole("link", { name: /skip to content/i });
     expect(skipLink.className).toMatch(/focus:not-sr-only/);
@@ -79,7 +71,7 @@ describe("RootLayout — skip-to-content link", () => {
         <div>
           <a href="/somewhere">other link</a>
         </div>
-      </RootLayout>
+      </RootLayout>,
     );
     const allLinks = container.querySelectorAll("a");
     expect(allLinks.length).toBeGreaterThanOrEqual(1);

@@ -1,6 +1,29 @@
 import * as React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
+
+// Mock window.matchMedia for RevealProvider (now rendered inside the page)
+beforeEach(() => {
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  );
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class MockIntersectionObserver {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    },
+  );
+});
 
 // Mock next-auth/react so UserMenu (rendered inside Header) doesn't throw
 // "useSession must be wrapped in <SessionProvider>" during unit tests.

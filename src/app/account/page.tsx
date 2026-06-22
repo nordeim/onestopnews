@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { verifySession } from "@/lib/auth/dal";
 import { getLinkedProviders } from "./actions";
 import { AccountClient } from "./AccountClient";
@@ -8,19 +9,41 @@ import { AccountClient } from "./AccountClient";
  * Phase 19+ remediation, Batch 3 / F2.
  *
  * Shows the user's currently-linked auth providers (Credentials + any OAuth)
- * and lets them initiate linking a new OAuth provider. The actual OAuth flow
- * still goes through Auth.js `/api/auth/signin`, but the `linkOAuthProvider`
- * server action pre-creates the `accounts` row so the OAuth callback's
- * `adapter.linkAccount()` succeeds instead of throwing `OAuthAccountNotLinked`.
+ * and lets them initiate linking a new OAuth provider.
  *
- * This page closes the gap documented in:
- *   - src/lib/auth/index.ts:signIn() TODO
- *   - src/app/auth-error/AuthErrorMessage.tsx "link from your account settings"
- *
- * Auth: requires authenticated session (verifySession redirects to /sign-in
- * if not signed in).
+ * The page shell is synchronous; all data access (verifySession +
+ * getLinkedProviders) happens inside the Suspense-wrapped AccountData
+ * component, satisfying Next.js 16 cacheComponents requirements.
  */
-export default async function AccountPage() {
+
+/* ------------------------------------------------------------------ */
+/* Skeleton (rendered by Suspense while AccountData fetches)          */
+/* ------------------------------------------------------------------ */
+function AccountSkeleton() {
+  return (
+    <main
+      id="main-content"
+      className="min-h-screen bg-paper-50 text-ink-600 font-ui"
+    >
+      <div className="mx-auto max-w-2xl px-6 py-12">
+        <div className="mb-8 border-b border-ink-100 pb-6 animate-pulse">
+          <div className="h-3 w-16 bg-ink-200 rounded mb-4" />
+          <div className="h-9 w-64 bg-ink-200 rounded mb-2" />
+          <div className="h-4 w-48 bg-ink-100 rounded mt-2" />
+        </div>
+        <div className="space-y-4">
+          <div className="h-16 bg-ink-100 rounded" />
+          <div className="h-16 bg-ink-100 rounded" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Async data component (Server Component)                             */
+/* ------------------------------------------------------------------ */
+async function AccountData() {
   const { user } = await verifySession();
   const linkedProviders = await getLinkedProviders();
 
@@ -48,5 +71,16 @@ export default async function AccountPage() {
         <AccountClient linkedProviders={linkedProviders} />
       </div>
     </main>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page shell (synchronous — delegates data fetch to AccountData)      */
+/* ------------------------------------------------------------------ */
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<AccountSkeleton />}>
+      <AccountData />
+    </Suspense>
   );
 }

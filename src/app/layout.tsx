@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Newsreader, Instrument_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import { SessionProvider } from "next-auth/react";
-import { RevealProvider } from "@/shared/components/providers/RevealProvider";
 import "./globals.css";
 
 const newsreader = Newsreader({
@@ -59,12 +58,7 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        <RevealProvider>
-          {/* Phase 19 (H2): SessionProvider enables useSession() in client
-              components like <UserMenu> in the Header. Required for the
-              sign-in/sign-out button to work. */}
-          <SessionProvider>{children}</SessionProvider>
-        </RevealProvider>
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );
