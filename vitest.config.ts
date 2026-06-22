@@ -12,6 +12,9 @@ export default defineConfig({
     exclude: [
       "node_modules/",
       ".gemini/",
+      "skills/",
+      ".claude/",
+      ".agents/",
       "dist/",
       "backup/",
       "plans/",
