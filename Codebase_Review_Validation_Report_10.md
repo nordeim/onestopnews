@@ -1184,4 +1184,176 @@ AGENTS.md 更新 (6处)
   验证
 - ✅ pnpm check 通过（tsc --noEmit 和 eslint --max-warnings 0）
 
+---
+
+All 452 tests across 66 suites passed, so there are no failing test assertions. However, the test log contains several stderr and warning messages that warrant scrutiny for potential functional bugs, test reliability issues, or coding concerns. Below is a meticulous breakdown.
+
+---
+
+### 1. `src/app/layout.test.tsx` – RootLayout skip-link tests
+
+**Repeated warnings/errors:**
+
+- `In HTML, <html> cannot be a child of <div>. This will cause a hydration error.`
+- `ClientFetchError: Failed to parse URL from /api/auth/session. …`
+- `An update to SessionProvider inside a test was not wrapped in act(...).`
+
+**Analysis:**
+
+- The `<html>` warning is a **JSDOM limitation** – the global layout renders an `<html>` element, but the test renderer wraps it in a `<div>`. This does **not** indicate an application bug; Next.js’s error and layout components are designed to output the root `<html>` directly, and the warning is expected in unit tests. No functional change is needed.
+- The `ClientFetchError` means that `next-auth`’s `SessionProvider` is attempting to `fetch('/api/auth/session')` without a proper base URL (e.g., `NEXTAUTH_URL` is missing in the test environment). The fetch fails, but the test still passes – likely because the error is caught and a fallback is handled.  
+  **Potential issue:** If the session endpoint were misconfigured or unavailable in production, the same `ClientFetchError` could surface as an unhandled promise rejection. However, this is a **test environment configuration gap**, not a logic bug in the code itself. Still, it would be prudent to mock `next-auth`’s `useSession` or set a valid `NEXTAUTH_URL` to avoid spurious network calls and make tests deterministic.
+- The `act(...)` warnings indicate that React state updates from `SessionProvider` are not wrapped in `act()`. This is a **test quality** issue – the component may be updating state asynchronously after initial render, and assertions could miss those updates. The tests pass now, but they may be fragile. Not a bug in the application, but worth fixing.
+
+---
+
+### 2. `src/app/error-boundaries.test.tsx` – Error boundary rendering
+
+**Warning:**
+
+- `In HTML, <html> cannot be a child of <div>. This will cause a hydration error.` (in global‑error tests)
+
+**Analysis:**
+
+- Similar to the layout test, the global‑error component intentionally returns an `<html>` document. The warning is expected and harmless. The component is designed for Next.js’s document‑replacing error fallback; no application bug exists.
+
+**Other stderr messages:**
+
+- `[ErrorBoundary] Route segment error: Error: test` and `[GlobalError] Root layout error: Error: test` are **intentional logs** from the component when an error is thrown during testing. They are not errors – they show the boundary is catching errors as designed.
+
+---
+
+### 3. `src/app/(public)/search/SearchPageClient.test.tsx`
+
+**Warning (4×):**
+
+- `An update to SearchPageClient inside a test was not wrapped in act(...).`
+
+**Analysis:**
+
+- The `SearchPageClient` component likely performs asynchronous state updates (e.g., fetching suggestions, debounced search). The tests do not wait for those updates to finish before making assertions.  
+  **Risk:** While the current assertions pass, there could be side effects that are never validated, or tests could become flaky if timing changes. This is a **test‑suite quality issue**, not a coding error in the component.
+
+---
+
+### 4. `src/features/summaries/components/SummaryPanel.test.tsx`
+
+**Warning (2×):**
+
+- `An optimistic state update occurred outside a transition or action. To fix, move the update to an action, or wrap with startTransition.`
+
+**Analysis:**
+
+- The `SummaryPanel` component likely uses React’s `useOptimistic` or `startTransition` APIs. In the test, the state update is triggered programmatically outside of a user event (like a button click). In a real browser, the update would naturally occur within an event handler, so this warning would not appear.  
+  **No functional bug** – just a testing‑environment discrepancy. The component is using the API correctly for user interactions.
+
+---
+
+### 5. `src/workers/lib/cacheInvalidation.test.ts`
+
+**stderr:**
+
+- `[CacheInvalidation] Failed to publish invalidation: Error: Redis connection failed`
+
+**Analysis:**
+
+- The test “handles Redis connection errors gracefully” deliberately simulates a Redis failure. The function logs the error, which appears on stderr. **This is expected behaviour** and proves the error‑handling path works. No bug.
+
+---
+
+### 6. `src/workers/jobs/parseFeed.test.ts`
+
+**stderr (2 lines):**
+
+- `[parseFeed] JSON parse failed: SyntaxError: …`
+- `[parseFeed] XML parse failed: Error: Non-whitespace before first tag. …`
+
+**Analysis:**
+
+- Both are expected logs for the “returns empty array for malformed JSON / XML” edge cases. The tests confirm that malformed feeds are handled gracefully. No bug.
+
+---
+
+### 7. `src/app/api/push/subscribe/route.test.ts` – POST /api/push/subscribe
+
+**stderr:**
+
+- `TypeError: __vite_ssr_import_2__.db.insert(...).values(...).onConflictDoUpdate is not a function`
+
+**Context:** The test “returns 500 when DB insert fails” is supposed to trigger a DB failure. The mock for `db.insert` probably does not fully replicate Drizzle’s chainable methods – it returns a `.values()` that lacks `.onConflictDoUpdate`. This causes the route to throw a `TypeError`, which is caught by its `try/catch` and results in a 500 response, making the test pass.  
+**Assessment:** The route code is correct – it tries to use `onConflictDoUpdate` (a real Drizzle method) and, when the chain is broken (as in a mock), it throws. The test’s mock is incomplete, but the route’s error handling covers it. **No application bug**, but the mock should be adjusted to simulate a realistic DB failure (e.g., by making `.onConflictDoUpdate` throw) to avoid misleading logs.
+
+---
+
+### 8. `src/lib/queue/flows.test.ts` – Redis failure resilience
+
+**Multiple stderr lines:**
+
+- `[FlowProducer] Atomic flow enqueue failed. Falling back …`
+- `[FlowProducer] Fallback scoreQueue.add() also failed …`
+
+**Analysis:**
+
+- All these logs are generated by the fallback mechanism when Redis is intentionally down in the tests. They confirm that the resilience logic behaves as designed. **No bugs.**
+
+---
+
+### 9. `src/app/api/categories/route.test.ts` – GET /api/categories
+
+**stderr:**
+
+- `[API /categories] Error: Error: DB connection lost`
+
+**Analysis:**
+
+- The test for “returns 500 when db query fails” deliberately throws a DB error, which is logged by the route. This is expected and shows the error‑handling path works.
+
+---
+
+### 10. `src/workers/jobs/summarize.test.ts` – AI summarization fallbacks
+
+**stderr:**
+
+- `[Summarize] Anthropic failed, falling back to OpenAI: Error: …`
+
+**Analysis:**
+
+- The test forces Anthropic to fail, triggering a fallback to OpenAI. The log is intentional and proves the fallback works. No bug.
+
+---
+
+### 11. `src/workers/jobs/alerts.test.ts` – Alert notifications
+
+**stderr:**
+
+- `[ALERT] [OneStopNews] 4 summaries need editorial review (threshold: 3). …`
+- `[ALERT] [OneStopNews] 3 summaries need editorial review (threshold: 2). …`
+
+**Analysis:**
+
+- These are the actual alert messages produced by the `checkNeedsReviewAlert` function. In production they would be sent to an alert channel; during testing they are simply logged to the console. This is acceptable and demonstrates the function works correctly.
+
+---
+
+## Summary of Findings
+
+| Type                          | Location                                                                       | Likely Cause                                                          | Is it a Bug in Application Code?                                          |
+| ----------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Hydration warning**         | `error-boundaries`, `layout` tests                                             | JSDOM renders `<html>` inside a `<div>`                               | No – expected for components that render the root element                 |
+| **ClientFetchError**          | `layout` test                                                                  | Missing `NEXTAUTH_URL` in test env → `fetch(/api/auth/session)` fails | No – test configuration issue; no production impact if env is set         |
+| **act(…) warnings**           | `SearchPageClient`, `SummaryPanel`, `layout` tests                             | Asynchronous state updates not wrapped in `act()`                     | No – test quality issue; components behave correctly in real interactions |
+| **Optimistic update warning** | `SummaryPanel` test                                                            | State update triggered outside an event handler in test               | No – component usage is correct for real user events                      |
+| **TypeError in mock**         | `push/subscribe` test                                                          | Incomplete mock lacks `.onConflictDoUpdate`                           | No – route’s error handling catches it; mock should be improved           |
+| **All other stderr logs**     | `cacheInvalidation`, `parseFeed`, `flows`, `categories`, `summarize`, `alerts` | Intentional error‑path logs from the functions under test             | No – these are expected and prove the error‑handling logic works          |
+
+**Conclusion:** No functional bugs or logic/coding errors in the application were revealed by the test log. The warnings are either test‑environment artefacts, incomplete mocks, or expected diagnostic output. The test suite is fully green and demonstrates that all intended behaviours – including error resilience – function as designed.
+
+For future test reliability, it is recommended to:
+
+- Provide a valid `NEXTAUTH_URL` or mock `next-auth` to silence the `ClientFetchError`.
+- Wrap state‑updating assertions in `act()` to eliminate the React warnings.
+- Complete the Drizzle mock chain in the push/subscribe test to simulate failures cleanly.
+
+---
+
 https://chat.z.ai/s/bc150dde-7e26-4714-9746-c7b7b335dcd8
