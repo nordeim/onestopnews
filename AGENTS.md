@@ -502,6 +502,8 @@ Must pass before any PR is merged. No exceptions.
 | `queries.ts` with `"use cache"` directive not unit-testable (Phase 20)                     | `"use cache"` + `cacheLife("feed")` are Next.js compiler directives that throw in vitest (`TypeError: cacheLife is not a function`). The whole query function was untestable.                                                              | Extract pure `buildFeedQuery(options)` helper (no `"use cache"`) that returns the Drizzle query builder. Wrap with `getFeedArticles()` that adds `"use cache"` + slicing. Test the helper. |
 | `requestSummary` action without verifySession + rate limit (Phase 19, refactored Phase 20) | Server Actions bypass layout guards; unauthenticated clients could enqueue BullMQ jobs → unbounded AI spend.                                                                                                                               | Every Server Action must call `verifySession()` or `verifyAdminSession()` as first line + per-user rate limit. See `src/features/summaries/actions.ts`.                                    |
 | `OAuthAccountNotLinked` error message pointing to non-existent page (Phase 20)             | Phase 19 / M6 added "link from your account settings" text but `/account` page didn't exist — user dead-ends.                                                                                                                              | Build `/account` page + `linkOAuthProvider` server action that pre-creates the `accounts` row. See `src/app/account/`.                                                                     |
+| Async Server Component in page body without `<Suspense>` (Phase 20+)                       | Next.js 16 `cacheComponents: true` treats uncached data access outside `<Suspense>` as a `blocking-route` error — prerender fails at build time. `/account` page called `await verifySession()` directly in `page.tsx` body.               | Use synchronous page shell + async Server Component inside `<Suspense>`: `export default function Page() { return <Suspense><AccountData/></Suspense> }`                                   |
+| `export const dynamic = "force-dynamic"` with `cacheComponents: true` (Phase 20+)          | Next.js 16 rejects `export const dynamic` when `cacheComponents: true` is set — build error. The old workaround for dynamic routes no longer applies.                                                                                      | Use the `<Suspense>` + Server Component pattern instead. See `/account` page for reference.                                                                                                |
 
 ---
 
@@ -1309,6 +1311,9 @@ Single-source-of-truth path lookup for every key file in the project. (Migrated 
 | E2E A11y Scans               | `e2e/a11y.spec.ts` (Phase 19 M5)                                                                              |
 | Sign-In Page                 | `src/app/sign-in/page.tsx` (Phase 15)                                                                         |
 | Sign-In Client Component     | `src/app/sign-in/SignInClient.tsx` (Phase 15)                                                                 |
+| Account Page                 | `src/app/account/page.tsx` (Phase 20; uses Suspense + Server Component pattern to avoid blocking-route)       |
+| Account Client Component     | `src/app/account/AccountClient.tsx` (Phase 20)                                                                |
+| Account Server Actions       | `src/app/account/actions.ts` (Phase 20)                                                                       |
 | Auth Error Page              | `src/app/auth-error/page.tsx` (Phase 15)                                                                      |
 | Admin Guard Component        | `src/shared/components/auth/AdminGuard.tsx` (Phase 16)                                                        |
 | Admin Guard Skeleton         | `src/shared/components/auth/AdminGuardSkeleton.tsx` (Phase 16)                                                |
@@ -1674,6 +1679,7 @@ pnpm dev
 | **Phase 18** — Database Reinitialization & Skip-Link Supplement                                                        | **COMPLETE** | Created `database_reinitialize.md` protocol + `scripts/reinit-db.sh` (Docker-aware `dropdb`/`createdb`/`pg_restore` with 15s health checks and `--clean --if-exists` flags); extended skip-link supplement pass from 7 page templates down to 0 remaining; validated `docker-compose.dev.yml` stack builds cleanly; confirmed `db:push` removal and `"latest"` dep pinning completion (327 tests across 57 suites + 10 E2E)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Phase 19** — Comprehensive Code Audit & Remediation                                                                  | **COMPLETE** | Systematic 7-dimension code audit (security, frontend, DB/worker/API, CI/ops/testing). Identified 47 validated gaps; applied TDD-driven fixes across 5 batches. **Critical (5)**: C1 CI redness from vendored `skills/` (tsconfig/eslint exclude), C2 rate limit on `/api/summarize/[id]` (per-user 5/min), C3 `requestSummary` Server Action auth, C4 FlowProducer resilience to Redis failures via scoreQueue fallback, C5 SummariesData Approve/Disable button wiring + new `approveSummary` action. **High (12)**: H1 Accordion focus rings, H2 Header sign-in/out via `<UserMenu>` + `SessionProvider`, H3 Search error state with Retry, H4 SummaryPanel error state with Try Again, H5 branded `error.tsx`/`not-found.tsx`/`global-error.tsx`, H6 `@vitest/coverage-v8` + CI coverage gate, H7 `deploy.sh` zero-downtime + rollback, H8 created missing `nginx/nginx.conf`, H9 replaced regex HTML stripper with `cheerio`, H10 `needs_review` alerting via `checkNeedsReviewAlert`, H11 cross-field search migration `0006` (body weight C + denormalized `sourceName` weight D), H12 eliminated all `process.env.*` direct reads. **Medium (15 of 19)**: M1 HSTS+CSP, M2 `TRUSTED_PROXY_CIDRS`+boot warning, M3 paginated sources query, M4 search cache via `"use cache"`+`cacheLife("reference")`, M5 `@axe-core/playwright`+`e2e/a11y.spec.ts`, M6 actionable `OAuthAccountNotLinked` error, M7 hardened worker shutdown (25s timeout+`Promise.allSettled`), M8 `fastupdate=off` GIN, M9 Dockerfile HEALTHCHECK, M10 husky+lint-staged pre-commit hooks, M11 INP budget in `lighthouserc.js`, M13 SourcesData empty state, M15 design tokens `dispatch-warning`/`dispatch-danger`, M16 bare `tsx` (was `npx tsx`), M17 dropped `version: '3.8'`, M18 search queries header corrected, M19 `no-explicit-any` promoted to `error`. **Final: 392 tests / 63 suites** + 10 E2E + 4 axe-core a11y scans (was 312/56 at audit start — +80 tests, +7 suites). `pnpm check` + `pnpm lint` both green (were red due to vendored `skills/`).                                                                                                                                                                                                                                                                                       |
 | **Phase 20** — Post-Phase-19 Remediation Documentation Alignment                                                       | **COMPLETE** | Closed most Phase 19 deferred items via 4 batches (13 tasks total) with strict TDD discipline. **Batch 1 (Documentation alignment)**: D1 consolidated AGENTS.md + CLAUDE.md (CLAUDE.md reduced to stub; 81-entry File Locations table + Contact & Maintenance footer migrated into AGENTS.md); D2 rewrote `MASTER_EXECUTION_PLAN.md` as v6.0 (19 phases, 12 corrected specs, errata section; v5.1 + `next.md` archived with `.archived` suffix); D3 updated env var docs (added `TRUSTED_PROXY_CIDRS`, marked phantom `SENTRY_DSN`/`AXIOM_TOKEN` as reserved, corrected count 16→17); D4 fixed stale CI comment (80/80/70/80 → 75/80/65/80). **Batch 2 (TDD test additions)**: T1-T6 added 35 tests across 6 files (FeedSkeleton, categories OPTIONS, push/subscribe OPTIONS+401, PageTransition clicks+reduced-motion — fixed production bug: `matchMedia` guard, seed orchestration, queries.ts refactored to extract pure `buildFeedQuery` helper); T7 raised coverage thresholds back to 80/80/70/80. **Batch 3 (Functional features)**: F1 implemented `walkXffChain` + `getClientIpFromHeaders` in new `src/lib/network/getClientIp.ts` (CIDR chain walking via Node's `net.BlockList`); F2 built `/account` page + `linkOAuthProvider` server action + updated `AuthErrorMessage.tsx` to link to `/account`; F3 added testcontainers integration test infrastructure (`vitest.integration.config.ts` + `pipeline.db-integration.test.ts` + `test:integration` script; auto-skips when Docker unavailable). **Batch 4 (Optional hardening)**: H1 added ESLint `no-restricted-imports` rule enforcing domain-layer purity (runtime imports from `@/lib/db*` in `src/domain/**` fail lint; `import type` still allowed); H2 migrated `encrypt.test.ts` to `vi.hoisted()` pattern — fixed production bug: `encrypt.ts` now has belt-and-suspenders `validatePushKeyEncryptionKey()`; H3 added JSDoc clarifications on cursor types. **Test progression**: 392/63 → 452/66 (+60 tests, +3 suites). **Coverage**: 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements (above raised 80/80/70/80 thresholds). **2 production bugs fixed**: PageTransition `matchMedia` crash in jsdom/older browsers; encrypt.ts confusing error messages when env is mocked. `pnpm check` + `pnpm test -- --coverage` both green. |
+| **Phase 20+** — `/account` `blocking-route` Fix + `RevealProvider` Refactor                                            | **COMPLETE** | Fixed fatal `blocking-route` error on `/account` by rewriting `src/app/account/page.tsx` to use synchronous page shell + async `AccountData` Server Component inside `<Suspense>` (the canonical Next.js 16 pattern with `cacheComponents: true`). Discovered that `export const dynamic = "force-dynamic"` is incompatible with `cacheComponents: true` — build fails. Moved `RevealProvider` from root `layout.tsx` to `(public)/page.tsx` to prevent hydration mismatch on non-public pages. No new tests added (0 test change)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
@@ -2336,6 +2342,83 @@ Phase 20 closed most of the Phase 19 deferred items via 4 batches (13 tasks tota
 
 **Pattern**: When testing functions that return discriminated unions, narrow with `if (result.status === "...")` before accessing status-specific properties. Don't rely on prior `expect` calls to narrow — they don't.
 
+---
+
+## Phase 20+ Ad-Hoc Fix: `/account` `blocking-route` Error — Lessons Learned
+
+### The `blocking-route` Error on `/account` (Post-Phase 20)
+
+**Issue**: `pnpm build` failed with `Error: Route "/account": Uncached data was accessed outside of <Suspense>`. The `/account` page (`src/app/account/page.tsx`) was an Async Server Component that called `await verifySession()` directly in the page body. `verifySession()` calls `await auth()`, which reads cookies — an uncached data access. In Next.js 16 with `cacheComponents: true`, this triggers the fatal `blocking-route` error during static prerender.
+
+**Root Cause**: Next.js 16's `cacheComponents: true` requires all asynchronous data fetching to be either wrapped in `<Suspense>` (for streaming) or inside a `"use cache"` component (for static prerendering). The `/account` page violated this by awaiting `verifySession()` directly.
+
+**Attempted Fix (Failed)**: Adding `export const dynamic = "force-dynamic"` to the page. This is the Next.js 14/15 workaround for dynamic routes, but **Next.js 16 with `cacheComponents: true` explicitly rejects `export const dynamic`** — it produces a build error.
+
+**Correct Fix**: Rewrote `src/app/account/page.tsx` to use the canonical Next.js 16 pattern: a synchronous page shell that wraps an async `AccountData` Server Component inside `<Suspense>`, with an `AccountSkeleton` fallback:
+
+```tsx
+// ✅ src/app/account/page.tsx — Synchronous shell + async Server Component in Suspense
+import { Suspense } from "react";
+import { verifySession } from "@/lib/auth/dal";
+import { getLinkedProviders } from "./actions";
+import { AccountClient } from "./AccountClient";
+
+function AccountSkeleton() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="h-8 w-48 animate-pulse rounded bg-paper-100" />
+    </div>
+  );
+}
+
+async function AccountData() {
+  const session = await verifySession();
+  const linkedProviders = await getLinkedProviders();
+  return <AccountClient session={session} linkedProviders={linkedProviders} />;
+}
+
+export default function AccountPage() {
+  return (
+    <main id="main-content" className="min-h-screen bg-paper-50">
+      <div className="mx-auto max-w-2xl px-4 py-8">
+        <h1 className="font-editorial text-3xl">Account Settings</h1>
+        <Suspense fallback={<AccountSkeleton />}>
+          <AccountData />
+        </Suspense>
+      </div>
+    </main>
+  );
+}
+```
+
+**Verification**: `pnpm build` now succeeds. `/account` renders as `◐ (Partial Prerender)`.
+
+**Key Rules**:
+
+1. **Never `await` a database query or auth check directly in a page component body**. Always extract into a separate Server Component and wrap it in `<Suspense>`.
+2. **`export const dynamic = "force-dynamic"` is NOT compatible with `cacheComponents: true`**. Do not use it. The `<Suspense>` + Server Component pattern is the correct replacement.
+3. **Every page that needs dynamic data must use the pattern** shown above. This applies to ALL routes, not just `/account`.
+
+### `RevealProvider` Refactoring (Post-Phase 20)
+
+**Issue**: `RevealProvider` was in the root `src/app/layout.tsx`, causing `React Context` on every page. Non-public pages (sign-in, auth-error, admin) don't need scroll-reveal animations. More importantly, having `RevealProvider` in the root layout could cause hydration mismatches if its internal `useEffect` ran on pages that don't need it.
+
+**Fix**: Moved `RevealProvider` from `src/app/layout.tsx` to `src/app/(public)/page.tsx`, wrapping only the public landing page content. Removed the `RevealProvider` mock from `src/app/layout.test.tsx`.
+
+**Pattern**: Keep providers as close to their consumers as possible. Don't put animation/scroll providers in the root layout unless every page needs them.
+
+---
+
+### Phase 20+ Recommendations
+
+1. **Audit all pages for `blocking-route` compliance**: Run `pnpm build` and check for `blocking-route` errors. Any page that calls `await` on auth, DB queries, or cookies must use the `<Suspense>` + Server Component pattern.
+
+2. **Document the `export const dynamic` incompatibility**: The old Next.js 14/15 pattern of `export const dynamic = "force-dynamic"` no longer works with `cacheComponents: true`. Update any internal docs or guides that reference it.
+
+3. **Check for other root-layout provider bloat**: Review `src/app/layout.tsx` for other providers that could be moved closer to their consumers. Candidates: `SessionProvider` (already scoped correctly), `RevealProvider` (now fixed).
+
+---
+
 ### Phase 20 Recommendations
 
 1. **Push Phase 20 commits to `origin/main`**: CI will run the raised coverage gate (80/80/70/80) for the first time — verify it passes. The new `test:integration` script is NOT yet wired into CI (see Phase 20 Deferred Items in README.md).
@@ -2364,7 +2447,7 @@ Phase 20 closed most of the Phase 19 deferred items via 4 batches (13 tasks tota
 
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
-- **Last Updated**: June 22, 2026 (Phase 20 complete)
+- **Last Updated**: June 22, 2026 (Phase 20+ — `/account` blocking-route fix + `RevealProvider` refactor)
 - **Total Tests**: 452 across 66 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass) (all green).
 - **Quality Gate**: `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) + `pnpm test -- --coverage` (enforced in CI at 80/80/70/80 thresholds) — all green
 - **Pre-commit Hooks**: husky + lint-staged (Phase 19 / M10) — runs eslint + prettier on staged `.ts`/`.tsx` before every commit

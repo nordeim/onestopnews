@@ -1244,6 +1244,48 @@ The `AUTH_URL` env var must match the URL users actually visit (including scheme
 
 **Fix**: Run `pnpm db:seed` to populate 30 sample articles. Verify the `FeedData.tsx` component renders `<FeedContainer initialArticles={feed.articles} initialNextCursor={feed.nextCursor} initialHasMore={feed.hasMore} />`.
 
+### `blocking-route` Error on Dynamic Routes (e.g., `/account`) (Phase 20+)
+
+**Symptom**: `pnpm build` fails with `Error: Route "/account": Uncached data was accessed outside of <Suspense>`. The page is an Async Server Component that calls `await verifySession()` or `await auth()` directly in the page body, which reads cookies — an uncached data access.
+
+**Cause**: Next.js 16 with `cacheComponents: true` requires all asynchronous data fetching to be either wrapped in `<Suspense>` (for streaming) or inside a `"use cache"` component (for static prerendering). Awaiting auth/DB queries directly in the page body triggers the fatal `blocking-route` error during static prerender.
+
+**Attempted Fix (Fails)**: Adding `export const dynamic = "force-dynamic"` to the page. This is the Next.js 14/15 workaround for dynamic routes, but **Next.js 16 with `cacheComponents: true` explicitly rejects `export const dynamic`** — it produces a build error.
+
+**Correct Fix — Synchronous Page Shell + Async Server Component in `<Suspense>`**:
+
+```tsx
+// ✅ page.tsx — Synchronous shell + async Server Component in Suspense
+import { Suspense } from "react";
+import { verifySession } from "@/lib/auth/dal";
+
+function AccountSkeleton() {
+  return <div className="animate-pulse">Loading...</div>;
+}
+
+async function AccountData() {
+  const session = await verifySession();
+  return <div>Welcome, {session.user.name}</div>;
+}
+
+export default function AccountPage() {
+  return (
+    <main id="main-content">
+      <h1>Account Settings</h1>
+      <Suspense fallback={<AccountSkeleton />}>
+        <AccountData />
+      </Suspense>
+    </main>
+  );
+}
+```
+
+**Key Rules**:
+
+1. **Never `await` a database query or auth check directly in a page component body**. Always extract into a separate Server Component and wrap it in `<Suspense>`.
+2. **`export const dynamic = "force-dynamic"` is NOT compatible with `cacheComponents: true`**. Do not use it. The `<Suspense>` + Server Component pattern is the correct replacement.
+3. **Every page that needs dynamic data must use the pattern** shown above. This applies to ALL routes.
+
 ### `./scripts/deploy.sh` Fails with "cannot execute: required file not found" (Phase 16)
 
 **Symptom**: Running `./scripts/deploy.sh` directly fails with `bash: ./scripts/deploy.sh: cannot execute: required file not found`. Running `bash scripts/deploy.sh` works fine.
@@ -1430,7 +1472,7 @@ export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
 
 13. **Lighthouse CI Budgets**: Start with conservative budgets (Perf ≥ 90, A11y ≥ 95) and tighten as the app matures. PPR helps with performance but heavy AI components can slow LCP.
 
-14. **Blocking Route Prevention**: In Next.js 16 with `cacheComponents: true`, always wrap database queries in `<Suspense>` with a fallback UI (e.g., `FeedSkeleton`). Never `await` data fetches directly in the main page component body — this triggers the `blocking-route` error.
+14. **Blocking Route Prevention**: In Next.js 16 with `cacheComponents: true`, always wrap database queries in `<Suspense>` with a fallback UI (e.g., `FeedSkeleton`). Never `await` data fetches directly in the main page component body — this triggers the `blocking-route` error. **Do NOT use `export const dynamic = "force-dynamic"`** — it is incompatible with `cacheComponents: true` and causes a build error. Use the `<Suspense>` + Server Component pattern instead.
 
 15. **~~Article Detail Page~~** (RESOLVED — Phase 14): The article detail page now fetches real data via `getArticleWithSummary(id)`, renders `SummaryPanel` + `NutritionLabel`, and emits 3-layer provenance via `generateMetadata()`.
 
