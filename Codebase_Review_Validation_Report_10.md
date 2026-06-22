@@ -1138,4 +1138,50 @@ The archive is in `/home/project/download/` — ready for you to grab and refres
 
 ---
 
+AGENTS.md 更新 (6处)
+
+1. Anti-Patterns to Avoid 表 — 新增2个反模式：
+
+- Async Server Component in page body without <Suspense>: Next.js 16 cacheComponents: true 将 <Suspense> 外的未缓存数据访问视为 blocking-route 错误。/account 页面曾直接在 page.tsx body 中调用 await verifySession()。
+- export const dynamic = "force-dynamic"与 cacheComponents: true 不兼容: Next.js 16 拒绝 export const dynamic，构建会报错。旧版动态路由方案不再适用。
+
+2. Quick Reference: File Locations 表 — 新增3个文件：
+
+- Account Page: src/app/account/page.tsx (Phase 20; 使用 Suspense + Server Component 模式避免 blocking-route)
+- Account Client Component: src/app/account/AccountClient.tsx (Phase 20)
+- Account Server Actions: src/app/account/actions.ts (Phase 20)
+
+3. Phase Status Tracker — 新增 Phase 20+ 行：
+
+- /account blocking-route 修复 + RevealProvider 重构
+- 详细描述了修复方式（同步 page shell + async Server Component inside <Suspense>）
+- 记录了 export const dynamic 与 cacheComponents: true 不兼容的发现
+- 记录了 RevealProvider 从 root layout 迁移到 (public)/page.tsx 的架构优化
+
+4. Phase 20+ Ad-Hoc Fix 章节 — 全新添加：
+
+- 详细的 blocking-route 修复过程说明
+- 代码示例（同步 page shell + <Suspense> + async Server Component）
+- 关键规则总结（3条）
+- RevealProvider 重构说明
+- 推荐事项（3条）
+
+5. Contact & Maintenance — 更新 "Last Updated" 时间
+   README.md 更新 (2处)
+1. 新增 Troubleshooting 章节: blocking-route Error on Dynamic Routes (Phase 20+)
+
+- 症状描述
+- 原因分析
+- 尝试过的错误方案（export const dynamic = "force-dynamic"）
+- 正确修复方案（含完整代码示例）
+- 3条关键规则
+
+2. 更新 Recommendation #14 (Blocking Route Prevention):
+
+- 新增警告：不要使用 export const dynamic = "force-dynamic" — 与 cacheComponents: true 不兼容，会导致构建错误
+  CLAUDE.md 更新 (未改动)
+- 由于它是 stub（指向 AGENTS.md），test counts unchanged（452/66 + 10 E2E + 4 a11y + 4 integration），无需更新。
+  验证
+- ✅ pnpm check 通过（tsc --noEmit 和 eslint --max-warnings 0）
+
 https://chat.z.ai/s/bc150dde-7e26-4714-9746-c7b7b335dcd8
