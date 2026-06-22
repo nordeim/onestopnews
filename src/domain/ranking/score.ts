@@ -2,7 +2,13 @@
  * score.ts — Pure domain function for article importance scoring.
  *
  * PAD §5.6: "calculateImportanceScore(inputs: ScoringInputs): number – returns float in 0.0–1.0 range."
- * MEP v5.1: "calculateImportanceScore returns float [0.0, 1.0] not 0–100"
+ * MEP v6.0: "calculateImportanceScore returns float [0.0, 1.0] not 0–100"
+ *
+ * Phase 19+ remediation (Batch 4 / H1) — Architectural note:
+ * The `import type` statement below is TYPE-ONLY — erased at compile time,
+ * no runtime coupling to `@/lib/db/schema`. Compliant with the documented
+ * rule that `src/domain/**` must have zero DB runtime imports. Enforced
+ * by the ESLint `no-restricted-imports` rule in `eslint.config.mjs`.
  */
 
 import type { ContentAvailability } from "@/lib/db/schema";
@@ -45,7 +51,8 @@ export function calculateImportanceScore(inputs: ScoringInputs): number {
   const sourceFactor = Math.max(0, 1 - (inputs.sourcePriority - 1) * 0.2);
 
   // Combined score (weighted average)
-  const score = recencyFactor * 0.5 + contentBonus + summaryBonus + sourceFactor * 0.2;
+  const score =
+    recencyFactor * 0.5 + contentBonus + summaryBonus + sourceFactor * 0.2;
 
   // Clamp to [0.0, 1.0]
   return Math.min(1, Math.max(0, score));

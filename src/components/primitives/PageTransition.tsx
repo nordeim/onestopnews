@@ -32,8 +32,10 @@ export function PageTransition({ children }: PageTransitionProps) {
     }
 
     // Check for reduced motion preference
+    // Guard matchMedia — jsdom and some older browsers don't implement it.
     const prefersReduced =
       typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (prefersReduced) {

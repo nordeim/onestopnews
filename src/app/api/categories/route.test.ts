@@ -24,7 +24,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-const { GET } = await import("./route");
+const { GET, OPTIONS } = await import("./route");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -63,12 +63,39 @@ describe("GET /api/categories", () => {
   it("returns 500 when db query fails", async () => {
     const { db } = await import("@/lib/db");
     vi.mocked(db.query.categories.findMany).mockRejectedValueOnce(
-      new Error("DB connection lost")
+      new Error("DB connection lost"),
     );
 
     const response = await GET();
     expect(response.status).toBe(500);
     const body = await response.json();
     expect(body.error).toMatch(/internal server error/i);
+  });
+});
+
+describe("OPTIONS /api/categories (CORS preflight)", () => {
+  it("returns 200 with CORS headers for preflight requests", async () => {
+    const response = await OPTIONS();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+      "GET, OPTIONS",
+    );
+    expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
+      "Content-Type",
+    );
+  });
+
+  it("returns a null body (preflight has no content)", async () => {
+    const response = await OPTIONS();
+    const body = await response.json();
+    expect(body).toBeNull();
+  });
+
+  it("does NOT call the database (preflight is cheap)", async () => {
+    const { db } = await import("@/lib/db");
+    const spy = vi.mocked(db.query.categories.findMany);
+    await OPTIONS();
+    expect(spy).not.toHaveBeenCalled();
   });
 });

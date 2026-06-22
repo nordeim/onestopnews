@@ -28,12 +28,35 @@ import { env } from "@/lib/env";
 const ALGORITHM = "aes-256-gcm";
 
 // ─── Module-load validation ────────────────────────────────────────────────
-// Phase 19 (H12): The Zod schema in env/index.ts already validated this at
-// module load (it would have thrown before we even got here). We just
-// cache the Buffer so encrypt/decrypt don't re-allocate on every call.
-// The non-null assertion is safe because Zod's `.regex(/^[0-9a-fA-F]{64}$/)`
-// guarantees the string is present and well-formed.
-const KEY_BUFFER = Buffer.from(env.PUSH_KEY_ENCRYPTION_KEY, "hex");
+// Phase 19 (H12): The Zod schema in env/index.ts already validates this at
+// module load (it would have thrown before we even got here in production).
+// We ALSO validate here as a belt-and-suspenders measure so that:
+//   1. The error message is always "PUSH_KEY_ENCRYPTION_KEY: ..." (consistent
+//      across production + tests)
+//   2. Tests that mock @/lib/env (bypassing Zod) still get a clear error
+//      if they forget to set PUSH_KEY_ENCRYPTION_KEY on the mock
+//   3. Any future code path that imports encrypt.ts without going through
+//      the env validation (e.g., a CLI script) gets a clear error
+const HEX_64_REGEX = /^[0-9a-fA-F]{64}$/;
+function validatePushKeyEncryptionKey(value: string | undefined): string {
+  if (!value) {
+    throw new Error(
+      "PUSH_KEY_ENCRYPTION_KEY is required (64 hex chars / 32 bytes). Generate with: openssl rand -hex 32",
+    );
+  }
+  if (!HEX_64_REGEX.test(value)) {
+    throw new Error(
+      "PUSH_KEY_ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). Got: " +
+        `${value.length} chars. Generate with: openssl rand -hex 32`,
+    );
+  }
+  return value;
+}
+
+const KEY_BUFFER = Buffer.from(
+  validatePushKeyEncryptionKey(env.PUSH_KEY_ENCRYPTION_KEY),
+  "hex",
+);
 
 /**
  * encryptPushKeys — Encrypts Web Push subscription keys with AES-256-GCM.

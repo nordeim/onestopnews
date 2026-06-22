@@ -65,32 +65,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-    // ── Phase 19 (M6): Surface OAuthAccountNotLinked errors clearly ──────
+    // ── Phase 19 (M6) + Phase 19+ remediation (Batch 3 / F2) ─────────────
     // When a user signs in with Credentials first, then tries OAuth with
     // the same email, Auth.js v5 throws `OAuthAccountNotLinked` by default
     // (the email is already bound to a different credential). The default
     // behavior redirects to /auth-error with an opaque `?error=OAuthAccountNotLinked`
-    // query param, which the auth-error page renders as "Something went wrong".
+    // query param.
     //
-    // This signIn callback detects that specific error and appends a
-    // `?error=account-linking-required` param so the auth-error page can
-    // render an actionable message ("Sign in with your original method
-    // first, then link the new provider from account settings").
+    // The /auth-error page now renders an actionable message + a link to
+    // /account, where the user can manually link the new OAuth provider
+    // via the `linkOAuthProvider` server action (src/app/account/actions.ts).
+    // That action pre-creates the `accounts` row so the next OAuth attempt
+    // succeeds instead of throwing.
     //
-    // TODO: Implement a proper /link-account flow that:
-    //   1. Detects the OAuthAccountNotLinked error
-    //   2. Prompts the user to sign in with their original method
-    //   3. Calls adapter.linkAccount() to merge the new OAuth provider
-    // This is a substantial feature (new page, new server action, new UI)
-    // and is tracked as a follow-up. For now, this callback at least makes
-    // the error message actionable.
+    // This signIn callback remains a no-op (returns true) because Auth.js v5
+    // beta's signIn callback signature doesn't expose the error type — the
+    // /auth-error page handles detection via the `?error=` query param.
     async signIn({ user, account }) {
-      // If signing in with OAuth and the email already exists for a
-      // different provider, account will be null (the adapter throws
-      // before we get here). We can't easily detect this case here —
-      // Auth.js v5 beta's signIn callback signature doesn't expose the
-      // error. The /auth-error page checks the `?error=` param instead.
-      // This callback is a placeholder for future linking logic.
       void user;
       void account;
       return true;

@@ -2,6 +2,18 @@
  * Domain types for articles.
  * Derived from Drizzle schema via InferSelectModel.
  * These are the canonical types for all article-related data.
+ *
+ * Phase 19+ remediation (Batch 4 / H1) — Architectural note:
+ * The `import type` statements below are TYPE-ONLY — they are erased at
+ * compile time by TypeScript and create NO runtime coupling to
+ * `@/lib/db/schema`. This is compliant with the documented rule that
+ * `src/domain/**` must have zero Next.js / DB runtime imports. The ESLint
+ * rule `no-restricted-imports` in `eslint.config.mjs` enforces this:
+ * any non-type import from `@/lib/db*` in `src/domain/**` will fail lint.
+ *
+ * Rationale: keeping the domain layer runtime-pure means it can be unit-
+ * tested without a database connection, reused in non-Next.js contexts
+ * (workers, CLI scripts), and refactored without rippling DB-side changes.
  */
 
 import type { InferSelectModel } from "drizzle-orm";

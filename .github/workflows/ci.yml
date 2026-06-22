@@ -76,11 +76,13 @@ jobs:
         run: pnpm run lint
       - name: Run Unit Tests
         run: pnpm run test
-      - name: Run Tests with Coverage (Phase 19 / H6)
-        # Phase 19 (H6): Enforce coverage thresholds in CI. The thresholds
-        # are configured in vitest.config.ts (lines 80/80/70/80). If actual
-        # coverage falls below, the test command exits non-zero and the
-        # workflow fails — preventing coverage regressions from landing.
+      - name: Run Tests with Coverage (Phase 19 / H6 + Batch 2 / T7)
+        # Phase 19 (H6): Enforce coverage thresholds in CI.
+        # Batch 2 (T7) of the Phase 19+ remediation raised thresholds back
+        # to 80/80/70/80 (functions/lines/branches/statements) after adding
+        # the missing unit tests in T1-T6. If actual coverage falls below,
+        # the test command exits non-zero and the workflow fails — preventing
+        # coverage regressions from landing.
         run: pnpm run test -- --coverage
       - name: Run TypeScript Check
         run: pnpm run check

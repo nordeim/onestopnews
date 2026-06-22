@@ -42,8 +42,9 @@ vi.mock("@/lib/auth/dal", () => ({
   }),
 }));
 
-const { POST } = await import("./route");
+const { POST, OPTIONS } = await import("./route");
 const { encryptPushKeys } = await import("@/lib/security/encrypt");
+const { verifySession } = await import("@/lib/auth/dal");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -83,7 +84,7 @@ describe("POST /api/push/subscribe", () => {
     expect(mockValues).toHaveBeenCalledWith(
       expect.objectContaining({
         encryptedKeys: "encrypted-envelope-string",
-      })
+      }),
     );
 
     // Verify the OLD keys field is NOT set to the encrypted envelope
@@ -99,7 +100,7 @@ describe("POST /api/push/subscribe", () => {
 
   it("returns 400 for missing keys", async () => {
     const response = await POST(
-      makeRequest({ endpoint: "https://example.com/push" })
+      makeRequest({ endpoint: "https://example.com/push" }),
     );
     expect(response.status).toBe(400);
   });
@@ -108,5 +109,52 @@ describe("POST /api/push/subscribe", () => {
     mockValues.mockRejectedValueOnce(new Error("DB connection lost"));
     const response = await POST(makeRequest(validBody));
     expect(response.status).toBe(500);
+  });
+
+  it("returns 401 when verifySession throws (user not signed in)", async () => {
+    vi.mocked(verifySession).mockRejectedValueOnce(
+      new Error("redirect to /sign-in"),
+    );
+    const response = await POST(makeRequest(validBody));
+    expect(response.status).toBe(401);
+    const body = await response.json();
+    expect(body.error).toMatch(/unauthorized/i);
+  });
+
+  it("returns 400 when request body is not valid JSON", async () => {
+    const req = new NextRequest("http://localhost:3000/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{not valid json",
+    });
+    const response = await POST(req);
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/invalid json/i);
+  });
+});
+
+describe("OPTIONS /api/push/subscribe (CORS preflight)", () => {
+  it("returns 204 No Content with CORS headers", async () => {
+    const response = await OPTIONS();
+    expect(response.status).toBe(204);
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(response.headers.get("Access-Control-Allow-Methods")).toBe(
+      "POST, OPTIONS",
+    );
+    expect(response.headers.get("Access-Control-Allow-Headers")).toBe(
+      "Content-Type",
+    );
+  });
+
+  it("does not call verifySession (preflight is unauthenticated)", async () => {
+    await OPTIONS();
+    expect(verifySession).not.toHaveBeenCalled();
+  });
+
+  it("does not call the database (preflight is cheap)", async () => {
+    const { db } = await import("@/lib/db");
+    await OPTIONS();
+    expect(db.insert).not.toHaveBeenCalled();
   });
 });

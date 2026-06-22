@@ -4,7 +4,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    // Exclude Playwright E2E tests from vitest (they use @playwright/test, not vitest)
+    // Exclude Playwright E2E tests + DB integration tests from default vitest run.
+    // Integration tests use testcontainers (require Docker) and run via
+    // `pnpm test:integration` (separate vitest config).
     exclude: [
       "node_modules/",
       "dist/",
@@ -12,29 +14,26 @@ export default defineConfig({
       "plans/",
       "e2e/**",
       "playwright.config.ts",
+      "src/**/*.db-integration.test.ts",
     ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      // Phase 19 (H6): Thresholds calibrated to current actual coverage
-      // (~78% functions, ~83% lines). The original 80/80/70/80 was failing
-      // because several UI/route files have low function coverage (e.g.,
-      // FeedSkeleton, route handlers, queries).
-      //
-      // TODO: Raise these back to 80/80/70/80 once the following files have
-      // additional unit tests:
-      //   - src/features/feed/components/FeedSkeleton.tsx (0% lines)
-      //   - src/app/api/categories/route.ts (33% lines)
-      //   - src/app/api/push/subscribe/route.ts (50% lines)
-      //   - src/components/primitives/PageTransition.tsx (40% lines)
-      //   - src/features/feed/queries.ts (21% functions)
-      //   - src/lib/db/seed.ts (low — no test)
-      //
-      // For now, 75/80/65/80 catches regressions while not blocking CI.
+      // Phase 19+ remediation (Batch 2 / T7): Thresholds raised back to
+      // 80/80/70/80 (functions/lines/branches/statements). The Phase 19
+      // calibration lowered these to 75/80/65/80 pending additional unit
+      // tests; T1-T6 of the remediation plan added those tests:
+      //   - T1: FeedSkeleton.test.tsx (7 tests) — was 0% lines, now ~100%
+      //   - T2: categories/route.test.ts OPTIONS + 401 (3 new tests) — was 33%
+      //   - T3: push/subscribe/route.test.ts OPTIONS + 401 + invalid JSON (5 new tests) — was 50%
+      //   - T4: PageTransition click + reduced-motion (6 new tests) — was 40%
+      //   - T5: seed.test.ts orchestration (3 new tests) — was untested
+      //   - T6: queries.ts refactored to extract buildFeedQuery (11 new tests) — was 21% functions
+      // Current actual coverage: 89.62% lines / 81.23% branches / 84.57% functions / 90.56% statements.
       thresholds: {
         lines: 80,
-        functions: 75,
-        branches: 65,
+        functions: 80,
+        branches: 70,
         statements: 80,
       },
       exclude: [
@@ -44,6 +43,7 @@ export default defineConfig({
         "*.d.ts",
         "src/test/**",
         "e2e/**",
+        "src/**/*.db-integration.test.ts",
       ],
     },
     setupFiles: ["./src/test/setup.ts"],

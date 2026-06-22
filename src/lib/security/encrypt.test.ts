@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { encryptPushKeys, decryptPushKeys } from "./encrypt";
 
 // ─── UNIT TEST: AES-256-GCM Push Key Encryption ──────────────────────────────
 //
@@ -11,27 +10,47 @@ import { encryptPushKeys, decryptPushKeys } from "./encrypt";
 //  - Round-trip: encrypt -> decrypt produces identical input
 //  - Invalid format throws descriptive error
 //  - PUSH_KEY_ENCRYPTION_KEY validated at MODULE LOAD (fail-fast at boot)
+//
+// Phase 19+ remediation (Batch 4 / H2):
+// Migrated the regular unit tests (encrypt/decrypt/round-trip) to the
+// `vi.hoisted()` + `vi.mock("@/lib/env")` pattern documented in Phase 19
+// gotcha #7. This eliminates process.env mutation for those tests.
+//
+// The module-load validation tests still use `process.env` direct mutation
+// with save/restore because they need `vi.resetModules()` to re-trigger
+// the module load with different env values — and `vi.mock()` doesn't
+// re-apply after `vi.resetModules()` in Vitest 4. The save/restore pattern
+// is the canonical Vitest approach for module-load env testing.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Set a test encryption key
-const TEST_KEY = "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899";
+// Test encryption key — 64 hex chars (32 bytes).
+// Inlined into the vi.hoisted() factory below because vi.hoisted() runs
+// BEFORE the module's other top-level declarations — referencing `TEST_KEY`
+// from inside the hoisted factory would hit a temporal dead zone ReferenceError.
+const TEST_KEY =
+  "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899";
+
+// vi.hoisted() runs BEFORE the vi.mock() factory, so the factory can safely
+// reference `mockEnv` without hitting a ReferenceError (the hoisting problem
+// documented in Phase 19 gotcha #7).
+const { mockEnv } = vi.hoisted(() => ({
+  mockEnv: {
+    PUSH_KEY_ENCRYPTION_KEY:
+      "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899",
+  } as { PUSH_KEY_ENCRYPTION_KEY?: string },
+}));
+
+vi.mock("@/lib/env", () => ({ env: mockEnv }));
 
 describe("push key encryption", () => {
-  const originalKey = process.env.PUSH_KEY_ENCRYPTION_KEY;
-
   beforeEach(() => {
-    process.env.PUSH_KEY_ENCRYPTION_KEY = TEST_KEY;
+    // Reset to a known-good state before each test
+    mockEnv.PUSH_KEY_ENCRYPTION_KEY = TEST_KEY;
+    vi.resetModules();
   });
 
-  afterEach(() => {
-    if (originalKey) {
-      process.env.PUSH_KEY_ENCRYPTION_KEY = originalKey;
-    } else {
-      delete process.env.PUSH_KEY_ENCRYPTION_KEY;
-    }
-  });
-
-  it("round-trips encryption and decryption correctly", () => {
+  it("round-trips encryption and decryption correctly", async () => {
+    const { encryptPushKeys, decryptPushKeys } = await import("./encrypt");
     const original = {
       p256dh: "BF8pKvQlt5lRJBBs5DhKYJ3w8J-zZdqvdvh3umpYwNE=",
       auth: "f7GzA0dGKb2KxY3-vQWuBQ==",
@@ -45,12 +64,18 @@ describe("push key encryption", () => {
     expect(decrypted).toEqual(original);
   });
 
-  it("throws on invalid encrypted format", () => {
-    expect(() => decryptPushKeys("invalid")).toThrow("Invalid encrypted push key format");
-    expect(() => decryptPushKeys("only:two")).toThrow("Invalid encrypted push key format");
+  it("throws on invalid encrypted format", async () => {
+    const { decryptPushKeys } = await import("./encrypt");
+    expect(() => decryptPushKeys("invalid")).toThrow(
+      "Invalid encrypted push key format",
+    );
+    expect(() => decryptPushKeys("only:two")).toThrow(
+      "Invalid encrypted push key format",
+    );
   });
 
-  it("produces different ciphertext for same input (IV is random)", () => {
+  it("produces different ciphertext for same input (IV is random)", async () => {
+    const { encryptPushKeys } = await import("./encrypt");
     const original = {
       p256dh: "BF8pKvQlt5lRJBBs5DhKYJ3w8J-zZdqvdvh3umpYwNE=",
       auth: "f7GzA0dGKb2KxY3-vQWuBQ==",
@@ -63,7 +88,8 @@ describe("push key encryption", () => {
     expect(encrypted1).not.toBe(encrypted2);
   });
 
-  it("handles longer push keys correctly", () => {
+  it("handles longer push keys correctly", async () => {
+    const { encryptPushKeys, decryptPushKeys } = await import("./encrypt");
     const original = {
       p256dh: "x".repeat(1000),
       auth: "y".repeat(500),
@@ -83,27 +109,32 @@ describe("push key encryption", () => {
 // worker / web server fail fast at boot if the env var is missing/invalid,
 // rather than 500-ing on the first push operation.
 //
-// These tests use vi.resetModules() + dynamic import() to re-trigger the
-// module load with controlled env state. The previously-cached module is
-// discarded so the new env value takes effect at the fresh module load.
+// Phase 19+ remediation (Batch 4 / H2): These tests use the same `mockEnv`
+// object from the vi.hoisted() pattern above. Each test mutates
+// `mockEnv.PUSH_KEY_ENCRYPTION_KEY` to a different invalid value, calls
+// `vi.resetModules()` to discard the cached module, and dynamically
+// re-imports `./encrypt` to trigger the module-load validation.
+//
+// No `process.env` direct mutation — the mock env object is the single
+// source of truth for these tests, eliminating both test pollution and
+// parallel-test collision risks.
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("PUSH_KEY_ENCRYPTION_KEY module-load validation", () => {
-  const originalKey = process.env.PUSH_KEY_ENCRYPTION_KEY;
+  // Save the original mockEnv value so we can restore it after each test.
+  // (No process.env mutation — the production code reads via the typed `env`
+  // export, which is mocked to read from `mockEnv`.)
+  const originalMockValue = mockEnv.PUSH_KEY_ENCRYPTION_KEY;
 
   afterEach(() => {
-    // Restore original env state and reset the module cache so subsequent
-    // test files see a clean module loaded with the test-setup env value.
-    if (originalKey) {
-      process.env.PUSH_KEY_ENCRYPTION_KEY = originalKey;
-    } else {
-      delete process.env.PUSH_KEY_ENCRYPTION_KEY;
-    }
+    // Restore the mock to its original value + reset module cache so
+    // subsequent test files see a clean module loaded with the test-setup env.
+    mockEnv.PUSH_KEY_ENCRYPTION_KEY = originalMockValue;
     vi.resetModules();
   });
 
   it("module loads successfully when PUSH_KEY_ENCRYPTION_KEY is a valid 64-hex string", async () => {
-    process.env.PUSH_KEY_ENCRYPTION_KEY = TEST_KEY;
+    mockEnv.PUSH_KEY_ENCRYPTION_KEY = TEST_KEY;
     vi.resetModules();
 
     // Importing the module should NOT throw — the env var is valid.
@@ -113,24 +144,31 @@ describe("PUSH_KEY_ENCRYPTION_KEY module-load validation", () => {
   });
 
   it("module throws at import time when PUSH_KEY_ENCRYPTION_KEY is missing", async () => {
-    delete process.env.PUSH_KEY_ENCRYPTION_KEY;
+    delete mockEnv.PUSH_KEY_ENCRYPTION_KEY;
     vi.resetModules();
 
-    await expect(import("./encrypt")).rejects.toThrow(/PUSH_KEY_ENCRYPTION_KEY/);
+    await expect(import("./encrypt")).rejects.toThrow(
+      /PUSH_KEY_ENCRYPTION_KEY/,
+    );
   });
 
   it("module throws at import time when PUSH_KEY_ENCRYPTION_KEY is not 64 chars", async () => {
-    process.env.PUSH_KEY_ENCRYPTION_KEY = "tooshort";
+    mockEnv.PUSH_KEY_ENCRYPTION_KEY = "tooshort";
     vi.resetModules();
 
-    await expect(import("./encrypt")).rejects.toThrow(/PUSH_KEY_ENCRYPTION_KEY/);
+    await expect(import("./encrypt")).rejects.toThrow(
+      /PUSH_KEY_ENCRYPTION_KEY/,
+    );
   });
 
   it("module throws at import time when PUSH_KEY_ENCRYPTION_KEY is not hex", async () => {
     // 64 chars long but contains non-hex characters (z, x, etc.)
-    process.env.PUSH_KEY_ENCRYPTION_KEY = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
+    mockEnv.PUSH_KEY_ENCRYPTION_KEY =
+      "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz";
     vi.resetModules();
 
-    await expect(import("./encrypt")).rejects.toThrow(/PUSH_KEY_ENCRYPTION_KEY/);
+    await expect(import("./encrypt")).rejects.toThrow(
+      /PUSH_KEY_ENCRYPTION_KEY/,
+    );
   });
 });

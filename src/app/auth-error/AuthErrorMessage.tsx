@@ -6,11 +6,14 @@
  *
  * Phase 19 (M6): Previously the auth-error page rendered a generic
  * "Something went wrong" message regardless of the error type. Now we
- * detect the `OAuthAccountNotLinked` error specifically and tell the user
- * to sign in with their original method first (the proper account-linking
- * flow is a follow-up — see the TODO in src/lib/auth/index.ts).
+ * detect the `OAuthAccountNotLinked` error specifically and link the user
+ * to /account where they can link the new provider.
+ *
+ * Phase 19+ remediation (Batch 3 / F2): The "link from your account settings"
+ * text now links to the actual /account page (which previously didn't exist).
  */
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 export function AuthErrorMessage() {
@@ -19,11 +22,21 @@ export function AuthErrorMessage() {
 
   if (error === "OAuthAccountNotLinked") {
     return (
-      <p className="font-ui text-sm text-ink-600 mb-8 max-w-md mx-auto">
-        An account with this email already exists using a different sign-in
-        method. Please sign in with your original method first, then link the
-        new provider from your account settings.
-      </p>
+      <div className="font-ui text-sm text-ink-600 mb-8 max-w-md mx-auto space-y-3">
+        <p>
+          An account with this email already exists using a different sign-in
+          method. Please sign in with your original method first, then link the
+          new provider from your account settings.
+        </p>
+        <p>
+          <Link
+            href="/account"
+            className="font-mono text-[10px] uppercase tracking-widest text-dispatch-ember underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2"
+          >
+            Go to account settings →
+          </Link>
+        </p>
+      </div>
     );
   }
 

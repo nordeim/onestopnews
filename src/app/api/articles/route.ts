@@ -2,18 +2,23 @@
  * route.ts — Public REST API for articles.
  *
  * PRD §6: GET /api/articles?category=&cursor=&q=&limit=
- * MEP v5.1: CORS headers, cache-control, public access.
+ * MEP v6.0: CORS headers, cache-control, public access.
  *
  * Phase 13 hardening:
  *   - Cursor validation (returns 400 for invalid ISO 8601 date)
  *   - Rate limiting via Redis fixed-window (max 20 req/s per IP)
+ *
+ * Phase 19+ remediation (Batch 3 / F1):
+ *   - getClientIp() extracted to src/lib/network/getClientIp.ts
+ *   - Now supports TRUSTED_PROXY_CIDRS env var for CIDR chain walking
+ *     (handles multi-hop proxy chains like Cloudflare → Nginx → app)
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { searchArticles } from "@/features/search/queries";
 import { getFeedArticles } from "@/features/feed/queries";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { env } from "@/lib/env";
+import { getClientIp } from "@/lib/network/getClientIp";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -26,51 +31,18 @@ const CORS_HEADERS = {
 const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_SEC = 1;
 
-/**
- * Extracts and validates the client IP from request headers.
- *
- * IP extraction strategy:
- *   - If TRUSTED_PROXY env var is set ("true"), the app is behind a trusted
- *     reverse proxy / CDN. Use the RIGHTMOST IP in x-forwarded-for (the
- *     trusted proxy's view of the client). This prevents spoofing because
- *     only the trusted proxy can set the header.
- *   - Otherwise (default, no proxy), use the LEFTMOST IP in x-forwarded-for
- *     (the client-supplied value). This is spoofable but documented —
- *     suitable for development or direct-exposure deployments.
- *   - If x-forwarded-for is absent, fall back to x-real-ip.
- *   - If no IP headers present, return "unknown".
- *
- * @param request — The NextRequest to extract the client IP from
- * @returns The client IP string (or "unknown")
- */
-function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const ips = forwarded.split(",").map((ip) => ip.trim());
-    // When behind a trusted proxy, use the rightmost (last) IP — the proxy's
-    // view of the client. Otherwise use the leftmost (first) IP.
-    // TRUSTED_PROXY is declared in the Zod env schema (src/lib/env/index.ts)
-    // and validated at module load. We read it via the typed `env` export
-    // (not process.env directly) so typos are caught at boot.
-    const isTrustedProxy = env.TRUSTED_PROXY === "true";
-    const ip = isTrustedProxy ? ips[ips.length - 1] : ips[0];
-    return ip ?? "unknown";
-  }
-  return request.headers.get("x-real-ip") ?? "unknown";
-}
-
 export async function GET(request: NextRequest) {
   // ── Rate limit check ─────────────────────────────────────────────────────
   const ip = getClientIp(request);
   const rateLimitResult = await checkRateLimit(
     `api:articles:${ip}`,
     RATE_LIMIT_MAX,
-    RATE_LIMIT_WINDOW_SEC
+    RATE_LIMIT_WINDOW_SEC,
   );
   if (!rateLimitResult.allowed) {
     const retryAfterSec = Math.max(
       1,
-      Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)
+      Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
     );
     return NextResponse.json(
       { error: "Rate limit exceeded. Please retry later." },
@@ -81,7 +53,7 @@ export async function GET(request: NextRequest) {
           "Retry-After": String(retryAfterSec),
           "X-RateLimit-Remaining": "0",
         },
-      }
+      },
     );
   }
 
@@ -102,7 +74,7 @@ export async function GET(request: NextRequest) {
           error:
             "Invalid cursor format. Expected ISO 8601 date string (e.g., 2024-06-01T00:00:00Z).",
         },
-        { status: 400, headers: CORS_HEADERS }
+        { status: 400, headers: CORS_HEADERS },
       );
     }
   }
@@ -149,7 +121,7 @@ export async function GET(request: NextRequest) {
     console.error("[API /articles] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS }
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 }

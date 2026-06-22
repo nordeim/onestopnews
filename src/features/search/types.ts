@@ -13,6 +13,19 @@ import type { ArticleWithSource } from "@/domain/articles/types";
 export interface SearchParams {
   query: string;
   categorySlug?: string;
+  /**
+   * Cursor for pagination — must be a `Date` object (NOT a string).
+   *
+   * Callers are responsible for parsing ISO 8601 strings from URL query
+   * params BEFORE calling `searchArticles`. The API boundary at
+   * `src/app/api/articles/route.ts:97-108` performs this validation and
+   * returns HTTP 400 with a descriptive error for invalid ISO 8601 strings.
+   *
+   * TypeScript's `Date` type enforces this contract at compile time —
+   * passing a string here is a type error. This is intentional: the data
+   * layer should not duplicate input validation that the API boundary
+   * already handles.
+   */
   cursor?: Date;
   limit?: number;
 }
