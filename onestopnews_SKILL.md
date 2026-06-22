@@ -208,7 +208,7 @@ Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects
 | `noImplicitOverride: true`               | Requires `override` keyword                            | Silent method shadowing                         |
 | `forceConsistentCasingInFileNames: true` | Case-sensitive imports                                 | Cross-platform import failures (macOS vs Linux) |
 
-### Environment Variables (17 total: 10 required + 6 optional + 1 with default)
+### Environment Variables (19 total: 12 required + 7 optional)
 
 All validated by Zod at module load in `src/lib/env/index.ts`. The app fails fast with a descriptive error if any required var is missing or invalid.
 
