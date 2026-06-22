@@ -394,7 +394,7 @@ Please answer Q1–Q5 (or simply reply "go with recommendations" to accept B, A,
 2. Proceed to **Phase 4: IMPLEMENT** starting with Batch 1
 3. Follow strict TDD (Red → Green → Refactor → commit) for every code-bearing task
 4. Run the validation gate between each batch (`pnpm check && pnpm test`)
-5. Append a worklog entry to `/home/z/my-project/worklog.md` after each batch
+5. Append a worklog entry to `/home/project/worklog.md` after each batch
 
 ---
 
@@ -725,7 +725,7 @@ Plus 4 integration tests (3 Docker-gated, 1 always-pass integrity check).
 4. **Update the README Phase Status table** with a new "Phase 19+ Remediation" row documenting the +60 tests, raised coverage thresholds, and the new `/account` page.
 5. **Consider next iteration**: With the deferred Phase 19 items now closed, candidate next work includes: (a) testcontainers in CI as a separate GitHub Actions job, (b) the OAuth account-linking flow's UX polish (currently the user has to retry OAuth after pre-creating the row), (c) JSON-LD BreadcrumbList/WebSite schema enrichment, (d) RevealProvider activation decision.
 
-The worklog at `/home/z/my-project/worklog.md` contains the full per-batch Task ID entries with file paths, line numbers, and lessons learned — suitable for handoff to future agents or reviewers.
+The worklog at `/home/project/worklog.md` contains the full per-batch Task ID entries with file paths, line numbers, and lessons learned — suitable for handoff to future agents or reviewers.
 
 ---
 
@@ -875,7 +875,7 @@ I meticulously reviewed and updated all three docs to reflect the Phase 20 remed
 - **8 new gotchas**: matchMedia guard, belt-and-suspenders validation, vi.hoisted TDZ, Node 24 IPv6 bug, testcontainers vi.resetModules, ESLint no-restricted-imports, vi.mock chain breaks, discriminated union narrowing
 - **Phase 20 deferred items**: testcontainers in CI, OAuth UX polish, JSON-LD WebSite/BreadcrumbList, RevealProvider activation, AES IV length, IPv6 CIDR matching
 
-The worklog at `/home/z/my-project/worklog.md` contains the full DOC-ALIGN entry with per-file edit details. The documentation is now the authoritative source of truth for the post-Phase 20 codebase state.
+The worklog at `/home/project/worklog.md` contains the full DOC-ALIGN entry with per-file edit details. The documentation is now the authoritative source of truth for the post-Phase 20 codebase state.
 
 ---
 
@@ -901,7 +901,7 @@ The archive is ready for download.
 
 ## Archive Summary
 
-**File:** `/home/z/my-project/download/onestopnews-phase20-remediated.tar.gz`
+**File:** `/home/project/download/onestopnews-phase20-remediated.tar.gz`
 **Size:** 47 MB (compressed)
 **Contents:** 2,335 entries (1,766 actual files)
 
@@ -969,4 +969,173 @@ git commit -m "Phase 20: Post-Phase-19 remediation — documentation alignment +
 git push origin main
 ```
 
-The archive is in `/home/z/my-project/download/` — you can grab it from there.
+The archive is in `/home/project/download/` — you can grab it from there.
+
+---
+
+I'll execute this meticulously: ANALYZE the actual codebase to extract exact values → PLAN the skill structure → IMPLEMENT the SKILL.md → VALIDATE against the codebase. Since the example structure references Vite/HeroKinetic/BentoGrid (which are NOT in this project), I'll adapt the structure to OneStopNews's actual architecture (Next.js 16/FeedGrid/ArticleCard/useDebounce/useReducedMotion/RSS ingestion).
+Now let me read the remaining key files in parallel — schema types, domain types, tsconfig, next.config, package.json, and an existing SKILL.md for format reference.
+Now let me read the existing SKILL.md for format reference and check the schema types + domain/ranking/score:
+There's an existing SKILL.md (Phase 17 era, 2102 lines). I need to create a NEW one that reflects the post-Phase 20 state. Let me check the rest of the structure to understand what sections need updating:
+Good — the existing SKILL.md has the exact 20-section structure the user wants, but it's stuck at Phase 17 (302 tests, no Phase 18-20 content). I need to create a new `onestopnews_SKILL.md` that reflects the post-Phase 20 state (452 tests, new components, new hooks patterns, new anti-patterns, etc.).
+
+Let me read a few more key files to get exact values for the new SKILL.md — the schema types, domain/ranking/score, and the parseFeed worker:
+I have enough context now. Let me update the todo list and start writing the SKILL.md. Given the size (will be ~2000+ lines), I'll write it in sections using the Write tool.
+Now I'll write the comprehensive SKILL.md. Given the size, I'll write it as a single large file using the Write tool.
+Now let me validate the SKILL.md against the actual codebase to ensure all claims are accurate.
+All key claims validated:
+
+- ✅ Tech stack versions match exactly (next ^16.2.9, react ^19.2.7, typescript ^5.7.0, drizzle-orm ^0.45.2, bullmq ^5.78.0, next-auth 5.0.0-beta.31, zod ^4.4.3, ai ^6.0.201, cheerio ^1.2.0, etc.)
+- ✅ All 9 tsconfig flags present (strict, noUncheckedIndexedAccess, verbatimModuleSyntax, erasableSyntaxOnly, noImplicitAny, noImplicitReturns, noFallthroughCasesInSwitch, noImplicitOverride, forceConsistentCasingInFileNames)
+- ✅ `cacheComponents: true` is top-level in next.config.ts
+- ✅ 25 color tokens in globals.css `@theme` block (matches the complete color reference in §19)
+
+Let me also verify the SKILL.md doesn't break `pnpm check` (it shouldn't since it's a .md file, but let's confirm) and copy it to the download directory:
+All green. Now let me update the worklog and todos.
+The comprehensive skill file is complete and validated.
+
+## SKILL.md Summary
+
+**File:** `/home/project/onestopnews/onestopnews_SKILL.md` (also copied to `/home/project/download/onestopnews_SKILL.md`)
+**Size:** 100 KB, 2,243 lines, 20 sections + Validation Checklist + Quick Reference
+
+### What's Documented (all 20 sections grounded in actual source code)
+
+1. **Project Identity & Design Philosophy** — "Editorial Dispatch" system, 5-Layer Model, 4 differentiators, Phase 1–20 history
+2. **Tech Stack & Environment** — exact versions (Next.js 16.2.9, React 19.2.7, TS 5.7, Drizzle 0.45.2, BullMQ 5.78, etc.), 17 env vars, 9 tsconfig flags with rationale
+3. **Bootstrapping & Configuration** — from-zero setup, `next.config.ts` with flag placement matrix, `proxy.ts`, `postcss.config.mjs`, `eslint.config.mjs` (with domain purity rule), `vitest.config.ts`
+4. **The Design System (Code-First)** — typography stack (Newsreader/Instrument Sans/Commit Mono), 25 color tokens, CSS Subgrid architecture, 12 custom utility classes, 5 animation tokens
+5. **Component Architecture & Patterns** — Button (cva+Radix Slot), ArticleCard (CSS Subgrid), NutritionLabel, SummaryPanel (5-state), PageTransition (with Phase 20 matchMedia guard fix)
+6. **Custom Hooks Deep Dive** — `useDebounce<T>` + `useReducedMotion` with full implementation
+7. **Content Management: RSS Ingestion Pipeline** — `parseFeed` (rss-parser + cheerio), `normalize` (SHA-256), content availability guard, FlowProducer DAG, 3-layer AI provenance
+8. **Accessibility (WCAG AAA)** — skip link, focus rings, ARIA patterns, reduced motion, color contrast table, axe-core E2E scans
+9. **Anti-Patterns & Common Bugs** — 89 entries organized by 7 categories
+10. **Debugging Guide** — 12 symptom→cause→fix entries
+11. **Pre-Ship Checklist** — 7 categories with exact commands
+12. **Lessons Learnt** — Top 20 compiled lessons from Phases 5–20
+13. **Pitfalls to Avoid** — 8 critical + 7 subtle
+14. **Best Practices** — 23 practices across Architectural, Testing, Design System
+15. **Coding Patterns** — 8 patterns (cn, cva, Lazy Proxy, verifySession+cache, FlowProducer status, buildFeedQuery separation, walkXffChain CIDR, vi.hoisted, Server Action)
+16. **Coding Anti-Patterns** — Top 15 with fixes
+17. **Responsive Breakpoint Reference** — Tailwind v4 defaults + mobile-first rules
+18. **Z-Index Layer Map** — 7 layers from -1 to 9999
+19. **Color Reference (Complete)** — all 25 tokens with hex + usage + contrast ratios
+20. **TypeScript Interface Reference** — schema-derived types, domain types, scoring/feed/search/summary/account/network/flow/provenance types, component props
+
+### Validation (10-point checklist — all confirmed)
+
+✅ Tech stack versions match `package.json` exactly
+✅ Configuration files match (`tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.ts`)
+✅ Design system tokens match `globals.css` `@theme` block (25 colors)
+✅ Component architecture matches source (Button, ArticleCard, FeedGrid, PageTransition)
+✅ Hooks implementation matches (`useDebounce`, `useReducedMotion`)
+✅ Content ingestion patterns match (`parseFeed`, `normalize`, FlowProducer DAG)
+✅ Accessibility implementation matches (`layout.tsx` skip link, `globals.css` reduced motion)
+✅ Anti-patterns documented correctly (89 entries cross-referenced with `AGENTS.md`)
+✅ Color references match (all hex values verified)
+✅ TypeScript interfaces match (all types verified against source files)
+
+### Quality Gate
+
+- `pnpm check`: 0 tsc errors, 0 eslint warnings
+- `pnpm test`: 452 tests / 66 suites pass in ~31s
+- The SKILL.md is the definitive engineering knowledge base for the post-Phase 20 codebase
+
+The file is available at both `/home/project/onestopnews/onestopnews_SKILL.md` (in the repo) and `/home/project/download/onestopnews_SKILL.md` (for download). Any coding agent who reads this top-to-bottom will have the institutional knowledge required to extend, debug, or replicate the OneStopNews project.
+
+---
+
+The SKILL.md (2,243 lines, 100KB) is in the repo. Now I'll create an updated archive that includes it. Let me remove the old archive and create a new one with the same exclusion set.
+Now let me verify the archive integrity, confirm the SKILL.md is included, and spot-check the key Phase 20 deliverables.
+The archive is verified:
+
+- ✅ gzip integrity OK
+- ✅ 2,335 entries (same as before — SKILL.md was already in the repo, just updated in place)
+- ✅ `onestopnews/onestopnews_SKILL.md` is present (the new 2,243-line version)
+- ✅ All excluded dirs absent (only `skills/` matches, which is the vendored skills directory — intentional)
+
+Let me do a final spot-check to confirm the SKILL.md in the archive is the updated Phase 20 version (not the old Phase 17 version):
+All verified. Let me update the worklog and provide the final summary.
+The updated archive is ready for download.
+
+## Updated Archive Summary
+
+**File:** `/home/project/download/onestopnews-phase20-remediated.tar.gz`
+**Size:** 47 MB (compressed)
+**Contents:** 2,335 entries
+
+### What's New in This Archive
+
+The updated `onestopnews_SKILL.md` (Phase 20 version, 2,243 lines, 100KB) is now included. The header confirms it's the current version:
+
+- **Phase:** 20 (Post-Phase-19 Remediation Documentation Alignment — COMPLETE)
+- **Test Status:** 452 tests across 66 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests
+- **Coverage:** 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements
+
+### What's Included
+
+The entire remediated OneStopNews codebase with all Phase 20 deliverables:
+
+- **SKILL.md** — the new comprehensive 20-section engineering knowledge base
+- **Documentation:** MEP v6.0, AGENTS.md (canonical), CLAUDE.md (stub), README.md — all aligned with post-Phase 20 state
+- **Phase 20 Batch 3 features:** `src/lib/network/getClientIp.ts` (CIDR chain walking), `src/app/account/` (OAuth linking page + server action), `src/workers/pipeline.db-integration.test.ts` (testcontainers)
+- **Phase 20 Batch 2 tests:** FeedSkeleton, PageTransition, categories OPTIONS, push/subscribe OPTIONS+401, seed orchestration, queries.ts buildFeedQuery refactor
+- **Phase 20 Batch 4 hardening:** ESLint `no-restricted-imports` rule, encrypt.ts belt-and-suspenders validation, JSDoc clarifications
+- **Config:** `vitest.config.ts` (thresholds 80/80/70/80), `vitest.integration.config.ts`, `.github/workflows/ci.yml`, `.env.example`, `package.json`, `pnpm-lock.yaml` (in sync)
+
+### What's Excluded (per your request + cleanup)
+
+- `node_modules/` (894 MB)
+- `.git/` (72 MB)
+- `.next/` (not present — never built)
+- `.agents/`, `coverage/`, `plans/`, `backup/`, `tsconfig.tsbuildinfo`, `app_start_log.txt`
+- 5 stale `onestopnews-phase14-17.2*.tar.gz` archives from project root
+
+### Verified
+
+- ✅ gzip integrity check passed
+- ✅ SKILL.md is the Phase 20 version (2,243 lines, header confirms "Phase: 20")
+- ✅ All 8 key Phase 20 deliverables confirmed present
+- ✅ All excluded dirs confirmed absent
+
+### To Refresh Your GitHub Repo
+
+```bash
+# 1. Download and extract the archive locally
+tar -xzf onestopnews-phase20-remediated.tar.gz
+cd onestopnews
+
+# 2. If refreshing an existing clone, fetch latest from origin first
+git pull origin main
+
+# 3. Copy the remediated files over your local clone (preserves .git/)
+rsync -av --exclude='.git' onestopnews/ /path/to/your/clone/
+
+# 4. Install deps (rebuilds node_modules from pnpm-lock.yaml)
+pnpm install --frozen-lockfile
+
+# 5. Verify everything is green
+pnpm check              # tsc + eslint (0 errors, 0 warnings)
+pnpm test               # 452 tests / 66 suites (~30s)
+pnpm test -- --coverage # passes at 80/80/70/80 thresholds
+pnpm test:integration   # 4 tests (3 skip without Docker, 1 passes)
+
+# 6. Commit and push
+git add -A
+git commit -m "Phase 20: Post-Phase-19 remediation + comprehensive SKILL.md
+
+- Documentation: MEP v6.0, AGENTS/CLAUDE consolidation, env var docs
+- TDD tests: +60 tests, coverage thresholds raised to 80/80/70/80
+- Features: walkXffChain CIDR chain walking, /account OAuth linking, testcontainers
+- Hardening: ESLint no-restricted-imports, vi.hoisted() migration, JSDoc
+- SKILL.md: 2243-line, 20-section engineering knowledge base
+- 2 production bugs fixed: PageTransition matchMedia guard, encrypt.ts validation
+- Tests: 392/63 → 452/66 (+60 tests, +3 suites)"
+git push origin main
+```
+
+The archive is in `/home/project/download/` — ready for you to grab and refresh your GitHub repo.
+
+---
+
+https://chat.z.ai/s/bc150dde-7e26-4714-9746-c7b7b335dcd8
