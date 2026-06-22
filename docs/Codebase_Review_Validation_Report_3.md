@@ -38,6 +38,7 @@ I have completed a meticulous ANALYZE → VALIDATE → IMPLEMENT → VERIFY → 
 **OneStopNews** is a **topic-first news aggregation platform** with source-cited AI summaries. Rather than organizing news by publisher, it organizes stories by **subject** across 50–200+ RSS/Atom/JSON feeds, normalizes/dedupes them, scores importance, optionally AI-summarizes them, and exposes them via topic-categorized feed, full-text search, public REST API, and admin tools.
 
 **Defining differentiators (all verified in code):**
+
 1. **3-layer machine-readable AI provenance** — JSON-LD + `X-AI-Provenance` HTTP header + `<meta name="ai-provenance">` — emitted via `generateMetadata()` on `/article/[id]`. C2PA explicitly rejected. EU AI Act Article 50 compliant. ✅
 2. **Editorial Dispatch design system** — Newsreader (headlines) + Instrument Sans (UI/body) + Commit Mono (metadata, self-hosted via `next/font/local`). CSS Subgrid for feed alignment. `--dispatch-ember #c7513f` accent. ✅
 3. **Content Availability Guard** — `contentAvailabilityEnum` with 4 tiers; only `partial_text`/`full_text` eligible for summarization. Double-enforced at Server Action AND API Route layers. Prevents AI hallucination. ✅
@@ -48,20 +49,23 @@ I have completed a meticulous ANALYZE → VALIDATE → IMPLEMENT → VERIFY → 
 ## 2. WHY — Design Philosophy & Principles (Confirmed)
 
 ### The Meticulous Approach (6-phase SOP, mandatory for all tasks)
+
 ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER. ✅ Documented identically across `GEMINI.md`, `CLAUDE.md`, `AGENTS.md`, MEP v5.1, and `README.md`.
 
 ### OneStopNews-Specific Principles (all verified)
-| Principle | Verified |
-|---|---|
-| **Library Discipline** (Shadcn/Radix first, wrap for bespoke styling) | ✅ Button uses `cva` + Radix `Slot` |
-| **Single Source of Truth** (Drizzle schema is the only source of DB types) | ✅ Mostly — see drift note (2 hand-written enum types in `score.ts` and `seed.ts`) |
-| **Opt-In Caching** (`cacheComponents: true`, everything dynamic by default) | ✅ Top-level in `next.config.ts` |
-| **Progressive Enhancement** (View Transitions silently degrade) | ✅ `experimental.viewTransition: true`; `PageTransition.tsx` has graceful degradation |
-| **Zero `any`** (TS strict, prefer `unknown`) | ✅ `strict: true` + `noUncheckedIndexedAccess: true` + `verbatimModuleSyntax: true` + `erasableSyntaxOnly: true` |
-| **Auth at the DAL** (`proxy.ts` UX-only; real auth in `verifySession`/`verifyAdminSession`) | ✅ `dal.ts` uses `cache()` + `redirect()` |
-| **Content Guard** (never summarize `title_only`/`excerpt`) | ✅ Enforced in both `requestSummary` action AND `/api/summarize/[id]` route |
+
+| Principle                                                                                   | Verified                                                                                                         |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Library Discipline** (Shadcn/Radix first, wrap for bespoke styling)                       | ✅ Button uses `cva` + Radix `Slot`                                                                              |
+| **Single Source of Truth** (Drizzle schema is the only source of DB types)                  | ✅ Mostly — see drift note (2 hand-written enum types in `score.ts` and `seed.ts`)                               |
+| **Opt-In Caching** (`cacheComponents: true`, everything dynamic by default)                 | ✅ Top-level in `next.config.ts`                                                                                 |
+| **Progressive Enhancement** (View Transitions silently degrade)                             | ✅ `experimental.viewTransition: true`; `PageTransition.tsx` has graceful degradation                            |
+| **Zero `any`** (TS strict, prefer `unknown`)                                                | ✅ `strict: true` + `noUncheckedIndexedAccess: true` + `verbatimModuleSyntax: true` + `erasableSyntaxOnly: true` |
+| **Auth at the DAL** (`proxy.ts` UX-only; real auth in `verifySession`/`verifyAdminSession`) | ✅ `dal.ts` uses `cache()` + `redirect()`                                                                        |
+| **Content Guard** (never summarize `title_only`/`excerpt`)                                  | ✅ Enforced in both `requestSummary` action AND `/api/summarize/[id]` route                                      |
 
 ### Anti-Generic Posture (Confirmed)
+
 - Newsreader + Instrument Sans + Commit Mono only — Inter, Roboto, Space Grotesk explicitly rejected. ✅
 - Design tokens via `@theme` block in `globals.css`; raw hex forbidden in Tailwind classes. ✅
 - `.font-editorial` bakes in `font-weight: 800`, `line-height: 1.1`, `letter-spacing: -0.02em`. ✅
@@ -71,23 +75,25 @@ ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER. ✅ Document
 ## 3. HOW — Architecture & Technical Implementation (Confirmed with minor drift)
 
 ### Tech Stack (verified)
-| Layer | Documented | Installed |
-|---|---|---|
-| Next.js | ≥16.0.7 (installed 16.2.9) | ✅ `^16.2.9` |
-| React | 19.2 | ✅ `^19.2.7` |
-| Node.js | ≥24 LTS | ✅ `engines.node: ">=24.0.0"`, Dockerfiles use `node:24-alpine` |
-| PostgreSQL | 17 | ✅ docker-compose + CI |
-| Redis | 7.x | ✅ |
-| BullMQ | v5 | ✅ installed (via `"latest"` — minor drift, lockfile resolves to v5) |
-| Drizzle ORM | 0.36+ | ✅ installed |
-| Auth.js | 5.0.0-beta.31 + @auth/core@0.41.2 | ⚠️ `next-auth` pinned correctly; `@auth/core` not explicitly listed (transitive) |
-| Tailwind | v4 (4.3.0) + `@tailwindcss/postcss@4.3.1` | ✅ |
-| Vercel AI SDK | `ai@6` + `@ai-sdk/anthropic@3` + `@ai-sdk/openai@3` | ⚠️ `ai` is `"latest"` (resolves to v6); `@ai-sdk/*` pinned correctly |
-| Zod | 4.4.3 | ✅ resolved to 4.4.3 |
-| Vitest | ^2.x | ⚠️ Resolved to 4.1.8 (newer than docs claim — not a regression) |
-| TypeScript | strict mode | ✅ All 4 strict flags enabled |
+
+| Layer         | Documented                                          | Installed                                                                        |
+| ------------- | --------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Next.js       | ≥16.0.7 (installed 16.2.9)                          | ✅ `^16.2.9`                                                                     |
+| React         | 19.2                                                | ✅ `^19.2.7`                                                                     |
+| Node.js       | ≥24 LTS                                             | ✅ `engines.node: ">=24.0.0"`, Dockerfiles use `node:24-alpine`                  |
+| PostgreSQL    | 17                                                  | ✅ docker-compose + CI                                                           |
+| Redis         | 7.x                                                 | ✅                                                                               |
+| BullMQ        | v5                                                  | ✅ installed (via `"latest"` — minor drift, lockfile resolves to v5)             |
+| Drizzle ORM   | 0.36+                                               | ✅ installed                                                                     |
+| Auth.js       | 5.0.0-beta.31 + @auth/core@0.41.2                   | ⚠️ `next-auth` pinned correctly; `@auth/core` not explicitly listed (transitive) |
+| Tailwind      | v4 (4.3.0) + `@tailwindcss/postcss@4.3.1`           | ✅                                                                               |
+| Vercel AI SDK | `ai@6` + `@ai-sdk/anthropic@3` + `@ai-sdk/openai@3` | ⚠️ `ai` is `"latest"` (resolves to v6); `@ai-sdk/*` pinned correctly             |
+| Zod           | 4.4.3                                               | ✅ resolved to 4.4.3                                                             |
+| Vitest        | ^2.x                                                | ⚠️ Resolved to 4.1.8 (newer than docs claim — not a regression)                  |
+| TypeScript    | strict mode                                         | ✅ All 4 strict flags enabled                                                    |
 
 ### 5-Layer Architecture (verified)
+
 ```
 Layer 0: proxy.ts          ✅ Cookie check + redirect only; ZERO DB calls
 Layer 1: App Router        ✅ No data fetching in layouts
@@ -95,9 +101,11 @@ Layer 2: Feature Modules   ✅ All DB access via queries.ts
 Layer 3: Domain Services   ✅ normalize.ts + score.ts have ZERO framework/DB imports
 Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 ```
+
 **Minor drift**: `(admin)/layout.tsx` does NOT call `verifyAdminSession()` directly — it delegates to per-page data components wrapped in `<Suspense>` (a deliberate `cacheComponents` workaround). The guard still runs at Layer 1 page-entry, but not at the layout boundary as docs claim.
 
 ### Database Schema (verified)
+
 - **11 tables**: 8 business (`users`, `categories`, `subcategories`, `sources`, `articles`, `summaries`, `pushSubscriptions`, `userPreferences`) + 4 Auth.js adapter (`users` shared, `accounts`, `sessions`, `verificationTokens`). ✅
 - `contentAvailabilityEnum` (4 values), `summaryStatusEnum` (5 values, no `"error"`). ✅
 - `articles.body` (text, nullable, added via `0003_strong_mac_gargan.sql`). ✅
@@ -111,6 +119,7 @@ Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 - **6 migrations** (0000–0005) in journal. ✅
 
 ### Worker Pipeline (verified — 33/34 checks PASS)
+
 - **4 BullMQ workers**: ingest (50), summarize (5), score (20), feedSlice (10). ✅
 - **Graceful shutdown** via SIGTERM/SIGINT → `worker.close()` → `process.exit(0)`. ✅
 - **Real `rss-parser`** in `parseFeed.ts` (NOT stub). Atom detection via raw XML root `<feed>`. ✅
@@ -124,6 +133,7 @@ Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 - **Drift**: `PUSH_KEY_ENCRYPTION_KEY` validation is lazy (inside `getKey()`) not at module load — docs claim fail-fast.
 
 ### AI Provenance (verified)
+
 - `generateProvenanceMetadata()` returns `{ jsonLd, httpHeader, metaTag }`. ✅
 - JSON-LD uses `schema.org/CreativeWork`. ✅
 - HTTP header is base64-encoded JSON with `compliance: "eu-ai-act-art50"`. ✅
@@ -131,6 +141,7 @@ Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 - `/article/[id]/page.tsx` emits all 3 layers via `metadata.other`. ✅
 
 ### Auth (verified)
+
 - Auth.js v5 `5.0.0-beta.31`, JWT strategy, DrizzleAdapter. ✅
 - `verifySession()` uses `cache()` + `redirect()` (never throws). ✅
 - `buildProviders()` conditionally adds Google/GitHub only when both env vars present. ✅
@@ -139,11 +150,13 @@ Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 - **Drift**: `TRUSTED_PROXY` not declared in Zod env schema — read directly via `process.env.TRUSTED_PROXY` in `/api/articles` route.
 
 ### Rate Limiting (verified)
+
 - `/api/articles` = 20 req/s per IP via Redis fixed-window counter. ✅
 - `TRUSTED_PROXY=true` switches to rightmost IP (anti-spoofing). ✅
 - Returns 429 with `Retry-After` + `X-RateLimit-Remaining` headers. ✅
 
 ### Testing & Quality Gates (verified live)
+
 - `pnpm check` = `tsc --noEmit && pnpm lint --max-warnings 0` → **PASS, silent exit, zero errors**. ✅
 - `pnpm test` → **279 tests across 49 suites PASS in 15.12s**. ✅
 - `vitest.config.ts` excludes `e2e/` + `playwright.config.ts`. ✅
@@ -154,6 +167,7 @@ Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 - Playwright config has Chromium + Firefox + WebKit projects + auto-start web server. ✅
 
 ### Docker & Deployment (verified)
+
 - All 4 Dockerfiles pinned to `node:24-alpine`. ✅
 - `Dockerfile.worker` runs `tsx src/workers/index.ts` directly (no `dist/`, no `worker:build`). ✅
 - `Dockerfile.web` uses `output: "standalone"`. ✅
@@ -165,17 +179,17 @@ Layer 4: Infrastructure    ✅ Drizzle, Auth.js, BullMQ, AI SDK isolated
 
 ## 4. Current Project Status
 
-| Aspect | Status |
-|---|---|
-| **Phase** | All 15 phases COMPLETE (Phase 15 = Production Readiness: Dockerfiles, Load More, Drop `keys` column, OAuth) |
-| **Test count** | **279 tests across 49 suites + 10 Playwright E2E tests** — verified live (15.12s) |
-| **TypeScript** | Zero errors (`tsc --noEmit` clean) |
-| **ESLint** | Zero warnings (`--max-warnings 0` clean) |
-| **Test coverage thresholds** | Configured (80% lines/functions/statements, 70% branches) |
-| **Migrations** | 6 migrations (0000–0005) in journal, additive-only |
-| **CI/CD** | GitHub Actions `ci.yml` + `e2e.yml` on push/PR to main |
-| **Production artifacts** | `Dockerfile.web`, `Dockerfile.worker`, `docker-compose.prod.yml`, `scripts/deploy.sh` |
-| **Documentation drift** | `Codebase_Review_Validation_Report_2.md` is **stale** (claims Phase 14 / 251 tests; actual is Phase 15 / 279 tests) |
+| Aspect                       | Status                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Phase**                    | All 15 phases COMPLETE (Phase 15 = Production Readiness: Dockerfiles, Load More, Drop `keys` column, OAuth)         |
+| **Test count**               | **279 tests across 49 suites + 10 Playwright E2E tests** — verified live (15.12s)                                   |
+| **TypeScript**               | Zero errors (`tsc --noEmit` clean)                                                                                  |
+| **ESLint**                   | Zero warnings (`--max-warnings 0` clean)                                                                            |
+| **Test coverage thresholds** | Configured (80% lines/functions/statements, 70% branches)                                                           |
+| **Migrations**               | 6 migrations (0000–0005) in journal, additive-only                                                                  |
+| **CI/CD**                    | GitHub Actions `ci.yml` + `e2e.yml` on push/PR to main                                                              |
+| **Production artifacts**     | `Dockerfile.web`, `Dockerfile.worker`, `docker-compose.prod.yml`, `scripts/deploy.sh`                               |
+| **Documentation drift**      | `Codebase_Review_Validation_Report_2.md` is **stale** (claims Phase 14 / 251 tests; actual is Phase 15 / 279 tests) |
 
 ---
 
@@ -250,6 +264,7 @@ Your `OneStopNews` codebase is a **production-grade, mature Phase-15-complete pl
 The drift I detected is mostly cosmetic (version pins, stale docs, missing CSS utility class) with **5 medium-severity items worth fixing before any production deploy** (admin guard placement, `TRUSTED_PROXY` schema, lazy push-key validation, prod Redis policy, deploy script shebang).
 
 **Next steps you may want to consider:**
+
 - Tell me which of the 5 medium-severity drifts you'd like me to fix first — I can implement each one following the Meticulous Approach (ANALYZE → PLAN → VALIDATE → IMPLEMENT → VERIFY → DELIVER) with TDD where applicable.
 
 ---
@@ -279,28 +294,28 @@ I have re-validated every severity-rated finding by reading the actual source fi
 
 ### Final Severity Matrix
 
-| # | Finding | Severity | Confirmed? | Root Cause |
-|---|---|---|---|---|
-| **1** | `(admin)/layout.tsx` does not call `verifyAdminSession()` | **HIGH** (security exposure) | ✅ Confirmed in source | Next.js 16 `cacheComponents` rejects async layouts; the layout was made synchronous as a workaround, pushing the guard into per-page data components. **Latent risk:** any new admin page added without a Suspense-wrapped data component that calls `verifyAdminSession()` will be publicly accessible. |
-| **2** | `TRUSTED_PROXY` not declared in Zod env schema | **MEDIUM** (silent misconfig) | ✅ Confirmed in source | When `TRUSTED_PROXY` was added in Phase 14, it was read directly via `process.env` instead of being added to the Zod schema. This violates the "all env vars declared in Zod" principle and means typos cannot be caught at boot. |
-| **3** | `PUSH_KEY_ENCRYPTION_KEY` validation is lazy, not at module load | **MEDIUM** (deferred failure) | ✅ Confirmed in source | `encrypt.ts` calls `getKey()` inside `encryptPushKeys()`/`decryptPushKeys()` rather than at module scope. Boot succeeds even if the env var is missing/invalid; first push operation 500s. |
-| **4** | `docker-compose.prod.yml` Redis missing `noeviction` + AOF | **MEDIUM** (data loss under pressure) | ✅ Confirmed in source | The `command:` block was added to `docker-compose-dev.yml:51-57` (correctly) but never propagated to `docker-compose.prod.yml:71-80`. Default Redis policy is `noeviction` BUT without `--appendonly yes` there's no AOF persistence — jobs can be lost on Redis restart. |
-| **5** | `scripts/deploy.sh` shebang malformed | **MEDIUM** (broken deploy script) | ✅ Confirmed in source | Line 1 is `#!/bin/bash.# Deployment script...` — a single line where shebang is concatenated with a comment. The interpreter path becomes `/bin/bash.#` which doesn't exist; the script won't execute via `./deploy.sh`. |
+| #     | Finding                                                          | Severity                              | Confirmed?             | Root Cause                                                                                                                                                                                                                                                                                               |
+| ----- | ---------------------------------------------------------------- | ------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | `(admin)/layout.tsx` does not call `verifyAdminSession()`        | **HIGH** (security exposure)          | ✅ Confirmed in source | Next.js 16 `cacheComponents` rejects async layouts; the layout was made synchronous as a workaround, pushing the guard into per-page data components. **Latent risk:** any new admin page added without a Suspense-wrapped data component that calls `verifyAdminSession()` will be publicly accessible. |
+| **2** | `TRUSTED_PROXY` not declared in Zod env schema                   | **MEDIUM** (silent misconfig)         | ✅ Confirmed in source | When `TRUSTED_PROXY` was added in Phase 14, it was read directly via `process.env` instead of being added to the Zod schema. This violates the "all env vars declared in Zod" principle and means typos cannot be caught at boot.                                                                        |
+| **3** | `PUSH_KEY_ENCRYPTION_KEY` validation is lazy, not at module load | **MEDIUM** (deferred failure)         | ✅ Confirmed in source | `encrypt.ts` calls `getKey()` inside `encryptPushKeys()`/`decryptPushKeys()` rather than at module scope. Boot succeeds even if the env var is missing/invalid; first push operation 500s.                                                                                                               |
+| **4** | `docker-compose.prod.yml` Redis missing `noeviction` + AOF       | **MEDIUM** (data loss under pressure) | ✅ Confirmed in source | The `command:` block was added to `docker-compose-dev.yml:51-57` (correctly) but never propagated to `docker-compose.prod.yml:71-80`. Default Redis policy is `noeviction` BUT without `--appendonly yes` there's no AOF persistence — jobs can be lost on Redis restart.                                |
+| **5** | `scripts/deploy.sh` shebang malformed                            | **MEDIUM** (broken deploy script)     | ✅ Confirmed in source | Line 1 is `#!/bin/bash.# Deployment script...` — a single line where shebang is concatenated with a comment. The interpreter path becomes `/bin/bash.#` which doesn't exist; the script won't execute via `./deploy.sh`.                                                                                 |
 
 ### Additional Lower-Severity Findings (validated, will batch into plan)
 
-| # | Finding | Severity | Root Cause |
-|---|---|---|---|
-| **6** | 9 deps use `"latest"` instead of documented pins (`ai`, `bullmq`, `ioredis`, `zod`, `tailwindcss`, `vitest`, `postgres`, `luxon`, `drizzle-orm`) | LOW | Pattern propagated across multiple phases; lockfile is frozen so reproducible, but `package.json` doesn't reflect documented contract. |
-| **7** | `@auth/core`, `@playwright/test`, `@axe-core/playwright` not declared as direct deps | LOW | Transitive deps that should be explicit per Library Discipline. |
-| **8** | 2 hand-written enum types in `score.ts:16` and `seed.ts` instead of deriving via `typeof enum.enumValues[number]` | LOW | Pattern inconsistency — `determineContentAvailability.ts` does it correctly. |
-| **9** | `db:push` script still in `package.json` despite "no push in prod" rule | LOW | Legacy script never removed. |
-| **10** | `fastupdate=off` GIN index commented out in `custom-indexes.sql` | LOW | Documentation overstates what ships by default. |
-| **11** | `getFeedArticles` uses `innerJoin` (docs claim LEFT JOIN) | LOW | Documentation drift; code is internally consistent. |
-| **12** | `getCategories` function doesn't exist (docs reference it) | LOW | Documentation drift; closest is `getCategoryMap` using `cacheLife("feed")` not `cacheLife("reference")`. |
-| **13** | `.number-counter` CSS class referenced in README but missing from `globals.css` | LOW | Documentation drift; class never implemented. |
-| **14** | `e2e.yml` doesn't explicitly list browsers or axe-core steps | LOW | Delegates to `playwright.config.ts` which does have all 3 browsers. Not a functional gap. |
-| **15** | `docker-compose-sample.yml` stale (different Redis policy, non-existent paths) | LOW | Legacy sample file not maintained. |
+| #      | Finding                                                                                                                                          | Severity | Root Cause                                                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **6**  | 9 deps use `"latest"` instead of documented pins (`ai`, `bullmq`, `ioredis`, `zod`, `tailwindcss`, `vitest`, `postgres`, `luxon`, `drizzle-orm`) | LOW      | Pattern propagated across multiple phases; lockfile is frozen so reproducible, but `package.json` doesn't reflect documented contract. |
+| **7**  | `@auth/core`, `@playwright/test`, `@axe-core/playwright` not declared as direct deps                                                             | LOW      | Transitive deps that should be explicit per Library Discipline.                                                                        |
+| **8**  | 2 hand-written enum types in `score.ts:16` and `seed.ts` instead of deriving via `typeof enum.enumValues[number]`                                | LOW      | Pattern inconsistency — `determineContentAvailability.ts` does it correctly.                                                           |
+| **9**  | `db:push` script still in `package.json` despite "no push in prod" rule                                                                          | LOW      | Legacy script never removed.                                                                                                           |
+| **10** | `fastupdate=off` GIN index commented out in `custom-indexes.sql`                                                                                 | LOW      | Documentation overstates what ships by default.                                                                                        |
+| **11** | `getFeedArticles` uses `innerJoin` (docs claim LEFT JOIN)                                                                                        | LOW      | Documentation drift; code is internally consistent.                                                                                    |
+| **12** | `getCategories` function doesn't exist (docs reference it)                                                                                       | LOW      | Documentation drift; closest is `getCategoryMap` using `cacheLife("feed")` not `cacheLife("reference")`.                               |
+| **13** | `.number-counter` CSS class referenced in README but missing from `globals.css`                                                                  | LOW      | Documentation drift; class never implemented.                                                                                          |
+| **14** | `e2e.yml` doesn't explicitly list browsers or axe-core steps                                                                                     | LOW      | Delegates to `playwright.config.ts` which does have all 3 browsers. Not a functional gap.                                              |
+| **15** | `docker-compose-sample.yml` stale (different Redis policy, non-existent paths)                                                                   | LOW      | Legacy sample file not maintained.                                                                                                     |
 
 ---
 
@@ -315,6 +330,7 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 **Root cause fix:** Next.js 16 `cacheComponents` requires that any async operation in a layout be wrapped in `<Suspense>`. The current pattern of pushing auth into page data components is fragile — it relies on every page author remembering to do it. The fix is to introduce an `AdminGuard` async Server Component that calls `verifyAdminSession()`, wrap it in `<Suspense>` inside the layout, and render `children` only after the guard passes.
 
 **Files affected:**
+
 - `src/app/(admin)/layout.tsx` — add `<AdminGuard>` wrapper around `{children}`
 - `src/shared/components/auth/AdminGuard.tsx` — **NEW** — async Server Component that calls `verifyAdminSession()` then returns `children`
 - `src/shared/components/auth/AdminGuardSkeleton.tsx` — **NEW** — Suspense fallback (dark sidebar + spinner)
@@ -323,6 +339,7 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 - `src/features/sources/components/SourcesData.tsx` — remove redundant `verifyAdminSession()` call (now handled by layout)
 
 **TDD test plan (RED first):**
+
 1. Test: `AdminGuard` renders `children` when `verifyAdminSession` returns admin user
 2. Test: `AdminGuard` calls `redirect("/")` when user is non-admin
 3. Test: `AdminGuard` calls `redirect("/sign-in")` when no session
@@ -341,6 +358,7 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 **Root cause fix:** Add `TRUSTED_PROXY: z.string().optional()` to `envSchema` in `src/lib/env/index.ts`. Switch `src/app/api/articles/route.ts:51` from `process.env.TRUSTED_PROXY` to `env.TRUSTED_PROXY`. This aligns with the documented "all env vars declared in Zod" principle.
 
 **Files affected:**
+
 - `src/lib/env/index.ts` — add `TRUSTED_PROXY: z.string().optional()` to schema
 - `src/app/api/articles/route.ts` — import `env` from `@/lib/env`, replace `process.env.TRUSTED_PROXY` with `env.TRUSTED_PROXY`
 - `src/lib/env/index.test.ts` — **NEW** (or extend existing test if present) — TDD test asserting `TRUSTED_PROXY` is parsed by schema
@@ -350,6 +368,7 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 - `src/test/setup.ts` — add `process.env.TRUSTED_PROXY = "true"` for test isolation
 
 **TDD test plan (RED first):**
+
 1. Test: `envSchema.parse({ ...allRequiredVars, TRUSTED_PROXY: "true" })` succeeds with `TRUSTED_PROXY: "true"`
 2. Test: `envSchema.parse({ ...allRequiredVars })` succeeds with `TRUSTED_PROXY: undefined` (optional)
 3. Test: `/api/articles` route uses rightmost IP when `env.TRUSTED_PROXY === "true"`
@@ -368,10 +387,12 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 **Root cause fix:** Move the validation from `getKey()` (called lazily) to module scope. Cache the validated key buffer so we don't re-validate on every call.
 
 **Files affected:**
+
 - `src/lib/security/encrypt.ts` — hoist validation to module scope; replace `getKey()` calls with cached buffer
 - `src/lib/security/encrypt.test.ts` — extend with TDD test: module throws at import time when key is missing
 
 **TDD test plan (RED first):**
+
 1. Test: Importing `encrypt.ts` with valid `PUSH_KEY_ENCRYPTION_KEY` does NOT throw
 2. Test: Importing `encrypt.ts` with missing `PUSH_KEY_ENCRYPTION_KEY` throws at module load (use `vi.resetModules()` + dynamic import)
 3. Test: Importing `encrypt.ts` with invalid (non-hex) key throws at module load
@@ -393,12 +414,14 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 **Root cause fix (deploy.sh):** Split line 1 into `#!/bin/bash` on line 1 and `# Deployment script...` on line 2. Also fix the `"$DOCKER_REGISTRY/onestopnews-web:$IMAGE_TAG"` quoted-variable bug (line 20-21 — `"DOCKER_REGISTRY/..."` is a literal string, not variable interpolation; should be `"${DOCKER_REGISTRY}/onestopnews-web:$IMAGE_TAG"`).
 
 **Files affected:**
+
 - `docker-compose.prod.yml` — add `command:` block to redis service
 - `scripts/deploy.sh` — fix shebang + fix DOCKER_REGISTRY variable interpolation
 - `scripts/deploy.test.sh` — **NEW** (optional) — shellcheck-based test for shebang validity
 - (No TypeScript tests needed for infra-only changes per TDD exception for "pure CSS/layout changes" — extended here to "pure infra/config changes".)
 
 **TDD test plan:**
+
 - Run `shellcheck scripts/deploy.sh` (or `bash -n scripts/deploy.sh` for syntax check) before and after fix
 - Validate `docker-compose.prod.yml` syntax with `docker compose -f docker-compose.prod.yml config` (offline, no containers)
 
@@ -414,19 +437,20 @@ I propose **5 sequential batches**. Each batch is independently testable and com
 
 This batch is non-urgent and can be deferred or split further. Sub-items:
 
-| Sub-item | Files | Approach |
-|---|---|---|
-| 5a. Replace `"latest"` with pinned ranges | `package.json` | Use `pnpm-lock.yaml` to discover resolved versions, pin with `^` ranges matching the major version |
-| 5b. Add missing direct deps (`@auth/core`, `@playwright/test`, `@axe-core/playwright`) | `package.json` | `pnpm add -D @playwright/test@latest @axe-core/playwright@latest && pnpm add @auth/core@0.41.2` |
-| 5c. DRY up enum types | `src/lib/db/schema.ts` (export `ContentAvailability` type), `src/domain/ranking/score.ts`, `src/lib/db/seed.ts` | Export `ContentAvailability = typeof contentAvailabilityEnum.enumValues[number]` from `schema.ts`; import in `score.ts` and `seed.ts` |
-| 5d. Remove `db:push` script | `package.json` | Delete the `"db:push": "drizzle-kit push"` line |
-| 5e. Uncomment `fastupdate=off` GIN index | `drizzle/custom-indexes.sql` | Either uncomment OR update documentation to reflect that this is opt-in |
-| 5f. Update docs: `getFeedArticles` uses `innerJoin` | `CLAUDE.md`, `AGENTS.md`, `README.md` | Replace "LEFT JOIN" with "INNER JOIN" in docs |
-| 5g. Update docs: `getCategoryMap` is the function name | `CLAUDE.md`, `AGENTS.md`, `README.md` | Replace `getCategories` references with `getCategoryMap`; note that it uses `cacheLife("feed")` not `cacheLife("reference")` |
-| 5h. Add `.number-counter` CSS class OR remove from README | `src/app/globals.css` or `README.md` | Add the class definition (preferred) — `@apply font-editorial text-6xl font-bold text-ink-900 transition-all duration-1000;` |
-| 5i. Delete `docker-compose-sample.yml` | root | Remove the stale file (or update if it serves a purpose) |
+| Sub-item                                                                               | Files                                                                                                           | Approach                                                                                                                              |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 5a. Replace `"latest"` with pinned ranges                                              | `package.json`                                                                                                  | Use `pnpm-lock.yaml` to discover resolved versions, pin with `^` ranges matching the major version                                    |
+| 5b. Add missing direct deps (`@auth/core`, `@playwright/test`, `@axe-core/playwright`) | `package.json`                                                                                                  | `pnpm add -D @playwright/test@latest @axe-core/playwright@latest && pnpm add @auth/core@0.41.2`                                       |
+| 5c. DRY up enum types                                                                  | `src/lib/db/schema.ts` (export `ContentAvailability` type), `src/domain/ranking/score.ts`, `src/lib/db/seed.ts` | Export `ContentAvailability = typeof contentAvailabilityEnum.enumValues[number]` from `schema.ts`; import in `score.ts` and `seed.ts` |
+| 5d. Remove `db:push` script                                                            | `package.json`                                                                                                  | Delete the `"db:push": "drizzle-kit push"` line                                                                                       |
+| 5e. Uncomment `fastupdate=off` GIN index                                               | `drizzle/custom-indexes.sql`                                                                                    | Either uncomment OR update documentation to reflect that this is opt-in                                                               |
+| 5f. Update docs: `getFeedArticles` uses `innerJoin`                                    | `CLAUDE.md`, `AGENTS.md`, `README.md`                                                                           | Replace "LEFT JOIN" with "INNER JOIN" in docs                                                                                         |
+| 5g. Update docs: `getCategoryMap` is the function name                                 | `CLAUDE.md`, `AGENTS.md`, `README.md`                                                                           | Replace `getCategories` references with `getCategoryMap`; note that it uses `cacheLife("feed")` not `cacheLife("reference")`          |
+| 5h. Add `.number-counter` CSS class OR remove from README                              | `src/app/globals.css` or `README.md`                                                                            | Add the class definition (preferred) — `@apply font-editorial text-6xl font-bold text-ink-900 transition-all duration-1000;`          |
+| 5i. Delete `docker-compose-sample.yml`                                                 | root                                                                                                            | Remove the stale file (or update if it serves a purpose)                                                                              |
 
 **TDD test plan (where applicable):**
+
 - 5c: After refactor, `pnpm check` and `pnpm test` pass; no behavior change
 - All sub-items: `pnpm check && pnpm test` must remain green; `pnpm install --frozen-lockfile` must still succeed
 
@@ -441,35 +465,41 @@ This batch is non-urgent and can be deferred or split further. Sub-items:
 I have validated the plan against the actual codebase for feasibility. Findings:
 
 ### ✅ Batch 1 Feasibility (AdminGuard)
+
 - `verifyAdminSession()` is already async-friendly (uses `cache()` from `react`)
 - `(admin)/layout.tsx` is currently synchronous — making it async + wrapping children in `<Suspense>` is the canonical Next.js 16 pattern
 - `SummariesData.tsx` and `SourcesData.tsx` already call `verifyAdminSession()` — we can safely remove these calls after the layout-level guard is in place (the `cache()` memoization means the call is deduplicated per-request anyway)
 - **No risk of breaking existing tests** — existing tests for `SummariesData`/`SourcesData` already mock `verifyAdminSession`
 
 ### ✅ Batch 2 Feasibility (TRUSTED_PROXY)
+
 - `envSchema` is a plain Zod object — adding a field is safe
 - `env.TRUSTED_PROXY` access pattern is identical to other env vars (`env.DATABASE_URL` etc.)
 - The `/api/articles/route.test.ts` already exists — extending it is straightforward
 - CI env block already sets 14 vars; adding 1 more is trivial
 
 ### ✅ Batch 3 Feasibility (Push Key Validation)
+
 - `encrypt.ts` is small (62 lines) — refactor is contained
 - Module-scope validation is the same pattern as `env/index.ts:109` (`export const env = validateEnv();`)
 - Tests already exist at `src/lib/security/encrypt.test.ts` — extending with module-load tests via `vi.resetModules()` is the standard Vitest pattern
 - **Risk:** Vitest setup file already sets `PUSH_KEY_ENCRYPTION_KEY` to a valid 64-hex string, so importing `encrypt.ts` in existing tests will continue to work. New "missing key" test must use `vi.resetModules()` + `vi.stubEnv("PUSH_KEY_ENCRYPTION_KEY", "")` BEFORE re-importing the module.
 
 ### ✅ Batch 4 Feasibility (Docker + Deploy Script)
+
 - `docker-compose-dev.yml:51-57` already has the correct command block — copy-paste with prod-appropriate `--maxmemory`
 - `deploy.sh` is 32 lines; the shebang fix is a 1-line split; the `DOCKER_REGISTRY` variable interpolation bug is also a 1-line fix (change `"DOCKER_REGISTRY/..."` to `"${DOCKER_REGISTRY}/..."`)
 - `docker compose config` is a non-destructive validation command (parses YAML without starting containers)
 
 ### ✅ Batch 5 Feasibility (Cleanup)
+
 - All sub-items are low-risk; no behavior changes
 - 5c (DRY enum types) requires careful refactor — the test for `score.ts` uses the existing type signature, so the test itself shouldn't need changes (just verify the type still satisfies the same constraint)
 - 5a (version pins) requires cross-referencing `pnpm-lock.yaml` to discover resolved versions — safe but tedious
 - **Risk:** Changing `package.json` versions requires `pnpm install` to succeed afterward; lockfile may need regeneration if any version is changed to a non-matching range
 
 ### 🚨 No Critical Issues Found
+
 After comprehensive re-validation, I confirm there are **no CRITICAL severity issues** — no production-down exposures, no data-loss bugs, no active security breaches. The 5 HIGH/MEDIUM issues are all latent risks that should be fixed before the next production deploy but don't block current development.
 
 ---
@@ -479,6 +509,7 @@ After comprehensive re-validation, I confirm there are **no CRITICAL severity is
 Below is the consolidated, sequenced ToDo list. Each item follows RED → GREEN → REFACTOR → COMMIT:
 
 ### Batch 1 — AdminGuard (HIGH)
+
 1. **[RED]** Write `src/shared/components/auth/AdminGuard.test.tsx` — 4 tests (renders children for admin; redirects non-admin to `/`; redirects no-session to `/sign-in`; layout wraps children in AdminGuard)
 2. **[GREEN]** Create `src/shared/components/auth/AdminGuard.tsx` + `AdminGuardSkeleton.tsx` — async Server Component calling `verifyAdminSession()`, returns `children` on success
 3. **[GREEN]** Update `src/app/(admin)/layout.tsx` — make async, wrap `{children}` in `<Suspense fallback={<AdminGuardSkeleton />}><AdminGuard>{children}</AdminGuard></Suspense>`
@@ -486,6 +517,7 @@ Below is the consolidated, sequenced ToDo list. Each item follows RED → GREEN 
 5. **[COMMIT]** Verify `pnpm check && pnpm test` green; commit "fix(admin): centralize verifyAdminSession in layout via AdminGuard"
 
 ### Batch 2 — TRUSTED_PROXY (MEDIUM)
+
 6. **[RED]** Extend `src/lib/env/index.test.ts` (or create) — 2 tests (TRUSTED_PROXY parsed when set; TRUSTED_PROXY optional when unset)
 7. **[RED]** Extend `src/app/api/articles/route.test.ts` — 2 tests (rightmost IP when TRUSTED_PROXY=true; leftmost IP when unset)
 8. **[GREEN]** Add `TRUSTED_PROXY: z.string().optional()` to `envSchema` in `src/lib/env/index.ts`
@@ -494,12 +526,14 @@ Below is the consolidated, sequenced ToDo list. Each item follows RED → GREEN 
 11. **[COMMIT]** Verify `pnpm check && pnpm test` green; commit "fix(env): declare TRUSTED_PROXY in Zod schema; route uses env.TRUSTED_PROXY"
 
 ### Batch 3 — Push Key Validation (MEDIUM)
+
 12. **[RED]** Extend `src/lib/security/encrypt.test.ts` — 3 new tests (module loads OK with valid key; module throws at import when key missing; module throws at import when key non-hex)
 13. **[GREEN]** Refactor `src/lib/security/encrypt.ts` — hoist validation to module scope: `const KEY_HEX = process.env.PUSH_KEY_ENCRYPTION_KEY; if (!KEY_HEX || !/^[0-9a-fA-F]{64}$/.test(KEY_HEX)) throw new Error(...); const KEY_BUFFER = Buffer.from(KEY_HEX, "hex");` then use `KEY_BUFFER` in encrypt/decrypt
 14. **[REFACTOR]** Remove `getKey()` function; ensure `encryptPushKeys`/`decryptPushKeys` use cached `KEY_BUFFER`
 15. **[COMMIT]** Verify `pnpm check && pnpm test` green; commit "fix(security): hoist PUSH_KEY_ENCRYPTION_KEY validation to module load"
 
 ### Batch 4 — Docker + Deploy Script (MEDIUM)
+
 16. **[VERIFY]** `bash -n scripts/deploy.sh` should fail (proves the bug exists) — capture current broken state
 17. **[GREEN]** Fix `scripts/deploy.sh` line 1 — split shebang from comment; also fix `"${DOCKER_REGISTRY}/..."` variable interpolation on lines 20-21
 18. **[VERIFY]** `bash -n scripts/deploy.sh` exits 0 (proves the fix)
@@ -508,6 +542,7 @@ Below is the consolidated, sequenced ToDo list. Each item follows RED → GREEN 
 21. **[COMMIT]** Commit "fix(infra): harden prod Redis (noeviction+AOF); fix deploy.sh shebang+var interpolation"
 
 ### Batch 5 — Documentation/Code Alignment (LOW)
+
 22. **[GREEN]** 5c: Export `ContentAvailability` type from `src/lib/db/schema.ts`; import in `score.ts:16` and `seed.ts` (replace hand-written unions)
 23. **[VERIFY]** `pnpm check && pnpm test` green
 24. **[GREEN]** 5d: Remove `"db:push"` script from `package.json`
@@ -547,10 +582,10 @@ Per the Meticulous Approach, **I will not proceed to IMPLEMENT (Phase 5) until y
 ---
 
 I'll execute Batches 1-4 with TDD discipline, one commit per batch, on `main`. Let me set up the environment first and then begin.
+
 ## Phase 0 — Setup & Baseline Verification
 
-**Baseline verified:** `pnpm check` passes (zero TS errors, zero lint warnings), `pnpm test` passes **279/279 tests across 49 suites in 13.67s**. Working tree is clean. Now I begin TDD execution.
----
+## **Baseline verified:** `pnpm check` passes (zero TS errors, zero lint warnings), `pnpm test` passes **279/279 tests across 49 suites in 13.67s**. Working tree is clean. Now I begin TDD execution.
 
 ## Batch 1 — HIGH Security: Centralize Admin Auth Guard in Layout
 
@@ -564,17 +599,22 @@ Now run the test to confirm it FAILS (RED phase) — `AdminGuard` doesn't exist 
 **RED confirmed for both tests.** Now I move to GREEN.
 
 ### Step 1.2 — GREEN: Create AdminGuard + AdminGuardSkeleton
+
 Now run the AdminGuard test alone to see if it passes:
 **AdminGuard tests GREEN — all 4 pass.** Now update the layout to use AdminGuard.
 
 ### Step 1.3 — GREEN: Update `(admin)/layout.tsx`
+
 **Layout test GREEN.** Now the REFACTOR step.
 
 ### Step 1.4 — REFACTOR: Remove Redundant `verifyAdminSession()` Calls
 
 The layout now handles admin auth at the boundary, so `SummariesData.tsx:13` and `SourcesData.tsx:54` have redundant calls. The `cache()` memo in `dal.ts` deduplicates per-request, but removing the redundant calls keeps the code clean and signals intent clearly.
+
 ### Step 1.5 — VERIFY: Run Full Test Suite + Lint + tsc
+
 **Batch 1 VERIFIED GREEN:**
+
 - `pnpm check`: zero TS errors, zero ESLint warnings (silent exit)
 - `pnpm test`: **284 tests across 51 suites pass** (was 279/49 baseline → +5 tests, +2 suites for AdminGuard + layout tests)
 
@@ -582,6 +622,7 @@ Now commit Batch 1:
 Wait — `tsconfig.tsbuildinfo` shouldn't be tracked. Let me check the `.gitignore`:
 `tsconfig.tsbuildinfo` is already tracked from prior commits, so it's not gitignored. Since `tsc --noEmit` legitimately updates this file as a side effect, I'll exclude it from this commit to keep the batch focused on the AdminGuard change:
 **Batch 1 committed** (`b934be5`). Now Batch 2.
+
 ---
 
 ## Batch 2 — MEDIUM Security: Add `TRUSTED_PROXY` to Zod Env Schema
@@ -601,6 +642,7 @@ Let me look at how the env module is mocked elsewhere, and check how the route r
 I see — `cacheInvalidation.test.ts` uses `vi.mock("@/lib/env", ...)` to mock the env module entirely. That's the pattern I need.
 
 **Key design decision:** Since the route currently reads `process.env.TRUSTED_PROXY` and the test uses `vi.stubEnv`, the simplest fix that preserves test behavior is:
+
 1. Add `TRUSTED_PROXY: z.string().optional()` to the Zod schema (so it's declared/typed)
 2. Switch the route from `process.env.TRUSTED_PROXY` to `env.TRUSTED_PROXY`
 
@@ -614,6 +656,7 @@ Now run the env test (RED phase — `TRUSTED_PROXY` is not yet in schema, but si
 **RED confirmed for 2 of 4 tests** — the `true` and `false` value tests fail because `TRUSTED_PROXY` is being stripped as an unknown key. The other 2 tests pass (absence and arbitrary string). Now GREEN — add the field to the schema:
 
 ### Step 2.2 — GREEN: Add `TRUSTED_PROXY` to Zod Schema
+
 **Env schema test GREEN.** Now I need to switch the route to use `env.TRUSTED_PROXY` and update the route test to mock `@/lib/env` instead of using `vi.stubEnv`. First, update the route:
 Now update the route test. The existing test uses `vi.stubEnv("TRUSTED_PROXY", "true")` which won't work now since `env` is computed at module load. I need to mock `@/lib/env` like `cacheInvalidation.test.ts` does, and let the test dynamically control `env.TRUSTED_PROXY`:
 Now update the test that uses `vi.stubEnv("TRUSTED_PROXY", "true")` to instead mutate `mockEnv.TRUSTED_PROXY`:
@@ -621,15 +664,20 @@ Now run the route test to verify it still passes with the new mock pattern:
 **All 12 route tests pass.** Now I need to update `.env.example`, `ci.yml`, and `test/setup.ts` to declare `TRUSTED_PROXY`.
 
 ### Step 2.3 — GREEN: Update `.env.example`, `ci.yml`, `test/setup.ts`
+
 Now update `ci.yml` to set `TRUSTED_PROXY`:
 Now update `test/setup.ts` to also set `TRUSTED_PROXY` for local test runs:
+
 ### Step 2.4 — VERIFY: Full Test Suite + Lint + tsc
+
 **Batch 2 VERIFIED GREEN:**
+
 - `pnpm check`: zero TS errors, zero ESLint warnings
 - `pnpm test`: **288 tests across 52 suites pass** (was 284/51 after Batch 1 → +4 env tests, +1 env test suite)
 
 Now commit Batch 2:
 **Batch 2 committed** (`7e1166f`). Now Batch 3.
+
 ---
 
 ## Batch 3 — MEDIUM Security: Hoist `PUSH_KEY_ENCRYPTION_KEY` Validation to Module Load
@@ -644,11 +692,13 @@ Now run the tests to confirm RED for the new tests (the existing module-load beh
 **RED confirmed for 3 of the 4 new tests** — the missing key, too-short key, and non-hex key tests all fail because the module loads successfully (lazy validation). The "valid key" test passes (it should always pass). Now GREEN.
 
 ### Step 3.2 — GREEN: Hoist Validation to Module Scope
+
 Now run the encrypt tests to verify GREEN:
 **All 8 encrypt tests pass.** But there's a subtle concern — the `route.test.ts` for `/api/push/subscribe` mocks `@/lib/security/encrypt` so it won't be affected by the module-load validation. Let me also verify the `push/subscribe` route test still works, and check there are no other test files that import encrypt without mocking:
 **Full suite GREEN: 292 tests across 52 suites pass** (was 288/52 after Batch 2 → +4 module-load tests in the existing encrypt test suite). Now run `pnpm check` and commit:
 **`pnpm check` GREEN** (zero TS errors, zero lint warnings). Commit Batch 3:
 **Batch 3 committed** (`fe56890`). Now Batch 4.
+
 ---
 
 ## Batch 4 — MEDIUM Infra: Production Redis Hardening + Deploy Script Fix
@@ -668,16 +718,20 @@ Docker isn't available in this environment, so I'll use Python's `yaml` module t
 YAML parses fine — the bug is missing config, not malformed YAML. Now let me proceed with the GREEN fixes.
 
 ### Step 4.2 — GREEN: Fix `deploy.sh` Shebang + Variable Interpolation
+
 Now verify the fixes:
 Shebang is now clean (`#!/bin/bash$` — no concatenated comment), and variable interpolation is fixed (`"${DOCKER_REGISTRY}/..."` with `$` prefix). Now let me try executing the script directly to confirm it no longer fails with "cannot execute":
 **Bug #1 fixed**: The script now executes directly via `./deploy.sh` — the shebang is recognized, the script starts running, and only fails later because `docker` isn't installed in this environment (expected — that's not a bug).
 
 ### Step 4.3 — GREEN: Add `command:` Block to Prod Redis
+
 ### Step 4.4 — VERIFY: Validate YAML + Run Full Test Suite
+
 Both fixes verified. Now run the full test suite + lint to confirm no regression:
 **All green:** `pnpm check` clean, `pnpm test` 292/52 pass. Now I'll add the CI step for shell + YAML validation per your request.
 
 ### Step 4.5 — CI: Add Shell + YAML Validation Step
+
 I'll add a new "Validate Scripts & Configs" step that runs `bash -n` on shell scripts and validates YAML/docker-compose files. I'll place it right after Checkout (before the heavy install step) so it fails fast:
 Now let me locally simulate the CI step to make sure my validation logic works (since docker isn't available, I'll simulate the same checks the CI step runs):
 My Python f-string has an escaping issue (the `\"` inside the f-string in a single-quoted shell heredoc). Let me fix the YAML validation logic — I'll move it to a separate script file to avoid quoting hell:
@@ -685,10 +739,12 @@ Now update the CI step to use the script:
 Now let me simulate the CI step locally to verify it works end-to-end:
 **CI step simulation passes locally** — the gate catches both the shebang bug (now fixed) and YAML structural issues. Now let me also test that the gate **fails** when there's actually a bug. Let me temporarily break deploy.sh and confirm the gate catches it:
 **Negative test confirmed**: the CI gate correctly catches the malformed shebang and exits 1. Now restore the file and verify final state:
+
 ### Step 4.6 — Final VERIFY + Commit Batch 4
 
 Run the full test + check + YAML validation one more time before commit:
 **All green:**
+
 - `pnpm check`: zero TS errors, zero ESLint warnings
 - `pnpm test`: **292 tests across 52 suites pass** (unchanged from Batch 3 — Batch 4 is infra-only)
 - YAML validation: all 4 docker-compose files valid
@@ -696,12 +752,14 @@ Run the full test + check + YAML validation one more time before commit:
 
 Now commit Batch 4:
 **Batch 4 committed** (`8372baf`).
+
 ---
 
 ## Phase 5 — VERIFY: Final Comprehensive Validation
 
 Let me run a final end-to-end verification across all 4 batches and review the commit log:
 **Final verification complete — all systems green.**
+
 ---
 
 # Phase 6 — DELIVER: Complete Handoff
@@ -712,23 +770,23 @@ All 4 batches executed via TDD discipline, one commit per batch, on `main` branc
 
 ### Commit Log
 
-| Commit | Batch | Severity | Summary |
-|---|---|---|---|
-| `b934be5` | 1 | HIGH | `fix(admin): centralize verifyAdminSession in layout via AdminGuard` |
-| `7e1166f` | 2 | MEDIUM | `fix(env): declare TRUSTED_PROXY in Zod schema; route uses env.TRUSTED_PROXY` |
-| `fe56890` | 3 | MEDIUM | `fix(security): hoist PUSH_KEY_ENCRYPTION_KEY validation to module load` |
-| `8372baf` | 4 | MEDIUM | `fix(infra): harden prod Redis; fix deploy.sh; add CI validation gate` |
+| Commit    | Batch | Severity | Summary                                                                       |
+| --------- | ----- | -------- | ----------------------------------------------------------------------------- |
+| `b934be5` | 1     | HIGH     | `fix(admin): centralize verifyAdminSession in layout via AdminGuard`          |
+| `7e1166f` | 2     | MEDIUM   | `fix(env): declare TRUSTED_PROXY in Zod schema; route uses env.TRUSTED_PROXY` |
+| `fe56890` | 3     | MEDIUM   | `fix(security): hoist PUSH_KEY_ENCRYPTION_KEY validation to module load`      |
+| `8372baf` | 4     | MEDIUM   | `fix(infra): harden prod Redis; fix deploy.sh; add CI validation gate`        |
 
 ### Test Count Progression
 
-| Stage | Tests | Suites | Delta |
-|---|---|---|---|
-| Baseline (Phase 15) | 279 | 49 | — |
-| After Batch 1 (AdminGuard) | 284 | 51 | +5 tests, +2 suites |
-| After Batch 2 (TRUSTED_PROXY) | 288 | 52 | +4 tests, +1 suite |
-| After Batch 3 (encrypt module-load) | 292 | 52 | +4 tests |
-| After Batch 4 (infra) | 292 | 52 | +0 (infra-only, validated by CI gate) |
-| **Final** | **292** | **52** | **+13 tests, +3 suites** |
+| Stage                               | Tests   | Suites | Delta                                 |
+| ----------------------------------- | ------- | ------ | ------------------------------------- |
+| Baseline (Phase 15)                 | 279     | 49     | —                                     |
+| After Batch 1 (AdminGuard)          | 284     | 51     | +5 tests, +2 suites                   |
+| After Batch 2 (TRUSTED_PROXY)       | 288     | 52     | +4 tests, +1 suite                    |
+| After Batch 3 (encrypt module-load) | 292     | 52     | +4 tests                              |
+| After Batch 4 (infra)               | 292     | 52     | +0 (infra-only, validated by CI gate) |
+| **Final**                           | **292** | **52** | **+13 tests, +3 suites**              |
 
 ### Quality Gates Verified
 
@@ -741,12 +799,14 @@ All 4 batches executed via TDD discipline, one commit per batch, on `main` branc
 ### What Was Fixed (Root Causes Addressed)
 
 **Batch 1 — HIGH Security (AdminGuard):**
+
 - Created `src/shared/components/auth/AdminGuard.tsx` + `AdminGuardSkeleton.tsx`
 - Updated `(admin)/layout.tsx` to wrap children in `<Suspense><AdminGuard>{children}</AdminGuard></Suspense>`
 - Removed redundant `verifyAdminSession()` calls from `SummariesData` + `SourcesData` (safe due to `cache()` memoization)
 - **Result:** Any future admin page added under `(admin)/` is automatically protected at the layout boundary
 
 **Batch 2 — MEDIUM Security (TRUSTED_PROXY):**
+
 - Added `TRUSTED_PROXY: z.string().optional()` to Zod env schema
 - Switched `/api/articles` route from `process.env.TRUSTED_PROXY` to typed `env.TRUSTED_PROXY`
 - Updated `.env.example`, `ci.yml`, `test/setup.ts` to declare the var
@@ -754,12 +814,14 @@ All 4 batches executed via TDD discipline, one commit per batch, on `main` branc
 - **Result:** Typos in `TRUSTED_PROXY` are caught at boot; the var is now part of the validated env contract
 
 **Batch 3 — MEDIUM Security (Push Key Validation):**
+
 - Hoisted `PUSH_KEY_ENCRYPTION_KEY` validation from lazy `getKey()` to module scope
 - Cached the validated `KEY_BUFFER` so encrypt/decrypt don't re-validate on every call
 - Added 4 module-load tests using `vi.resetModules()` + dynamic `import()`
 - **Result:** Worker/web server fails fast at boot if env var is missing/invalid (was: 500 on first push operation)
 
 **Batch 4 — MEDIUM Infra (Redis + Deploy + CI Gate):**
+
 - Added `command:` block to `docker-compose.prod.yml` redis service: `--maxmemory 1gb --maxmemory-policy noeviction --appendonly yes --save 60 1000 --loglevel warning`
 - Fixed `scripts/deploy.sh` line 1 shebang (was concatenated with comment)
 - Fixed `scripts/deploy.sh` lines 20-21 `DOCKER_REGISTRY` variable interpolation (was missing `$` prefix)
@@ -782,15 +844,18 @@ Everything is committed and the working tree is clean (only `tsconfig.tsbuildinf
 I'll execute this meticulously: first read the existing skill files for reference, then audit the actual codebase to extract exact details, then synthesize a comprehensive new `onestopnews_SKILL.md`.
 
 ## Phase 1: ANALYZE — Plan + Audit Existing Artifacts
+
 Two existing skill files (3060 + 2218 lines). They're pre-Phase-16. I'll create a fresh, comprehensive one. Let me read the config files + design system first (most critical for tokens), then launch parallel subagents for the rest:
 Excellent — I have the complete design system + config. Now let me launch parallel subagents to extract details from the remaining file groups:
 I now have exhaustive details from all 4 parallel subagents covering UI components, feature components, lib/infra layer, and workers/routes. Combined with the config files I read directly, I have everything needed to write the comprehensive SKILL.md.
+
 ## Phase 2: IMPLEMENT — Write the Comprehensive SKILL.md
 
 Given the size (will be a large file with 20 sections), I'll write it in multiple passes to avoid JSON validation issues:
 The SKILL.md is written. Now verify pnpm check still green (the file is Markdown, so shouldn't affect anything, but let's confirm) and commit:
 **SKILL.md written: 2746 lines. `pnpm check` clean. `pnpm test` 292/52 green.** Now commit:
 **SKILL.md committed** (`ae60d21`). Let me do a final verification:
+
 ---
 
 # OneStopNews SKILL.md — Complete
@@ -801,12 +866,12 @@ The comprehensive `onestopnews_SKILL.md` has been created, distilling all projec
 
 ### Deliverable
 
-| Property | Value |
-|---|---|
-| **File** | `/home/z/my-project/onestopnews/onestopnews_SKILL.md` |
-| **Size** | 2746 lines |
-| **Sections** | 21 main sections + 2 appendices (24 `##` headers total) |
-| **Commit** | `ae60d21` — `docs: create comprehensive onestopnews_SKILL.md (2746 lines, 21 sections)` |
+| Property       | Value                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| **File**       | `/home/z/my-project/onestopnews/onestopnews_SKILL.md`                                                    |
+| **Size**       | 2746 lines                                                                                               |
+| **Sections**   | 21 main sections + 2 appendices (24 `##` headers total)                                                  |
+| **Commit**     | `ae60d21` — `docs: create comprehensive onestopnews_SKILL.md (2746 lines, 21 sections)`                  |
 | **Net change** | +1899 insertions, -2213 deletions (replaced the old 2218-line v1 with a comprehensive 2746-line version) |
 
 ### Methodology Executed
@@ -840,16 +905,15 @@ The comprehensive `onestopnews_SKILL.md` has been created, distilling all projec
 
 ### Commit Log (6 commits ahead of origin/main)
 
-| Commit | Type | Summary |
-|---|---|---|
-| `822f5d0` | fix | Batch 1: AdminGuard (HIGH security) |
-| `17998ce` | fix | Batch 2: TRUSTED_PROXY in Zod schema |
-| `aaa3eac` | fix | Batch 3: PUSH_KEY_ENCRYPTION_KEY module-load validation |
-| `62752f4` | fix | Batch 4: Prod Redis + deploy.sh + CI gate |
-| `ea96e76` | docs | Align README/CLAUDE/AGENTS with Phase 16 |
-| `ae60d21` | docs | **Create comprehensive onestopnews_SKILL.md** |
+| Commit    | Type | Summary                                                 |
+| --------- | ---- | ------------------------------------------------------- |
+| `822f5d0` | fix  | Batch 1: AdminGuard (HIGH security)                     |
+| `17998ce` | fix  | Batch 2: TRUSTED_PROXY in Zod schema                    |
+| `aaa3eac` | fix  | Batch 3: PUSH_KEY_ENCRYPTION_KEY module-load validation |
+| `62752f4` | fix  | Batch 4: Prod Redis + deploy.sh + CI gate               |
+| `ea96e76` | docs | Align README/CLAUDE/AGENTS with Phase 16                |
+| `ae60d21` | docs | **Create comprehensive onestopnews_SKILL.md**           |
 
 The SKILL.md is now the definitive reference for any coding agent (or senior engineer) who needs to extend, debug, or replicate the OneStopNews codebase. Every section is grounded in the actual source code at HEAD `ea96e76`.
 
 # https://chat.z.ai/s/132fcc7d-1842-46e1-b961-db78cfb5f7e5
-
