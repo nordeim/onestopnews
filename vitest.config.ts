@@ -7,8 +7,11 @@ export default defineConfig({
     // Exclude Playwright E2E tests + DB integration tests from default vitest run.
     // Integration tests use testcontainers (require Docker) and run via
     // `pnpm test:integration` (separate vitest config).
+    // Also exclude .gemini/ (vendored agent extensions with external test files
+    // that would cause 199+ spurious failures if picked up).
     exclude: [
       "node_modules/",
+      ".gemini/",
       "dist/",
       "backup/",
       "plans/",
