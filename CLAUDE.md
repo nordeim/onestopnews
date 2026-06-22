@@ -1,58 +1,452 @@
+---
+IMPORTANT: Read fresh for every conversation. This file encodes the institutional knowledge of the OneStopNews codebase. When in doubt, consult AGENTS.md as the canonical source.
+---
+
 # OneStopNews
 
-> **This file has been consolidated into [`AGENTS.md`](./AGENTS.md).**
->
-> As of the post-Phase 19 remediation (and the Phase 20 documentation alignment),
-> AGENTS.md is the single source of truth for all project standards, anti-patterns,
-> phase histories, file inventories, and lessons learned. CLAUDE.md is now a stub
-> and is no longer maintained as a parallel document.
->
-> **All instructions that previously lived in CLAUDE.md now live in AGENTS.md:**
->
-> - Foundational Principles (the Meticulous Approach + OneStopNews-Specific Principles)
-> - Implementation Standards (TypeScript, Next.js 16 App Router, Drizzle, Auth.js, Design System, Worker/BullMQ, AI Pipeline, React 19)
-> - Development Workflow (prerequisites, setup, build, pre-commit gate)
-> - Testing Strategy, Code Quality Standards
-> - Anti-Patterns to Avoid (89 entries post-Phase 20 — 78 from Phase 19 + 11 new from Phase 20)
-> - Quick Reference: Layer Model + File Locations (81-entry table)
-> - Phase Status Tracker (Phases 1–20, all COMPLETE)
-> - Lessons Learned for every phase from Phase 5 through Phase 20
-> - Updated File Inventories (Post-Phase 6, Post-Phase 17, Post-Phase 18, Post-Phase 20)
-> - Contact & Maintenance footer
->
-> If you arrived here expecting to read project standards, please open
-> [`AGENTS.md`](./AGENTS.md) instead. If you have a tool or workflow that
-> references `CLAUDE.md` (e.g., the Claude Code agent), it will read this stub
-> and follow the pointer.
->
-> **Why the consolidation?** AGENTS.md was already a 70% superset of CLAUDE.md.
-> Maintaining two near-duplicate files caused real drift: Phase 18 references
-> in CLAUDE.md were stale while AGENTS.md was up-to-date, the "Security &
-> Compliance" section and the three file-inventory tables were never copied
-> over, and every update had to be applied twice (and sometimes wasn't). The
-> decision was made in the Phase 19+ remediation plan (recommendation Q1=B)
-> to merge the unique CLAUDE.md sections into AGENTS.md and reduce CLAUDE.md
-> to this stub. Phase 20 / D1 executed the consolidation; Phase 20's
-> documentation alignment pass (this update) confirms CLAUDE.md remains a
-> stub pointing to AGENTS.md.
->
-> **Current project state (post-Phase 20):**
->
-> - 452 tests across 66 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests
-> - Coverage: 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements (thresholds 80/80/70/80)
-> - `pnpm check` + `pnpm test -- --coverage` + `pnpm test:integration` all green
-> - MEP v6.0 is the authoritative engineering blueprint (`MASTER_EXECUTION_PLAN.md`)
+**Topic-first news aggregation with source-cited AI summaries.**
 
-**Project summary (for quick context):**
+A Next.js 16 + React 19 application backed by PostgreSQL 17, BullMQ v5 on Redis, and a separate Node.js 24 LTS worker service. The "Editorial Dispatch" design system uses Newsreader + Instrument Sans + Commit Mono with CSS Subgrid for feed alignment. Every AI summary carries a 3-layer machine-readable provenance disclosure (JSON-LD + HTTP header + HTML meta tag) for EU AI Act Article 50 compliance.
 
-OneStopNews is a topic-first news aggregation + AI summarisation platform
-built on Next.js 16.2.9 + React 19.2 + PostgreSQL 17 + BullMQ v5 on Redis +
-a standalone Node.js 24 LTS worker service. The "Editorial Dispatch" design
-system uses Newsreader + Instrument Sans + Commit Mono with CSS Subgrid for
-feed alignment. Every AI summary carries a 3-layer machine-readable provenance
-disclosure (JSON-LD + HTTP header + HTML meta tag) for EU AI Act Article 50
-compliance.
+**Maintained by:** Senior Engineering, Tech Leads, DevOps
+**Authoritative Sources:** `AGENTS.md` | `onestopnews_SKILL.md` | `README.md`
 
-For the full project instructions, **see [`AGENTS.md`](./AGENTS.md).**
-For the user-facing project overview, see [`README.md`](./README.md).
-For the engineering blueprint, see [`MASTER_EXECUTION_PLAN.md`](./MASTER_EXECUTION_PLAN.md) (v6.0).
+---
+
+## Foundational Principles
+
+### The Meticulous Approach (Mandatory 6-Phase Workflow)
+
+1. **ANALYZE** — Deep requirement mining. Read actual source files (never assume). Identify explicit, implicit, and edge-case needs. Explore multiple approaches. Assess risks.
+2. **PLAN** — Structured execution roadmap. Present for explicit user confirmation before writing code.
+3. **VALIDATE** — Obtain user approval. Address concerns. Never proceed without alignment.
+4. **IMPLEMENT** — Modular, tested, documented builds. TDD: RED → GREEN → REFACTOR → COMMIT. Use library components before custom ones.
+5. **VERIFY** — Rigorous QA against success criteria. Test edge cases, accessibility (WCAG AAA), and performance.
+6. **DELIVER** — Complete handoff with instructions, documentation, and next steps.
+
+**Non-negotiable:** Never write code without completing ANALYZE and PLAN. Never skip VALIDATE.
+
+### Project-Specific Principles
+
+| Principle                  | Rationale                                                                                                                 |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| **Library Discipline**     | If Shadcn UI / Radix provides the primitive, use it. Wrap for bespoke styling. Never rebuild from scratch.                |
+| **Single Source of Truth** | The Drizzle schema is the only source of DB types. Types derive from schema via `(typeof enum.enumValues)[number]`.       |
+| **Opt-In Caching**         | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent. |
+| **Zero `any`**             | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only.      |
+| **Auth at the DAL**        | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()`.      |
+| **Content Guard**          | Never enqueue summarisation for `title_only` or `excerpt` articles. Prevents AI hallucination.                            |
+| **Fail Fast at Boot**      | Security-critical env vars validated at module load. Never lazily validate.                                               |
+
+---
+
+## Implementation Standards
+
+### Next.js 16 App Router
+
+- **Server Components by default.** Use `'use client'` only for interactivity (state, effects, browser APIs).
+- **Async `params` / `searchParams`** are `Promise<T>`. Always `await` them. Synchronous access causes runtime 500.
+- **`cookies()` is async** — always `await` before calling `.get()`.
+- **No data fetching in Layouts.** Layouts cause re-renders. Fetch in Pages.
+- **`<Suspense>` + Server Component pattern** for all dynamic data. Never `await` a DB query directly in a page body — triggers `blocking-route` error.
+- **Route Handlers** (`app/api/.../route.ts`) for public HTTP endpoints. Server Actions for mutations.
+- **`<Image>` component** for all images (optimization, lazy loading, CLS prevention). External domains must be in `next.config.ts` `remotePatterns`.
+- **`error.tsx`** and **`loading.tsx`** at every route segment for error boundaries and streaming UI.
+- **`proxy.ts`** (not `middleware.ts`) is the network boundary. Cookie check + redirect only. NO DB calls.
+
+#### Critical Configuration (wrong placement = silent breakage)
+
+| Flag                          | Placement                     | What Breaks if Wrong                  |
+| :---------------------------- | :---------------------------- | :------------------------------------ |
+| `cacheComponents: true`       | **Top-level**                 | Every `"use cache"` silently ignored  |
+| `cacheLife` profiles          | **Top-level**                 | `cacheLife('feed')` throws at runtime |
+| `turbopack: {}`               | **Top-level**                 | Ignored or config warning             |
+| `experimental.viewTransition` | **Inside `experimental: {}`** | Transitions silently disabled         |
+| `experimental.ppr`            | **DO NOT INCLUDE**            | Build error in Next.js 16             |
+| `experimental.dynamicIO`      | **DO NOT INCLUDE**            | Deprecated                            |
+
+### TypeScript
+
+- **`strict: true`** — non-negotiable.
+- **`noUncheckedIndexedAccess: true`** — `arr[i]` returns `T | undefined`, hiding runtime errors.
+- **`verbatimModuleSyntax: true`** — requires `import type` for type-only imports.
+- **`erasableSyntaxOnly: true`** — forbids `enum` / `namespace`. Use string unions + ES modules.
+- **Prefer `interface` over `type`** for structural definitions. `type` for unions/intersections.
+- **Early returns** over deeply nested conditionals.
+- **Composition over inheritance** — no class hierarchies for business logic.
+- **Avoid explicit return types** unless the function is a public API boundary.
+- **`import type` for type-only imports** — required when `verbatimModuleSyntax` is enabled.
+
+### Tailwind CSS v4
+
+- **CSS-first configuration** via `@theme` block in `globals.css`. No `tailwind.config.js`.
+- **`@tailwindcss/postcss` plugin is MANDATORY.** Without it, zero utility classes generate.
+- **Design token discipline:** NEVER use raw hex colors (e.g., `bg-[#1a1a2e]`). All colors from `@theme` tokens.
+- **Custom utility classes** defined in `globals.css` via `@layer components`.
+- **CSS Subgrid** for feed alignment: `grid-rows-subgrid row-span-3` on cards.
+
+### Drizzle ORM & Database
+
+- **Lazy Proxy Connection:** `lib/db/index.ts` defers connection until first query. Prevents build-time crashes.
+- **Migrations:** `drizzle-kit generate` + `migrate`. **Never `push`** in production.
+- **Additive-only deployments:** when removing a column, deploy code first, drop column in next release.
+- **All queries via `queries.ts`** in the relevant feature module. No raw Drizzle calls in components.
+- **Service Factory Pattern:** Encapsulate database queries in factory functions. Injectable, mockable, testable.
+
+### React 19 Patterns
+
+- **Forms:** Use `useActionState` for form state with server actions.
+- **Instant UI:** Use `useOptimistic` + `startTransition` for optimistic updates.
+- **`"use client"` must be first line** — before any imports.
+- **RSC:** No browser APIs in Server Components (`window`, `document`, `localStorage`).
+
+### Design System — "Editorial Dispatch"
+
+| Role      | Typeface                   | Weight  | Tailwind Class   |
+| :-------- | :------------------------- | :------ | :--------------- |
+| Headlines | Newsreader (variable)      | 800     | `font-editorial` |
+| UI / Body | Instrument Sans (variable) | 400–600 | `font-ui`        |
+| Metadata  | Commit Mono (self-hosted)  | 400     | `font-mono`      |
+
+**Explicit rejections:** Inter, Roboto, Space Grotesk. Never use them.
+
+**Key colors:** `ink-900 (#1a1a18)`, `ink-600 (#3d3d3a)`, `paper-50 (#fafaf8)`, `dispatch-ember (#c7513f)`.
+
+### Worker & BullMQ
+
+- **Redis config:** `maxRetriesPerRequest: null`, `noeviction` policy.
+- **Connection splitting:** Worker connection persists during outages; Queue producer does not.
+- **Concurrency:** `ingest: 50`, `summarize: 5`, `score: 20`, `feed-slice: 10`.
+- **Flows:** `FlowProducer` for atomic DAG (ingest → score → feed-slice refresh).
+- **Graceful shutdown:** `SIGTERM` / `SIGINT` handlers close all workers before exit.
+
+### AI Pipeline & 3-Layer Disclosure
+
+**Content Availability Guard (Anti-Hallucination):**
+
+- `title_only` → **DO NOT summarise**
+- `excerpt` → **DO NOT summarise**
+- `partial_text` → Summarise permitted (300–1500 chars)
+- `full_text` → Summarise preferred (>1500 chars)
+
+**3-Layer Machine-Readable Disclosure (`provenance.ts`):**
+
+1. **JSON-LD** — `<script type="application/ld+json">` in page body (NOT via `metadata.other`)
+2. **HTTP Header** — `X-AI-Provenance` base64-encoded JSON
+3. **HTML Meta Tag** — `<meta name="ai-provenance" content="...">`
+
+**Summary Review Workflow:** `none → pending → ok` or `needs_review → ok/disabled`
+
+---
+
+## Development Workflow
+
+### Prerequisites
+
+- **Node.js** ≥24 LTS ("Krypton")
+- **pnpm** ≥9.x
+- **PostgreSQL** ≥17
+- **Redis** ≥7.x
+
+### Setup Commands
+
+```bash
+# 1. Install dependencies
+pnpm install
+
+# 2. Configure environment
+cp .env.example .env.local
+# Edit .env.local — set all required vars (see Environment Variables below)
+
+# 3. Generate and apply database migrations
+pnpm db:generate
+pnpm db:migrate
+
+# 4. Seed sample data (idempotent)
+pnpm db:seed
+
+# 5. Start development (TWO terminals)
+pnpm dev      # Terminal 1 — Next.js (Turbopack) on http://localhost:3000
+pnpm worker   # Terminal 2 — Worker service (BullMQ + RSS + AI)
+```
+
+### Build & Quality Commands
+
+| Command                     | Purpose                                        |
+| :-------------------------- | :--------------------------------------------- |
+| `pnpm dev`                  | Next.js dev server with Turbopack Fast Refresh |
+| `pnpm worker`               | Worker service (BullMQ consumers + RSS + AI)   |
+| `pnpm build`                | Production build (Next.js)                     |
+| `pnpm start`                | Production server (Next.js)                    |
+| `pnpm lint`                 | ESLint (`--max-warnings 0`)                    |
+| `pnpm check`                | `tsc --noEmit && pnpm lint` (combined gate)    |
+| `pnpm test`                 | Run all test suites (`vitest run`)             |
+| `pnpm test:watch`           | Vitest in watch mode                           |
+| `pnpm test:e2e`             | Playwright E2E tests                           |
+| `pnpm test:integration`     | DB integration tests (requires Docker)         |
+| `pnpm drizzle-kit generate` | Generate migration SQL from schema             |
+| `pnpm drizzle-kit migrate`  | Apply pending migrations                       |
+| `pnpm db:seed`              | Seed sample articles/categories/sources        |
+| `pnpm db:studio`            | Drizzle Studio (DB GUI)                        |
+| `pnpm format`               | Prettier write                                 |
+| `pnpm format:check`         | Prettier check                                 |
+
+### Pre-Commit Gate
+
+```bash
+pnpm check    # Runs tsc --noEmit && pnpm lint
+pnpm test     # Run all test suites
+```
+
+Must pass before any PR is merged. No exceptions.
+
+### Database Commands
+
+| Command            | Purpose                                    |
+| :----------------- | :----------------------------------------- |
+| `pnpm db:generate` | Generate migration SQL from Drizzle schema |
+| `pnpm db:migrate`  | Apply pending migrations                   |
+| `pnpm db:seed`     | Seed sample data (idempotent)              |
+| `pnpm db:studio`   | Open Drizzle Studio GUI                    |
+
+---
+
+## Testing Strategy
+
+| Category    | Tool                  | Scope                                | Target                  |
+| :---------- | :-------------------- | :----------------------------------- | :---------------------- |
+| Unit        | Vitest                | Domain logic, utilities, Zod parsing | 80%+ coverage           |
+| Integration | Vitest + Docker       | Drizzle queries, BullMQ jobs         | CI gate                 |
+| E2E         | Playwright            | Critical user journeys               | Zero visual regressions |
+| A11y        | axe-core + Playwright | Keyboard nav, screen reader labels   | WCAG 2.1 AAA            |
+
+**Test Infrastructure:**
+
+- PostgreSQL and Redis run in ephemeral Docker containers for integration tests.
+- TypeScript strict mode enforced in test files.
+- `vitest.config.ts` at root, with `@/` path alias mapped to `src/`.
+- Separate `vitest.integration.config.ts` for DB integration tests (node env, 120s timeout).
+
+**Coverage thresholds:** 80% lines / 80% functions / 70% branches / 80% statements.
+
+---
+
+## Code Quality Standards
+
+- **Lint:** ESLint + Prettier, enforced in CI with `--max-warnings 0`.
+- **Types:** `tsc --noEmit` with `strict: true` and `noUncheckedIndexedAccess: true`. Zero `any`.
+- **Naming:**
+  - Components: PascalCase (`ArticleCard.tsx`)
+  - Utilities/hooks: camelCase (`useDebounce.ts`)
+  - Feature folders: kebab-case (`/features/feed/`)
+  - Database tables: snake_case in Drizzle, camelCase in TypeScript
+- **Comments:** Explain _why_, not _what_. Self-documenting code is the goal.
+
+---
+
+## Project-Specific Standards
+
+### The 5-Layer Architecture Model (Golden Rule)
+
+```
+Layer 0: proxy.ts           — Cookie check, redirect. NO DB. NO logic.
+Layer 1: App Router          — Route structure, metadata, PPR, Suspense.
+Layer 2: Feature Modules     — UI composition, data binding, mutations.
+Layer 3: Domain Services     — Pure business logic. No framework or DB runtime imports.
+Layer 4: Infrastructure      — Drizzle, Auth.js, BullMQ, AI SDK. Side effects only.
+```
+
+**Golden Rule:** Deviation from this order creates security and consistency bugs.
+
+### Authentication & Authorization (Auth.js v5)
+
+```ts
+// lib/auth/dal.ts — The only correct pattern
+import { cache } from "react";
+import { redirect } from "next/navigation";
+import { auth } from "./index";
+
+export const verifySession = cache(async () => {
+  const session = await auth();
+  if (!session?.user?.email) redirect("/sign-in");
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, session.user.email),
+    columns: { id: true, role: true, name: true },
+  });
+  if (!user) redirect("/sign-in");
+  return { user, sessionId: session.user.id };
+});
+
+export const verifyAdminSession = cache(async () => {
+  const { user } = await verifySession();
+  if (user.role !== "admin") redirect("/");
+  return user;
+});
+```
+
+- **`redirect()` not `throw new Error()`** in Server Components.
+- **`cache()`** memoizes per-request. Multiple components calling `verifySession()` execute one validation.
+- **Every Server Action** must call `verifySession()` or `verifyAdminSession()` as its first line.
+
+### Environment Variables (19 total: 12 required + 7 optional)
+
+All validated by Zod at module load in `src/lib/env/index.ts`. The app fails fast with a descriptive error if any required var is missing.
+
+```bash
+# Required (12)
+DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews
+REDIS_URL=redis://localhost:6379
+AUTH_SECRET=  # min 32 chars, generate: openssl rand -base64 33
+AUTH_URL=http://localhost:3000
+ANTHROPIC_API_KEY=sk-ant-...  # must start with sk-ant-
+OPENAI_API_KEY=sk-...  # must start with sk-
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=  # npx web-push generate-vapid-keys
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:admin@onestopnews.com
+PUSH_KEY_ENCRYPTION_KEY=  # 64 hex chars, openssl rand -hex 32
+GOOGLE_CLIENT_ID=  # optional but counted as required for OAuth
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+
+# Optional (7)
+TRUSTED_PROXY=  # "true" | unset — use rightmost IP behind CDN
+TRUSTED_PROXY_CIDRS=  # comma-separated CIDRs for proxy-chain walking
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+NODE_ENV=development  # development | production | test (default: development)
+```
+
+**CRITICAL:** Never read `process.env.*` directly in production code. Import `env` from `@/lib/env`.
+
+### Key File Paths
+
+| What                        | Path                                                   |
+| :-------------------------- | :----------------------------------------------------- |
+| Next.js config              | `next.config.ts`                                       |
+| TypeScript config           | `tsconfig.json`                                        |
+| ESLint config               | `eslint.config.mjs`                                    |
+| Vitest config (unit)        | `vitest.config.ts`                                     |
+| Vitest config (integration) | `vitest.integration.config.ts`                         |
+| Playwright config           | `playwright.config.ts`                                 |
+| PostCSS config              | `postcss.config.mjs`                                   |
+| Global CSS + design tokens  | `src/app/globals.css`                                  |
+| Root layout                 | `src/app/layout.tsx`                                   |
+| Network boundary            | `proxy.ts` (repo root)                                 |
+| DB schema                   | `src/lib/db/schema.ts`                                 |
+| Lazy DB proxy               | `src/lib/db/index.ts`                                  |
+| Env validation (Zod)        | `src/lib/env/index.ts`                                 |
+| Auth config                 | `src/lib/auth/index.ts`                                |
+| Auth DAL                    | `src/lib/auth/dal.ts`                                  |
+| Auth providers              | `src/lib/auth/providers.ts`                            |
+| BullMQ queues               | `src/lib/queue/index.ts`                               |
+| FlowProducer DAG            | `src/lib/queue/flows.ts`                               |
+| Rate limiter                | `src/lib/rateLimit.ts`                                 |
+| Trusted proxy CIDR walker   | `src/lib/network/getClientIp.ts`                       |
+| Push key encryption         | `src/lib/security/encrypt.ts`                          |
+| AI prompts                  | `src/lib/ai/prompts.ts`                                |
+| 3-layer provenance          | `src/lib/ai/provenance.ts`                             |
+| Worker entry                | `src/workers/index.ts`                                 |
+| RSS parser                  | `src/workers/jobs/parseFeed.ts`                        |
+| AI summarizer               | `src/workers/jobs/summarize.ts`                        |
+| Content guard               | `src/workers/jobs/determineContentAvailability.ts`     |
+| Cache invalidation          | `src/workers/lib/cacheInvalidation.ts`                 |
+| Feed queries                | `src/features/feed/queries.ts`                         |
+| ArticleCard                 | `src/features/feed/components/ArticleCard.tsx`         |
+| Summary actions             | `src/features/summaries/actions.ts`                    |
+| NutritionLabel              | `src/features/summaries/components/NutritionLabel.tsx` |
+| Account page                | `src/app/account/page.tsx`                             |
+| Domain types                | `src/domain/articles/types.ts`                         |
+| Domain normalize            | `src/domain/articles/normalize.ts`                     |
+| Importance scoring          | `src/domain/ranking/score.ts`                          |
+| `cn()` utility              | `src/shared/lib/utils.ts`                              |
+| Button                      | `src/shared/components/ui/Button.tsx`                  |
+| useDebounce                 | `src/shared/hooks/useDebounce.ts`                      |
+| useReducedMotion            | `src/shared/hooks/useReducedMotion.ts`                 |
+| PageTransition              | `src/components/primitives/PageTransition.tsx`         |
+| CI pipeline                 | `.github/workflows/ci.yml`                             |
+| E2E pipeline                | `.github/workflows/e2e.yml`                            |
+| Pre-commit hook             | `.husky/pre-commit`                                    |
+
+---
+
+## Anti-Patterns to Avoid
+
+| #   | Anti-Pattern                                                | Fix                                                          |
+| :-- | :---------------------------------------------------------- | :----------------------------------------------------------- |
+| 1   | `any` in TypeScript                                         | `unknown` + type guards                                      |
+| 2   | `enum` / `namespace`                                        | String unions + ES modules (violates `erasableSyntaxOnly`)   |
+| 3   | `throw new Error()` in RSC auth                             | `redirect('/sign-in')`                                       |
+| 4   | `drizzle-kit push` in production                            | `generate` + `migrate` only                                  |
+| 5   | `process.env.*` outside `src/lib/env/`                      | Import `env` from `@/lib/env`                                |
+| 6   | Runtime imports from `@/lib/db*` in `src/domain/**`         | `import type` only (enforced by ESLint)                      |
+| 7   | `await` in page body without `<Suspense>`                   | Wrap in `<Suspense fallback={<Skeleton />}>`                 |
+| 8   | `new Date()` in Server Components                           | Move to Client Component or compute from headers             |
+| 9   | JSON-LD via `metadata.other`                                | Render `<script type="application/ld+json">` in page body    |
+| 10  | Regex HTML stripping (`/<[^>]*>/g`)                         | Use `cheerio`                                                |
+| 11  | `window.matchMedia()` without `typeof === "function"` guard | Add guard (crashes in jsdom + older browsers)                |
+| 12  | Server Action without `verifySession()`                     | Every action starts with auth check                          |
+| 13  | `vi.mock()` factory referencing `let`/`const` below it      | Use `vi.hoisted()`                                           |
+| 14  | `cacheLife()` in tests without `next/cache` mock            | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`      |
+| 15  | Missing `SessionProvider` in tests using `useSession()`     | Mock `next-auth/react` with passthrough `SessionProvider`    |
+| 16  | `flowProducer.add()` without try/catch                      | Wrap + fallback to `scoreQueue.add()` + return status object |
+| 17  | `vi.clearAllMocks()` on structural mock chains              | Only reset leaf mocks via `mockResolvedValueOnce()`          |
+| 18  | Discriminated union assertions without `if` narrowing       | Use `if (result.status === "linked") { ... }`                |
+| 19  | Missing `@tailwindcss/postcss` plugin                       | Install + create `postcss.config.mjs` + clear `.next/` cache |
+| 20  | Raw hex colors in Tailwind classes                          | Use design tokens (`bg-ink-900`, `text-paper-50`)            |
+
+---
+
+## Git & Version Control
+
+- **Atomic commits** — one logical change per commit.
+- **TDD cycle** — one Red-Green-Refactor cycle per commit.
+- **Pre-commit hooks** — husky + lint-staged runs eslint + prettier on staged `.ts`/`.tsx`.
+- **No `db:push` script** — removed from `package.json`. Use `db:generate` + `db:migrate`.
+
+---
+
+## Error Handling & Debugging
+
+### Error Handling Approach
+
+- **Server Components:** Use `redirect()` for auth failures, not `throw`.
+- **Client Components:** `try/catch` with user-friendly error messages + retry buttons.
+- **API Routes:** Return structured JSON errors with appropriate HTTP status codes.
+- **Server Actions:** Return status objects, never re-throw if side effect landed.
+
+### Common Debugging Scenarios
+
+| Symptom                                 | Cause                                    | Fix                                                            |
+| :-------------------------------------- | :--------------------------------------- | :------------------------------------------------------------- |
+| Page completely unstyled                | Missing `@tailwindcss/postcss`           | Install plugin + create `postcss.config.mjs` + `rm -rf .next/` |
+| `blocking-route` error                  | Uncached data fetch outside `<Suspense>` | Wrap in `<Suspense>`                                           |
+| `next-prerender-current-time`           | `new Date()` in Server Component         | Move to Client Component                                       |
+| Commit Mono not loading                 | Using `@fontsource/commit-mono`          | Self-host via `next/font/local`                                |
+| 64 tsc errors in `skills/`              | Vendored code not excluded               | Add `"skills"` to tsconfig `exclude`                           |
+| `cacheLife is not a function` in tests  | No Next.js cache context                 | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`        |
+| `useSession` requires `SessionProvider` | Test doesn't go through layout           | Mock `next-auth/react`                                         |
+| Rate limit 429 behind CDN               | Leftmost XFF IP spoofable                | Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS`               |
+
+---
+
+## Security & Compliance
+
+| Concern           | Posture                                                                       |
+| :---------------- | :---------------------------------------------------------------------------- |
+| Next.js version   | Pinned to `^16.2.9` (≥16.0.7 mitigates CVE-2025-55182)                        |
+| Auth              | Auth.js v5 beta (`5.0.0-beta.31`), HttpOnly session cookies                   |
+| AI Disclosure     | 3-layer: JSON-LD + HTTP header + HTML meta. EU AI Act Art. 50 compliant.      |
+| Push keys         | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex.        |
+| DB connections    | Lazy Proxy connection. `max: 10` for dedicated runtimes.                      |
+| Access control    | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins.           |
+| Rate limiting     | `GET /api/articles`: 20 req/s per IP. `POST /api/summarize`: 5 req/min/user.  |
+| Content hashing   | SHA-256 (`node:crypto`) of `title\|body\|publishedAt`.                        |
+| Env validation    | All required env vars validated by Zod at module load.                        |
+| Cursor validation | `/api/articles` cursor param validated as ISO 8601; returns `400` on invalid. |
+
+---
+
+_This CLAUDE.md is derived from AGENTS.md (the canonical institutional knowledge base) and onestopnews_SKILL.md (the complete engineering reference). For exhaustive detail on any topic, consult those files directly._
