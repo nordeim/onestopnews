@@ -1,28 +1,16 @@
-# OneStopNews — Complete Skill Reference
-
-> **Classification:** Definitive Engineering Knowledge Base
-> **Phase:** 21 (Security & Architecture Remediation — COMPLETE)
-> **Last Updated:** June 23, 2026
-> **Test Status:** 472 tests across 67 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests — all green
-> **Coverage:** 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements (thresholds 80/80/70/80)
-> **Quality Gate:** `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) + `pnpm test -- --coverage` (CI-enforced) + `pnpm audit --audit-level=high --prod` (Phase 21)
-
-This document is the complete, code-first reference for the OneStopNews codebase. Every section is grounded in the actual source code at HEAD (post-Phase 21). Any coding agent (or senior engineer) who reads this file top-to-bottom will have the institutional knowledge required to extend, debug, or replicate this project.
-
+---
+name: onestopnews
+description: "Complete engineering reference for the OneStopNews codebase — a topic-first news aggregation platform with source-cited AI summaries and EU AI Act Article 50 provenance disclosure. Use this skill when extending the codebase, debugging, onboarding, or replicating the architecture. Covers Next.js 16 + React 19 + Drizzle + BullMQ + Auth.js v5 + Editorial Dispatch design system + 5-layer architecture + 3-layer provenance + content availability guard + 498 tests across 69 suites."
+version: 2.0.0
+last_updated: 2026-06-24
+project_state: "Phase 22 complete · 498 tests / 69 suites · 0 tsc errors · 0 ESLint warnings · 86/78/83/87% coverage"
 ---
 
-## The Meticulous Approach (Mandatory SOP)
+# OneStopNews — Engineering Skill Reference
 
-Every task — no matter how small — must follow this six-phase workflow:
+> **Purpose:** Single-source engineering reference for the OneStopNews codebase. Other coding agents (Claude, Gemini, Codex, etc.) should consult this file when extending, debugging, or replicating this project. Every section is grounded in actual code — exact classNames, color values, configuration flags, and the reasoning behind every non-obvious decision.
 
-1. **ANALYZE** — Deep requirement mining. Identify explicit, implicit, and edge-case needs. Read the actual source files (never assume). Explore multiple approaches. Assess risks.
-2. **PLAN** — Structured execution roadmap. Present for explicit user confirmation before writing code.
-3. **VALIDATE** — Obtain user approval. Address concerns. Never proceed without alignment.
-4. **IMPLEMENT** — Modular, tested, documented builds. Use library components before custom ones. TDD: RED → GREEN → REFACTOR → COMMIT.
-5. **VERIFY** — Rigorous QA against success criteria. Test edge cases, accessibility (WCAG AAA), and performance (Core Web Vitals).
-6. **DELIVER** — Complete handoff with instructions, documentation, and next steps.
-
-**Non-negotiable:** Never write code without first completing ANALYZE and PLAN. Never skip the VALIDATE checkpoint.
+> **Authoritative Sources:** This SKILL.md is derived from `AGENTS.md` (the canonical institutional knowledge base post-Phase 19) · `MASTER_EXECUTION_PLAN.md` v7.0 · `CLAUDE.md` · `README.md` · the actual source tree under `src/`. When in doubt, consult AGENTS.md as the source of truth.
 
 ---
 
@@ -53,136 +41,103 @@ Every task — no matter how small — must follow this six-phase workflow:
 
 ## 1. Project Identity & Design Philosophy
 
-### What Is OneStopNews?
+### What OneStopNews Is
 
-OneStopNews is a **topic-first news aggregation platform** with source-cited AI summaries. Rather than organizing news by publisher, it organizes stories by **subject** across 50–200+ RSS/Atom/JSON feeds, normalizes/dedupes them, scores importance, optionally AI-summarizes them with strict provenance, and exposes them via topic-categorized feed, full-text search, public REST API, and admin tools.
+**OneStopNews** is a **topic-first news aggregation platform with source-cited AI summaries**. Instead of presenting news by source or chronologically, it reorganises public news content around **subjects** (a two-level topic hierarchy). It collects article metadata from 50–200+ diverse RSS/Atom/JSON feeds, normalises and categorises stories, and pairs every AI-generated summary with a transparent **"Nutrition Label"** disclosing the model, temperature, coverage percentage, and citations.
 
-### The "Editorial Dispatch" Design System
+### The Core Thesis: "Editorial Dispatch"
 
-The visual identity is **architectural, not cosmetic.** Every element carries the weight of something worth reading. This is a high-end editorial aesthetic — think _The Economist_ meets _Bloomberg Terminal_ — not "AI slop."
+The design system is called **"Editorial Dispatch"** — a deliberate rejection of the homogenised "AI slop" aesthetic (purple gradients, generic Inter/Roboto typography, predictable card grids). The thesis:
 
-**Design Thesis:** "High-End Editorial" — calm, authoritative, typography-driven, with deliberate use of whitespace as a structural element. The interface should feel like a well-edited newspaper, not a social media feed.
+> **A news platform should feel like a well-edited newspaper — calm, authoritative, and unmistakably crafted — not like a generic SaaS dashboard.**
 
-**Explicit Rejections:**
+The system has three intentional poles:
 
-- Inter, Roboto, Space Grotesk — never use them
-- Purple gradients on white — cliché AI aesthetic
-- Predictable card grids with rounded corners — too generic
-- Bootstrap-style 12-column grids — too predictable
+1. **Editorial Restraint** — Newsreader serif headlines evoke print journalism; Instrument Sans UI body keeps density legible; Commit Mono metadata mimics wire-service dispatch formatting (`UPPERCASE TRACKING-WIDEST TEXT-[10px]`).
+2. **Tactile Confidence** — Micro-interactions are subtle but present: card hover state changes background + adds 1px shadow; button hover scales 1.02%; link underlines animate left-to-right on hover. No bouncy springs, no parallax, no skeuomorphism.
+3. **Provenance as Aesthetics** — The "Nutrition Label" sidebar with `border-l-2 border-dispatch-ember` is not just a UI pattern — it's a visible commitment to AI transparency. The aesthetic encodes the ethics.
 
-### The 4 Defining Differentiators
+### Explicit Rejections (Anti-Generic Mandate)
 
-1. **3-layer machine-readable AI provenance** — JSON-LD `<script>` + `X-AI-Provenance` HTTP header + `<meta name="ai-provenance">` — EU AI Act Article 50 compliant. C2PA explicitly rejected (no text standard exists).
-2. **Editorial Dispatch design system** — Newsreader (headlines, 800 weight) + Instrument Sans (UI/body) + Commit Mono (metadata, self-hosted via `next/font/local`). CSS Subgrid for feed alignment. `--dispatch-ember #c7513f` accent.
-3. **Content Availability Guard** — 4-tier enum (`title_only` / `excerpt` / `partial_text` / `full_text`); only `partial_text`/`full_text` eligible for AI summarization. Double-enforced at Server Action AND API Route layers. Prevents AI hallucination.
-4. **Modular monolith (Next.js 16 web) + standalone Node.js 24 worker service**, connected via BullMQ v5 on Redis 7+ and shared PostgreSQL 17.
+These choices are FORBIDDEN. If you see them in a PR, reject the PR.
 
-### The 5-Layer Request Model (Golden Rule)
+| Rejected Choice                                     | Why                                                    | Use Instead                                                                |
+| :-------------------------------------------------- | :----------------------------------------------------- | :------------------------------------------------------------------------- |
+| Inter / Roboto / Space Grotesk                      | "Safe" generic fonts — every AI-generated UI uses them | Newsreader (headlines), Instrument Sans (UI), Commit Mono (metadata)       |
+| Fira Code / JetBrains Mono                          | Generic dev mono fonts                                 | Commit Mono (self-hosted woff2)                                            |
+| Purple gradient on white                            | The single most clichéd AI aesthetic                   | `dispatch-ember` (#c7513f) — warm terracotta, evokes print ink             |
+| Predictable card grids with rounded-xl + shadow-2xl | "SaaS dashboard" aesthetic                             | CSS Subgrid flat cards with `border-b border-ink-100` dividers             |
+| Tailwind default `amber-*` / `red-*` for warnings   | Breaks design system                                   | `dispatch-warning` (#b45309), `dispatch-danger` (#dc2626) — Phase 19 / M15 |
+| Raw hex colors in components (`bg-[#1a1a2e]`)       | Bypasses token system                                  | Design tokens only (`bg-ink-900`, `text-paper-50`)                         |
+| Fixed pixel heights for cards                       | Breaks responsive, defeats Subgrid                     | CSS Subgrid with `grid-rows-subgrid row-span-3`                            |
 
-Every request passes through exactly these layers. Deviating from this order creates security and consistency bugs.
+### The Three Foundational Pillars
 
-```
-Layer 0: proxy.ts           — Cookie check, redirect. NO DB. NO logic.
-Layer 1: App Router           — Route structure, metadata, PPR, Suspense.
-Layer 2: Feature Modules     — UI composition, data binding, mutations.
-Layer 3: Domain Services      — Pure business logic. No Next.js or DB runtime imports.
-Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects only.
-```
-
-**Phase 20 / H1 enforcement:** The ESLint `no-restricted-imports` rule in `eslint.config.mjs` enforces Layer 3 purity — any runtime import from `@/lib/db*` in `src/domain/**` fails lint. `import type` is still allowed (erased at compile time, zero runtime coupling).
-
-### The Meticulous Approach Principles
-
-| Principle                   | Rationale                                                                                                                                                                            |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Library Discipline**      | If Shadcn UI / Radix provides the primitive, use it. Wrap for bespoke styling. Never rebuild from scratch.                                                                           |
-| **Single Source of Truth**  | The Drizzle schema is the only source of DB types. Types derive from schema via `(typeof enum.enumValues)[number]` and `$inferSelect`.                                               |
-| **Opt-In Caching**          | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent.                                                            |
-| **Progressive Enhancement** | View Transitions are progressive. They silently degrade on Firefox / reduced-motion. Never rely on them for core functionality.                                                      |
-| **Zero `any`**              | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only.                                                                 |
-| **Auth at the DAL**         | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()` (Server Components/Actions) or `auth()` (API routes — Phase 21). |
-| **Content Guard**           | Never enqueue summarisation for `title_only` or `excerpt` articles. This prevents AI hallucination.                                                                                  |
-| **Secret Hygiene**          | `.env*` files are gitignored (only `.env.example` tracked). `AUTH_SECRET` rejects known-weak values in production. Never commit real secrets. (Phase 21)                             |
-
-### Phase History (21 phases)
-
-| Phase  | Focus                                                                       | Key Deliverable                                                                                                                                                                                               |
-| :----- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1–8    | Foundation → DB → Design System → Feed → AI → Search/Admin → Worker → CI/CD | V1 feature-complete                                                                                                                                                                                           |
-| 9      | Blocking-route fix                                                          | `cacheComponents` + `<Suspense>` pattern                                                                                                                                                                      |
-| 10     | Landing page                                                                | 10-section editorial dispatch page                                                                                                                                                                            |
-| 11–12  | Bug fixes + Tailwind v4 PostCSS                                             | `@tailwindcss/postcss` + self-hosted Commit Mono                                                                                                                                                              |
-| 13     | Critical gaps remediation                                                   | Real RSS parsing, AI SDK v6, FlowProducer DAG, rate limiting                                                                                                                                                  |
-| 14     | Validated gaps closure                                                      | Article detail page, 3-layer provenance, E2E tests                                                                                                                                                            |
-| 15     | Production readiness                                                        | Dockerfiles, OAuth, sign-in/auth-error pages                                                                                                                                                                  |
-| 16–17  | AdminGuard + skip-links + JSON-LD fix                                       | WCAG AAA compliance                                                                                                                                                                                           |
-| 18     | DB reinit + skip-link supplement                                            | Operational tooling                                                                                                                                                                                           |
-| 19     | Comprehensive code audit                                                    | 47 gaps, 39 remediated, +80 tests                                                                                                                                                                             |
-| 20     | Post-Phase-19 remediation                                                   | +60 tests, walkXffChain, /account page, testcontainers, ESLint domain purity, MEP v6.0                                                                                                                        |
-| **21** | **Security & architecture remediation (audit-driven)**                      | **11 findings fixed: .env\* untracked, admin routes fixed, auth pattern corrected, CSP hardened, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete. +20 tests, +1 suite** |
+| Pillar                 | What It Means                                   | How It Manifests                                                                                                            |
+| :--------------------- | :---------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| **Topic-first**        | Stories organized by subject, not source        | `categories` + `subcategories` tables; `/topics/[category]` route                                                           |
+| **Source-cited AI**    | Every AI summary cites verifiable sources       | `sourcesCited: { url, title }[]` in Zod schema; NutritionLabel renders `[1]`, `[2]` superscript links                       |
+| **3-Layer Provenance** | Machine-readable disclosure on every AI summary | JSON-LD `<script>` in body + `X-AI-Provenance` HTTP header + `<meta name="ai-provenance">` — EU AI Act Article 50 compliant |
 
 ---
 
 ## 2. Tech Stack & Environment
 
-### Exact Versions (from `package.json`)
+### Exact Versions (verified against `package.json` + `pnpm-lock.yaml`)
 
-| Layer                  | Technology                                             | Exact Version                                                                                        | Purpose                                                                                          |
-| :--------------------- | :----------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- |
-| **Web Framework**      | Next.js                                                | `^16.2.9`                                                                                            | App Router, PPR, Cache Components, `proxy.ts` (≥16.0.7 mitigates CVE-2025-55182)                 |
-| **UI Runtime**         | React                                                  | `^19.2.7`                                                                                            | View Transitions, `useActionState`, `useOptimistic`, `<Activity>`                                |
-| **Language**           | TypeScript                                             | `^5.7.0` (strict)                                                                                    | Zero `any`, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`, `erasableSyntaxOnly`             |
-| **Styling**            | Tailwind CSS                                           | `^4.3.1`                                                                                             | Utility-first with `@theme` tokens. CSS Subgrid for feed alignment.                              |
-| **PostCSS**            | `@tailwindcss/postcss`                                 | `^4.3.1`                                                                                             | **Mandatory** PostCSS plugin for Tailwind v4 utility class generation                            |
-| **Components**         | Shadcn UI + Radix                                      | `@radix-ui/react-accordion ^1.2.14`, `@radix-ui/react-dialog ^1.1.16`, `@radix-ui/react-slot ^1.2.5` | Accessible primitives, wrapped for bespoke aesthetic                                             |
-| **ORM**                | Drizzle ORM                                            | `^0.45.2`                                                                                            | TypeScript-native, SQL-fluent, lazy proxy connection pattern                                     |
-| **Validation**         | Zod                                                    | `^4.4.3`                                                                                             | Schema-first, composable. Enforces AI output constraints.                                        |
-| **Auth**               | Auth.js (next-auth)                                    | `5.0.0-beta.31` (pinned)                                                                             | HttpOnly session cookies, Drizzle adapter, JWT strategy                                          |
-| **Database**           | PostgreSQL                                             | 17                                                                                                   | Primary datastore. GIN FTS + `ts_rank_cd` BM25. `pg_trgm` for autocomplete.                      |
-| **Driver**             | `postgres` (postgres.js)                               | `^3.4.9`                                                                                             | Enables lazy proxy connection pattern (NOT `pg`)                                                 |
-| **Job Queue**          | BullMQ                                                 | `^5.78.0`                                                                                            | Job graphs (Flows via `FlowProducer`), priorities, monitoring                                    |
-| **Queue Backend**      | Redis (ioredis)                                        | `^5.11.1`                                                                                            | AOF persistence, `noeviction`, `maxRetriesPerRequest: null`                                      |
-| **Worker Runtime**     | Node.js                                                | 24 LTS ("Krypton")                                                                                   | BullMQ-native. LTS through April 2028. `engines.node: ">=24.0.0"`                                |
-| **AI SDK**             | Vercel AI SDK                                          | `ai@^6.0.201` + `@ai-sdk/anthropic@^3.0.85` + `@ai-sdk/openai@^3.0.73`                               | `generateObject()` with Zod schema validation                                                    |
-| **AI (Primary)**       | Claude 4.5 Haiku                                       | `claude-haiku-4-5`                                                                                   | $1/$5 per M tokens. Best cost/quality for news summarisation.                                    |
-| **AI (Fallback)**      | GPT-5 Mini                                             | `gpt-5-mini`                                                                                         | Validated cost/quality fallback model                                                            |
-| **RSS Parsing**        | `rss-parser`                                           | `^3.13.0`                                                                                            | RSS 2.0 + Atom 1.0 parsing. JSON Feed parsed natively.                                           |
-| **HTML Stripping**     | `cheerio`                                              | `^1.2.0`                                                                                             | Phase 19 H9: replaces regex `<[^>]*>/g` (which leaked `<script>` content)                        |
-| **Rate Limiting**      | `ioredis` (fixed-window)                               | `^5.11.1`                                                                                            | Redis `INCR` + `EXPIRE`. 20 req/s per IP on `/api/articles`. 5 req/min/user on `/api/summarize`. |
-| **Push Notifications** | `web-push`                                             | `^3.6.7`                                                                                             | VAPID + AES-256-GCM key encryption                                                               |
-| **Password Hashing**   | `bcryptjs`                                             | `^3.0.3`                                                                                             | Credentials provider                                                                             |
-| **Date/Time**          | `luxon`                                                | `^3.7.2`                                                                                             | DST-safe quiet hours for push notifications                                                      |
-| **Icons**              | `lucide-react`                                         | `^1.18.0`                                                                                            | Icon library                                                                                     |
-| **Class Management**   | `class-variance-authority` + `clsx` + `tailwind-merge` | `^0.7.1` / `^2.1.1` / `^3.6.0`                                                                       | `cn()` utility + `cva` variant discipline                                                        |
-| **Testing (Unit)**     | Vitest                                                 | `^4.1.9`                                                                                             | jsdom environment, coverage via `@vitest/coverage-v8 ^4.1.9`                                     |
-| **Testing (E2E)**      | Playwright                                             | `^1.61.0`                                                                                            | Chromium/Firefox/WebKit + `@axe-core/playwright ^4.11.3`                                         |
-| **Test Integration**   | testcontainers                                         | `12.0.3` + `@testcontainers/postgresql` + `@testcontainers/redis`                                    | Real DB container tests (Phase 20 / F3)                                                          |
-| **Pre-commit**         | husky + lint-staged                                    | `^9.1.7` / `^17.0.8`                                                                                 | eslint + prettier on staged `.ts`/`.tsx`                                                         |
-| **Formatting**         | Prettier                                               | `^3.8.4`                                                                                             | + `prettier-plugin-tailwindcss ^0.8.0`                                                           |
-| **Linting**            | ESLint + typescript-eslint                             | `^8.61.0`                                                                                            | Flat config, `--max-warnings 0`                                                                  |
-| **DB Migrations**      | drizzle-kit                                            | `^0.31.10`                                                                                           | `generate` + `migrate` (never `push` in production)                                              |
-| **TSX Runner**         | tsx                                                    | `^4.22.4`                                                                                            | Worker process: `tsx src/workers/index.ts`                                                       |
+| Layer               | Package                                                           | Version                       | Notes                                                                                          |
+| :------------------ | :---------------------------------------------------------------- | :---------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Runtime**         | Node.js                                                           | `>=24.0.0` (24 LTS "Krypton") | Pinned in `package.json` `engines.node` + Dockerfiles use `node:24-alpine`                     |
+| **Package Manager** | pnpm                                                              | `>=9.0.0` (9.15.9 installed)  | Pinned via `packageManager: "pnpm@9.15.0"`                                                     |
+| **Framework**       | next                                                              | `^16.2.9`                     | CVE-2025-55182 mitigated (≥16.0.7 minimum)                                                     |
+| **UI Library**      | react / react-dom                                                 | `^19.2.7`                     | React 19 stable                                                                                |
+| **Language**        | typescript                                                        | `^5.7.0`                      | Strict mode + `erasableSyntaxOnly`                                                             |
+| **Styling**         | tailwindcss                                                       | `^4.3.1`                      | CSS-first `@theme` config (no `tailwind.config.js`)                                            |
+| **PostCSS**         | `@tailwindcss/postcss`                                            | `^4.3.1`                      | MANDATORY — without it, zero utilities generate                                                |
+| **Database**        | PostgreSQL                                                        | 17                            | Run via Docker (`postgres:17` image)                                                           |
+| **ORM**             | drizzle-orm                                                       | `^0.45.2`                     | Lazy Proxy connection pattern                                                                  |
+| **Migrations**      | drizzle-kit                                                       | `^0.31.10`                    | `generate` + `migrate` only — NEVER `push` in prod                                             |
+| **DB Driver**       | postgres (postgres.js)                                            | `^3.4.9`                      | NOT `pg` — postgres.js is the driver                                                           |
+| **Queue**           | bullmq                                                            | `^5.78.0`                     | 4 workers: ingest(50), summarize(5), score(20), feedSlice(10)                                  |
+| **Redis Client**    | ioredis                                                           | `^5.11.1`                     | For BullMQ + rate limiting                                                                     |
+| **Auth**            | next-auth                                                         | `5.0.0-beta.31`               | Auth.js v5 beta — 4 known `as any` casts in `lib/auth/index.ts` (DrizzleAdapter type mismatch) |
+| **Auth Adapter**    | @auth/drizzle-adapter                                             | `^1.11.2`                     |                                                                                                |
+| **AI SDK**          | ai (Vercel AI SDK v6)                                             | `^6.0.201`                    | `generateObject()` returns `result.object` directly                                            |
+| **AI Providers**    | @ai-sdk/anthropic / @ai-sdk/openai                                | `^3.0.85` / `^3.0.73`         | Primary: Claude Haiku 4.5; Fallback: GPT-5 Mini                                                |
+| **Validation**      | zod                                                               | `^4.4.3`                      | Used for env vars + AI output schema                                                           |
+| **HTML Parsing**    | cheerio                                                           | `^1.2.0`                      | Real HTML parser (replaces regex stripping) — Phase 19 / H9                                    |
+| **RSS Parsing**     | rss-parser                                                        | `^3.13.0`                     | RSS 2.0 + Atom 1.0                                                                             |
+| **Date**            | luxon                                                             | `^3.7.2`                      | DST-safe quiet hours for push notifications                                                    |
+| **Web Push**        | web-push                                                          | `^3.6.7`                      | VAPID keys + AES-256-GCM encrypted subscription keys                                           |
+| **Crypto**          | bcryptjs                                                          | `^3.0.3`                      | Password hashing for Credentials provider                                                      |
+| **UI Primitives**   | @radix-ui/react-accordion, react-dialog, react-slot               | `^1.2.x`                      | Shadcn-style wrapping                                                                          |
+| **Class Utils**     | class-variance-authority, clsx, tailwind-merge                    | `^0.7.1`, `^2.1.1`, `^3.6.0`  | `cn()` utility                                                                                 |
+| **HTTP**            | undici                                                            | `^8.5.0`                      | Direct dep + pnpm override on cheerio>undici (Phase 22 / H2 mitigation)                        |
+| **Icons**           | lucide-react                                                      | `^1.18.0`                     |                                                                                                |
+| **Testing**         | vitest, @vitest/coverage-v8                                       | `^4.1.9`                      | jsdom env + 80/70/80/80 thresholds                                                             |
+| **E2E**             | @playwright/test, @axe-core/playwright                            | `^1.61.0`, `^4.11.3`          | 10 E2E + 4 a11y scans                                                                          |
+| **Integration**     | testcontainers, @testcontainers/postgresql, @testcontainers/redis | `^12.0.3`                     | Docker-gapped DB integration tests                                                             |
 
-### Critical `tsconfig.json` Flags
+### Critical TypeScript Flags (`tsconfig.json`)
+
+These flags are **non-negotiable**. Removing any of them will cause either silent bugs or build failures.
 
 ```json
 {
   "compilerOptions": {
     "target": "ES2022",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "verbatimModuleSyntax": true,
-    "erasableSyntaxOnly": true,
+    "strict": true, // Master switch — all strict checks
+    "noUncheckedIndexedAccess": true, // arr[i] returns T | undefined (catches runtime undefined access)
+    "verbatimModuleSyntax": true, // Requires `import type` for type-only imports
+    "erasableSyntaxOnly": true, // FORBIDS `enum` and `namespace` — use string unions + ES modules
+    "strictNullChecks": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
-    "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
     "isolatedModules": true,
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "incremental": true,
     "paths": { "@/*": ["./src/*"] }
   },
   "exclude": [
@@ -196,112 +151,122 @@ Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects
 }
 ```
 
-**Why these flags matter:**
+**`erasableSyntaxOnly` is the most important flag.** It forbids TypeScript constructs that emit runtime code (`enum`, `namespace`, parameter properties). This forces all "enums" to be string unions or Drizzle `pgEnum()` (which emits SQL, not TS runtime code). If you write `enum Status { ACTIVE = "active" }`, tsc will fail with `error TS1294: This syntax is not allowed when 'erasableSyntaxOnly' is enabled`.
 
-| Flag                                     | Purpose                                                | What Breaks Without It                          |
-| :--------------------------------------- | :----------------------------------------------------- | :---------------------------------------------- |
-| `strict: true`                           | Non-negotiable type safety                             | All type errors silently pass                   |
-| `noUncheckedIndexedAccess: true`         | `arr[i]` returns `T \| undefined` (not `T`)            | Hides runtime `undefined` access bugs           |
-| `verbatimModuleSyntax: true`             | Requires `import type` for type-only imports           | Tree-shaking misses type-only imports           |
-| `erasableSyntaxOnly: true`               | Forbids `enum` / `namespace` (compile to runtime IIFE) | Use string unions + ES modules instead          |
-| `noImplicitAny: true`                    | Catches untyped parameters                             | `any` creeps in silently                        |
-| `noImplicitReturns: true`                | Catches missing return paths                           | Functions return `undefined` silently           |
-| `noFallthroughCasesInSwitch: true`       | Catches missing `break`                                | Switch cases fall through unexpectedly          |
-| `noImplicitOverride: true`               | Requires `override` keyword                            | Silent method shadowing                         |
-| `forceConsistentCasingInFileNames: true` | Case-sensitive imports                                 | Cross-platform import failures (macOS vs Linux) |
+**`noUncheckedIndexedAccess` is the second most important.** Without it, `arr[0]` returns `T` — but at runtime it might be `undefined`. With it, `arr[0]` returns `T | undefined`, forcing you to handle the empty case. This catches hundreds of bugs that would otherwise only surface in production.
 
 ### Environment Variables (17 total: 10 required + 6 optional + 1 with default)
 
 All validated by Zod at module load in `src/lib/env/index.ts`. The app fails fast with a descriptive error if any required var is missing or invalid.
 
-**Phase 21 Security:** `.env`, `.env.docker`, `.env.local` are gitignored. Only `.env.example` is tracked (placeholder values). `AUTH_SECRET` rejects known-weak values (containing `dev`, `test`, `ci-dummy`, `change-me`, `placeholder`, etc.) in production via `superRefine`.
-
 ```bash
-# ── Required (10) ─────────────────────────────────────────
-DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews
-REDIS_URL=redis://localhost:6379
-AUTH_SECRET=  # min 32 chars, generate: openssl rand -base64 33
-                 # Phase 21: rejects known-weak values in production
+# Required (10)
+DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews  # must start with postgres:// or postgresql://
+REDIS_URL=redis://localhost:6379                                # must start with redis://
+AUTH_SECRET=                                                     # min 32 chars; rejects weak values in prod (superRefine)
 AUTH_URL=http://localhost:3000
-ANTHROPIC_API_KEY=sk-ant-...  # must start with sk-ant-
-OPENAI_API_KEY=sk-...  # must start with sk-
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=  # npx web-push generate-vapid-keys
+ANTHROPIC_API_KEY=sk-ant-...                                    # must start with sk-ant-
+OPENAI_API_KEY=sk-...                                           # must start with sk-
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=                                    # npx web-push generate-vapid-keys
 VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=mailto:admin@onestopnews.com
-PUSH_KEY_ENCRYPTION_KEY=  # 64 hex chars, openssl rand -hex 32
+PUSH_KEY_ENCRYPTION_KEY=                                         # 64 hex chars (32 bytes); openssl rand -hex 32
 
-# ── Optional (6) ──────────────────────────────────────────
-TRUSTED_PROXY=  # "true" | unset
-TRUSTED_PROXY_CIDRS=  # "10.0.0.0/8,172.16.0.0/12" (Phase 20 / F1)
-GOOGLE_CLIENT_ID=  # both ID+SECRET required to enable
+# Optional (6) — OAuth providers (both ID + SECRET required to enable)
+GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+TRUSTED_PROXY=          # "true" | unset — use rightmost IP behind CDN
+TRUSTED_PROXY_CIDRS=    # comma-separated CIDRs for proxy-chain walking
 
-# ── With Default (1) ──────────────────────────────────────
-NODE_ENV=development  # development | production | test
+# With default
+NODE_ENV=development    # development | production | test (default: development)
 ```
+
+**CRITICAL RULE:** Never read `process.env.*` directly in production code. Import `env` from `@/lib/env` and access `env.VAR_NAME`. The Zod schema validates everything at module load. Direct `process.env.*` reads bypass validation — typos like `GOOGLE_CLIENTID` (missing underscore) silently return `undefined` and disable OAuth with no error.
+
+**Phase 21 Security:** `.env`, `.env.docker`, `.env.local` are gitignored. Only `.env.example` is tracked (placeholder values). `AUTH_SECRET` rejects known-weak values (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`, etc.) in production via `superRefine`.
 
 ---
 
 ## 3. Bootstrapping & Configuration
 
-### From Zero: Recreating the Project
+### From Zero: Recreating This Project
 
 ```bash
-# 1. Create Next.js 16 app with TypeScript + Tailwind v4
-pnpm create next-app@latest onestopnews --typescript --tailwind --app --turbopack
+# 1. Scaffold Next.js 16 + TypeScript + Tailwind v4
+pnpm create next-app@latest onestopnews \
+  --typescript \
+  --tailwind \
+  --eslint \
+  --app \
+  --src-dir \
+  --import-alias "@/*" \
+  --use-pnpm
+
 cd onestopnews
 
-# 2. Pin Node 24 + pnpm 9
-echo 'engines.node: ">=24.0.0"' >> package.json
-echo 'packageManager: "pnpm@9.15.0"' >> package.json
+# 2. Install runtime dependencies (exact versions from package.json)
+pnpm add next@^16.2.9 react@^19.2.7 react-dom@^19.2.7
+pnpm add drizzle-orm@^0.45.2 postgres@^3.4.9
+pnpm add bullmq@^5.78.0 ioredis@^5.11.1
+pnpm add next-auth@5.0.0-beta.31 @auth/drizzle-adapter@^1.11.2
+pnpm add ai@^6.0.201 @ai-sdk/anthropic@^3.0.85 @ai-sdk/openai@^3.0.73
+pnpm add zod@^4.4.3 cheerio@^1.2.0 rss-parser@^3.13.0
+pnpm add luxon@^3.7.2 web-push@^3.6.7 bcryptjs@^3.0.3
+pnpm add undici@^8.5.0
+pnpm add @radix-ui/react-accordion@^1.2.14 @radix-ui/react-dialog@^1.1.16 @radix-ui/react-slot@^1.2.5
+pnpm add class-variance-authority@^0.7.1 clsx@^2.1.1 tailwind-merge@^3.6.0
+pnpm add lucide-react@^1.18.0
 
-# 3. Install core deps
-pnpm add drizzle-orm postgres ioredis bullmq next-auth@5.0.0-beta.31 @auth/drizzle-adapter \
-  zod ai @ai-sdk/anthropic @ai-sdk/openai rss-parser cheerio web-push bcryptjs luxon \
-  lucide-react class-variance-authority clsx tailwind-merge
+# 3. Install dev dependencies
+pnpm add -D drizzle-kit@^0.31.10
+pnpm add -D vitest@^4.1.9 @vitest/coverage-v8@^4.1.9
+pnpm add -D @playwright/test@^1.61.0 @axe-core/playwright@^4.11.3
+pnpm add -D testcontainers@^12.0.3 @testcontainers/postgresql@^12.0.3 @testcontainers/redis@^12.0.3
+pnpm add -D @testing-library/react@^16.3.2 @testing-library/dom@^10.4.1 @testing-library/jest-dom@^6.9.1
+pnpm add -D jsdom@^29.1.1
+pnpm add -D husky@^9.1.7 lint-staged@^17.0.8
+pnpm add -D prettier@^3.8.4 prettier-plugin-tailwindcss@^0.8.0
+pnpm add -D typescript@^5.7.0 typescript-eslint@^8.61.0
+pnpm add -D tsx@^4.22.4
+pnpm add -D @types/node@^25.9.3 @types/react@^19.2.17 @types/react-dom@^19.2.3
 
-# 4. Install Radix primitives (Shadcn-style, not full Shadcn CLI)
-pnpm add @radix-ui/react-accordion @radix-ui/react-dialog @radix-ui/react-slot
-
-# 5. Install dev deps
-pnpm add -D drizzle-kit tsx vitest @vitest/coverage-v8 @playwright/test \
-  @axe-core/playwright husky lint-staged prettier prettier-plugin-tailwindcss \
-  typescript-eslint @tailwindcss/postcss testcontainers @testcontainers/postgresql @testcontainers/redis
-
-# 6. Self-host Commit Mono (DO NOT use @fontsource/commit-mono — causes build issues)
-mkdir -p public/fonts
-# Download commit-mono-400.woff2 from the official source and place in public/fonts/
+# 4. Add pnpm overrides for the cheerio>undici CVE (Phase 22 / H2 mitigation)
+# Edit package.json to add:
+#   "pnpm": { "overrides": { "cheerio>undici": "^8.5.0" } }
 ```
 
-### `next.config.ts` — Critical Configuration
+### Critical Configuration Files
+
+#### `next.config.ts` — The 5 Most Important Flags
 
 ```typescript
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone", // Required for Dockerfile.web
-  cacheComponents: true, // TOP-LEVEL — enables "use cache" + PPR
+  // 1. OUTPUT: "standalone" — required for Docker deployment
+  output: "standalone",
+
+  // 2. CACHE COMPONENTS — TOP-LEVEL (not inside experimental!)
+  // Enables "use cache" directive, PPR, opt-in caching model.
+  // Replaces ALL of: experimental.ppr + dynamicIO.
+  cacheComponents: true,
+
+  // 3. CACHE LIFE PROFILES — TOP-LEVEL alongside cacheComponents
+  // MUST be defined here before any cacheLife('profileName') call works.
   cacheLife: {
-    // TOP-LEVEL — profiles for cacheLife() calls
     feed: { stale: 30, revalidate: 120, expire: 600 },
     topicShell: { stale: 300, revalidate: 900, expire: 86400 },
     reference: { stale: 3600, revalidate: 86400, expire: 604800 },
   },
-  turbopack: {}, // TOP-LEVEL — graduated from experimental in Next.js 16
-  images: {
-    formats: ["image/avif", "image/webp"],
-    remotePatterns: [
-      { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
-    ],
-  },
-  experimental: {
-    viewTransition: true, // Inside experimental — View Transitions API
-    // DO NOT include: clientSegmentCache (not in 16.2.9 ExperimentalConfig — TS error)
-    // DO NOT include: ppr (build error in Next.js 16 — cacheComponents implements PPR)
-    // DO NOT include: dynamicIO (deprecated — replaced by cacheComponents)
-  },
+
+  // 4. TURBOPACK — TOP-LEVEL in Next.js 16 (graduated from experimental)
+  turbopack: {},
+
+  // 5. SECURITY HEADERS — CSP, HSTS, X-Frame-Options, X-Content-Type-Options
+  // Phase 22 / H1: 'unsafe-eval' ACTUALLY removed (Phase 21 S4 was a comment-only fix)
   async headers() {
     return [
       {
@@ -320,75 +285,59 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline'", // NO 'unsafe-eval' — Phase 22 / H1
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' https: data:",
+              "font-src 'self' data:",
+              "connect-src 'self'",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join("; "),
           },
         ],
       },
     ];
+  },
+
+  experimental: {
+    viewTransition: true, // MUST be inside experimental: {}
+    // DO NOT INCLUDE: experimental.ppr (build error in Next.js 16)
+    // DO NOT INCLUDE: experimental.dynamicIO (deprecated)
+    // DO NOT INCLUDE: experimental.clientSegmentCache (not in 16.2.9 ExperimentalConfig)
   },
 };
 
 export default nextConfig;
 ```
 
-### Flag Placement Matrix (wrong placement = silent breakage)
+**Flag Placement Is Critical** (wrong placement = silent breakage):
 
-| Flag                              | Placement                     | What Breaks if Wrong                                    |
-| :-------------------------------- | :---------------------------- | :------------------------------------------------------ |
-| `cacheComponents: true`           | **Top-level**                 | Every `"use cache"` silently ignored → zero caching     |
-| `cacheLife` profiles              | **Top-level**                 | `cacheLife('feed')` throws at runtime — profile missing |
-| `turbopack: {}`                   | **Top-level**                 | Ignored or config warning                               |
-| `experimental.viewTransition`     | **Inside `experimental: {}`** | Transitions silently disabled                           |
-| `experimental.ppr`                | **DO NOT INCLUDE**            | Build error in Next.js 16                               |
-| `experimental.dynamicIO`          | **DO NOT INCLUDE**            | Deprecated — replaced by `cacheComponents`              |
-| `experimental.clientSegmentCache` | **DO NOT INCLUDE**            | TS2353 — not in 16.2.9 `ExperimentalConfig`             |
+| Flag                              | Placement                     | What Breaks if Wrong                  |
+| :-------------------------------- | :---------------------------- | :------------------------------------ |
+| `cacheComponents: true`           | **Top-level**                 | Every `"use cache"` silently ignored  |
+| `cacheLife` profiles              | **Top-level**                 | `cacheLife('feed')` throws at runtime |
+| `turbopack: {}`                   | **Top-level**                 | Ignored or config warning             |
+| `experimental.viewTransition`     | **Inside `experimental: {}`** | Transitions silently disabled         |
+| `experimental.ppr`                | **DO NOT INCLUDE**            | Build error in Next.js 16             |
+| `experimental.dynamicIO`          | **DO NOT INCLUDE**            | Deprecated                            |
+| `experimental.clientSegmentCache` | **DO NOT INCLUDE**            | Not in 16.2.9 type — TS error         |
 
-### `proxy.ts` — Network Boundary (Layer 0)
-
-```typescript
-// proxy.ts (at repo root — NOT src/middleware.ts)
-import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "./src/lib/auth";
-
-export async function proxy(request: NextRequest) {
-  const session = await auth();
-  const isSignedIn = !!session?.user;
-  const isOnSignInPage = request.nextUrl.pathname.startsWith("/sign-in");
-  const isOnAuthError = request.nextUrl.pathname.startsWith("/auth-error");
-
-  if (!isSignedIn && !isOnSignInPage && !isOnAuthError) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
-  }
-  if (isSignedIn && (isOnSignInPage || isOnAuthError)) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-  return NextResponse.next();
-}
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
-};
-```
-
-**Rules:** ZERO DB calls. ZERO business logic. Optimistic cookie check only. Runs on Node.js runtime only (NOT Edge — `proxy.ts` does not support Edge in Next.js 16).
-
-### `postcss.config.mjs` — Mandatory for Tailwind v4
+#### `postcss.config.mjs` — The Tailwind v4 Plugin Is MANDATORY
 
 ```javascript
-/** @type {import('postcss-load-config').Config} */
-const config = {
+export default {
   plugins: {
     "@tailwindcss/postcss": {},
   },
 };
-
-export default config;
 ```
 
-**Without this file, Tailwind v4 generates ZERO utility classes.** The symptom is a completely unstyled page. If you see this, check: (1) `@tailwindcss/postcss` is installed, (2) `postcss.config.mjs` exists, (3) `.next/` cache is cleared (`rm -rf .next`), (4) dev server restarted.
+**Without this file, zero Tailwind utility classes generate.** The page will load completely unstyled. If you see a page with raw HTML and no styling, this is almost always the cause. Fix: create `postcss.config.mjs`, install `@tailwindcss/postcss`, then `rm -rf .next/` to clear the cache.
 
-### `eslint.config.mjs` — Flat Config with Domain Purity Rule
+#### `eslint.config.mjs` — Domain Layer Purity Rule
 
 ```javascript
 import tseslint from "typescript-eslint";
@@ -400,8 +349,8 @@ export default [
       "node_modules/**",
       "drizzle/**",
       "dist/**",
-      "playwright.config.ts",
       "skills/**",
+      "docs/**",
       "coverage/**",
     ],
   },
@@ -414,7 +363,9 @@ export default [
       "@typescript-eslint/no-explicit-any": "error",
     },
   },
-  // Phase 20 / H1: Domain layer purity — runtime imports from @/lib/db* forbidden
+  // Domain layer purity rule (Phase 20 / H1):
+  // src/domain/** may import from @/lib/db ONLY via `import type`
+  // (compile-time-only, erased at build — no runtime coupling).
   {
     files: ["src/domain/**/*.ts"],
     rules: {
@@ -424,17 +375,19 @@ export default [
           paths: [
             {
               name: "@/lib/db",
-              message: "Use `import type` instead...",
+              message:
+                "Runtime imports forbidden in src/domain/**. Use `import type { ... } from '@/lib/db/schema'`.",
               allowTypeImports: true,
             },
             {
               name: "@/lib/db/schema",
-              message: "Use `import type` instead...",
+              message: "Runtime imports forbidden. Use `import type` instead.",
               allowTypeImports: true,
             },
             {
               name: "@/lib/db/index",
-              message: "Domain layer must be pure...",
+              message:
+                "Runtime imports forbidden. The domain layer must be pure.",
               allowTypeImports: true,
             },
           ],
@@ -445,69 +398,101 @@ export default [
 ];
 ```
 
-### `vitest.config.ts` — 3-Tier Test Architecture
+#### `.prettierignore` — Scope Format Checks (Phase 22 / N6)
 
-```typescript
-import { defineConfig } from "vitest/config";
+Without this file, `pnpm format:check` scans 226+ markdown files in `skills/`, `docs/`, archived plans — false-positive CI failures.
 
-export default defineConfig({
-  test: {
-    environment: "jsdom",
-    globals: true,
-    exclude: [
-      "node_modules/",
-      "dist/",
-      "backup/",
-      "plans/",
-      "e2e/**",
-      "playwright.config.ts",
-      "src/**/*.db-integration.test.ts",
-    ],
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      thresholds: { lines: 80, functions: 80, branches: 70, statements: 80 },
-      exclude: [
-        "node_modules/",
-        "dist/",
-        "*.config.*",
-        "*.d.ts",
-        "src/test/**",
-        "e2e/**",
-        "src/**/*.db-integration.test.ts",
-      ],
-    },
-    setupFiles: ["./src/test/setup.ts"],
-  },
-  resolve: { alias: { "@": new URL("./src", import.meta.url).pathname } },
-});
+```gitignore
+node_modules/
+.next/
+dist/
+coverage/
+pnpm-lock.yaml
+drizzle/meta/
+skills/
+docs/
+*.archived
+*.backup
+*.bak
+*.tar.gz
+*.tar.bz2
+*.tgz
+e2e/
+playwright-report/
+.env
+.env.*
+!.env.example
+.husky/
+.github/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.woff
+*.woff2
+*.ttf
 ```
 
-**Separate `vitest.integration.config.ts`** for DB integration tests (node env, 120s timeout, includes only `*.db-integration.test.ts`).
+**Active docs at repo root (`README.md`, `AGENTS.md`, `CLAUDE.md`, `MASTER_EXECUTION_PLAN.md`, `Codebase_Review_Validation_Report_*.md`) are NOT excluded** — they should be kept formatted.
 
 ---
 
 ## 4. The Design System (Code-First)
 
-### Typography Stack (exact `@theme` values from `globals.css`)
+### The `@theme` Block (in `src/app/globals.css`)
+
+This is the single source of truth for all design tokens. Tailwind v4 reads this block and generates utilities like `bg-ink-900`, `text-dispatch-ember`, `font-editorial`.
 
 ```css
+@import "tailwindcss";
+
 @theme {
+  /* ── Ink Scale (text colors, dark surfaces) ── */
+  --color-ink-900: #1a1a18; /* Headlines — WCAG AAA 15:1 on paper-50 */
+  --color-ink-700: #2a2a27;
+  --color-ink-600: #3d3d3a; /* Body text — WCAG AAA 9.5:1 on paper-50 */
+  --color-ink-500: #525250;
+  --color-ink-400: #6b6b68;
+  --color-ink-300: #8a8a83; /* Muted text, metadata dividers */
+  --color-ink-100: #e8e8e4; /* Borders, scrollbar thumb */
+
+  /* ── Paper Scale (backgrounds, card surfaces) ── */
+  --color-paper-50: #fafaf8; /* Page background — warm off-white */
+  --color-paper-100: #f2f2ee; /* Card hover background, nutrition label bg */
+  --color-paper-200: #e6e4de; /* Image placeholders */
+  --color-paper-300: #d8d4cc; /* Card borders on dark surfaces */
+
+  /* ── Dispatch Brand Accents ── */
+  --color-dispatch-ember: #c7513f; /* PRIMARY ACCENT — breaking/AI badge/focus rings */
+  --color-dispatch-ember-light: #fde8e4;
+  --color-dispatch-sage: #6b8f71; /* "Active" status indicator */
+  --color-dispatch-sage-light: #e4ede5;
+  --color-dispatch-slate: #5a6b7a; /* Neutral source attribution */
+  --color-dispatch-slate-light: #e2e7ec;
+  --color-dispatch-clay: #8b6d5a; /* Warm earth tone (accent) */
+  --color-dispatch-clay-light: #ede5df;
+  --color-dispatch-violet: #7a6b8f; /* Citation links */
+  --color-dispatch-violet-light: #e8e4ef;
+
+  /* ── Semantic State Tokens (Phase 19 / M15) ── */
+  --color-dispatch-warning: #b45309; /* amber-700 equivalent — SummaryPanel needs_review */
+  --color-dispatch-warning-light: #fef3c7;
+  --color-dispatch-danger: #dc2626; /* red-600 equivalent — Button destructive variant */
+  --color-dispatch-danger-dark: #b91c1c;
+
+  /* ── Typography Stack ── */
   --font-editorial: "Newsreader", Georgia, "Times New Roman", serif;
   --font-ui: "Instrument Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "Commit Mono", ui-monospace, "Fira Code", monospace;
 }
 ```
 
-| Role          | Typeface                   | Weight        | CSS Variable       | Tailwind Class   | Fallback              |
-| :------------ | :------------------------- | :------------ | :----------------- | :--------------- | :-------------------- |
-| **Headlines** | Newsreader (variable)      | 800 (display) | `--font-editorial` | `font-editorial` | Georgia, serif        |
-| **UI / Body** | Instrument Sans (variable) | 400–600       | `--font-ui`        | `font-ui`        | system-ui, sans-serif |
-| **Metadata**  | Commit Mono (self-hosted)  | 400           | `--font-mono`      | `font-mono`      | Fira Code, monospace  |
+### Font Loading (in `src/app/layout.tsx`)
 
-**Font loading (`src/app/layout.tsx`):**
+Three fonts loaded via `next/font` — **never via CSS `@font-face` or `@fontsource`** (which broke Commit Mono in Phase 12):
 
-```typescript
+```tsx
 import { Newsreader, Instrument_Sans } from "next/font/google";
 import localFont from "next/font/local";
 
@@ -525,7 +510,7 @@ const instrumentSans = Instrument_Sans({
   display: "swap",
 });
 
-// Commit Mono MUST be self-hosted via next/font/local — @fontsource/commit-mono causes build issues
+// Commit Mono is SELF-HOSTED via next/font/local — @fontsource/commit-mono broke in Phase 12
 const commitMono = localFont({
   src: "../../public/fonts/commit-mono-400.woff2",
   variable: "--font-mono",
@@ -533,375 +518,434 @@ const commitMono = localFont({
   style: "normal",
   display: "swap",
 });
+
+// Apply all three CSS variables to <html>:
+<html lang="en" className={`${newsreader.variable} ${instrumentSans.variable} ${commitMono.variable}`}>
 ```
 
-**`.font-editorial` class** (applies display settings beyond just the font family):
+### Typography Hierarchy (Exact Usage)
+
+| Role                                                   | Font            | Weight  | Tailwind Class   | Example Usage                                                                     |
+| :----------------------------------------------------- | :-------------- | :------ | :--------------- | :-------------------------------------------------------------------------------- |
+| **Headlines** (H1, H2, H3)                             | Newsreader      | 800     | `font-editorial` | `<h1 className="font-editorial text-3xl sm:text-4xl text-ink-900">`               |
+| **UI / Body**                                          | Instrument Sans | 400–600 | `font-ui`        | `<p className="font-ui text-sm leading-relaxed text-ink-600">`                    |
+| **Metadata** (timestamps, source names, status badges) | Commit Mono     | 400     | `font-mono`      | `<span className="font-mono text-[10px] uppercase tracking-widest text-ink-300">` |
+
+### The `.font-editorial` Enhancement Block
+
+Defined in `globals.css` — applies typographic refinements to all editorial headlines:
 
 ```css
 .font-editorial {
   font-weight: 800;
   line-height: 1.1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.02em; /* Tight tracking for large display type */
   text-rendering: optimizeLegibility;
-  font-feature-settings: "ss01", "ss02";
+  font-feature-settings: "ss01", "ss02"; /* Newsreader stylistic sets */
 }
 ```
 
-### Color Tokens (complete — from `globals.css` `@theme` block)
+### CSS Subgrid (The Feed Alignment Mechanism)
 
-See [§19 Color Reference (Complete)](#19-color-reference-complete) for the full table. Key tokens:
+This is the **defining structural choice** of the feed UI. Instead of fixed heights or flex hacks, articles use CSS Subgrid so headlines/excerpts/metadata align across cards in the same row.
 
-| Token                    | Hex       | Usage                                    |
-| :----------------------- | :-------- | :--------------------------------------- |
-| `--color-ink-900`        | `#1a1a18` | Headings (letterpress black)             |
-| `--color-ink-600`        | `#3d3d3a` | Body text (WCAG AAA 9.5:1 on `paper-50`) |
-| `--color-ink-300`        | `#8a8a83` | Muted / metadata                         |
-| `--color-ink-100`        | `#e8e8e4` | Dividers / borders                       |
-| `--color-paper-50`       | `#fafaf8` | Page background (newsprint off-white)    |
-| `--color-paper-100`      | `#f2f2ee` | Card surface                             |
-| `--color-dispatch-ember` | `#c7513f` | Breaking news, AI badge, focus rings     |
-| `--color-dispatch-sage`  | `#6b8f71` | Finance / positive accent                |
-| `--color-dispatch-slate` | `#5a6b7a` | Tech / neutral accent                    |
-
-**Design Token Discipline:** NEVER use raw hex colors in Tailwind classes (e.g., `bg-[#1a1a2e]`). All colors must come from the design token system (`bg-ink-900`, `text-paper-50`, etc.). Raw hex values bypass the theme and break maintainability.
-
-### CSS Subgrid Feed Architecture
-
-The feed grid uses `grid-rows-subgrid` to force Headline, Excerpt, and Metadata rows to align across every card in a visual row — no fixed heights, no JavaScript measurement.
-
-**Parent (`FeedGrid.tsx`):**
-
-```tsx
-<div
-  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8"
-  role="feed"
-  aria-label="News articles"
->
-  {articles.map((article) => (
+```css
+/* In FeedGrid.tsx: */
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
+  {articles.map(article => (
     <ArticleCard key={article.id} article={article} />
   ))}
 </div>
-```
 
-**Child (`ArticleCard.tsx`):**
-
-```tsx
+/* In ArticleCard.tsx: */
 <article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6">
-  <h3 className="font-editorial text-xl ...">  {/* Row 1: Headline */}
-  <p className="font-ui text-sm ... line-clamp-3">  {/* Row 2: Excerpt */}
-  <div className="flex items-center gap-3 font-mono text-[10px] ...">  {/* Row 3: Metadata */}
+  <h3 className="font-editorial text-xl leading-tight text-ink-900">...</h3>  {/* Row 1 */}
+  <p className="font-ui text-sm leading-relaxed text-ink-600 line-clamp-3">...</p>  {/* Row 2 */}
+  <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-ink-600 mt-auto">...</div>  {/* Row 3 */}
 </article>
 ```
 
-**Contract:** Parent defines columns with `gap-x` only (no `gap-y`). Each `ArticleCard` spans 3 row tracks via `row-span-3`. Vertical spacing between visual rows is owned by the card (`mb-10`). Last card uses `last:mb-0` to prevent footer spacing issues.
+**Why Subgrid:** Headlines are 1–3 lines, excerpts are 0–3 lines, metadata is always 1 line. Without Subgrid, cards in the same row would have jagged bottoms. With Subgrid, all cards align on all 3 row tracks — calm, editorial, no visual noise.
 
-### Custom Utility Classes (from `globals.css`)
+### Custom Utility Classes (in `globals.css`)
 
-| Class                | Definition                                                                                 | Usage                                             |
-| :------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------------------ |
-| `.cat-label`         | `font-mono; font-variant: all-small-caps; letter-spacing: 0.12em`                          | Category labels, metadata tags                    |
-| `.cat-label-wide`    | `font-mono; font-variant: all-small-caps; letter-spacing: 0.25em`                          | Wide category labels with extra tracking          |
-| `.btn-ember`         | `transition: transform/background/box-shadow 150ms; hover: scale(1.02) + color-mix darken` | Primary CTA buttons                               |
-| `.pulse-dot`         | `animation: pulse-dot 2s ease-in-out infinite (opacity 1→0.25→1)`                          | Live status indicators                            |
-| `.commitment-number` | `font-editorial; font-size: 4.5rem; opacity: 0.08; position: absolute`                     | Decorative background numbers in StatsSection     |
-| `.nutrition-label`   | `border-left: 3px solid dispatch-ember; gradient paper-100→paper-50`                       | AI summary transparency panel                     |
-| `.reveal`            | `opacity: 0; transform: translateY(24px); transition: 700ms`                               | Scroll-reveal entrance (IntersectionObserver)     |
-| `.reveal.visible`    | `opacity: 1; transform: translateY(0)`                                                     | Active reveal state                               |
-| `.outline-hidden`    | `outline: 2px solid transparent; outline-offset: 2px`                                      | Tailwind v4 replacement for `outline-none` (a11y) |
-| `.category-nav`      | `scrollbar-width: none; -ms-overflow-style: none`                                          | Hidden scrollbar for horizontal nav               |
-| `.link-underline`    | `::after width: 0→100% on hover`                                                           | Animated underline for links                      |
-| `.cta-input`         | `bg: rgba(255,255,255,0.06); border: rgba(255,255,255,0.15)`                               | Input on dark background (NewsletterCTA)          |
-
-### Animation Tokens
-
-| Animation                   | Keyframes                                                   | Usage                                                |
-| :-------------------------- | :---------------------------------------------------------- | :--------------------------------------------------- |
-| `ticker-scroll`             | `translateX(0) → translateX(-50%)` over 80s linear infinite | NewsTicker marquee                                   |
-| `pulse-dot`                 | `opacity: 1 → 0.25 → 1` over 2s ease-in-out                 | Live status indicators                               |
-| `slideDown` / `slideUp`     | `height: 0 → var(--radix-accordion-content-height)`         | Radix Accordion expand/collapse (300ms cubic-bezier) |
-| `reveal` / `reveal.visible` | `opacity: 0, translateY(24px) → opacity: 1, translateY(0)`  | Scroll-triggered entrance (700ms)                    |
-| `scroll-progress`           | `scaleX(0) → scaleX(1)` via `animation-timeline: scroll()`  | CSS-only scroll progress bar                         |
-
-**Accessibility:** All animations respect `prefers-reduced-motion: reduce`. The global CSS overrides:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0ms !important;
-    transition-duration: 0ms !important;
-  }
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-```
+| Class                         | Purpose                                | Definition                                                                           |
+| :---------------------------- | :------------------------------------- | :----------------------------------------------------------------------------------- |
+| `.story-card`                 | Card hover transition                  | `transition: background-color 200ms, box-shadow 200ms;` + hover state                |
+| `.nutrition-label`            | AI summary sidebar                     | `border-left: 3px solid dispatch-ember; background: linear-gradient(...);`           |
+| `.citation-ref`               | Inline citation links                  | `border-bottom: 1px dashed dispatch-violet;`                                         |
+| `.btn-ember`                  | Primary CTA micro-interaction          | hover: `scale(1.02)` + `box-shadow: 0 4px 16px rgba(199, 81, 63, 0.25);`             |
+| `.link-underline`             | Animated underline                     | `::after` width 0→100% on hover                                                      |
+| `.cta-input`                  | Dark-background input                  | `background: rgba(255, 255, 255, 0.06);`                                             |
+| `.cat-label`                  | Category badge                         | `font-mono; font-variant: all-small-caps; letter-spacing: 0.12em;`                   |
+| `.cat-label-wide`             | Wide category badge                    | Same but `letter-spacing: 0.25em;`                                                   |
+| `.outline-hidden`             | Tailwind v4 `outline-none` replacement | `outline: 2px solid transparent;` (a11y-preserving)                                  |
+| `.reveal` + `.reveal.visible` | IntersectionObserver-driven fade-in    | `opacity: 0; transform: translateY(24px);` → `opacity: 1; transform: translateY(0);` |
+| `.scroll-progress`            | CSS-only scroll progress bar           | `animation-timeline: scroll(); z-index: 999;`                                        |
+| `.ticker-track`               | News ticker scroll                     | `animation: ticker-scroll 80s linear infinite;`                                      |
+| `.pulse-dot`                  | Live indicator                         | `animation: pulse-dot 2s ease-in-out infinite;`                                      |
+| `.commitment-number`          | Large editorial numerals               | `font-editorial; font-size: 4.5rem; opacity: 0.08;`                                  |
 
 ---
 
 ## 5. Component Architecture & Patterns
 
-### The "Engineered Soul" Component Philosophy
+### The 5-Layer Request Model (Golden Rule)
 
-Every component serves a specific architectural purpose. There are no "wrapper for wrapper's sake" components. The hierarchy is:
+This is the **single most important architectural principle** in the codebase. Deviation from this order creates security and consistency bugs.
 
 ```
-src/shared/components/     ← Cross-feature primitives (Layer 2)
-  ├── ui/                  ← Button, Badge, Skeleton, StatsSection, Accordion, NewsletterCTA
-  ├── layout/              ← Header, Footer, Masthead, NewsTicker, UserMenu
-  ├── providers/           ← RevealProvider (IntersectionObserver)
-  └── auth/                ← AdminGuard, AdminGuardSkeleton
-
-src/features/*/components/ ← Feature-specific (Layer 2)
-  ├── feed/                ← ArticleCard, FeedGrid, FeedData, FeedSkeleton, LeadStory, FeedContainer, LoadMoreButton
-  ├── articles/            ← ArticleData, ArticleSkeleton
-  ├── summaries/           ← NutritionLabel, NutritionLabelDemo, SummaryPanel, DisclosureBadge, SummariesData, SummariesSkeleton
-  ├── search/              ← SearchBar, SearchResults, SearchData, SearchSkeleton
-  └── sources/             ← SourcesData, SourcesSkeleton
-
-src/components/primitives/ ← Cross-cutting (Layer 2)
-  └── PageTransition.tsx   ← View Transitions abstraction
-
-src/app/                   ← Route components (Layer 1)
-  ├── (public)/            ← page.tsx (landing), search/
-  ├── topics/[category]/   ← PPR + Cache Component
-  ├── article/[id]/        ← Fully dynamic, 3-layer provenance
-  ├── sign-in/             ← Server + SignInClient
-  ├── auth-error/          ← AuthErrorMessage (links to /account)
-  ├── account/             ← Linked-provider management (Phase 20 / F2)
-  └── (admin)/             ← AdminGuard-protected routes
+Layer 0: proxy.ts           — Cookie check, redirect. NO DB. NO logic. NO Edge runtime.
+Layer 1: App Router          — Route structure, metadata, PPR, Suspense. Layouts must NOT fetch data.
+Layer 2: Feature Modules     — UI composition, data binding, mutations (feed, summaries, search, admin)
+Layer 3: Domain Services     — Pure business logic. No Next.js or DB runtime imports (import type only)
+Layer 4: Infrastructure      — Drizzle, Auth.js, BullMQ, AI SDK. Side effects only.
 ```
 
-### Button — cva + Radix Slot Pattern
+**Golden Rule:** A lower layer may never import from a higher layer. Domain may import types from Infrastructure but never runtime code. Feature Modules may import from Domain and Infrastructure. App Router may import from Feature Modules.
 
-```typescript
-// src/shared/components/ui/Button.tsx
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+### Server Components by Default
 
+**Server Components are the default.** Use `'use client'` only for:
+
+- Components with `useState`, `useEffect`, `useReducer`, `useRef`
+- Components using browser APIs (`window`, `document`, `localStorage`, `matchMedia`)
+- Components using `usePathname`, `useRouter`, `useSearchParams`
+- Components wrapped in `'use client'` contexts (`SessionProvider`, etc.)
+
+**Never put `'use client'` on a Server Component.** Never import `'use client'` modules into Server Components beyond the boundary.
+
+### Async `params` / `searchParams` / `cookies()` in Next.js 16
+
+In Next.js 16, all three are `Promise<T>`. Always `await` them:
+
+```tsx
+// CORRECT
+export async function ArticlePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  // ...
+}
+
+// WRONG — synchronous access causes runtime 500
+export function ArticlePage({ params }: { params: { id: string } }) {
+  const { id } = params; // TypeError: params is not iterable
+}
+```
+
+Same for `cookies()`:
+
+```tsx
+const cookieStore = await cookies();
+const session = cookieStore.get("session");
+```
+
+### Suspense + Server Component Pattern (Mandatory for Dynamic Data)
+
+Next.js 16 `cacheComponents: true` requires ALL async data fetching inside `<Suspense>` or `"use cache"`. Direct `await` in a page body triggers a `blocking-route` build error.
+
+```tsx
+// CORRECT — page shell is sync, async data is in a Server Component inside Suspense
+export default function HomePage() {
+  return (
+    <div>
+      <Header />
+      <Suspense fallback={<FeedSkeleton />}>
+        <FeedData />
+      </Suspense>
+      <Footer />
+    </div>
+  );
+}
+
+// FeedData.tsx — async Server Component
+export async function FeedData() {
+  const { articles, hasMore, nextCursor } = await getFeedArticles({});
+  return (
+    <FeedContainer
+      initialArticles={articles}
+      initialHasMore={hasMore}
+      initialCursor={nextCursor}
+    />
+  );
+}
+```
+
+### The `queries.ts` Boundary
+
+**All DB access goes through feature-level `queries.ts` files.** No raw Drizzle calls in components.
+
+```
+src/features/feed/queries.ts         ← getFeedArticles, buildFeedQuery
+src/features/articles/queries.ts     ← getArticleWithSummary
+src/features/search/queries.ts       ← searchArticles, getSearchSuggestions
+src/features/sources/queries.ts      ← getAllSources, getCategoryMap
+src/features/summaries/queries.ts    ← summary-related queries
+```
+
+### Component Philosophy: "Engineered Soul"
+
+Every component has a clear purpose, documented in a JSDoc header. The pattern:
+
+```tsx
+/**
+ * ArticleCard — Subgrid child spanning 3 row tracks.
+ *
+ * Subgrid contract (PRD §4.3):
+ *   Row 1: Headline — Editorial serif, weight 800.
+ *   Row 2: Excerpt — UI sans, 3-line clamp.
+ *   Row 3: Metadata — Mono, uppercase, auto-aligned.
+ *
+ * Data contract:
+ *   `article.source.name` requires a JOIN with the sources table.
+ *   Feed queries MUST use getFeedArticles() which includes this JOIN.
+ */
+export function ArticleCard({ article }: ArticleCardProps) {
+  // ...
+}
+```
+
+### Specific Component Patterns
+
+#### `ArticleCard` — The Subgrid Card
+
+```tsx
+<article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6 transition-colors duration-300 hover:bg-paper-100/50">
+  <h3 className="font-editorial text-xl leading-tight text-ink-900 group-hover:text-dispatch-ember transition-colors duration-300">
+    <Link
+      href={`/article/${article.id}`}
+      className="after:absolute after:inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 rounded-sm"
+    >
+      {article.title}
+    </Link>
+  </h3>
+  <p className="font-ui text-sm leading-relaxed text-ink-600 line-clamp-3">
+    {article.excerpt ?? <span className="text-ink-300 italic">No excerpt available.</span>}
+  </p>
+  <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-ink-600 mt-auto">
+    <span className="text-dispatch-slate font-medium truncate max-w-[120px]">{article.source.name}</span>
+    <span className="w-1 h-1 rounded-full bg-ink-300 shrink-0" aria-hidden="true" />
+    <time dateTime={...} className="shrink-0 tabular-nums">{formatTimeAgo(article.publishedAt)}</time>
+    {article.hasSummary && article.summaryStatus === "ok" && (
+      <>
+        <span className="w-1 h-1 rounded-full bg-ink-300 shrink-0" aria-hidden="true" />
+        <span className="text-dispatch-ember font-medium shrink-0 tracking-widest">AI Brief</span>
+      </>
+    )}
+  </div>
+</article>
+```
+
+**Key patterns:**
+
+- `after:absolute after:inset-0` — makes the entire card clickable via the inner `<Link>` (the pseudo-element stretches over the whole card)
+- `group-hover:text-dispatch-ember` — headline color changes when card is hovered
+- `line-clamp-3` — excerpt clamped to 3 lines (uses Tailwind v4 built-in)
+- `mt-auto` — metadata pinned to bottom of row 3 (Subgrid alignment)
+- `tabular-nums` — dates use tabular figures (no width jitter)
+- `aria-hidden="true"` on decorative dots (screen readers skip them)
+
+#### `NutritionLabel` — The AI Transparency Sidebar
+
+```tsx
+<aside
+  aria-label="AI-generated summary transparency label"
+  className="border-l-2 border-dispatch-ember bg-paper-100/50 p-6"
+>
+  <div className="mb-4 flex items-center gap-2">
+    <span
+      className="h-2 w-2 rounded-full bg-dispatch-ember"
+      aria-hidden="true"
+    />
+    <span className="font-mono text-[10px] uppercase tracking-widest text-ink-300">
+      AI-Generated Summary
+    </span>
+  </div>
+  <p className="font-ui text-base leading-relaxed text-ink-900">
+    {summary.summaryText}
+  </p>
+  {/* Key Points + Sources Cited [1] [2] ... + Coverage % + "Verify with original source →" link */}
+</aside>
+```
+
+#### `Button` — Shadcn-style with CVA Variants
+
+```tsx
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-sm font-ui font-medium text-sm " +
-  "transition-all duration-150 ease-out " +
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember " +
-  "focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 " +
-  "disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 rounded-sm font-ui font-medium text-sm transition-all duration-150 ease-out " +
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 " +
+    "disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        primary: "bg-dispatch-ember text-paper-50 hover:bg-dispatch-ember/90 active:scale-[0.98]",
-        secondary: "bg-ink-900 text-paper-50 hover:bg-ink-700 active:scale-[0.98]",
-        outline: "border border-ink-100 bg-transparent text-ink-900 hover:bg-paper-100 hover:border-ink-300 active:scale-[0.99]",
-        ghost: "bg-transparent text-ink-600 hover:bg-paper-100 hover:text-ink-900",
-        destructive: "bg-dispatch-danger text-paper-50 hover:bg-dispatch-danger-dark active:scale-[0.98]",
+        primary:
+          "bg-dispatch-ember text-paper-50 hover:bg-dispatch-ember/90 active:scale-[0.98]",
+        secondary:
+          "bg-ink-900 text-paper-50 hover:bg-ink-700 active:scale-[0.98]",
+        outline:
+          "border border-ink-100 bg-transparent text-ink-900 hover:bg-paper-100 hover:border-ink-300",
+        ghost:
+          "bg-transparent text-ink-600 hover:bg-paper-100 hover:text-ink-900",
+        destructive:
+          "bg-dispatch-danger text-paper-50 hover:bg-dispatch-danger-dark active:scale-[0.98]",
       },
-      size: { sm: "h-8 px-3 text-xs", md: "h-10 px-4 text-sm", lg: "h-12 px-6 text-base", icon: "h-10 w-10 p-2" },
+      size: {
+        sm: "h-8 px-3 text-xs",
+        md: "h-10 px-4 text-sm",
+        lg: "h-12 px-6 text-base",
+        icon: "h-10 w-10 p-2",
+      },
     },
     defaultVariants: { variant: "primary", size: "md" },
   },
 );
+```
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-  isLoading?: boolean;
+**Note `rounded-sm`** (not `rounded-xl` or `rounded-2xl`) — Editorial Dispatch uses minimal radii. The "tactile maximalism" is in the hover micro-interactions, not in aggressive rounding.
+
+### AdminGuard Pattern — Auth at the Layout Boundary
+
+```tsx
+// src/shared/components/auth/AdminGuard.tsx
+export async function AdminGuard({
+  children,
+}: AdminGuardProps): Promise<React.ReactElement> {
+  await verifyAdminSession(); // Redirects internally on failure; if it returns, user is admin
+  return <>{children}</>;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, isLoading = false, disabled, children, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
-    return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} disabled={disabled || isLoading} {...props}>
-        {isLoading && <ButtonSpinner />}
-        {children}
-      </Comp>
-    );
-  },
+// src/app/(admin)/layout.tsx
+export default function AdminLayout({ children }) {
+  return (
+    <div className="min-h-screen bg-ink-900 text-paper-50">
+      <Suspense fallback={<AdminGuardSkeleton />}>
+        <AdminGuard>{children}</AdminGuard>
+      </Suspense>
+    </div>
+  );
+}
+```
+
+**This is the only correct admin auth pattern.** Per-page guards are forbidden — any new admin page that forgets the guard would be publicly accessible.
+
+### Server Action Pattern — Every Action Starts with Auth
+
+```tsx
+"use server";
+
+export async function requestSummary(
+  articleId: string,
+): Promise<SummariseResponse> {
+  // 1. AUTH FIRST — verifySession() returns session or throws NEXT_REDIRECT
+  const session = await verifySession();
+
+  // 2. Rate limit (per user, not per IP — NAT would let one user burn budget for all)
+  const rateLimitResult = await checkRateLimit(
+    `api:summarize:${session.user.id}`,
+    5,
+    60,
+  );
+  if (!rateLimitResult.allowed) {
+    return {
+      success: false,
+      jobId: null,
+      error: "Rate limit exceeded. Please retry later.",
+    };
+  }
+
+  // 3. Input validation (UUID regex)
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(articleId)) {
+    return { success: false, jobId: null, error: "Invalid article ID format" };
+  }
+
+  // 4. Content guard (anti-hallucination)
+  const article = await db.query.articles.findFirst({
+    where: eq(articles.id, articleId),
+  });
+  if (!article)
+    return { success: false, jobId: null, error: "Article not found" };
+  if (
+    article.contentAvailability === "title_only" ||
+    article.contentAvailability === "excerpt"
+  ) {
+    return {
+      success: false,
+      jobId: null,
+      error: `Cannot summarise articles with only ${article.contentAvailability}.`,
+    };
+  }
+
+  // 5. Mutation + revalidate
+  await db
+    .update(articles)
+    .set({ summaryStatus: "pending" })
+    .where(eq(articles.id, articleId));
+  const job = await summarizeQueue.add("summarize", {
+    articleId,
+    content: article.excerpt ?? article.title,
+  });
+  return { success: true, jobId: job!.id!, error: null };
+}
+```
+
+**Never wrap `verifySession()` in try/catch** — it catches the `NEXT_REDIRECT` thrown by `redirect()` and silently swallows it. API routes should use `auth()` directly (returns null → 401 JSON), not `verifySession()` (which redirects).
+
+### JSON-LD Pattern (3-Layer Provenance)
+
+```tsx
+// In ArticleData.tsx (Server Component):
+const jsonLdScript = article.summary?.status === "ok"
+  ? generateProvenanceMetadata({ summary: {...}, articleId, articleUrl, articleTitle, model, generatedAt }).jsonLd
+  : null;
+
+return (
+  <>
+    {jsonLdScript && (
+      <script
+        type="application/ld+json"
+        key={`provenance-jsonld-${article.id}`}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript }}
+      />
+    )}
+    {/* Page content */}
+  </>
 );
 ```
 
-**Key patterns:**
+**JSON-LD MUST be a `<script>` tag in the body** — NOT via `metadata.other`. Next.js 16 `metadata.other` only emits `<meta>` tags, never `<script>` tags. (Phase 17 fix.)
 
-1. `cva` for variant discipline (5 variants × 4 sizes)
-2. `Radix Slot` for `asChild` polymorphism (render as `<a>` or `<Link>`)
-3. `forwardRef` for ref forwarding
-4. `isLoading` prop: shows spinner, disables button, prevents double-submit
-5. `focus-visible:ring-dispatch-ember` for WCAG AAA focus ring
-
-### ArticleCard — CSS Subgrid Child
+The HTTP header (`X-AI-Provenance`) and HTML meta tag (`<meta name="ai-provenance">`) DO go via `metadata.other` in `generateMetadata()`:
 
 ```tsx
-// src/features/feed/components/ArticleCard.tsx
-export function ArticleCard({ article }: ArticleCardProps) {
-  return (
-    <article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6 transition-colors duration-300 hover:bg-paper-100/50">
-      {/* ROW 1: Headline */}
-      <h3 className="font-editorial text-xl leading-tight text-ink-900 group-hover:text-dispatch-ember transition-colors duration-300">
-        <Link
-          href={`/article/${article.id}`}
-          className="after:absolute after:inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 rounded-sm"
-        >
-          {article.title}
-        </Link>
-      </h3>
-      {/* ROW 2: Excerpt */}
-      <p className="font-ui text-sm leading-relaxed text-ink-600 line-clamp-3">
-        {article.excerpt ?? (
-          <span className="text-ink-300 italic">No excerpt available.</span>
-        )}
-      </p>
-      {/* ROW 3: Metadata */}
-      <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-ink-600 mt-auto">
-        <span className="text-dispatch-slate font-medium truncate max-w-[120px]">
-          {article.source.name}
-        </span>
-        <span
-          className="w-1 h-1 rounded-full bg-ink-300 shrink-0"
-          aria-hidden="true"
-        />
-        <time
-          dateTime={
-            article.publishedAt instanceof Date
-              ? article.publishedAt.toISOString()
-              : String(article.publishedAt)
-          }
-          className="shrink-0 tabular-nums"
-        >
-          {formatTimeAgo(article.publishedAt)}
-        </time>
-        {article.hasSummary && article.summaryStatus === "ok" && (
-          <>
-            <span
-              className="w-1 h-1 rounded-full bg-ink-300 shrink-0"
-              aria-hidden="true"
-            />
-            <span className="text-dispatch-ember font-medium shrink-0 tracking-widest">
-              AI Brief
-            </span>
-          </>
-        )}
-      </div>
-    </article>
-  );
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const { id } = await params;
+  const article = await getArticleWithSummary(id);
+  if (!article?.summary || article.summary.status !== "ok") return {};
+
+  const provenance = generateProvenanceMetadata({...});
+  return {
+    other: {
+      "ai-provenance": provenance.metaTag,           // Layer 3: <meta name="ai-provenance">
+      "X-AI-Provenance": provenance.httpHeader,      // Layer 2: HTTP header (base64 JSON)
+    },
+  };
 }
 ```
-
-**Key patterns:**
-
-1. `grid grid-rows-subgrid row-span-3` — spans 3 named rows (headline/excerpt/metadata align across cards)
-2. `after:absolute after:inset-0` — full-card click area on the `<Link>`
-3. `line-clamp-3` — excerpt truncated to 3 lines
-4. `mt-auto` — metadata row pinned to bottom
-5. `aria-hidden="true"` on decorative bullet separators
-6. `<time dateTime={...}>` — machine-readable timestamp for SEO
-7. "AI Brief" badge only when `hasSummary && summaryStatus === "ok"`
-
-### NutritionLabel — AI Transparency Panel
-
-```tsx
-// src/features/summaries/components/NutritionLabel.tsx
-<aside
-  className="nutrition-label ..."
-  aria-label="AI-generated summary transparency label"
->
-  {/* Summary text */}
-  <p className="font-ui text-base leading-relaxed text-ink-900">
-    {summary.summaryText}
-  </p>
-  {/* Transparency label section */}
-  <div className="border-t border-ink-100 ...">
-    {/* Model, temperature, coverage %, citations, compliance statement */}
-  </div>
-</aside>
-```
-
-**CSS:**
-
-```css
-.nutrition-label {
-  border-left: 3px solid var(--color-dispatch-ember);
-  background: linear-gradient(
-    to right,
-    var(--color-paper-100) 0%,
-    var(--color-paper-50) 100%
-  );
-}
-```
-
-### SummaryPanel — 5-State Machine
-
-```typescript
-// src/features/summaries/components/SummaryPanel.tsx
-// Handles all 5 summaryStatus states:
-none         → "Request AI Summary" button
-pending      → "Generating AI summary..." status text
-ok           → <NutritionLabel summary={summary} />
-needs_review → "Summary under editorial review" notice
-disabled     → renders null (no UI hint)
-```
-
-**Phase 19 H4:** Error state with "Try Again" button. **Phase 19 C5:** `SummariesData.tsx` Approve/Disable buttons wired via `<form action={...}>`.
-
-### FeedData + FeedSkeleton — Suspense Pattern
-
-```tsx
-// src/features/feed/components/FeedData.tsx (Server Component, wrapped in <Suspense>)
-export async function FeedData({ category, limit = 30 }: FeedDataProps) {
-  const page = await getFeedArticles({ category, limit });
-  return <FeedContainer initialPage={page} category={category} />;
-}
-
-// Usage in page.tsx:
-<Suspense fallback={<FeedSkeleton />}>
-  <FeedData category={category} />
-</Suspense>;
-```
-
-**Phase 9 fix:** Never `await` data fetches directly in a page body without `<Suspense>` — triggers `blocking-route` error in Next.js 16 `cacheComponents` mode.
-
-### PageTransition — Progressive Enhancement
-
-```tsx
-// src/components/primitives/PageTransition.tsx
-"use client";
-export function PageTransition({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  useEffect(() => {
-    if (typeof document === "undefined" || !document.startViewTransition)
-      return;
-    // Phase 20 / T4 fix: guard matchMedia — jsdom + older browsers don't implement it
-    const prefersReduced =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
-
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const anchor = target.closest("a");
-      if (!anchor) return;
-      const href = anchor.getAttribute("href");
-      if (!href || href.startsWith("http") || href.startsWith("#")) return;
-      e.preventDefault();
-      document.startViewTransition?.(() => router.push(href));
-    };
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
-  }, [router]);
-  return <>{children}</>;
-}
-```
-
-**Phase 20 / T4 production bug fix:** Added `typeof window.matchMedia === "function"` guard. Without it, jsdom (vitest) and older browsers crash with `TypeError: window.matchMedia is not a function`.
 
 ---
 
 ## 6. Custom Hooks Deep Dive
 
-### `useDebounce<T>` — Generic Value Debounce
+### `useDebounce` — Generic Value Debounce
 
-```typescript
-// src/shared/hooks/useDebounce.ts
+```tsx
 "use client";
+
 import { useState, useEffect } from "react";
 
 export function useDebounce<T>(value: T, delay = 300): T {
@@ -909,37 +953,26 @@ export function useDebounce<T>(value: T, delay = 300): T {
 
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
+    return () => clearTimeout(handler); // Cleanup on unmount or value change
   }, [value, delay]);
 
   return debouncedValue;
 }
 ```
 
-**Implementation details:**
+**Why generic `<T>`:** Works for strings (search input), arrays (multi-select), objects (form state), anything. The `delay` default of 300ms is the right balance for search-as-you-type UX — fast enough to feel responsive, slow enough to avoid spamming the API.
 
-- Generic `<T>` — works with any value type (string, number, object, array)
-- Default delay 300ms
-- Cleanup via `useEffect` return (`clearTimeout`)
-- Dependencies: `[value, delay]` — re-runs when value OR delay changes
+**Why `useEffect` cleanup:** Without `clearTimeout`, every keystroke would schedule a timeout — the user would see stale debounced values flash through. Cleanup cancels pending timeouts when the value changes.
 
-**Usage in SearchBar:**
+### `useReducedMotion` — WCAG AAA Motion Preference
 
 ```tsx
-const [query, setQuery] = useState("");
-const debouncedQuery = useDebounce(query, 300);
-// debouncedQuery only updates 300ms after the user stops typing
-```
-
-### `useReducedMotion` — WCAG AAA Motion Detection
-
-```typescript
-// src/shared/hooks/useReducedMotion.ts
 "use client";
+
 import { useState, useEffect } from "react";
 
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(false); // SSR-safe default: false
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -954,257 +987,7 @@ export function useReducedMotion(): boolean {
 }
 ```
 
-**Implementation details:**
-
-- Returns `false` on SSR (prevents hydration mismatch)
-- Checks on mount via `mq.matches`
-- Listens for changes via `addEventListener("change", ...)`
-- Cleanup via `removeEventListener`
-- WCAG AAA: When `true`, DISABLE all animations entirely — do NOT just slow them
-
-**Usage pattern:**
-
-```tsx
-const reduced = useReducedMotion();
-<div className={reduced ? "" : "animate-pulse"}>...</div>;
-```
-
-**Note:** This hook is for client components that need conditional animation logic. For CSS-level animation disabling, the global `@media (prefers-reduced-motion: reduce)` block in `globals.css` handles it automatically.
-
----
-
-## 7. Content Management: RSS Ingestion Pipeline
-
-### Architecture (NOT `import.meta.glob` — this is a server-side RSS pipeline)
-
-OneStopNews does NOT use `import.meta.glob` for content management. Content comes from **50–200+ external RSS/Atom/JSON feeds** parsed by a standalone Node.js worker service.
-
-```
-RSS/Atom/JSON Feed (external)
-    ↓
-src/workers/jobs/parseFeed.ts (rss-parser + cheerio)
-    ↓
-src/domain/articles/normalize.ts (normalizeCanonicalUrl + hashContent SHA-256)
-    ↓
-src/workers/jobs/determineContentAvailability.ts (4-tier guard)
-    ↓
-PostgreSQL (articles table, upsert via onConflictDoUpdate on canonicalUrl)
-    ↓
-src/lib/queue/flows.ts (FlowProducer DAG: ingest → score → feed-slice)
-    ↓
-src/workers/jobs/summarize.ts (AI SDK v6, Anthropic + OpenAI fallback)
-    ↓
-PostgreSQL (summaries table, 3-layer provenance)
-```
-
-### `parseFeed.ts` — RSS/Atom/JSON Parser
-
-```typescript
-// src/workers/jobs/parseFeed.ts
-import Parser from "rss-parser";
-import * as cheerio from "cheerio"; // Phase 19 H9: replaces regex HTML stripping
-
-const parser = new Parser({
-  timeout: 30000,
-  headers: { "User-Agent": "OneStopNews/1.0 (+https://onestop.news)" },
-  customFields: {
-    item: [["content:encoded", "contentEncoded"]],
-  },
-});
-
-// HTML stripping — MUST use cheerio, NOT regex
-function stripHtml(html: string): string {
-  const $ = cheerio.load(html);
-  $("script, style, noscript, iframe, object, embed").remove();
-  return $.text().replace(/\s+/g, " ").trim();
-}
-```
-
-**Phase 19 H9 gotcha:** The previous regex-based stripper `/<[^>]*>/g` strips TAGS but not their TEXT CONTENT — `<script>alert('evil')</script>` became `alert('evil')` in the stripped output, leaking into AI summarization prompts. `cheerio` handles all edge cases: numeric entities, CDATA, nested tags, malformed HTML.
-
-**cheerio entity gotcha:** cheerio decodes `&#8217;` to U+2019 (right single quotation mark `'`), NOT ASCII apostrophe `'`. Tests asserting `body === "It's a test"` will fail — use `body.toContain("\u2019s a test")` instead.
-
-### `normalize.ts` — Pure Domain Functions
-
-```typescript
-// src/domain/articles/normalize.ts
-import { createHash } from "node:crypto";
-
-export function normalizeCanonicalUrl(url: string): string {
-  // Remove UTM params, normalize trailing slashes, lowercase scheme/host
-  const parsed = new URL(url);
-  parsed.searchParams.delete("utm_source");
-  parsed.searchParams.delete("utm_medium");
-  parsed.searchParams.delete("utm_campaign");
-  parsed.pathname = parsed.pathname.replace(/\/$/, "") || "/";
-  return `${parsed.protocol.toLowerCase()}//${parsed.host.toLowerCase()}${parsed.pathname}`;
-}
-
-// Phase 14 gotcha #1: MUST include body for content-change detection
-export function hashContent(
-  title: string,
-  body: string,
-  publishedAt: Date,
-): string {
-  const content = `${title}|${body}|${publishedAt.toISOString()}`;
-  return createHash("sha256").update(content).digest("hex");
-}
-```
-
-**Phase 14 fix:** `hashContent` must include `body` — without it, content-only updates (same title+date, different body) are silently dropped by `onConflictDoUpdate WHERE contentHash = EXCLUDED.contentHash`.
-
-### Content Availability Guard (Anti-Hallucination)
-
-```typescript
-// src/lib/db/schema.ts
-export const contentAvailabilityEnum = pgEnum("content_availability", [
-  "title_only", // Title extracted only. DO NOT summarise.
-  "excerpt", // Title + short excerpt (≤300 chars). DO NOT summarise.
-  "partial_text", // Title + excerpt + partial body (300–1500 chars). Summarise permitted.
-  "full_text", // Title + excerpt + full body (>1500 chars). Summarise preferred.
-]);
-```
-
-**Enforced at BOTH layers:**
-
-1. Server Action (`src/features/summaries/actions.ts:55`): `verifySession()` first, then content guard
-2. HTTP Route (`src/app/api/summarize/[id]/route.ts`): Same guard
-
-### FlowProducer DAG (Atomic Ingestion Pipeline)
-
-```typescript
-// src/lib/queue/flows.ts
-// Phase 19 C4 fix: try/catch + fallback — never re-throw if side effect landed
-export async function enqueuePostIngestFlow(
-  newArticleIds: string[],
-): Promise<PostIngestFlowStatus> {
-  try {
-    await flowProducer.add({
-      name: "feed-slice-refresh",
-      queueName: "feed-slice",
-      data: { articleIds: newArticleIds },
-      children: newArticleIds.map((id) => ({
-        name: "score-article",
-        queueName: "score",
-        data: { articleId: id },
-      })),
-    });
-    return {
-      status: "ok",
-      fallbackUsed: false,
-      fallbackFailures: 0,
-      enqueuedCount: newArticleIds.length,
-    };
-  } catch (flowError) {
-    // Fallback: enqueue scores directly (loses atomicity but ensures scoring happens)
-    const fallbackFailures = 0;
-    for (const articleId of newArticleIds) {
-      try {
-        await scoreQueue.add("score-article", { articleId });
-      } catch {
-        fallbackFailures++;
-      }
-    }
-    return {
-      status: "degraded",
-      fallbackUsed: true,
-      fallbackFailures,
-      enqueuedCount: newArticleIds.length,
-    };
-  }
-}
-```
-
-**Phase 19 C4 lesson:** At resilience boundaries, NEVER re-throw if the side effect has already landed (articles persisted). Return a status object instead — re-throwing causes BullMQ to retry, but the retry sees a different state (articles already persisted) and silently drops the work.
-
-### 3-Layer AI Provenance (`src/lib/ai/provenance.ts`)
-
-```typescript
-// Layer 1: JSON-LD (rendered in page BODY via ArticleData.tsx — NOT via metadata.other)
-function generateJsonLd(summary): object {
-  return {
-    "@context": "https://schema.org",
-    "@type": "CreativeWork",
-    isBasedOn: summary.originalArticleUrl,
-    accountablePerson: { "@type": "Person", name: "OneStopNews AI" },
-    dateModified: summary.generatedAt,
-    description: summary.summaryText,
-  };
-}
-
-// Layer 2: HTTP header (set via generateMetadata() metadata.other)
-function generateHttpHeader(summary): string {
-  return Buffer.from(
-    JSON.stringify({
-      model: summary.model,
-      generatedAt: summary.generatedAt,
-      sourcesVerified: summary.sourcesCited.length,
-      coveragePercentage: summary.coveragePercentage,
-      compliance: "eu-ai-act-art50",
-    }),
-  ).toString("base64");
-}
-
-// Layer 3: HTML meta tag (set via generateMetadata() metadata.other)
-function generateMetaTag(summary): string {
-  return `model=${summary.model};coverage=${summary.coveragePercentage}%;compliance=eu-ai-act-art50`;
-}
-```
-
-**Phase 17 fix:** JSON-LD is rendered as `<script type="application/ld+json">` in the page BODY via `ArticleData.tsx:86-93` — NOT via `metadata.other` (which renders `<meta>` tags, not `<script>` tags). The HTTP header + meta tag still go via `metadata.other`.
-
----
-
-## 8. Accessibility (WCAG AAA) Implementation
-
-### Skip-to-Content Link (Phase 17)
-
-```tsx
-// src/app/layout.tsx
-<a
-  href="#main-content"
-  className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-ink-900 focus:text-paper-50 focus:font-ui focus:text-sm focus:rounded focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-dispatch-ember"
->
-  Skip to content
-</a>
-```
-
-**Every page template must include `<main id="main-content">`** for the skip link to work — including error boundaries (`error.tsx`, `global-error.tsx`, `not-found.tsx`).
-
-### Focus Rings (WCAG AAA)
-
-```css
-/* globals.css */
-:focus-visible {
-  outline: 2px solid var(--color-dispatch-ember);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-```
-
-**Component-level focus rings** (redundant with global `:focus-visible` for explicitness):
-
-```tsx
-className =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50";
-```
-
-### ARIA Patterns
-
-| Pattern             | Implementation                                                     |
-| :------------------ | :----------------------------------------------------------------- |
-| Feed container      | `role="feed" aria-label="News articles"`                           |
-| Loading state       | `role="feed" aria-busy="true" aria-label="Loading news articles"`  |
-| Empty state         | `role="status"` with ember dot + "No stories in this category yet" |
-| Search form         | `role="search"`                                                    |
-| Navigation          | `<nav aria-label="Primary navigation">`                            |
-| AI summary panel    | `aria-label="AI-generated summary transparency label"`             |
-| Decorative elements | `aria-hidden="true"` on bullet separators, spinner SVGs            |
-| Live indicators     | `.pulse-dot` with `aria-hidden="true"` (announced via parent text) |
-
-### Reduced Motion (WCAG AAA)
-
-**Global CSS override** (disables ALL animations):
+**WCAG AAA rule:** When `prefers-reduced-motion: reduce`, **DISABLE all animations entirely** — do NOT just slow them. The CSS override in `globals.css`:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -1220,692 +1003,31 @@ className =
 }
 ```
 
-**Component-level** via `useReducedMotion()` hook (for conditional logic, not just CSS).
+This is a **belt-and-suspenders** approach — the CSS override handles all CSS animations, while the hook lets JS-driven animations (Framer Motion, GSAP) check the preference and skip themselves.
 
-### Color Contrast (WCAG AAA)
+### `verifySession` / `verifyAdminSession` — The DAL Auth Pattern
 
-| Foreground               | Background               | Ratio  | Usage                                    |
-| :----------------------- | :----------------------- | :----- | :--------------------------------------- |
-| `ink-600 #3d3d3a`        | `paper-50 #fafaf8`       | 9.5:1  | Body text (AAA)                          |
-| `ink-900 #1a1a18`        | `paper-50 #fafaf8`       | 15.8:1 | Headings (AAA)                           |
-| `ink-300 #8a8a83`        | `paper-50 #fafaf8`       | 3.4:1  | Metadata (AA Large only — use sparingly) |
-| `paper-50 #fafaf8`       | `dispatch-ember #c7513f` | 4.8:1  | Button text (AA)                         |
-| `dispatch-ember #c7513f` | `paper-50 #fafaf8`       | 4.8:1  | Focus ring (AA)                          |
-
-### axe-core E2E Scans (Phase 19 / M5)
-
-```typescript
-// e2e/a11y.spec.ts
-import { injectAxe, checkA11y } from "axe-playwright";
-
-test("homepage is WCAG AAA accessible", async ({ page }) => {
-  await page.goto("/");
-  await injectAxe(page);
-  await checkA11y(page, undefined, {
-    axeOptions: {
-      runOnly: ["tag=wcag2a", "tag=wcag2aa", "tag=wcag21a", "tag=wcag21aa"],
-    },
-  });
-});
-```
-
-4 scans: `/`, `/search`, `/sign-in`, `/auth-error`. The `color-contrast` rule is filtered out (dispatch-ember/dispatch-sage tokens are manually verified at 9.5:1 contrast on paper-50, but axe sometimes flags them in test env).
-
----
-
-## 9. Anti-Patterns & Common Bugs
-
-### The 89-Entry Anti-Patterns Table (Post-Phase 20)
-
-Complete list from `AGENTS.md`. Here are the most critical entries organized by category:
-
-#### Configuration Anti-Patterns
-
-| Anti-Pattern                                     | Why Forbidden                                                | Fix                                                                             |
-| :----------------------------------------------- | :----------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| `cacheComponents: true` inside `experimental`    | Every `"use cache"` silently ignored → zero caching          | Move to **top-level** of `next.config.ts`                                       |
-| `cacheLife` profiles inside `experimental`       | `cacheLife('feed')` throws at runtime — profile missing      | Define at **top-level** with all 3 fields (`stale`, `revalidate`, `expire`)     |
-| `experimental.ppr` in config                     | Build error in Next.js 16 — `cacheComponents` implements PPR | **Remove entirely**                                                             |
-| `experimental.dynamicIO` in config               | Deprecated — replaced by `cacheComponents`                   | **Remove entirely**                                                             |
-| `experimental.clientSegmentCache`                | Not in 16.2.9 `ExperimentalConfig` — `TS2353`                | **Remove entirely** (re-enable when upstream type includes it)                  |
-| Missing `@tailwindcss/postcss` in PostCSS config | Tailwind v4 generates ZERO utility classes                   | Install `@tailwindcss/postcss` + create `postcss.config.mjs`                    |
-| Vendored `skills/` not excluded from tsc/eslint  | 64 tsc errors + 43 lint warnings from skills' own deps       | Add `"skills"` to `tsconfig.json` `exclude` + `"skills/**"` to eslint `ignores` |
-
-#### TypeScript Anti-Patterns
-
-| Anti-Pattern                                        | Why Forbidden                                                 | Fix                                                                                               |
-| :-------------------------------------------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
-| `any` in TypeScript                                 | Breaks strict mode contract and type inference                | `unknown` + type guards                                                                           |
-| `enum` / `namespace`                                | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly` | String unions + ES modules                                                                        |
-| Missing `noUncheckedIndexedAccess`                  | `arr[i]` returns `T` instead of `T \| undefined`              | Enable in `tsconfig.json`                                                                         |
-| Missing `import type` for type-only imports         | `verbatimModuleSyntax` requires it                            | Use `import type { ... }`                                                                         |
-| Runtime imports from `@/lib/db*` in `src/domain/**` | Violates Layer 3 purity (domain must be runtime-pure)         | Use `import type` only — enforced by ESLint `no-restricted-imports` with `allowTypeImports: true` |
-
-#### React / Next.js Anti-Patterns
-
-| Anti-Pattern                                                | Why Forbidden                                                                | Fix                                                                                                  |
-| :---------------------------------------------------------- | :--------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| `new Date()` in Server Components                           | Non-deterministic; causes `next-prerender-current-time` build error          | Move to Client Component or compute from headers                                                     |
-| `new Date()` in Client Component without `<Suspense>`       | Prerender still fails — needs Suspense boundary above it                     | Wrap in `<Suspense fallback={...}>`                                                                  |
-| `.reveal` class on above-the-fold elements                  | Hydration mismatch: server renders `reveal`, client expects `reveal visible` | Only use scroll-reveal for below-the-fold content                                                    |
-| Synchronous `params`/`searchParams` access                  | Runtime 500 in Next.js 16 App Router                                         | `await params` / `await searchParams` (they're `Promise<T>`)                                         |
-| Synchronous `cookies()` access                              | `TS2339` error; runtime undefined                                            | `await cookies()` before `.get()`                                                                    |
-| Data fetching in Layouts                                    | Layouts cause re-renders. Fetch in Pages                                     | Move `await db.query...` from `layout.tsx` to `page.tsx`                                             |
-| `await` in page body without `<Suspense>`                   | `blocking-route` error in `cacheComponents` mode                             | Wrap dynamic content in `<Suspense fallback={<Skeleton />}>`                                         |
-| `window.matchMedia()` without `typeof === "function"` guard | Crashes in jsdom + older browsers (Phase 20 / T4)                            | `typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(...)` |
-
-#### Auth / Security Anti-Patterns
-
-| Anti-Pattern                                              | Why Forbidden                                                              | Fix                                                                                                       |
-| :-------------------------------------------------------- | :------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| `throw new Error()` in RSC auth                           | Triggers full-page error boundary. Bad UX                                  | `redirect('/sign-in')` — preserves invisible UX                                                           |
-| Server Action without `verifySession()`                   | Server Actions bypass layout guards; unauthenticated clients can call them | Every `actions.ts` function starts with `await verifySession()` or `await verifyAdminSession()`           |
-| `proxy.ts` with DB calls or business logic                | `proxy.ts` is UX-only; real auth at DAL                                    | Move auth to `verifySession()` / `verifyAdminSession()` in `src/lib/auth/dal.ts`                          |
-| `process.env.*` reads outside `src/lib/env/`              | Bypasses Zod schema validation — typos silently return `undefined`         | Import `env` from `@/lib/env` — validated at module load                                                  |
-| Leftmost `x-forwarded-for` IP behind CDN                  | Spoofable — attacker can bypass rate limiting                              | Set `TRUSTED_PROXY=true` + use `walkXffChain()` with `TRUSTED_PROXY_CIDRS` (Phase 20 / F1)                |
-| Security module relying solely on upstream Zod validation | When env is mocked in tests, Zod is bypassed — confusing errors            | Belt-and-suspenders: validate in the module itself (see `validatePushKeyEncryptionKey()` in `encrypt.ts`) |
-
-#### Database / Drizzle Anti-Patterns
-
-| Anti-Pattern                           | Why Forbidden                                                                             | Fix                                                                                  |
-| :------------------------------------- | :---------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| `drizzle-kit push` in production       | Overwrites schema without migration history. Irreversible                                 | `drizzle-kit generate` + `drizzle-kit migrate` (additive only)                       |
-| `hashContent` without body             | Content-only updates silently dropped by `onConflictDoUpdate WHERE`                       | Include `body` in hash: `hashContent(title, body, publishedAt)`                      |
-| Lazy proxy as plain `return {}`        | `TypeError: Cannot read properties of undefined` at runtime                               | Use real `Proxy<T>` that intercepts every property access                            |
-| `as any` in Drizzle `.with()`          | Relational queries break type inference                                                   | Use explicit `.innerJoin()` for type-safety                                          |
-| `flowProducer.add()` without try/catch | Redis failure → re-throw → BullMQ retries → articles already persisted → silent data loss | Wrap in try/catch + fallback to `scoreQueue.add()` per article; return status object |
-
-#### Testing Anti-Patterns
-
-| Anti-Pattern                                                      | Why Forbidden                                                                                | Fix                                                                                            |
-| :---------------------------------------------------------------- | :------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| `vi.mock()` factory referencing `let`/`const` below it            | `ReferenceError: Cannot access 'mockEnv' before initialization` (hoisting)                   | Use `vi.hoisted()` to declare mutable mock objects                                             |
-| `vi.hoisted()` factory referencing module-top `const`             | TDZ ReferenceError — hoisted factory runs before any `const`                                 | Inline literal values into the factory body                                                    |
-| `vi.clearAllMocks()` wiping `vi.mock()` chain structure           | `db.select().from().where()` chain breaks → `TypeError: Cannot read properties of undefined` | Set up chains ONCE in `vi.mock()` factory; reset only leaf mocks via `mockResolvedValueOnce()` |
-| `cacheLife()` called in module without `next/cache` mock in tests | `TypeError: cacheLife is not a function`                                                     | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`                                        |
-| Missing `SessionProvider` in tests using `useSession()`           | `Error: useSession must be wrapped in a <SessionProvider>`                                   | Mock `next-auth/react` with passthrough `SessionProvider` + stub `useSession`                  |
-| E2E tests scanned by vitest                                       | `@playwright/test` not installed in vitest env → import errors                               | Exclude `e2e/**` from `vitest.config.ts`                                                       |
-| Discriminated union assertions without `if` narrowing             | `Property 'provider' does not exist on type '{ status: "error"; message: string; }'`         | Use `if (result.status === "linked") { expect(result.provider)... }` — `expect` doesn't narrow |
-
-#### Content / AI Anti-Patterns
-
-| Anti-Pattern                                  | Why Forbidden                                                                             | Fix                                                                                                 |
-| :-------------------------------------------- | :---------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
-| Summarising `title_only` / `excerpt` articles | AI hallucination risk — fabricating content from insufficient input                       | Content availability guard: only `partial_text`/`full_text` may be summarised                       |
-| Regex-based HTML stripping (`/<[^>]*>/g`)     | Strips TAGS but not TEXT CONTENT — `<script>alert('evil')</script>` leaks into AI prompts | Use `cheerio.load(html); $("script, style, noscript, iframe, object, embed").remove(); $.text()`    |
-| JSON-LD via `metadata.other`                  | Next.js renders `metadata.other` as `<meta>` tags, NOT `<script>` tags                    | Render JSON-LD in page body via `<script type="application/ld+json" dangerouslySetInnerHTML={...}>` |
-
-#### Phase 21 Security & Architecture Anti-Patterns (Audit-Driven)
-
-| #   | Anti-Pattern                                                 | Why Forbidden                                                                                                        | Fix                                                                                                                             |
-| :-- | :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | `.env*` files committed to git                               | Real VAPID keys, API keys, encryption keys in git history forever — secrets must be rotated                          | Add `.env`, `.env.*`, `!.env.example` to `.gitignore`. `git rm --cached` the files. Rotate exposed secrets.                     |
-| 2   | Route group `(admin)/` expected to produce `/admin/` URLs    | Next.js route groups `(name)` don't affect URL structure. `(admin)/sources/` resolves to `/sources`                  | Add `admin/` subfolder inside the route group: `(admin)/admin/sources/page.tsx` → URL `/admin/sources`                          |
-| 3   | `verifySession()` wrapped in try/catch                       | `redirect()` throws `NEXT_REDIRECT`. Standard try/catch catches it, swallowing the redirect → 500 instead of 401     | Server Actions: remove try/catch — let redirect propagate. API Routes: use `auth()` directly (returns null → 401 JSON).         |
-| 4   | Dead code `if (!session)` after `verifySession()`            | `verifySession()` NEVER returns null — it returns a session or throws via `redirect()`. The check is unreachable.    | Remove the dead check. Understand that `verifySession()` returns `{ user, sessionId }` or throws — never null.                  |
-| 5   | CSP with `'unsafe-eval'`                                     | Allows `eval()`, `Function()` — significant XSS enabler. No code in `src/` uses these.                               | Remove `'unsafe-eval'` from CSP. Keep `'unsafe-inline'` temporarily (Next.js needs it); plan nonce-based CSP migration.         |
-| 6   | AES-256-GCM IV of 16 bytes                                   | NIST SP 800-38D recommends 96-bit (12-byte) IV for GCM. 16-byte IV requires additional GHASH computation.            | Change `randomBytes(16)` to `randomBytes(12)`. Decryption reads IV from stored hex — handles any length. Backward-compatible.   |
-| 7   | Rate limiter fails-closed (500) on Redis outage              | `checkRateLimit()` throws when Redis is down. No try/catch → uncaught throw → HTTP 500. Redis outage takes down API. | Wrap in try/catch. Fail OPEN (allow request, log warning) — rate limiting is defense-in-depth, not critical path.               |
-| 8   | `AUTH_SECRET` accepts known-weak values in production        | `z.string().min(32)` accepts `dev-secret-do-not-use-in-production` from `.env.example`. JWT sessions forgeable.      | `superRefine` rejecting weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`) in production only. |
-| 9   | `deleteSource` identical to `pauseSource` (both soft delete) | `deleteSource` set `isActive: false` — same as `pauseSource`. Misleading API. "delete" implies permanent removal.    | `deleteSource` = hard delete (`db.delete` with cascade via `onDelete: "cascade"`). `pauseSource` = soft deactivation.           |
-| 10  | No `pnpm audit` in CI                                        | CI had no dependency security scanning. Known vulnerabilities in Auth.js v5 beta not caught.                         | Add `pnpm audit --audit-level=high --prod` step to CI after install, before lint. Start with `\|\| true`; promote to hard gate. |
-
----
-
-## 10. Debugging Guide
-
-### Symptom: Page is completely unstyled
-
-**Cause:** Tailwind v4 PostCSS plugin not configured.
-
-**Fix:**
-
-```bash
-# 1. Install the PostCSS plugin
-pnpm add -D @tailwindcss/postcss
-
-# 2. Create postcss.config.mjs
-cat > postcss.config.mjs << 'EOF'
-const config = { plugins: { "@tailwindcss/postcss": {} } };
-export default config;
-EOF
-
-# 3. Clear stale Next.js cache (critical — old cache masks the fix)
-rm -rf .next
-
-# 4. Restart dev server
-pnpm dev
-```
-
-### Symptom: `blocking-route` error in Next.js 16
-
-**Cause:** `cacheComponents: true` + uncached data fetch outside `<Suspense>`.
-
-**Fix:** Wrap async data fetches in `<Suspense>` with a fallback:
+These are not React hooks but `cache()`-memoized async functions. They are the **only correct way** to verify a session in Server Components and Server Actions.
 
 ```tsx
-<Suspense fallback={<FeedSkeleton />}>
-  <FeedData category={category} />
-</Suspense>
-```
-
-### Symptom: Commit Mono font not loading
-
-**Cause:** Using `@fontsource/commit-mono` which causes build issues.
-
-**Fix:** Self-host via `next/font/local`:
-
-```typescript
-const commitMono = localFont({
-  src: "../../public/fonts/commit-mono-400.woff2",
-  variable: "--font-mono",
-  weight: "400",
-  display: "swap",
-});
-```
-
-### Symptom: `next-prerender-current-time` build error
-
-**Cause:** `new Date()` called in a Server Component (non-deterministic).
-
-**Fix:** Move date computation to a Client Component, or compute from headers:
-
-```tsx
-// Server Component — DON'T do this:
-const now = new Date(); // ❌ Build error
-
-// Client Component — OK:
-("use client");
-const [now, setNow] = useState<Date>();
-useEffect(() => setNow(new Date()), []);
-```
-
-### Symptom: Hydration mismatch on Masthead date
-
-**Cause:** Server and client render different dates (different locales/timezones).
-
-**Fix:** Use a Client Component wrapper for date/time display, or pass pre-formatted date strings from the server.
-
-### Symptom: CSS merge artifacts in Tailwind v4 `@theme`
-
-**Cause:** Merge artifacts (e.g., ` INCLUDED` text) corrupt the `@theme` block, breaking all custom colors.
-
-**Fix:** Audit `globals.css` `@theme` block for non-CSS content. Re-write the block cleanly.
-
-### Symptom: External images fail to load
-
-**Cause:** Missing `remotePatterns` in `next.config.ts`.
-
-**Fix:**
-
-```typescript
-images: {
-  remotePatterns: [
-    { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
-  ],
-},
-```
-
-### Symptom: `pnpm check` fails with 64 tsc errors pointing at `skills/`
-
-**Cause:** Vendored `skills/` directory has its own deps not installed in this project.
-
-**Fix:** Exclude `skills` from `tsconfig.json` `exclude` array + `"skills/**"` from eslint `ignores`.
-
-### Symptom: `TypeError: window.matchMedia is not a function` in tests
-
-**Cause:** `PageTransition.tsx` calls `window.matchMedia()` without guarding against jsdom/older browsers.
-
-**Fix:** Add `typeof window.matchMedia === "function"` to the guard chain (Phase 20 / T4).
-
-### Symptom: `TypeError: cacheLife is not a function` in tests
-
-**Cause:** `cacheLife()` only works inside a `"use cache"` boundary at runtime. Vitest doesn't have Next.js cache context.
-
-**Fix:** Mock `next/cache` in the test file:
-
-```typescript
-vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
-```
-
-### Symptom: `ReferenceError: Cannot access 'mockEnv' before initialization`
-
-**Cause:** `vi.mock()` factory hoisted above the `const mockEnv` declaration it references.
-
-**Fix:** Use `vi.hoisted()`:
-
-```typescript
-const { mockEnv } = vi.hoisted(() => ({ mockEnv: {} }));
-vi.mock("@/lib/env", () => ({ env: mockEnv }));
-```
-
-### Symptom: `pnpm install --frozen-lockfile` fails
-
-**Cause:** `package.json` has deps not in `pnpm-lock.yaml`.
-
-**Fix:** Run `pnpm install` (without `--frozen-lockfile`) to regenerate the lockfile, then commit it.
-
-### Symptom: Rate limit returns 429 unexpectedly
-
-**Cause:** IP extraction is spoofable when `TRUSTED_PROXY` is unset, or using leftmost IP behind a CDN.
-
-**Fix:** Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS=10.0.0.0/8,...` in `.env.local`. The `walkXffChain()` function (Phase 20 / F1) walks the XFF chain right-to-left, skipping trusted CIDRs.
-
-### Symptom: `OAuthAccountNotLinked` error with no clear next step
-
-**Cause:** Phase 19 / M6 added an error message but pointed to a non-existent "account settings" page.
-
-**Fix (Phase 20 / F2):** The `/auth-error` page now links to `/account` where the user can click "Link Google/GitHub" to pre-create the `accounts` row, then retry the OAuth flow.
-
-### Symptom: Admin sidebar links return 404 (Phase 21)
-
-**Cause:** Next.js route groups `(name)` don't affect URL structure. If admin pages are at `src/app/(admin)/sources/page.tsx`, the URL is `/sources`, NOT `/admin/sources`.
-
-**Fix:** Ensure admin pages are inside an `admin/` subfolder within the route group: `src/app/(admin)/admin/sources/page.tsx` → URL `/admin/sources`. The route group `(admin)` provides the shared layout (`AdminGuard`); the `admin/` folder provides the URL prefix.
-
-### Symptom: `revalidatePath("/admin/sources")` doesn't invalidate cache (Phase 21)
-
-**Cause:** Same route group issue. If the page is at `(admin)/sources/` (URL `/sources`), then `revalidatePath("/admin/sources")` targets a non-existent path.
-
-**Fix:** Ensure the page is at `(admin)/admin/sources/` (URL `/admin/sources`), then `revalidatePath("/admin/sources")` works correctly.
-
-### Symptom: API returns 500 instead of 401 for unauthenticated requests (Phase 21)
-
-**Cause:** `verifySession()` calls `redirect()` which throws `NEXT_REDIRECT`. If wrapped in try/catch, the redirect is caught and the catch block returns 500 "Internal server error".
-
-**Fix:** API routes should use `auth()` directly (returns null when unauthenticated) instead of `verifySession()` (which redirects). Never wrap `verifySession()` in try/catch. See `src/app/api/summarize/[id]/route.ts` for the correct pattern.
-
-### Symptom: Redis outage takes down `/api/articles` (Phase 21)
-
-**Cause:** `checkRateLimit()` throws when Redis is down. If not wrapped in try/catch, the uncaught throw returns HTTP 500.
-
-**Fix:** The rate limiter now fails OPEN (allows request, logs warning) via try/catch. If you see this issue, ensure the `/api/articles` route has the fail-open try/catch around `checkRateLimit()`.
-
-### Symptom: `pnpm build` fails: "AUTH_SECRET appears to be a known-weak/placeholder value" (Phase 21)
-
-**Cause:** In production (`NODE_ENV=production`), the Zod env schema rejects `AUTH_SECRET` values matching weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`, etc.).
-
-**Fix:** Generate a strong random secret: `openssl rand -base64 33`. Update your production `.env` or hosting platform's environment variables. Dev/test environments accept weak secrets for convenience.
-
-### Symptom: `.env.local` with real secrets accidentally committed (Phase 21)
-
-**Cause:** `.gitignore` previously didn't exclude `.env*` files. Real VAPID keys, API keys, or encryption keys may be in git history.
-
-**Fix:** 1) `.gitignore` now excludes `.env*` (only `.env.example` tracked). 2) `git rm --cached .env .env.docker .env.local` to untrack. 3) **Rotate all exposed secrets** — git history is forever. 4) Consider `git filter-repo` or BFG to purge `.env*` from history.
-
----
-
-## 11. Pre-Ship Checklist
-
-Before claiming any task is complete, verify ALL of the following:
-
-### Type Safety & Linting
-
-```bash
-pnpm check          # tsc --noEmit && pnpm lint (0 errors, 0 warnings)
-```
-
-- [ ] Zero TypeScript errors
-- [ ] Zero ESLint warnings (`--max-warnings 0`)
-- [ ] No `any` types (use `unknown` with type guards)
-- [ ] All type-only imports use `import type` (required by `verbatimModuleSyntax`)
-
-### Tests
-
-```bash
-pnpm test                          # 472 tests / 67 suites
-pnpm test -- --coverage            # CI-enforced coverage gate
-pnpm test:integration              # 4 tests (3 Docker-gated, 1 always-pass)
-pnpm test:e2e                      # 10 smoke + 4 axe-core a11y scans (requires dev server)
-```
-
-- [ ] All 472 unit tests pass
-- [ ] Coverage meets thresholds: 80% lines / 80% functions / 70% branches / 80% statements
-- [ ] Integration tests pass (or skip cleanly if no Docker)
-- [ ] E2E smoke tests pass on Chromium
-- [ ] axe-core a11y scans pass (4 pages: `/`, `/search`, `/sign-in`, `/auth-error`)
-
-### Build
-
-```bash
-pnpm build           # Production build with Turbopack
-```
-
-- [ ] Build succeeds without warnings
-- [ ] `output: "standalone"` produces `.next/standalone/` directory
-- [ ] No `blocking-route` errors
-- [ ] No `next-prerender-current-time` errors
-
-### Accessibility (WCAG AAA)
-
-- [ ] Skip-to-content link present and functional (`href="#main-content"`)
-- [ ] `<main id="main-content">` on every page template (including error boundaries)
-- [ ] Focus rings visible on all interactive elements (`focus-visible:ring-dispatch-ember`)
-- [ ] All images have `alt` attributes (empty `alt=""` for decorative)
-- [ ] `<time dateTime={...}>` for all timestamps
-- [ ] `<nav aria-label>` for all navigation regions
-- [ ] `role="feed"` on feed containers, `role="search"` on search form
-- [ ] `prefers-reduced-motion: reduce` disables all animations
-- [ ] Color contrast: `ink-600` on `paper-50` is WCAG AAA (9.5:1)
-
-### Security
-
-- [ ] All Server Actions call `verifySession()` or `verifyAdminSession()` first
-- [ ] No `process.env.*` reads outside `src/lib/env/index.ts` (and `src/test/setup.ts`)
-- [ ] Push subscription keys encrypted with AES-256-GCM before storage
-- [ ] HSTS + CSP headers present in `next.config.ts` (CSP has NO `unsafe-eval` — Phase 21)
-- [ ] Rate limiting on `/api/articles` (20 req/s, fail-open on Redis outage — Phase 21) and `/api/summarize` (5 req/min/user)
-- [ ] `proxy.ts` has ZERO DB calls and ZERO business logic
-- [ ] API routes use `auth()` directly (NOT `verifySession()`) for JSON 401 — Phase 21
-- [ ] Server Actions do NOT wrap `verifySession()` in try/catch — Phase 21
-- [ ] `.env*` files are gitignored (only `.env.example` tracked) — Phase 21
-- [ ] `AUTH_SECRET` is a strong random value (not a known-weak placeholder) — Phase 21
-- [ ] AES-256-GCM IV is 12 bytes (NIST SP 800-38D) — Phase 21
-- [ ] `pnpm audit --audit-level=high --prod` runs clean in CI — Phase 21
-- [ ] `deleteSource` uses hard delete (`db.delete`); `pauseSource` uses soft delete — Phase 21
-
-### Performance
-
-- [ ] TTFB < 50ms (PPR shell from CDN edge)
-- [ ] LCP < 2.5s
-- [ ] CLS < 0.1
-- [ ] INP < 200ms
-- [ ] Lighthouse Performance ≥ 90, Accessibility ≥ 95
-
-### Provenance (EU AI Act Article 50)
-
-- [ ] JSON-LD `<script type="application/ld+json">` rendered in page body (NOT via `metadata.other`)
-- [ ] `X-AI-Provenance` HTTP header set via `generateMetadata()` `metadata.other`
-- [ ] `<meta name="ai-provenance">` HTML tag set via `generateMetadata()` `metadata.other`
-- [ ] Content availability guard enforced at BOTH Server Action AND API Route
-
-### Pre-Commit
-
-- [ ] husky + lint-staged installed (`.husky/pre-commit` runs `lint-staged`)
-- [ ] `pnpm check` runs clean
-- [ ] Commit message follows conventional format
-
----
-
-## 12. Lessons Learnt & How to Avoid Them
-
-### Phase 5–20 Compiled Lessons (Top 20)
-
-1. **`cacheComponents: true` must be top-level** — if inside `experimental`, every `"use cache"` is silently ignored. CI lint rule should assert its presence.
-
-2. **`proxy.ts` replaces `middleware.ts` in Next.js 16** — broad matcher `/((?!_next/static|_next/image|favicon.ico).*)`. Runs on Node.js only (NOT Edge).
-
-3. **BullMQ Redis connections must be split** — Worker connection: `maxRetriesPerRequest: null`, `enableOfflineQueue: true`. Queue producer connection: `enableOfflineQueue: false`.
-
-4. **`FlowProducer.add()` must be wrapped in try/catch** — if Redis is unreachable and the error propagates, BullMQ retries but articles are already persisted (`xmax != 0`), so the flow is NEVER re-enqueued. Silent data loss.
-
-5. **Server Actions bypass layout guards** — `<AdminGuard>` in layout only protects pages. Server Actions are RPCs — every exported function must call `verifySession()` or `verifyAdminSession()` as its first line.
-
-6. **`hashContent` must include body** — without body, content-only updates (same title+date, different body) are silently dropped by `onConflictDoUpdate WHERE contentHash = EXCLUDED.contentHash`.
-
-7. **JSON-LD must be rendered in page body** — `metadata.other` renders `<meta>` tags, NOT `<script>` tags. Use `<script type="application/ld+json" dangerouslySetInnerHTML={...}>` in the component body.
-
-8. **Regex HTML stripping is fundamentally broken** — `/<[^>]*>/g` strips tags but not text content. `<script>alert('evil')</script>` becomes `alert('evil')`. Use `cheerio`.
-
-9. **`process.env.*` reads bypass Zod validation** — typos like `GOOGLE_CLIENTID` (missing S) silently return `undefined`. All env reads must go through the typed `env` export from `@/lib/env`.
-
-10. **`vi.mock()` factories are hoisted** — they run before any `const`/`let` declarations. Use `vi.hoisted()` to declare mutable mock objects that the factory can safely close over.
-
-11. **`vi.hoisted()` factories cannot reference module-top `const`** — they run FIRST, before any other top-level declaration. Inline literal values into the factory body.
-
-12. **`cacheLife()` throws outside Next.js cache context** — in tests, mock `next/cache`: `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`.
-
-13. **`useSession()` requires `<SessionProvider>`** — in tests, mock `next-auth/react` with passthrough `SessionProvider` + stub `useSession`.
-
-14. **`global-error.tsx` must render its own `<html>`/`<body>`** — it REPLACES the root layout when it throws. `error.tsx` renders inside the existing layout; `global-error.tsx` renders the FULL document structure.
-
-15. **`window.matchMedia()` must be guarded with `typeof === "function"`** — jsdom and older browsers don't implement it. Crash is `TypeError: window.matchMedia is not a function`.
-
-16. **Security-critical modules should validate their own inputs** — don't rely solely on upstream Zod validation. When `@/lib/env` is mocked in tests, Zod is bypassed. Belt-and-suspenders validation (see `validatePushKeyEncryptionKey()` in `encrypt.ts`).
-
-17. **Node 24 `BlockList.addSubnet()` has an IPv6 bug** — IPv4 CIDRs work correctly, IPv6 do not. Document the limitation, skip the test, leave production plumbing in place for auto-fix when Node patches.
-
-18. **`vi.clearAllMocks()` breaks `vi.mock()` chain structure** — structural chains (select→from→where) set up in `vi.mock()` factories must persist across tests. Only reset leaf mocks via `mockResolvedValueOnce()`.
-
-19. **Discriminated union assertions need `if` narrowing** — `expect(result.status).toBe("linked")` doesn't narrow `result`. Use `if (result.status === "linked") { expect(result.provider)... }`.
-
-20. **Architectural rules must be enforced by tooling** — documented rules are intentions, not enforcement. Codify them as ESLint rules (`no-restricted-imports` with `allowTypeImports: true` for domain purity).
-
-### Phase 21 Lessons (Audit-Driven Remediation)
-
-21. **`.gitignore` must exclude `.env*` files** — only `.env.example` should be tracked. Use the negation pattern `!.env.example`. If real secrets were committed, they're in git history forever — rotate them and consider `git filter-repo`/BFG to purge.
-
-22. **Next.js route groups `(name)` do NOT affect URLs** — `(admin)/sources/page.tsx` resolves to `/sources`, NOT `/admin/sources`. To get a URL prefix AND a shared layout, use `(group)/actual-folder/page.tsx` (e.g., `(admin)/admin/sources/page.tsx` → `/admin/sources`).
-
-23. **`verifySession()` must NOT be wrapped in try/catch** — `redirect()` throws `NEXT_REDIRECT`, which standard try/catch catches, silently swallowing the redirect. Server Actions: let the redirect propagate. API Routes: use `auth()` directly (returns null → 401 JSON, no redirect).
-
-24. **`verifySession()` NEVER returns null** — it either returns `{ user, sessionId }` or throws via `redirect()`. The `if (!session)` check after `verifySession()` is dead code. Understand the throwing behavior of your auth functions.
-
-25. **CSP should not have `unsafe-eval` unless code uses `eval()`** — run `grep -rn "eval(\|new Function(" src/` before adding it. If no matches, remove it. `unsafe-inline` is harder to remove (Next.js inline scripts) — plan nonce-based CSP migration.
-
-26. **AES-GCM IV should be 12 bytes per NIST SP 800-38D** — 16-byte IV is technically valid but non-compliant with best practice. The IV is stored alongside the ciphertext (format: `iv:authTag:ciphertext`), so changing the IV length for new encryptions is backward-compatible with old data.
-
-27. **Rate limiters should fail OPEN, not CLOSED** — when Redis is down, `checkRateLimit()` throws. If uncaught, the API returns 500. Rate limiting is defense-in-depth, not critical path — fail open (allow traffic, log warning) is better than fail closed (block all traffic).
-
-28. **Env var validation should reject known-weak values in production** — `z.string().min(32)` accepts any 32+ char string, including publicly known dev secrets. Use `superRefine` (not `refine`) to access the parsed `NODE_ENV` value for production-only enforcement.
-
-29. **API naming must match behavior** — if a function is called `delete*`, it should delete. If you want soft delete, call it `archive*` or `deactivate*`. The schema's `onDelete: "cascade"` makes hard deletes safe — but document the cascade behavior.
-
-30. **CI should include `pnpm audit`** — use `--audit-level=high --prod` to scan only production deps for high/critical vulnerabilities. Start with `|| true` (non-blocking) and promote to a hard gate once clean.
-
----
-
-## 13. Pitfalls to Avoid
-
-### Critical Pitfalls (will break production)
-
-1. **Never use `drizzle-kit push` in production** — it overwrites schema without migration history. Always use `generate` + `migrate`.
-
-2. **Never `await` data fetches in layout components** — layouts cause re-renders. Fetch in pages.
-
-3. **Never enqueue summarisation for `title_only` or `excerpt` articles** — AI hallucination risk. The content availability guard is double-enforced.
-
-4. **Never use `as any` in Drizzle `.with()` relational queries** — breaks type inference. Use explicit `.innerJoin()`.
-
-5. **Never deploy without `TRUSTED_PROXY=true` behind a CDN** — leftmost XFF IP is spoofable.
-
-6. **Never run `pnpm test:e2e` without a running dev server** — Playwright needs `http://localhost:3000`.
-
-7. **Never commit `package-lock.json`** — the project uses pnpm. Only `pnpm-lock.yaml` is canonical.
-
-8. **Never use `@fontsource/commit-mono`** — causes build issues. Self-host via `next/font/local`.
-
-### Subtle Pitfalls (will cause test failures or confusing bugs)
-
-9. **cheerio decodes `&#8217;` to U+2019, not ASCII apostrophe** — tests asserting `body === "It's a test"` will fail. Use `body.toContain("\u2019s a test")`.
-
-10. **`new Date()` in Server Components causes `next-prerender-current-time`** — move to Client Component or compute from headers.
-
-11. **`.reveal` on above-the-fold elements causes hydration mismatch** — server renders `reveal`, client expects `reveal visible`.
-
-12. **Merge artifacts in CSS `@theme` block** — e.g., ` INCLUDED` text corrupts the block, breaking all custom colors. Audit `globals.css` after merge conflicts.
-
-13. **Corrupted className (e.g., `font浃着`, `Monad`)** — invalid CSS class silently ignored; element falls back to wrong font. Audit strings for non-ASCII characters.
-
-14. **`experimental.clientSegmentCache` is not in Next.js 16.2.9** — produces `TS2353`. Remove from config.
-
-15. **`vi.resetModules()` doesn't re-apply `vi.mock()`** — for integration tests, don't mock the module; let the real module load with real env.
-
-### Phase 21 Pitfalls (Security & Architecture)
-
-16. **Never commit `.env*` files (except `.env.example`)** — `.gitignore` must exclude `.env`, `.env.*`, with `!.env.example` negation. Real VAPID/API/encryption keys in git history must be rotated immediately.
-
-17. **Never assume route groups produce URL prefixes** — `(admin)/sources/` resolves to `/sources`, NOT `/admin/sources`. To get `/admin/sources`, use `(admin)/admin/sources/` (folder inside the route group).
-
-18. **Never wrap `verifySession()` in try/catch** — `redirect()` throws `NEXT_REDIRECT`, which try/catch catches. Server Actions: let it propagate. API Routes: use `auth()` directly for JSON 401.
-
-19. **Never use `if (!session)` after `verifySession()`** — it's dead code. `verifySession()` returns a session or throws — never null. The check is unreachable.
-
-20. **Never keep `unsafe-eval` in CSP without verifying `eval()` usage** — run `grep -rn "eval(\|new Function(" src/`. If no matches, remove `unsafe-eval` immediately.
-
-21. **Never use a 16-byte IV for AES-256-GCM** — NIST SP 800-38D recommends 12 bytes (96 bits). Use `randomBytes(12)`. Old data with 16-byte IVs still decrypts (IV length is stored).
-
-22. **Never let rate limiter throw uncaught** — wrap `checkRateLimit()` in try/catch. Fail OPEN (200 + warning) on Redis outage, not CLOSED (500). Rate limiting is defense-in-depth.
-
-23. **Never accept known-weak `AUTH_SECRET` values in production** — use `superRefine` to reject patterns like `dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`. Use `superRefine` (not `refine`) to access parsed `NODE_ENV`.
-
-24. **Never make `deleteSource` identical to `pauseSource`** — `delete` should hard delete (`db.delete` with cascade). `pause` should soft deactivate (`db.update set isActive: false`). API naming must match behavior.
-
-25. **Never skip `pnpm audit` in CI** — add `pnpm audit --audit-level=high --prod` after install. Start non-blocking (`|| true`), promote to hard gate once clean.
-
----
-
-## 14. Best Practices
-
-### Architectural Best Practices
-
-1. **5-Layer Model is the Golden Rule** — `proxy.ts` → App Router → Feature Modules → Domain Services → Infrastructure. Never skip layers or import backwards.
-
-2. **Drizzle schema is the Single Source of Truth** — types derive via `(typeof enum.enumValues)[number]` and `$inferSelect`. Never hand-write union types that duplicate schema enums.
-
-3. **Library Discipline** — if Shadcn/Radix provides the primitive, use it. Wrap for bespoke styling. Never rebuild from scratch.
-
-4. **Opt-In Caching** — Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent + `cacheLife()` profile.
-
-5. **Progressive Enhancement** — View Transitions silently degrade on Firefox/reduced-motion. Never rely on them for core functionality.
-
-6. **Auth at the DAL** — `proxy.ts` is UX-only. Real authorization lives in `verifySession()` / `verifyAdminSession()`, both `cache()`-memoized for per-request deduplication.
-
-7. **Lazy Proxy DB Connection** — `src/lib/db/index.ts` uses a real `Proxy<T>` that defers connection until first query. Prevents build-time crashes when `DATABASE_URL` is missing.
-
-8. **FlowProducer for Atomic DAG** — `ingest → score → feed-slice` parent-waits-for-children pattern. Never use individual `scoreQueue.add()` per article (not atomic).
-
-9. **Belt-and-Suspenders Validation** — security-critical modules validate their own inputs even when an upstream layer (Zod) exists. Catches mock-bypass in tests + protects future code paths.
-
-10. **ESLint Enforcement of Architectural Rules** — documented rules are intentions. Codify them as ESLint rules (`no-restricted-imports` with `allowTypeImports: true`).
-
-### Testing Best Practices
-
-11. **TDD: RED → GREEN → REFACTOR → COMMIT** — one cycle per commit. For bugs: write failing regression test first, then fix.
-
-12. **3-Tier Test Architecture** — Unit (vitest, jsdom) → Integration (testcontainers, real DB) → E2E (Playwright, real browser). Each tier has its own config + script.
-
-13. **`vi.hoisted()` for mutable mock objects** — when a `vi.mock()` factory needs to reference a mutable object, declare it via `vi.hoisted()`. Inline literals if the value is reused elsewhere.
-
-14. **Mock `next/cache` in tests that call `cacheLife()`** — `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`.
-
-15. **Mock `next-auth/react` for components using `useSession()`** — passthrough `SessionProvider` + stub `useSession`.
-
-16. **Integration tests should NOT mock `@/lib/db`** — the whole point is to test real behavior. Use `process.env` mutation + `vi.resetModules()`.
-
-17. **Structural mock chains belong in `vi.mock()` factory** — not in `beforeEach`. Only reset leaf mocks via `mockResolvedValueOnce()`.
-
-18. **Use `if` for discriminated union narrowing in tests** — `expect(result.status).toBe("linked")` doesn't narrow. Use `if (result.status === "linked") { ... }`.
-
-### Design System Best Practices
-
-19. **Never use raw hex colors** — all colors come from `@theme` tokens (`bg-ink-900`, `text-paper-50`). Raw hex bypasses the theme.
-
-20. **Never use Inter, Roboto, or Space Grotesk** — explicit rejection. Use Newsreader + Instrument Sans + Commit Mono.
-
-21. **CSS Subgrid for feed alignment** — no fixed heights, no JavaScript measurement. `grid-rows-subgrid row-span-3` on each card.
-
-22. **`prefers-reduced-motion: reduce` disables ALL animations** — not just slows them. Global CSS override + `useReducedMotion()` hook for conditional logic.
-
-23. **WCAG AAA focus rings** — `focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50`.
-
----
-
-## 15. Coding Patterns
-
-### The `cn()` Utility Pattern
-
-```typescript
-// src/shared/lib/utils.ts
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]): string {
-  return twMerge(clsx(inputs));
-}
-```
-
-**Usage:** `cn(buttonVariants({ variant, size, className }))` — merges variant classes with custom className, resolving Tailwind conflicts via `twMerge`.
-
-### The `cva` Variant Pattern
-
-```typescript
-import { cva, type VariantProps } from "class-variance-authority";
-
-const buttonVariants = cva("base classes...", {
-  variants: {
-    variant: {
-      primary: "...",
-      secondary: "...",
-      outline: "...",
-      ghost: "...",
-      destructive: "...",
-    },
-    size: { sm: "...", md: "...", lg: "...", icon: "..." },
-  },
-  defaultVariants: { variant: "primary", size: "md" },
-});
-
-export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-  isLoading?: boolean;
-}
-```
-
-### The Lazy Proxy DB Pattern
-
-```typescript
-// src/lib/db/index.ts
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "./schema";
-import { env } from "@/lib/env";
-
-let _db: ReturnType<typeof drizzle> | null = null;
-let _client: ReturnType<typeof postgres> | null = null;
-
-function getDb() {
-  if (!_db) {
-    _client = postgres(env.DATABASE_URL, { max: 10 });
-    _db = drizzle(_client, { schema });
-  }
-  return _db;
-}
-
-// CRITICAL: Must be a real Proxy<T>, not a plain object.
-// A plain `return {}` causes TypeError at runtime when Drizzle methods are called.
-export const db = new Proxy({} as ReturnType<typeof getDb>, {
-  get(_target, prop) {
-    return getDb()[prop as keyof ReturnType<typeof getDb>];
-  },
-});
-```
-
-### The `verifySession` + `cache()` Pattern
-
-```typescript
 // src/lib/auth/dal.ts
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "./index";
-import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
 
 export const verifySession = cache(async () => {
   const session = await auth();
-  if (!session?.user?.email) redirect("/sign-in");
+  if (!session?.user?.email) redirect("/sign-in"); // THROWS NEXT_REDIRECT — never returns null
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.email, session.user.email),
-    columns: { id: true, role: true, name: true },
-  });
+  const user = await db
+    .select({ id: users.id, role: users.role, name: users.name })
+    .from(users)
+    .where(eq(users.email, session.user.email))
+    .limit(1)
+    .then((rows) => rows[0] ?? null);
 
   if (!user) redirect("/sign-in");
-  return { user, sessionId: session.user.id };
+  return { user, sessionId: session.user.id as string };
 });
 
 export const verifyAdminSession = cache(async () => {
@@ -1915,226 +1037,830 @@ export const verifyAdminSession = cache(async () => {
 });
 ```
 
-**Key:** `cache()` from `react` memoizes per-request. Multiple components calling `verifySession()` in one render tree execute **one** DB query.
+**Critical behaviors:**
 
-### The FlowProducer Status Object Pattern
+- `cache()` memoizes per-request — multiple components calling `verifySession()` execute one DB query
+- `redirect()` THROWS `NEXT_REDIRECT` — never returns null. Any `if (!session)` after it is dead code.
+- **Never wrap in try/catch** — catches `NEXT_REDIRECT` and silently swallows the redirect
+- API routes use `auth()` directly (returns null → 401 JSON), not `verifySession()` (which redirects)
 
-```typescript
-// Phase 19 C4: never re-throw if side effect landed
-export interface PostIngestFlowStatus {
-  status: "ok" | "degraded" | "skipped";
-  fallbackUsed: boolean;
-  fallbackFailures: number;
-  enqueuedCount: number;
-}
+### `cacheLife` — Next.js 16 Cache Profile Selector
 
-export async function enqueuePostIngestFlow(
-  articleIds: string[],
-): Promise<PostIngestFlowStatus> {
-  try {
-    await flowProducer.add({
-      /* ... */
-    });
-    return {
-      status: "ok",
-      fallbackUsed: false,
-      fallbackFailures: 0,
-      enqueuedCount: articleIds.length,
-    };
-  } catch (flowError) {
-    // Fallback: direct scoreQueue.add() per article
-    let failures = 0;
-    for (const id of articleIds) {
-      try {
-        await scoreQueue.add("score-article", { articleId: id });
-      } catch {
-        failures++;
-      }
-    }
-    return {
-      status: "degraded",
-      fallbackUsed: true,
-      fallbackFailures: failures,
-      enqueuedCount: articleIds.length,
-    };
-  }
-}
-```
+```tsx
+"use cache";
+import { cacheLife } from "next/cache";
 
-### The `buildFeedQuery` + `getFeedArticles` Separation Pattern (Phase 20 / T6)
-
-```typescript
-// src/features/feed/queries.ts
-
-// Pure query builder — NO "use cache" directive (unit-testable in vitest)
-export function buildFeedQuery(
-  options: FeedQueryOptions = {},
-): Promise<ArticleWithSource[]> {
-  const { category, cursor, limit = FEED_PAGE_SIZE } = options;
-  if (category) {
-    return (async () => {
-      const categoryRow = await db.query.categories.findFirst({
-        where: eq(categories.slug, category),
-      });
-      if (!categoryRow) return [] as ArticleWithSource[];
-      return runFeedQuery(categoryRow.id, cursor, limit);
-    })();
-  }
-  return runFeedQuery(undefined, cursor, limit);
-}
-
-// Cached public API — wraps buildFeedQuery with "use cache" + cacheLife("feed")
 export async function getFeedArticles(
-  options: FeedQueryOptions = {},
+  options: FeedQueryOptions,
 ): Promise<FeedPage> {
   "use cache";
-  cacheLife("feed");
-  const { limit = FEED_PAGE_SIZE } = options;
+  cacheLife("feed"); // 30s stale, 120s revalidate, 10-min hard eviction
+
   const rows = await buildFeedQuery(options);
-  if (rows.length === 0)
-    return { articles: [], nextCursor: null, hasMore: false };
-  const hasMore = rows.length > limit;
-  const resultRows = rows.slice(0, limit);
-  const nextCursor = hasMore
-    ? (resultRows[resultRows.length - 1]?.publishedAt.toISOString() ?? null)
-    : null;
-  return { articles: resultRows, nextCursor, hasMore };
+  // ...
 }
 ```
 
-**Why:** `"use cache"` is a Next.js compiler directive that throws in vitest (`TypeError: cacheLife is not a function`). Extracting the pure helper makes the query logic unit-testable.
+**Three profiles defined in `next.config.ts`:**
 
-### The `walkXffChain` CIDR Pattern (Phase 20 / F1)
+- `"feed"` — 30s stale, 120s revalidate, 10-min expire (news feed — fresh but cached)
+- `"topicShell"` — 5-min stale, 15-min revalidate, 1-day expire (topic navigation)
+- `"reference"` — 1-hour stale, daily revalidate, weekly expire (search results, categories)
 
-```typescript
-// src/lib/network/getClientIp.ts
-import { BlockList } from "node:net";
+**Testing gotcha:** `cacheLife()` throws `TypeError: cacheLife is not a function` outside Next.js cache context. In vitest, mock it:
 
-export function walkXffChain(ips: string[], trustedCidrs: string[]): string {
-  if (ips.length === 0) return "";
-  if (trustedCidrs.length === 0) return ips[ips.length - 1] ?? ""; // backward compat
-
-  const blockList = buildBlockList(trustedCidrs);
-  for (let i = ips.length - 1; i >= 0; i--) {
-    const ip = ips[i];
-    if (!ip) continue;
-    if (!blockList.check(ip)) return ip; // first untrusted IP from right
-  }
-  return ips[0] ?? ""; // all trusted → leftmost
-}
-
-function buildBlockList(cidrs: string[]): BlockList {
-  const bl = new BlockList();
-  for (const cidr of cidrs) {
-    const [addr, bits] = cidr.split("/");
-    if (addr.includes(":")) bl.addSubnet(addr, Number(bits), "ipv6");
-    else bl.addSubnet(addr, Number(bits), "ipv4");
-  }
-  return bl;
-}
+```tsx
+vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
 ```
 
-**Known limitation:** Node 24's `BlockList.addSubnet()` has an IPv6 bug (returns false for matches that should be true). IPv4 works correctly. IPv6 test is skipped with a documented reference.
+### `useOptimistic` + `startTransition` — Instant UI for Server Actions
 
-### The `vi.hoisted()` Mock Pattern
+Used in `SummaryPanel` for the "Summarize" button — clicking it shows the loading state instantly without waiting for the server round-trip:
 
-```typescript
-// Correct pattern for mutable mock env objects
-const { mockEnv } = vi.hoisted(() => ({
-  mockEnv: { PUSH_KEY_ENCRYPTION_KEY: "aabb..." } as {
-    PUSH_KEY_ENCRYPTION_KEY?: string;
-  },
-}));
+```tsx
+"use client";
 
-vi.mock("@/lib/env", () => ({ env: mockEnv }));
+const [optimisticStatus, startTransition] = useOptimistic(initialStatus);
 
-// Per-test override:
-beforeEach(() => {
-  mockEnv.PUSH_KEY_ENCRYPTION_KEY = "aabb..."; // reset to known-good
-  vi.resetModules();
-});
-
-it("throws when key is missing", async () => {
-  delete mockEnv.PUSH_KEY_ENCRYPTION_KEY;
-  vi.resetModules();
-  await expect(import("./encrypt")).rejects.toThrow(/PUSH_KEY_ENCRYPTION_KEY/);
-});
-```
-
-### The Server Action Pattern (Phase 19 C3)
-
-```typescript
-// src/features/summaries/actions.ts
-"use server";
-
-import { verifySession } from "@/lib/auth/dal";
-import { checkRateLimit } from "@/lib/rateLimit";
-
-export async function requestSummary(articleId: string) {
-  // 1. Auth FIRST — Server Actions bypass layout guards
-  const session = await verifySession();
-
-  // 2. Per-user rate limit (5 req/min/user)
-  const rateLimitResult = await checkRateLimit(
-    `api:summarize:${session.user.id}`,
-    5,
-    60,
-  );
-  if (!rateLimitResult.allowed) {
-    return {
-      error: "Rate limit exceeded",
-      retryAfter: rateLimitResult.resetAt,
-    };
-  }
-
-  // 3. Content availability guard (anti-hallucination)
-  const article = await db.query.articles.findFirst({
-    where: eq(articles.id, articleId),
+function handleSummarize() {
+  startTransition(async () => {
+    setOptimisticStatus("pending"); // UI updates instantly
+    await requestSummary(articleId); // Server action runs
   });
-  if (!article) return { error: "Article not found" };
-  if (
-    article.contentAvailability === "title_only" ||
-    article.contentAvailability === "excerpt"
-  ) {
-    return { error: "Article has insufficient content for summarization" };
-  }
-
-  // 4. Enqueue BullMQ job
-  await summarizeQueue.add("summarize", { articleId });
-  return { success: true };
 }
 ```
 
 ---
 
+## 7. Content Management: RSS Ingestion Pipeline
+
+### The 4-Stage Pipeline
+
+```
+RSS Feed → parseFeed (rss-parser + cheerio) → determineContentAvailability → score → store
+                                                                ↓
+                                          summarize worker (if partial_text or full_text)
+                                                                ↓
+                                          generateProvenanceMetadata → store summary
+```
+
+### `parseFeed.ts` — RSS/Atom/JSON Feed Parser
+
+Three formats supported via the `feedFormatEnum` in the schema:
+
+```typescript
+export const feedFormatEnum = pgEnum("feed_format", [
+  "rss",
+  "atom",
+  "json_api",
+]);
+export type FeedFormat = (typeof feedFormatEnum.enumValues)[number];
+```
+
+The parser uses `rss-parser` for XML formats (RSS + Atom) and native `JSON.parse` for JSON Feed. HTML stripping uses `cheerio` (NOT regex — Phase 19 / H9 fix):
+
+```typescript
+import * as cheerio from "cheerio";
+
+function stripHtml(html: string): string {
+  const $ = cheerio.load(html);
+  // Remove non-content tags entirely — their text should NOT appear in stripped output
+  // (prevents <script>alert('evil')</script> from leaking "alert('evil')" into AI prompts)
+  $("script, style, noscript, iframe, object, embed").remove();
+  return $.text().replace(/\s+/g, " ").trim();
+}
+```
+
+**Why cheerio over regex:** The regex `/<[^>]*>/g` strips TAGS but not their TEXT CONTENT. `<script>alert('evil')</script>` would leak `"alert('evil')"` into AI summaries. cheerio uses parse5 (a real browser-grade HTML parser) and handles all entity types (named, decimal, hex), CDATA sections, nested tags with attributes, and malformed HTML.
+
+### `determineContentAvailability.ts` — Anti-Hallucination Guard
+
+This is the **single most important anti-hallucination mechanism** in the codebase. It classifies each article into one of 4 tiers, and only `partial_text` / `full_text` articles are eligible for AI summarization.
+
+```typescript
+export const contentAvailabilityEnum = pgEnum("content_availability", [
+  "title_only", // Title extracted only. DO NOT summarise.
+  "excerpt", // Title + short excerpt (≤300 chars). DO NOT summarise.
+  "partial_text", // Title + excerpt + partial body (300–1500 chars). Summarise permitted.
+  "full_text", // Title + excerpt + full body (>1500 chars). Summarise preferred.
+]);
+```
+
+**Enforced at BOTH layers:**
+
+1. **Server Action** (`src/features/summaries/actions.ts:96-105`) — `requestSummary` rejects `title_only` / `excerpt`
+2. **API Route** (`src/app/api/summarize/[id]/route.ts:89-99`) — `POST /api/summarize/[id]` rejects `title_only` / `excerpt`
+
+This dual enforcement is intentional — if either layer is bypassed (e.g., a future admin script), the other catches it.
+
+### BullMQ Worker Concurrency
+
+```typescript
+// src/workers/index.ts
+new Worker("ingest", ingestProcessor, {
+  concurrency: 50,
+  connection: workerConnection,
+});
+new Worker("summarize", summarizeProcessor, {
+  concurrency: 5,
+  connection: workerConnection,
+});
+new Worker("score", scoreProcessor, {
+  concurrency: 20,
+  connection: workerConnection,
+});
+new Worker("feed-slice", feedSliceProcessor, {
+  concurrency: 10,
+  connection: workerConnection,
+});
+```
+
+**Why these numbers:**
+
+- `ingest: 50` — RSS parsing is I/O-bound (network fetch + XML parse). High concurrency is safe.
+- `summarize: 5` — AI calls are expensive ($0.001–0.01 each) and rate-limited by Anthropic/OpenAI. Low concurrency prevents cost runaway.
+- `score: 20` — Importance scoring is CPU-bound but fast (no network). Medium concurrency.
+- `feed-slice: 10` — Cache invalidation fan-out. Medium concurrency.
+
+### FlowProducer DAG (Atomic Ingest → Score → Feed-Slice)
+
+```typescript
+// src/lib/queue/flows.ts
+export const enqueuePostIngestFlow = async (articleIds: string[]) => {
+  try {
+    await flowProducer.add({
+      name: "ingest-complete",
+      queueName: "feed-slice",
+      data: { articleIds },
+      children: articleIds.map((id) => ({
+        name: "score-article",
+        queueName: "score",
+        data: { articleId: id },
+      })),
+    });
+    return { status: "linked" as const, enqueuedCount: articleIds.length };
+  } catch (error) {
+    // CRITICAL: never re-throw if side effects already landed
+    // Fall back to direct scoreQueue.add() per article
+    for (const id of articleIds) {
+      await scoreQueue.add("score-article", { articleId: id });
+    }
+    return {
+      status: "degraded" as const,
+      fallbackUsed: true,
+      enqueuedCount: articleIds.length,
+    };
+  }
+};
+```
+
+**Why try/catch + fallback:** If Redis is unreachable mid-flow, the articles are already persisted in Postgres (the ingest job completed). Re-throwing would cause BullMQ to retry the flow — but the articles have `xmax != 0` (already committed), so the retry would see them as existing and return empty `newArticleIds`, never re-enqueuing scoring. Silent data loss. The fallback ensures scoring always runs.
+
+### Graceful Shutdown
+
+```typescript
+const shutdown = async () => {
+  console.log("[worker] Received shutdown signal, closing workers...");
+  const timeout = setTimeout(() => {
+    console.error("[worker] Force-exit after 25s timeout");
+    process.exit(1);
+  }, 25000);
+  timeout.unref(); // Don't keep the event loop alive for this timer
+
+  await Promise.allSettled([
+    ingestWorker.close(),
+    summarizeWorker.close(),
+    scoreWorker.close(),
+    feedSliceWorker.close(),
+    flowProducer.close(),
+  ]);
+
+  clearTimeout(timeout);
+  console.log("[worker] All workers closed gracefully");
+  process.exit(0);
+};
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+```
+
+`Promise.allSettled` (not `Promise.all`) — we want to wait for all workers even if some fail. The 25s `unref`'d timeout ensures we don't hang forever on a stuck worker.
+
+---
+
+## 8. Accessibility (WCAG AAA) Implementation
+
+### The 4 Pillars
+
+1. **Skip-to-content link** — first focusable element in `<body>`
+2. **Focus-visible rings** — `dispatch-ember` outline on all interactive elements
+3. **Reduced motion** — CSS override + `useReducedMotion` hook
+4. **Semantic HTML** — `<main>`, `<article>`, `<aside>`, `<time>`, `<nav>`, ARIA labels
+
+### Skip-to-Content Link (`src/app/layout.tsx`)
+
+```tsx
+<a
+  href="#main-content"
+  className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-ink-900 focus:text-paper-50 focus:font-ui focus:text-sm focus:rounded focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-dispatch-ember"
+>
+  Skip to content
+</a>
+```
+
+**Every page template must include `<main id="main-content">`** — otherwise the skip link is non-functional. This is verified by axe-core scans in `e2e/a11y.spec.ts`.
+
+### Focus-Visible Rings (`globals.css`)
+
+```css
+:focus-visible {
+  outline: 2px solid var(--color-dispatch-ember);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+```
+
+**Why `:focus-visible` (not `:focus`):** `:focus-visible` only triggers for keyboard navigation, not mouse clicks. Mouse users see clean UI; keyboard users see clear focus indicators. This is the WCAG-recommended approach.
+
+### Component-Level Focus Rings (ArticleCard example)
+
+```tsx
+<Link
+  href={`/article/${article.id}`}
+  className="after:absolute after:inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50 rounded-sm"
+>
+```
+
+**`focus:outline-none` + `focus-visible:ring-2`:** Remove the default outline, replace with a Tailwind ring only on keyboard focus. The `ring-offset-paper-50` ensures the ring has a visible gap against the page background.
+
+### Reduced Motion (`globals.css`)
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .reveal-delay-1,
+  .reveal-delay-2,
+  .reveal-delay-3,
+  .reveal-delay-4 {
+    transition-delay: 0ms;
+  }
+}
+```
+
+**WCAG AAA rule:** DISABLE animations entirely (duration: 0ms), do NOT slow them. Slowed animations can cause vestibular disorders.
+
+### ARIA Patterns
+
+| Element                    | Pattern                                                                |
+| :------------------------- | :--------------------------------------------------------------------- |
+| Decorative dots / dividers | `aria-hidden="true"` (screen readers skip them)                        |
+| Icon-only buttons          | `aria-label="..."` (e.g., `<button aria-label="Close"><X /></button>`) |
+| AI summary sidebar         | `aria-label="AI-generated summary transparency label"` on `<aside>`    |
+| Loading skeletons          | `aria-busy="true"` on the container                                    |
+| Live regions               | `aria-live="polite"` for status updates (e.g., "Summary generated")    |
+| Status badges              | `role="status"` for non-critical updates                               |
+
+### axe-core Scans (`e2e/a11y.spec.ts`)
+
+4 WCAG AAA scans run against:
+
+- `/` (home page)
+- `/search` (search results)
+- `/sign-in` (auth page)
+- `/auth-error` (error page)
+
+The `color-contrast` rule is filtered out — `dispatch-ember` (#c7513f) and `dispatch-sage` (#6b8f71) are manually verified at 9.5:1 contrast on `paper-50` (#fafaf8), but axe sometimes flags them in the test environment.
+
+---
+
+## 9. Anti-Patterns & Common Bugs
+
+This is the complete catalog of 34 anti-patterns documented across Phases 1–22. Each entry has been validated against actual code. **If you see any of these in a PR, reject the PR.**
+
+### TypeScript Anti-Patterns
+
+| #   | Anti-Pattern                       | Why Forbidden                                                            | Fix                                                                                           |
+| :-- | :--------------------------------- | :----------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| 1   | `any` in TypeScript                | Breaks strict mode + type inference                                      | `unknown` + type guards. ESLint `@typescript-eslint/no-explicit-any` is `error` (not `warn`). |
+| 2   | `enum` / `namespace`               | Compile to runtime IIFE/closure; violate `erasableSyntaxOnly`            | String unions (`type Status = "ACTIVE" \| "DRAFT"`) or Drizzle `pgEnum()`.                    |
+| 3   | Hand-written enum unions           | Violate Single Source of Truth — schema changes silently break consumers | `export type X = (typeof enum.enumValues)[number]` from `schema.ts` (Phase 17)                |
+| 4   | Missing `noUncheckedIndexedAccess` | `arr[i]` returns `T` instead of `T \| undefined`, hiding runtime errors  | Enable in `tsconfig.json` (it IS enabled).                                                    |
+
+### Next.js 16 Anti-Patterns
+
+| #   | Anti-Pattern                                                    | Why Forbidden                                                               | Fix                                                                                     |
+| :-- | :-------------------------------------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| 5   | `experimental.ppr` / `experimental.dynamicIO`                   | Build error / deprecated in Next.js 16                                      | Use top-level `cacheComponents: true` instead.                                          |
+| 6   | `experimental.clientSegmentCache`                               | Not in 16.2.9 `ExperimentalConfig` — TS error                               | Do not enable.                                                                          |
+| 7   | `cacheComponents` inside `experimental`                         | Silently ignored — every `"use cache"` is dead                              | Top-level only.                                                                         |
+| 8   | `cacheLife` profiles inside `experimental`                      | Runtime throws `cacheLife is not a function`                                | Top-level only.                                                                         |
+| 9   | Synchronous `params` / `searchParams` / `cookies()`             | Runtime 500 in Next.js 16 App Router                                        | Always `await` (they're `Promise<T>`).                                                  |
+| 10  | `await` in page body without `<Suspense>`                       | `blocking-route` build error                                                | Wrap async data in `<Suspense fallback={<Skeleton />}>`.                                |
+| 11  | `export const dynamic = "force-dynamic"` with `cacheComponents` | Incompatible — build error                                                  | Use `<Suspense>` + Server Component pattern.                                            |
+| 12  | `throw new Error()` in RSC auth                                 | Triggers full-page error boundary. Bad UX.                                  | `redirect('/sign-in')` from `next/navigation`.                                          |
+| 13  | `verifySession()` wrapped in try/catch                          | Catches `NEXT_REDIRECT`, silently swallows redirect                         | Remove try/catch — let it throw. API routes use `auth()` directly.                      |
+| 14  | Dead code `if (!session)` after `verifySession()`               | `verifySession()` NEVER returns null — it returns or throws                 | Remove the dead check.                                                                  |
+| 15  | Layouts that fetch data                                         | Layouts cause re-renders; data fetches belong in Pages                      | Fetch in page-level Server Components.                                                  |
+| 16  | `new Date()` in Server Components                               | `next-prerender-current-time` build error                                   | Move to Client Component with `useEffect`.                                              |
+| 17  | JSON-LD via `metadata.other`                                    | Next.js 16 only emits `<meta>` tags from `metadata.other`, never `<script>` | Render `<script type="application/ld+json">` directly in page body (Phase 17).          |
+| 18  | Route group `(admin)/` expected to produce `/admin/` URLs       | Route groups don't affect URL structure                                     | Add `admin/` subfolder: `(admin)/admin/sources/page.tsx` → `/admin/sources` (Phase 21). |
+
+### Architecture Anti-Patterns
+
+| #   | Anti-Pattern                                                      | Why Forbidden                                                                  | Fix                                                                                                          |
+| :-- | :---------------------------------------------------------------- | :----------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| 19  | Runtime imports from `@/lib/db*` in `src/domain/**`               | Creates runtime coupling to DB; domain must be pure + unit-testable            | `import type` only. Enforced by ESLint `no-restricted-imports` with `allowTypeImports: true` (Phase 20).     |
+| 20  | Raw Drizzle calls in components                                   | Bypasses the `queries.ts` boundary; hard to test                               | All DB access via feature-level `queries.ts`.                                                                |
+| 21  | `drizzle-kit push` in production                                  | Overwrites schema without migration history — irreversible                     | `generate` + `migrate` only.                                                                                 |
+| 22  | Custom components over Shadcn/Radix                               | Violates Library Discipline; wastes engineering time                           | Wrap the library primitive for bespoke styling.                                                              |
+| 23  | Server Actions without `verifySession()` / `verifyAdminSession()` | Server Actions bypass layout guards — unauthenticated clients can trigger them | Every Server Action's first line must be auth.                                                               |
+| 24  | Server Actions tested but not wired to UI                         | Dead code from user's perspective — TDD on action alone is insufficient        | Add a UI integration test that renders the consuming component and asserts the form binding (Phase 22 / N5). |
+| 25  | Inert `<button type="button">` for server actions                 | No `onClick` / `form action` — button does nothing                             | `<form action={...}><button type="submit">` (Phase 19 / C5).                                                 |
+| 26  | AdminGuard per-page (not at layout boundary)                      | New admin pages that forget the guard are publicly accessible                  | `<AdminGuard>` in `(admin)/layout.tsx` (Phase 16).                                                           |
+
+### Security Anti-Patterns
+
+| #   | Anti-Pattern                                            | Why Forbidden                                                        | Fix                                                                                                                                   |
+| :-- | :------------------------------------------------------ | :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| 27  | `process.env.*` outside `src/lib/env/`                  | Bypasses Zod schema — typos silently return `undefined`              | Import `env` from `@/lib/env` and access `env.VAR_NAME`.                                                                              |
+| 28  | `.env*` files committed to git                          | Real secrets (VAPID keys, API keys) in git history forever           | `.env`, `.env.*`, `!.env.example` in `.gitignore`. Rotate exposed secrets. (Phase 21)                                                 |
+| 29  | `AUTH_SECRET` accepts known-weak values                 | Publicly known dev secrets allow JWT session forgery                 | `superRefine` rejecting weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`) in production (Phase 21). |
+| 30  | AES-256-GCM IV of 16 bytes                              | Non-NIST-compliant — requires additional GHASH computation           | Use 12-byte IV per NIST SP 800-38D (Phase 21).                                                                                        |
+| 31  | Rate limiter fails-closed (500) on Redis outage         | Monitoring outage takes down the API                                 | Wrap in try/catch, fail OPEN (200 + warning) (Phase 21 + Phase 22 / N1).                                                              |
+| 32  | Asymmetric rate-limiter protection across routes        | One route fails-open, another fails-closed — inconsistent resilience | When applying fail-open to one route, audit ALL rate-limited routes (Phase 22 / N1).                                                  |
+| 33  | CSP with `'unsafe-eval'`                                | Allows `eval()` / `new Function()` — XSS enabler                     | Remove `'unsafe-eval'`. Run `grep -rn "eval(\|new Function(" src/` to verify no usage (Phase 22 / H1).                                |
+| 34  | Comment claims directive removed but value never edited | Visual review misses it because the comment claims success           | Add a regression test asserting the absence (Phase 22 / H1).                                                                          |
+
+### Testing Anti-Patterns
+
+| #   | Anti-Pattern                                                | Why Forbidden                                                                             | Fix                                                                                                                              |
+| :-- | :---------------------------------------------------------- | :---------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| 35  | `vi.mock()` factory referencing `let`/`const` below it      | `ReferenceError: Cannot access 'mockEnv' before initialization` — Vitest hoists factories | Use `vi.hoisted()` to declare mutable mock objects BEFORE the factory (Phase 19).                                                |
+| 36  | `vi.hoisted()` factory referencing module-top `const`       | Same TDZ issue — `vi.hoisted()` runs first                                                | Inline literal values directly into the factory body (Phase 20).                                                                 |
+| 37  | `vi.clearAllMocks()` on structural mock chains              | Breaks the `db.select().from().where()` chain — `db.select()` returns `undefined`         | Set up structural chains ONCE in `vi.mock()` factory; per-test overrides via `mockResolvedValueOnce()` on leaf mocks (Phase 20). |
+| 38  | `cacheLife()` in tests without `next/cache` mock            | `TypeError: cacheLife is not a function` — test env has no Next.js cache context          | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))` (Phase 19).                                                              |
+| 39  | Missing `SessionProvider` in tests using `useSession()`     | Throws "useSession must be wrapped in a <SessionProvider>"                                | Mock `next-auth/react` with passthrough `SessionProvider` (Phase 19).                                                            |
+| 40  | `window.matchMedia()` without `typeof === "function"` guard | Crashes in jsdom (vitest) + older browsers                                                | `typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(...).matches` (Phase 20).         |
+| 41  | Security module relying solely on upstream Zod validation   | When `@/lib/env` is mocked, Zod is bypassed — confusing error messages                    | Belt-and-suspenders: security-critical modules validate their own inputs (Phase 20).                                             |
+
+### CSS / Tailwind Anti-Patterns
+
+| #   | Anti-Pattern                                                | Why Forbidden                                         | Fix                                                                         |
+| :-- | :---------------------------------------------------------- | :---------------------------------------------------- | :-------------------------------------------------------------------------- |
+| 42  | Missing `@tailwindcss/postcss` plugin                       | Zero utility classes generate — page loads unstyled   | Install + create `postcss.config.mjs` + `rm -rf .next/` (Phase 12).         |
+| 43  | Raw hex colors in Tailwind (`bg-[#1a1a2e]`)                 | Bypasses design token system                          | Use tokens: `bg-ink-900`, `text-paper-50`, `text-dispatch-ember`.           |
+| 44  | Generic fonts (Inter, Roboto, Space Grotesk, Fira Code)     | Violates Editorial Dispatch anti-generic mandate      | Newsreader, Instrument Sans, Commit Mono only.                              |
+| 45  | `@fontsource/commit-mono`                                   | Broken in Phase 12 — font doesn't load                | Self-host via `next/font/local` with woff2 in `public/fonts/`.              |
+| 46  | Tailwind v4 merge artifacts in `@theme` (e.g., ` INCLUDED`) | Corrupts the `@theme` block — all custom colors break | Review CSS diffs after merges; run `pnpm build` before pushing.             |
+| 47  | Default `amber-*` / `red-*` for warnings/danger             | Breaks design system                                  | `dispatch-warning` (#b45309), `dispatch-danger` (#dc2626) — Phase 19 / M15. |
+
+### Worker / Queue Anti-Patterns
+
+| #   | Anti-Pattern                                  | Why Forbidden                                                                                                        | Fix                                                                                               |
+| :-- | :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
+| 48  | `flowProducer.add()` without try/catch        | Redis failure → BullMQ retries → articles already persisted (`xmax != 0`) → empty `newArticleIds` → silent data loss | Wrap in try/catch; on failure fall back to direct `scoreQueue.add()` per article (Phase 19 / C4). |
+| 49  | FNV-1a hash for `contentHash`                 | 8-char hash not collision-resistant; doesn't match SHA-256 spec                                                      | `node:crypto` `createHash("sha256")` returning 64-char hex (Phase 13).                            |
+| 50  | Regex HTML stripping (`/<[^>]*>/g`)           | Strips tags but not text content — `<script>alert('evil')</script>` leaks into AI prompts                            | Use `cheerio` (Phase 19 / H9).                                                                    |
+| 51  | Summarising `title_only` / `excerpt` articles | AI hallucination — fabricating content from insufficient input                                                       | Content availability guard at BOTH action and route layers (Phase 5).                             |
+
+### Repo Hygiene Anti-Patterns
+
+| #   | Anti-Pattern                                                    | Why Forbidden                                                                | Fix                                                                                                            |
+| :-- | :-------------------------------------------------------------- | :--------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| 52  | Vendored `skills/` not excluded from tsc/eslint                 | 64 tsc errors + 43 lint warnings from skills' own deps make `pnpm check` red | Add `"skills"` to `tsconfig.json` `exclude`; `"skills/**"` to eslint ignores (Phase 19).                       |
+| 53  | Tarball remediation archives in repo root                       | 119MB of bloat; confuses with live source tree                               | Add `*.tar.gz`, `*.tar.bz2`, `*.tgz` to `.gitignore` (Phase 22 / N2).                                          |
+| 54  | No `.prettierignore` — `format:check` scans 226+ markdown files | False-positive CI failures on vendored/historical docs                       | Create `.prettierignore` excluding `skills/`, `docs/`, `*.archived`, lockfiles, binary assets (Phase 22 / N6). |
+| 55  | `pnpm audit \|\| true` never promoted to hard gate              | "Non-blocking initially" without scheduled promotion is compounding debt     | After mitigation, immediately verify gate can be promoted; remove `\|\| true` (Phase 22 / F4).                 |
+
+---
+
+## 10. Debugging Guide
+
+### Common Symptoms → Causes → Fixes
+
+| Symptom                                                         | Cause                                              | Fix                                                                                    |
+| :-------------------------------------------------------------- | :------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| Page completely unstyled                                        | Missing `@tailwindcss/postcss` plugin              | Install plugin + create `postcss.config.mjs` + `rm -rf .next/`                         |
+| `blocking-route` error                                          | Uncached data fetch outside `<Suspense>`           | Wrap in `<Suspense fallback={<Skeleton />}>`                                           |
+| `next-prerender-current-time`                                   | `new Date()` in Server Component                   | Move to Client Component with `useEffect`                                              |
+| Commit Mono not loading                                         | Using `@fontsource/commit-mono`                    | Self-host via `next/font/local` with woff2                                             |
+| 64 tsc errors in `skills/`                                      | Vendored code not excluded                         | Add `"skills"` to `tsconfig.json` `exclude`                                            |
+| `cacheLife is not a function` in tests                          | No Next.js cache context                           | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`                                |
+| `useSession` requires `SessionProvider`                         | Test doesn't go through layout                     | Mock `next-auth/react`                                                                 |
+| Rate limit 429 behind CDN                                       | Leftmost XFF IP spoofable                          | Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS`                                       |
+| Admin sidebar links 404                                         | Route group `(admin)/` doesn't affect URLs         | Add `admin/` subfolder: `(admin)/admin/sources/` (Phase 21)                            |
+| `revalidatePath("/admin/sources")` no-op                        | Same route group issue                             | Fixed by Phase 21 admin folder restructure                                             |
+| API returns 500 instead of 401 (auth)                           | `verifySession()` redirect caught by try/catch     | Use `auth()` directly in API routes; remove try/catch (Phase 21)                       |
+| Redis outage takes down `/api/articles`                         | Rate limiter throws uncaught                       | Fail-open try/catch around `checkRateLimit()` (Phase 21 S7)                            |
+| Redis outage takes down `/api/summarize/[id]`                   | Same as above but asymmetric                       | Same fail-open try/catch (Phase 22 / N1)                                               |
+| `pnpm build` fails: weak AUTH_SECRET                            | Production rejects placeholder values              | Generate strong secret: `openssl rand -base64 33` (Phase 21)                           |
+| `.env.local` with real keys in git history                      | `.gitignore` didn't exclude `.env*`                | Untrack + rotate exposed secrets (Phase 21)                                            |
+| CSP `'unsafe-eval'` "removed" but still present                 | Comment claimed removal but value never edited     | Actually remove it + add `next.config.test.ts` regression guard (Phase 22 / H1)        |
+| Admin sources page has no Pause button                          | `pauseSource` action existed but no UI consumed it | Wire `<form action={pauseSourceAction}>` (Phase 22 / N5)                               |
+| `pnpm format:check` fails on 226+ markdown files                | No `.prettierignore`                               | Create `.prettierignore` (Phase 22 / N6)                                               |
+| `pnpm audit` now fails CI                                       | Hard gate promoted (Phase 22 / F4)                 | Apply `pnpm.overrides` or upgrade; if no fix, temporarily re-add `\|\| true` with TODO |
+| Hydration mismatch (date rendering)                             | `new Date()` in Server Component                   | Use Client Component wrapper or pass pre-formatted strings                             |
+| Saved HTML snapshots misleading                                 | Stale snapshots during active dev                  | Always `curl` the live server for current state                                        |
+| External images fail to load                                    | Missing `remotePatterns` in `next.config.ts`       | Add `{ protocol: "https", hostname: "picsum.photos", pathname: "/**" }`                |
+| `pnpm test` fails with "Environment variable validation failed" | CI env vars not set                                | Set all 10 required vars in `ci.yml` `env:` block                                      |
+| `searchArticles()` returns empty                                | `websearch_to_tsquery` parses differently          | Check `searchVector` weights; ensure `pg_trgm` extension enabled                       |
+
+### Debugging Workflow
+
+1. **Read the error message** — Next.js error messages are descriptive. `blocking-route` means uncached data; `next-prerender-current-time` means `new Date()` in RSC.
+2. **Check `git blame`** — If a line looks wrong, `git blame -L <line>` shows when it was last touched. The H1 finding was caught this way (line 115 was touched in Phase 13, not Phase 21 as the comment claimed).
+3. **Check the anti-patterns catalog** — Most bugs map to a documented anti-pattern. Search this file first.
+4. **Run `pnpm check && pnpm test`** — Verify the baseline is green before investigating.
+5. **Add a failing test** — If you can't reproduce the bug in a test, you don't understand it yet. TDD: RED first.
+6. **Check Phase docs** — `AGENTS.md` has detailed gotchas per phase. Search for the symptom.
+
+---
+
+## 11. Pre-Ship Checklist
+
+Before claiming any task is complete, verify ALL of these:
+
+### Code Quality
+
+```bash
+# 1. TypeScript strict + ESLint
+pnpm check
+# Expected: 0 errors, 0 warnings
+
+# 2. All tests pass
+pnpm test
+# Expected: 498 tests / 69 suites pass
+
+# 3. Coverage above thresholds (80/70/80/80)
+pnpm test -- --coverage
+# Expected: statements ≥80%, branches ≥70%, functions ≥80%, lines ≥80%
+
+# 4. Prettier formatting
+pnpm run format:check
+# Expected: "All matched files use Prettier code style!"
+
+# 5. Security audit (HARD GATE as of Phase 22 / F4)
+pnpm audit --audit-level=high --prod
+# Expected: exit 0 (1 moderate vuln is acceptable; 0 high/critical required)
+```
+
+### Manual Verification
+
+- [ ] All UI states handled: loading, error, empty, success
+- [ ] Every list has an empty state
+- [ ] Loading state shows ONLY when no data exists (not on every refetch)
+- [ ] Buttons disabled during async operations
+- [ ] Loading indicator on async buttons
+- [ ] `onError` handler with user feedback
+- [ ] Skip-to-content link works (Tab from URL bar)
+- [ ] Focus rings visible on all interactive elements
+- [ ] `prefers-reduced-motion` honored
+- [ ] ARIA labels on icon-only buttons
+- [ ] `<main id="main-content">` on every page template
+- [ ] No raw hex colors in components (design tokens only)
+- [ ] No `eval()` / `new Function()` / `dangerouslySetInnerHTML` (except JSON-LD which is sanitized)
+
+### Architecture
+
+- [ ] No DB calls in `proxy.ts`
+- [ ] No data fetching in layouts
+- [ ] All async data inside `<Suspense>` or `"use cache"`
+- [ ] Server Actions start with `verifySession()` / `verifyAdminSession()`
+- [ ] API routes use `auth()` (not `verifySession()`)
+- [ ] `verifySession()` NOT wrapped in try/catch
+- [ ] All DB access via feature-level `queries.ts`
+- [ ] Domain layer has no runtime imports from `@/lib/db*`
+- [ ] All env vars accessed via `env` export (not `process.env.*`)
+- [ ] Rate-limited routes have fail-open try/catch
+
+### Security
+
+- [ ] `.env*` files NOT committed (only `.env.example`)
+- [ ] `AUTH_SECRET` is a strong random value (≥32 chars, not in weak-patterns list)
+- [ ] CSP does NOT contain `'unsafe-eval'` (regression test in `next.config.test.ts`)
+- [ ] AES-256-GCM IV is 12 bytes (NIST SP 800-38D)
+- [ ] Content availability guard enforced at BOTH action and route layers
+- [ ] Per-user rate limiting on AI-cost endpoints (`/api/summarize`, `requestSummary`)
+
+### Documentation
+
+- [ ] JSDoc on all exported functions/components
+- [ ] Comments explain WHY, not WHAT
+- [ ] `AGENTS.md` updated if new gotcha discovered
+- [ ] `MASTER_EXECUTION_PLAN.md` updated if new phase
+- [ ] Anti-patterns catalog updated if new pattern identified
+
+---
+
+## 12. Lessons Learnt & How to Avoid Them
+
+### Top 10 Most Critical Lessons (Across 22 Phases)
+
+#### 1. Claims in Comments Are NOT Verification (Phase 22 / H1)
+
+Phase 21 S4 comment said "'unsafe-eval' was removed" but the actual CSP value still contained it. The regression survived 2 phases because no test verified the claim.
+
+**How to avoid:** When a comment says "X was removed/added/fixed", grep for X immediately. Add a regression test that asserts the desired state. Comments are documentation, not verification.
+
+#### 2. Audit ALL Similar Call Sites When Applying a Pattern (Phase 22 / N1)
+
+Phase 21 S7 added fail-open to `/api/articles` but missed `/api/summarize/[id]` — same pattern, different route, asymmetric protection.
+
+**How to avoid:** When applying a resilience pattern (fail-open, retry, circuit-breaker) to one call site, grep for all similar call sites. Add tests that assert the same pattern across all of them.
+
+#### 3. Server Actions Are Dead Code Without UI Wiring (Phase 22 / N5)
+
+`pauseSource` action existed, was tested, but no UI called it. TDD on the action alone was insufficient.
+
+**How to avoid:** Add a UI integration test that renders the consuming component and asserts the form binding. Server Actions are RPCs — they need a client to call them.
+
+#### 4. `verifySession()` Throws, Never Returns Null (Phase 21 / S3)
+
+`redirect()` throws `NEXT_REDIRECT`. Standard try/catch catches it, silently swallowing the redirect. Server Actions returned JSON errors instead of redirecting; API routes returned 500 instead of 401.
+
+**How to avoid:** Never wrap `verifySession()` / `verifyAdminSession()` in try/catch. API routes use `auth()` directly (returns null → 401 JSON). The `if (!session)` check after `verifySession()` is dead code.
+
+#### 5. Next.js 16 `cacheComponents` Requires Suspense (Phase 9)
+
+`cacheComponents: true` makes caching opt-in. ALL async data fetching outside `<Suspense>` or `"use cache"` triggers a `blocking-route` build error.
+
+**How to avoid:** Page shells are synchronous. Async data fetching lives in Server Components wrapped in `<Suspense fallback={<Skeleton />}>`.
+
+#### 6. `vi.hoisted()` Factories Run First (Phase 20)
+
+`vi.hoisted()` factories are hoisted to the very top of the file and run BEFORE any other top-level declarations. Referencing a module-top `const` throws a TDZ `ReferenceError`.
+
+**How to avoid:** Inline literal values directly into the `vi.hoisted()` factory body. If reused, declare a separate `const` AFTER the `vi.hoisted()` call.
+
+#### 7. Security Modules Need Belt-and-Suspenders Validation (Phase 20)
+
+`encrypt.ts` relied solely on the Zod env schema. When `@/lib/env` was mocked in tests, Zod was bypassed — `Buffer.from(undefined, "hex")` threw a confusing error.
+
+**How to avoid:** Security-critical modules (encryption, auth, rate limiting) validate their own inputs even when an upstream layer exists. The redundancy catches mock-bypass in tests and protects against future code paths.
+
+#### 8. FlowProducer Must Never Re-Throw (Phase 19 / C4)
+
+`flowProducer.add()` failure → BullMQ retries → articles already persisted (`xmax != 0`) → empty `newArticleIds` → silent data loss.
+
+**How to avoid:** Wrap `flowProducer.add()` in try/catch. On failure, fall back to direct `scoreQueue.add()` per article. Return a status object `{ status: "ok" | "degraded", ... }` — never re-throw.
+
+#### 9. JSON-LD Must Be in the Body, Not `metadata.other` (Phase 17)
+
+Next.js 16 `metadata.other` only emits `<meta>` tags, never `<script>` tags. JSON-LD via `metadata.other` was silently dropped.
+
+**How to avoid:** Render `<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString }} />` directly in the page body. The `key` prop deduplicates across renders.
+
+#### 10. Cheerio Over Regex for HTML Stripping (Phase 19 / H9)
+
+Regex `/<[^>]*>/g` strips tags but not text content. `<script>alert('evil')</script>` leaked "alert('evil')" into AI summaries.
+
+**How to avoid:** Always use `cheerio` for HTML parsing. The regex approach misses numeric character references, CDATA sections, and `<script>`/`<style>` content.
+
+---
+
+## 13. Pitfalls to Avoid
+
+### Next.js 16-Specific Pitfalls
+
+1. **Don't enable `experimental.ppr`** — it's a build error in Next.js 16. `cacheComponents: true` implements PPR as default.
+2. **Don't enable `experimental.dynamicIO`** — deprecated/removed.
+3. **Don't enable `experimental.clientSegmentCache`** — not in 16.2.9 `ExperimentalConfig`, causes TS error.
+4. **Don't put `cacheComponents` or `cacheLife` inside `experimental`** — they must be top-level.
+5. **Don't access `params` / `searchParams` / `cookies()` synchronously** — they're `Promise<T>` in Next.js 16.
+6. **Don't use `export const dynamic = "force-dynamic"`** with `cacheComponents: true` — incompatible.
+7. **Don't fetch data in layouts** — layouts re-render; fetch in pages.
+8. **Don't render JSON-LD via `metadata.other`** — use a `<script>` tag in the body.
+
+### TypeScript Pitfalls
+
+1. **Don't use `enum` or `namespace`** — `erasableSyntaxOnly` forbids them.
+2. **Don't use `any`** — use `unknown` + type guards. ESLint `no-explicit-any` is `error`.
+3. **Don't disable `noUncheckedIndexedAccess`** — it catches runtime `undefined` access.
+4. **Don't write explicit return types** unless on public API boundaries — prefer inference.
+5. **Don't use `import { Type }`** — use `import type { Type }` (required by `verbatimModuleSyntax`).
+
+### Testing Pitfalls
+
+1. **Don't use `vi.fn(() => mockInstance)` for constructors** — use real `class` in mock factory.
+2. **Don't `vi.clearAllMocks()` on structural mock chains** — only reset leaf mocks via `mockResolvedValueOnce()`.
+3. **Don't reference `let`/`const` below `vi.mock()` factory** — use `vi.hoisted()`.
+4. **Don't reference module-top `const` in `vi.hoisted()` factory** — inline literals.
+5. **Don't use `??=` for test env vars** — use direct `=` assignment in `src/test/setup.ts`.
+6. **Don't forget to mock `next/cache`** when testing modules that call `cacheLife()`.
+7. **Don't use integration tests with `vi.mock()`** — let real modules load against testcontainers.
+
+### Drizzle / Database Pitfalls
+
+1. **Don't use `drizzle-kit push` in production** — `generate` + `migrate` only.
+2. **Don't write raw SQL string concatenation** — use Drizzle parameterized queries.
+3. **Don't forget `onDelete: "cascade"`** on foreign keys if you want cascade deletes.
+4. **Don't use lazy proxy for DrizzleAdapter** — use eager instance (`db/auth.ts`).
+5. **Don't forget to add new env vars to CI** — `src/lib/env/index.ts` validates at module load.
+
+### BullMQ / Worker Pitfalls
+
+1. **Don't re-throw from `flowProducer.add()`** — wrap in try/catch + fallback.
+2. **Don't use `new Redis()` per call** — module-level singleton.
+3. **Don't set `maxRetriesPerRequest: null` on Queue producer** — only on Worker connection.
+4. **Don't forget graceful shutdown** — `SIGTERM`/`SIGINT` handlers + `Promise.allSettled`.
+5. **Don't summarize `title_only` / `excerpt` articles** — content availability guard.
+
+---
+
+## 14. Best Practices
+
+### Code Organization
+
+- **Feature-folder structure:** `src/features/{feed,articles,summaries,search,sources}/` — each has `queries.ts`, `actions.ts`, `components/`, `lib/`, `types.ts`
+- **Domain layer is pure:** `src/domain/{articles,ranking}/` — no runtime DB imports (enforced by ESLint)
+- **Infrastructure is isolated:** `src/lib/{db,auth,queue,env,security,network,ai,rateLimit}/`
+- **Shared UI:** `src/shared/{components,hooks,lib}/` — primitives used across features
+- **App Router:** `src/app/{(public),(admin),api,account,article,auth-error,sign-in}/`
+
+### Naming Conventions
+
+- **Components:** PascalCase (`ArticleCard.tsx`)
+- **Utilities/hooks:** camelCase (`useDebounce.ts`, `formatTimeAgo`)
+- **Feature folders:** kebab-case (`/features/feed/`)
+- **Database tables:** snake_case in Drizzle (`pgTable("articles", ...)`), camelCase in TS (`articles`)
+- **Files:** match the default export name (`ArticleCard.tsx` exports `ArticleCard`)
+
+### Comment Discipline
+
+- **Explain WHY, not WHAT** — self-documenting code is the goal
+- **JSDoc on all exports** — purpose, params, return type, side effects
+- **Reference the spec** — `PRD §4.3`, `PAD §5.5`, `Phase 19 / H9`
+- **Document gotchas inline** — future readers need to know why a non-obvious choice was made
+
+### Git Discipline
+
+- **Atomic commits** — one logical change per commit
+- **TDD cycle** — one Red-Green-Refactor cycle per commit
+- **Pre-commit hooks** — husky + lint-staged runs eslint + prettier on staged `.ts`/`.tsx`
+- **No `db:push` script** — removed from `package.json`. Use `db:generate` + `db:migrate`.
+
+### Performance Best Practices
+
+- **`<Image>` component for all images** — optimization, lazy loading, CLS prevention
+- **External domains in `remotePatterns`** — security requirement
+- **`tabular-nums`** for dates/numbers — no width jitter
+- **CSS Subgrid** for feed alignment — no fixed heights, no JS measurement
+- **`cacheLife("feed")`** for news feed — 30s stale, 120s revalidate
+- **Lazy DB proxy** — defers connection until first query, prevents build-time crashes
+
+---
+
+## 15. Coding Patterns
+
+### The "queries.ts Boundary" Pattern
+
+Every feature has a `queries.ts` that encapsulates all DB access. Components never call Drizzle directly.
+
+```typescript
+// src/features/feed/queries.ts
+export function buildFeedQuery(
+  options: FeedQueryOptions = {},
+): Promise<ArticleWithSource[]> {
+  // Pure query builder — no "use cache", unit-testable in vitest
+  // ...
+}
+
+export async function getFeedArticles(
+  options: FeedQueryOptions = {},
+): Promise<FeedPage> {
+  "use cache";
+  cacheLife("feed");
+  const rows = await buildFeedQuery(options);
+  // Slice + compute hasMore + nextCursor
+  // ...
+}
+```
+
+**Why split:** `"use cache"` + `cacheLife()` are Next.js compiler directives that throw in vitest. The pure `buildFeedQuery` helper is testable; the cached `getFeedArticles` wrapper is the public API.
+
+### The "Server Action Wrapper" Pattern
+
+Server Actions that need to be called from `<form action={...}>` require a FormData wrapper.
+
+```typescript
+// The "pure" action takes a typed argument
+export async function pauseSource(id: string) {
+  await verifyAdminSession();
+  // ...
+}
+
+// The FormData wrapper for form binding
+export async function pauseSourceAction(formData: FormData): Promise<void> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || id.length === 0) {
+    throw new Error("id field is required and must be a non-empty string");
+  }
+  await pauseSource(id);
+}
+```
+
+### The "Fail-Open Rate Limiter" Pattern
+
+```typescript
+let rateLimitResult;
+try {
+  rateLimitResult = await checkRateLimit(`api:articles:${ip}`, 20, 1);
+} catch (rateLimitError) {
+  console.warn("[API /articles] Rate limiter unavailable (Redis down?), failing open:", rateLimitError);
+  rateLimitResult = null;  // Skip the 429 check
+}
+
+if (rateLimitResult && !rateLimitResult.allowed) {
+  return NextResponse.json({ error: "Rate limit exceeded." }, { status: 429, headers: { "Retry-After": ... } });
+}
+
+// ... continue processing
+```
+
+**Applied symmetrically to `/api/articles` (Phase 21 S7) AND `/api/summarize/[id]` (Phase 22 / N1).**
+
+### The "3-Layer Provenance" Pattern
+
+```typescript
+// All 3 layers generated from a single input via pure function
+const provenance = generateProvenanceMetadata({
+  summary: { summaryText, keyPoints, sourcesCited, aiStatement, coveragePercentage },
+  articleId, articleUrl, articleTitle, model, generatedAt,
+});
+
+// Layer 1: JSON-LD <script> in body (NOT via metadata.other)
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: provenance.jsonLd }} />
+
+// Layer 2 + 3: HTTP header + meta tag via metadata.other in generateMetadata()
+return { other: { "ai-provenance": provenance.metaTag, "X-AI-Provenance": provenance.httpHeader } };
+```
+
+### The "Belt-and-Suspenders Validation" Pattern
+
+Security-critical modules validate their own inputs even when an upstream Zod layer exists.
+
+```typescript
+// src/lib/security/encrypt.ts
+const HEX_64_REGEX = /^[0-9a-fA-F]{64}$/;
+function validatePushKeyEncryptionKey(value: string | undefined): string {
+  if (!value)
+    throw new Error("PUSH_KEY_ENCRYPTION_KEY is required (64 hex chars)...");
+  if (!HEX_64_REGEX.test(value))
+    throw new Error("PUSH_KEY_ENCRYPTION_KEY must be 64 hex chars...");
+  return value;
+}
+
+const KEY_BUFFER = Buffer.from(
+  validatePushKeyEncryptionKey(env.PUSH_KEY_ENCRYPTION_KEY),
+  "hex",
+);
+```
+
+**Why:** When `@/lib/env` is mocked in tests, Zod validation is bypassed. The belt-and-suspenders check ensures consistent error messages regardless of whether the upstream layer ran.
+
+### The "Content Availability Guard" Pattern
+
+```typescript
+// Enforced at BOTH Server Action AND API Route layers
+if (
+  article.contentAvailability === "title_only" ||
+  article.contentAvailability === "excerpt"
+) {
+  return {
+    success: false,
+    error: `Cannot summarise articles with only ${article.contentAvailability}.`,
+  };
+}
+```
+
+**Why both:** Server Actions and API routes are separate entry points. Either could be bypassed (e.g., a future admin script). Dual enforcement is defense-in-depth.
+
+---
+
 ## 16. Coding Anti-Patterns
 
-See [§9 Anti-Patterns & Common Bugs](#9-anti-patterns--common-bugs) for the complete 99-entry table (89 original + 10 Phase 21). The most critical anti-patterns to avoid:
+(See [Section 9: Anti-Patterns & Common Bugs](#9-anti-patterns--common-bugs) for the complete catalog of 55 anti-patterns.)
+
+The most critical to remember:
 
 1. **`any` in TypeScript** → use `unknown` + type guards
-2. **`enum` / `namespace`** → use string unions + ES modules (violates `erasableSyntaxOnly`)
-3. **`throw new Error()` in RSC auth** → use `redirect()` (preserves invisible UX)
-4. **`drizzle-kit push` in production** → use `generate` + `migrate`
-5. **`process.env.*` outside `src/lib/env/`** → use typed `env` export
-6. **Runtime imports from `@/lib/db*` in `src/domain/**`** → use `import type` only
-7. **`flowProducer.add()` without try/catch** → wrap + fallback + return status object
-8. **Regex HTML stripping** → use `cheerio`
-9. **JSON-LD via `metadata.other`** → render `<script>` in page body
-10. **`window.matchMedia()` without `typeof === "function"` guard** → add guard
-11. **Server Action without `verifySession()`** → every action starts with auth
-12. **`vi.mock()` factory referencing `let`/`const` below it** → use `vi.hoisted()`
-13. **`vi.hoisted()` factory referencing module-top `const`** → inline literal values
-14. **`vi.clearAllMocks()` on structural mock chains** → only reset leaf mocks
-15. **`cacheLife()` in tests without `next/cache` mock** → add `vi.mock("next/cache")`
-16. **`.env*` files committed to git** → gitignore `.env*` except `.env.example` (Phase 21)
-17. **Route group `(admin)/` expected to produce `/admin/` URLs** → add `admin/` subfolder (Phase 21)
-18. **`verifySession()` wrapped in try/catch** → remove try/catch; use `auth()` for API routes (Phase 21)
-19. **CSP with `unsafe-eval`** → remove if no `eval()` usage (Phase 21)
-20. **AES-256-GCM IV of 16 bytes** → use 12 bytes per NIST SP 800-38D (Phase 21)
-21. **Rate limiter fails-closed on Redis outage** → fail OPEN with try/catch (Phase 21)
-22. **`AUTH_SECRET` accepts known-weak values** → `superRefine` rejection in production (Phase 21)
-23. **`deleteSource` identical to `pauseSource`** → hard delete vs soft deactivate (Phase 21)
-24. **No `pnpm audit` in CI** → add `pnpm audit --audit-level=high --prod` (Phase 21)
+2. **`enum` / `namespace`** → string unions + ES modules (violates `erasableSyntaxOnly`)
+3. **`throw new Error()` in RSC auth** → `redirect('/sign-in')`
+4. **`verifySession()` in try/catch** → remove try/catch (catches `NEXT_REDIRECT`)
+5. **CSP with `'unsafe-eval'`** → remove (with regression test)
+6. **Rate limiter without fail-open** → wrap in try/catch
+7. **Server Actions without auth** → every action starts with `verifySession()`
+8. **`process.env.*` outside `lib/env/`** → import `env` from `@/lib/env`
+9. **Raw hex colors** → use design tokens
+10. **Regex HTML stripping** → use `cheerio`
 
 ---
 
@@ -2151,191 +1877,166 @@ See [§9 Anti-Patterns & Common Bugs](#9-anti-patterns--common-bugs) for the com
 | `xl:`  | 1280px    | Desktop                         |
 | `2xl:` | 1536px    | Large desktop                   |
 
-### OneStopNews Usage
+### Container Pattern
+
+The standard content container is `max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8`:
 
 ```tsx
-// FeedGrid — 3-column at lg, 2-column at md, 1-column mobile
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
-
-// Header — sticky, backdrop-blur
-<header className="sticky top-0 z-50 backdrop-blur-sm bg-paper-50/90">
-
-// ArticleCard — responsive typography
-<h3 className="font-editorial text-xl lg:text-2xl leading-tight">
-
-// Mobile nav — Radix Dialog drawer (hidden on desktop)
-<Dialog>
-  <DialogTrigger className="md:hidden">...</DialogTrigger>
-  <DialogContent className="md:hidden">...</DialogContent>
-</Dialog>
+<section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-8">
+  {/* Content */}
+</section>
 ```
 
-### Mobile-First Rules
+- Mobile: `px-4` (16px padding)
+- Tablet: `sm:px-6` (24px padding)
+- Desktop: `lg:px-8` (32px padding)
+- Max width: 1440px (centered with `mx-auto`)
 
-1. **Always start with mobile styles** (no prefix), then add `md:` / `lg:` overrides
-2. **Touch targets ≥ 44px** (WCAG AAA) — `h-10` (40px) is minimum for buttons, `h-12` preferred
-3. **Horizontal scroll for category nav** — `overflow-x-auto scrollbar-hide` on mobile
-4. **Drawer for mobile navigation** — Radix Dialog, not a hamburger toggle
+### Feed Grid Breakpoints
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
+  {/* ArticleCard with grid-rows-subgrid row-span-3 */}
+</div>
+```
+
+- Mobile: 1 column
+- Tablet (`md:`): 2 columns
+- Desktop (`lg:`): 3 columns
+
+### LeadStory Breakpoints
+
+```tsx
+<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12">
+  <div className="lg:col-span-7">{/* Image */}</div>
+  <div className="lg:col-span-5 flex flex-col justify-center">
+    {/* Headline + excerpt */}
+  </div>
+</div>
+```
+
+- Mobile: stacked (image above headline)
+- Desktop (`lg:`): 12-column grid, image takes 7 cols, headline takes 5 cols
+
+### Headline Size Progression
+
+```tsx
+<h1 className="font-editorial text-3xl sm:text-4xl lg:text-[46px] leading-[1.05] text-ink-900">
+```
+
+- Mobile: `text-3xl` (30px)
+- Tablet: `sm:text-4xl` (36px)
+- Desktop: `lg:text-[46px]` (arbitrary value for precise editorial scaling)
 
 ---
 
 ## 18. Z-Index Layer Map
 
-| Z-Index | Element                         | CSS Class                           | Purpose                   |
-| :------ | :------------------------------ | :---------------------------------- | :------------------------ |
-| `9999`  | Skip-to-content link (on focus) | `focus:z-[9999]`                    | Keyboard navigation       |
-| `999`   | Scroll progress bar             | `.scroll-progress { z-index: 999 }` | CSS-only scroll indicator |
-| `50`    | Header (sticky)                 | `z-50`                              | Sticky navigation         |
-| `50`    | Radix Dialog overlay            | Radix default                       | Modal backdrop            |
-| `50`    | Radix Dialog content            | Radix default                       | Modal content             |
-| `10`    | NewsTicker                      | `z-10`                              | Breaking news bar         |
-| `0`     | Default content                 | (default)                           | Page body                 |
-| `-1`    | Decorative background numbers   | `.commitment-number`                | Large faded numerals      |
+| Z-Index | Element                         | Class                           | Purpose                                       |
+| :------ | :------------------------------ | :------------------------------ | :-------------------------------------------- |
+| `9999`  | Skip-to-content link (on focus) | `focus:z-[9999]`                | Always visible above all content when focused |
+| `999`   | Scroll progress bar             | `z-999` (in `.scroll-progress`) | Fixed top bar showing scroll position         |
+| `50`    | Admin sidebar nav               | `z-50` (when sticky)            | Stays above main content on scroll            |
+| `40`    | Header (Masthead)               | `z-40`                          | Stays above page content                      |
+| `30`    | News ticker                     | `z-30`                          | Below header, above content                   |
+| `20`    | Mobile menu overlay             | `z-20`                          | Above content, below header                   |
+| `10`    | Card hover overlays             | `z-10`                          | Above sibling cards                           |
+| (none)  | Default content                 | (default `z-auto`)              | Normal flow                                   |
 
 **Rules:**
 
-- Never use `z-[9999]` except for the skip-to-content link
-- Modal/dialog overlays should be `z-50`
-- Sticky header should be `z-50`
-- Decorative elements should be `-1`
+- Skip link is always highest (a11y requirement)
+- Fixed/sticky UI elements (`z-30` to `z-50`) sit above content
+- Hover overlays use `z-10`
+- Never use `z-[9999]` except for skip link (it's a reserved a11y z-index)
 
 ---
 
 ## 19. Color Reference (Complete)
 
-### Ink Scale (Text Colors)
+### Ink Scale (Text + Dark Surfaces)
 
-| Token             | Hex       | Usage                        | Contrast on `paper-50` |
-| :---------------- | :-------- | :--------------------------- | :--------------------- |
-| `--color-ink-900` | `#1a1a18` | Headings (letterpress black) | 15.8:1 (AAA)           |
-| `--color-ink-700` | `#2a2a27` | Hovered headings             | 13.2:1 (AAA)           |
-| `--color-ink-600` | `#3d3d3a` | Body text                    | 9.5:1 (AAA)            |
-| `--color-ink-500` | `#525250` | Secondary text               | 6.9:1 (AAA)            |
-| `--color-ink-400` | `#6b6b68` | Tertiary text                | 4.8:1 (AA)             |
-| `--color-ink-300` | `#8a8a83` | Muted / metadata             | 3.4:1 (AA Large only)  |
-| `--color-ink-100` | `#e8e8e4` | Dividers / borders           | —                      |
+| Token             | Hex       | WCAG AAA Contrast on paper-50 | Usage                                      |
+| :---------------- | :-------- | :---------------------------- | :----------------------------------------- |
+| `--color-ink-900` | `#1a1a18` | 15.8:1 ✅                     | Headlines, admin sidebar bg                |
+| `--color-ink-700` | `#2a2a27` | 12.5:1 ✅                     | Hover states on dark surfaces              |
+| `--color-ink-600` | `#3d3d3a` | 9.5:1 ✅                      | Body text (primary)                        |
+| `--color-ink-500` | `#525250` | 7.2:1 ✅                      | Secondary text                             |
+| `--color-ink-400` | `#6b6b68` | 5.1:1 ✅ (AA)                 | Muted text                                 |
+| `--color-ink-300` | `#8a8a83` | 3.4:1 ⚠ (AA Large only)       | Metadata, dividers, decorative dots        |
+| `--color-ink-100` | `#e8e8e4` | 1.2:1 ❌                      | Borders, scrollbar thumb (decorative only) |
 
-### Paper Scale (Backgrounds)
+### Paper Scale (Backgrounds + Light Surfaces)
 
-| Token               | Hex       | Usage                                 |
-| :------------------ | :-------- | :------------------------------------ |
-| `--color-paper-50`  | `#fafaf8` | Page background (newsprint off-white) |
-| `--color-paper-100` | `#f2f2ee` | Card surface                          |
-| `--color-paper-200` | `#e6e4de` | Skeleton placeholder                  |
-| `--color-paper-300` | `#d8d4cc` | Hovered skeleton                      |
+| Token               | Hex       | Usage                            |
+| :------------------ | :-------- | :------------------------------- |
+| `--color-paper-50`  | `#fafaf8` | Page background (warm off-white) |
+| `--color-paper-100` | `#f2f2ee` | Card hover bg, NutritionLabel bg |
+| `--color-paper-200` | `#e6e4de` | Image placeholders               |
+| `--color-paper-300` | `#d8d4cc` | Card borders on dark surfaces    |
 
 ### Dispatch Brand Accents
 
-| Token                     | Hex       | Usage                                             | Light Variant                            |
-| :------------------------ | :-------- | :------------------------------------------------ | :--------------------------------------- |
-| `--color-dispatch-ember`  | `#c7513f` | Breaking news, AI badge, focus rings, primary CTA | `--color-dispatch-ember-light: #fde8e4`  |
-| `--color-dispatch-sage`   | `#6b8f71` | Finance / positive accent                         | `--color-dispatch-sage-light: #e4ede5`   |
-| `--color-dispatch-slate`  | `#5a6b7a` | Tech / neutral accent                             | `--color-dispatch-slate-light: #e2e7ec`  |
-| `--color-dispatch-clay`   | `#8b6d5a` | Local / politics accent                           | `--color-dispatch-clay-light: #ede5df`   |
-| `--color-dispatch-violet` | `#7a6b8f` | Culture / creative accent                         | `--color-dispatch-violet-light: #e8e4ef` |
+| Token                           | Hex       | Usage                                                          |
+| :------------------------------ | :-------- | :------------------------------------------------------------- |
+| `--color-dispatch-ember`        | `#c7513f` | **PRIMARY ACCENT** — breaking/AI badge/focus rings/CTA buttons |
+| `--color-dispatch-ember-light`  | `#fde8e4` | Ember tinted backgrounds                                       |
+| `--color-dispatch-sage`         | `#6b8f71` | "Active" status indicator                                      |
+| `--color-dispatch-sage-light`   | `#e4ede5` | Sage tinted backgrounds                                        |
+| `--color-dispatch-slate`        | `#5a6b7a` | Source attribution text                                        |
+| `--color-dispatch-slate-light`  | `#e2e7ec` | Slate tinted backgrounds                                       |
+| `--color-dispatch-clay`         | `#8b6d5a` | Warm earth tone (accent)                                       |
+| `--color-dispatch-clay-light`   | `#ede5df` | Clay tinted backgrounds                                        |
+| `--color-dispatch-violet`       | `#7a6b8f` | Citation links                                                 |
+| `--color-dispatch-violet-light` | `#e8e4ef` | Violet tinted backgrounds                                      |
 
 ### Semantic State Tokens (Phase 19 / M15)
 
-| Token                            | Hex       | Usage                                    |
-| :------------------------------- | :-------- | :--------------------------------------- |
-| `--color-dispatch-warning`       | `#b45309` | Warning state (amber-700 equivalent)     |
-| `--color-dispatch-warning-light` | `#fef3c7` | Warning background (amber-50 equivalent) |
-| `--color-dispatch-danger`        | `#dc2626` | Destructive actions (red-600 equivalent) |
-| `--color-dispatch-danger-dark`   | `#b91c1c` | Hovered destructive (red-700 equivalent) |
+| Token                            | Hex       | Tailwind Default Equivalent | Usage                             |
+| :------------------------------- | :-------- | :-------------------------- | :-------------------------------- |
+| `--color-dispatch-warning`       | `#b45309` | `amber-700`                 | SummaryPanel `needs_review` state |
+| `--color-dispatch-warning-light` | `#fef3c7` | `amber-50`                  | Warning tinted backgrounds        |
+| `--color-dispatch-danger`        | `#dc2626` | `red-600`                   | Button `destructive` variant      |
+| `--color-dispatch-danger-dark`   | `#b91c1c` | `red-700`                   | Destructive hover state           |
 
-### Tailwind Class Usage
+### Color Usage Rules
 
-```tsx
-// Text colors
-<h1 className="text-ink-900">Heading</h1>
-<p className="text-ink-600">Body text</p>
-<span className="text-ink-300">Metadata</span>
-
-// Backgrounds
-<div className="bg-paper-50">Page background</div>
-<div className="bg-paper-100">Card</div>
-
-// Accents
-<button className="bg-dispatch-ember text-paper-50">Primary CTA</button>
-<span className="text-dispatch-sage">Finance category</span>
-<button className="bg-dispatch-danger text-paper-50">Delete</button>
-
-// Borders
-<div className="border-b border-ink-100">Divider</div>
-```
+1. **Never use raw hex in components** — always reference tokens (`bg-ink-900`, not `bg-[#1a1a18]`)
+2. **Never use Tailwind's default `amber-*` / `red-*`** — use `dispatch-warning` / `dispatch-danger` (Phase 19 / M15)
+3. **Body text uses `ink-600`** (9.5:1 contrast — WCAG AAA)
+4. **Headlines use `ink-900`** (15.8:1 contrast — WCAG AAA)
+5. **Metadata uses `ink-300`** (3.4:1 — AA Large only, acceptable for `text-[10px] uppercase` decorative text)
+6. **Primary accent is `dispatch-ember`** — used for focus rings, CTAs, AI badges, breaking news indicators
+7. **Citation links use `dispatch-violet`** — distinct from navigation links (which use `dispatch-ember` on hover)
 
 ---
 
 ## 20. The Complete TypeScript Interface Reference
 
-### Schema-Derived Types (from `src/lib/db/schema.ts`)
-
-```typescript
-// Enums (derived via pgEnum — Single Source of Truth)
-export const userRoleEnum = pgEnum("user_role", ["reader", "admin"]);
-export const feedFormatEnum = pgEnum("feed_format", [
-  "rss",
-  "atom",
-  "json_api",
-]);
-export const contentAvailabilityEnum = pgEnum("content_availability", [
-  "title_only",
-  "excerpt",
-  "partial_text",
-  "full_text",
-]);
-export const summaryStatusEnum = pgEnum("summary_status", [
-  "none",
-  "pending",
-  "ok",
-  "needs_review",
-  "disabled",
-]);
-
-// Derived types (from enumValues — stays in sync with schema)
-export type UserRole = (typeof userRoleEnum.enumValues)[number]; // "reader" | "admin"
-export type FeedFormat = (typeof feedFormatEnum.enumValues)[number]; // "rss" | "atom" | "json_api"
-export type ContentAvailability =
-  (typeof contentAvailabilityEnum.enumValues)[number];
-export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
-
-// Table types (via $inferSelect)
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Category = typeof categories.$inferSelect;
-export type Subcategory = typeof subcategories.$inferSelect;
-export type Source = typeof sources.$inferSelect;
-export type Article = typeof articles.$inferSelect;
-export type Summary = typeof summaries.$inferSelect;
-export type PushSubscription = typeof pushSubscriptions.$inferSelect;
-export type UserPreference = typeof userPreferences.$inferSelect;
-export type Account = typeof accounts.$inferSelect;
-export type Session = typeof sessions.$inferSelect;
-export type VerificationToken = typeof verificationTokens.$inferSelect;
-```
-
-### Domain Types (from `src/domain/articles/types.ts`)
+### Domain Types (`src/domain/articles/types.ts`)
 
 ```typescript
 import type { InferSelectModel } from "drizzle-orm";
 import type { articles, sources, categories, summaries } from "@/lib/db/schema";
 
-// Base table types
+// Base table types (from Drizzle schema)
 export type Article = InferSelectModel<typeof articles>;
 export type Source = InferSelectModel<typeof sources>;
 export type Category = InferSelectModel<typeof categories>;
 export type Summary = InferSelectModel<typeof summaries>;
 
-// Domain-specific composite types
+// Article with its source information (requires JOIN)
 export interface ArticleWithSource extends Article {
   source: Pick<Source, "id" | "name" | "url">;
 }
 
+// Article with source, category, and optional summary (article detail page)
 export interface ArticleWithSummary extends ArticleWithSource {
   category: Pick<Category, "id" | "name" | "slug"> | null;
   summary: Summary | null;
 }
 
+// Paginated feed result
 export interface FeedPage {
   articles: ArticleWithSource[];
   nextCursor: string | null;
@@ -2343,55 +2044,123 @@ export interface FeedPage {
 }
 ```
 
-### Scoring Types (from `src/domain/ranking/score.ts`)
+### Schema-Derived Types (`src/lib/db/schema.ts`)
 
 ```typescript
-export interface ScoringInputs {
-  ageInHours: number;
-  hasSummary: boolean;
-  sourcePriority: number; // lower is better, typically 1–5
-  contentAvailability: ContentAvailability;
-}
-
-export function calculateImportanceScore(inputs: ScoringInputs): number; // returns float [0.0, 1.0]
+// All derived via `typeof enum.enumValues)[number]` — Single Source of Truth
+export type UserRole = (typeof userRoleEnum.enumValues)[number]; // "reader" | "admin"
+export type FeedFormat = (typeof feedFormatEnum.enumValues)[number]; // "rss" | "atom" | "json_api"
+export type ContentAvailability =
+  (typeof contentAvailabilityEnum.enumValues)[number];
+// "title_only" | "excerpt" | "partial_text" | "full_text"
+export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
+// "none" | "pending" | "ok" | "needs_review" | "disabled"
 ```
 
-### Feed Query Types (from `src/features/feed/queries.ts`)
+### AI Summarisation Schema (`src/features/summaries/lib/summariseSchema.ts`)
+
+```typescript
+export const sourceCitationSchema = z.object({
+  url: z.string().url("Source URL must be a valid URL"),
+  title: z.string().trim().min(1, "Source title cannot be empty"),
+});
+
+export const summarisationOutputSchema = z.object({
+  summaryText: z.string().min(50).max(800),
+  keyPoints: z.array(z.string().trim().min(1).max(120)).min(1).max(5),
+  sourcesCited: z.array(sourceCitationSchema).min(1),
+  aiStatement: z.string().min(20).max(200),
+  coveragePercentage: z.number().int().min(0).max(100),
+});
+
+export type SummarisationOutput = z.infer<typeof summarisationOutputSchema>;
+export type SourceCitation = z.infer<typeof sourceCitationSchema>;
+
+export function validateSummarisationOutput(
+  raw: unknown,
+):
+  | { success: true; data: SummarisationOutput }
+  | { success: false; error: string };
+```
+
+### Provenance Types (`src/lib/ai/provenance.ts`)
+
+```typescript
+export interface ProvenanceInput {
+  summary: SummarisationOutput;
+  articleId: string;
+  articleUrl: string;
+  articleTitle: string;
+  model: string;
+  generatedAt: string; // ISO timestamp
+}
+
+export interface ProvenanceResult {
+  jsonLd: string; // Layer 1: JSON-LD <script> content
+  httpHeader: string; // Layer 2: Base64-encoded JSON for X-AI-Provenance header
+  metaTag: string; // Layer 3: Semicolon-delimited string for <meta name="ai-provenance">
+}
+
+export function generateProvenanceMetadata(
+  input: ProvenanceInput,
+): ProvenanceResult;
+```
+
+### Auth Types (`types/next-auth.d.ts`)
+
+```typescript
+import { DefaultSession } from "next-auth";
+import "next-auth/jwt";
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: "reader" | "admin";
+    } & DefaultSession["user"]; // Merge to preserve name, email, image
+  }
+
+  interface User {
+    role: "reader" | "admin";
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    role?: "reader" | "admin";
+  }
+}
+```
+
+### Feed Query Types (`src/features/feed/queries.ts`)
 
 ```typescript
 export interface FeedQueryOptions {
-  category?: string;
-  cursor?: Date; // MUST be Date, NOT string — API boundary validates ISO 8601
-  limit?: number; // default 30
+  category?: string; // Category slug (resolved to categoryId internally)
+  cursor?: Date; // Cursor for pagination (NOT a string — callers parse ISO 8601 first)
+  limit?: number; // Default: 30 (FEED_PAGE_SIZE)
 }
 
 export interface FeedPage {
   articles: ArticleWithSource[];
-  nextCursor: string | null;
+  nextCursor: string | null; // ISO 8601 string of last article's publishedAt
   hasMore: boolean;
 }
-
-export function buildFeedQuery(
-  options?: FeedQueryOptions,
-): Promise<ArticleWithSource[]>;
-export async function getFeedArticles(
-  options?: FeedQueryOptions,
-): Promise<FeedPage>;
 ```
 
-### Search Types (from `src/features/search/types.ts`)
+### Search Types (`src/features/search/types.ts`)
 
 ```typescript
 export interface SearchParams {
   query: string;
-  categorySlug?: string;
-  cursor?: Date; // MUST be Date, NOT string
-  limit?: number;
+  cursor?: Date;
+  limit?: number; // Default: 31 (SEARCH_PAGE_SIZE — fetches limit+1 to detect hasMore)
 }
 
 export interface SearchResult {
   article: ArticleWithSource;
-  rank: number; // ts_rank_cd score
+  rank: number; // ts_rank_cd BM25 relevance score
 }
 
 export interface SearchPage {
@@ -2401,75 +2170,111 @@ export interface SearchPage {
 }
 ```
 
-### Summary Action Types (from `src/features/summaries/actions.ts`)
+### Server Action Return Types
 
 ```typescript
-export type LinkResult =
-  | { status: "linked"; provider: string }
-  | { status: "already_linked"; provider: string }
-  | { status: "error"; message: string };
-
-export async function requestSummary(
-  articleId: string,
-): Promise<{ success?: boolean; error?: string }>;
-export async function approveSummary(summaryId: string): Promise<void>;
-export async function disableSummary(summaryId: string): Promise<void>;
-```
-
-### Account Action Types (Phase 20 / F2, from `src/app/account/actions.ts`)
-
-```typescript
-export type LinkedProviderList = string[];
-
-export type LinkResult =
-  | { status: "linked"; provider: string }
-  | { status: "already_linked"; provider: string }
-  | { status: "error"; message: string };
-
-export async function getLinkedProviders(): Promise<LinkedProviderList>;
-export async function linkOAuthProvider(provider: string): Promise<LinkResult>;
-```
-
-### Network Types (Phase 20 / F1, from `src/lib/network/getClientIp.ts`)
-
-```typescript
-export function walkXffChain(ips: string[], trustedCidrs: string[]): string;
-export function getClientIpFromHeaders(headers: Headers): string;
-export function getClientIp(request: NextRequest): string;
-```
-
-### FlowProducer Status Type (from `src/lib/queue/flows.ts`)
-
-```typescript
-export interface PostIngestFlowStatus {
-  status: "ok" | "degraded" | "skipped";
-  fallbackUsed: boolean;
-  fallbackFailures: number;
-  enqueuedCount: number;
+// src/features/summaries/actions.ts
+export interface SummariseResponse {
+  success: boolean;
+  jobId: string | null;
+  error: string | null;
 }
 
-export async function enqueuePostIngestFlow(
-  articleIds: string[],
-): Promise<PostIngestFlowStatus>;
+// src/app/(admin)/admin/sources/actions.ts
+// pauseSource(id: string) → Source | undefined
+// pauseSourceAction(formData: FormData) → Promise<void>  (form-bound wrapper)
+// deleteSource(id: string) → Source | undefined  (HARD delete with cascade)
+// addSource(data: unknown) → Source
+// updateSource(id: string, data: unknown) → Source | undefined
 ```
 
-### Provenance Types (from `src/lib/ai/provenance.ts`)
+### Rate Limit Types (`src/lib/rateLimit.ts`)
 
 ```typescript
-export interface ProvenanceResult {
-  jsonLd: object; // schema.org/CreativeWork object
-  httpHeader: string; // base64-encoded JSON for X-AI-Provenance header
-  metaTag: string; // semicolon-delimited string for <meta name="ai-provenance">
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number; // Never negative
+  resetAt: number; // Epoch milliseconds when window resets
 }
 
-export function generateProvenanceMetadata(summary: Summary): ProvenanceResult;
+export async function checkRateLimit(
+  identifier: string,
+  limit: number,
+  windowSec: number,
+): Promise<RateLimitResult>;
 ```
 
-### Component Props (key examples)
+### Worker Job Types (BullMQ)
 
 ```typescript
-// Button
-export interface ButtonProps
+// Ingest job data
+interface IngestJobData {
+  sourceId: string;
+  feedUrl: string;
+  feedFormat: FeedFormat;
+}
+
+// Summarize job data
+interface SummarizeJobData {
+  articleId: string;
+  content: string; // article.excerpt ?? article.title
+}
+
+// Score job data
+interface ScoreJobData {
+  articleId: string;
+}
+
+// Feed-slice job data
+interface FeedSliceJobData {
+  articleIds: string[];
+}
+
+// FlowProducer status (never re-throws)
+type PostIngestFlowStatus =
+  | { status: "linked"; enqueuedCount: number }
+  | {
+      status: "degraded";
+      fallbackUsed: true;
+      fallbackFailures: number;
+      enqueuedCount: number;
+    }
+  | { status: "skipped"; reason: string };
+```
+
+### Component Prop Interfaces (Commonly Used)
+
+```typescript
+// ArticleCard
+interface ArticleCardProps {
+  article: ArticleWithSource;
+}
+
+// NutritionLabel
+interface NutritionLabelProps {
+  summary: SummarisationOutput;
+}
+
+// SummaryPanel (Client Component — handles 5 states)
+interface SummaryPanelProps {
+  articleId: string;
+  initialStatus: SummaryStatus; // "none" | "pending" | "ok" | "needs_review" | "disabled"
+  summary: {
+    summaryText: string;
+    keyPoints: string[];
+    sourcesCited: { url: string; title: string }[];
+    aiStatement: string;
+    coveragePercentage: number;
+  } | null;
+}
+
+// AdminGuard (async Server Component)
+interface AdminGuardProps {
+  children: React.ReactNode;
+}
+
+// Button (Shadcn-style with CVA)
+interface ButtonProps
   extends
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
@@ -2477,108 +2282,86 @@ export interface ButtonProps
   isLoading?: boolean;
 }
 
-// ArticleCard
-interface ArticleCardProps {
-  article: ArticleWithSource;
-}
-
-// FeedGrid
-interface FeedGridProps {
-  articles: ArticleWithSource[];
-}
-
-// FeedData
-interface FeedDataProps {
-  category?: string;
-  limit?: number;
-}
-
-// AccountClient
-interface AccountClientProps {
-  linkedProviders: LinkedProviderList;
+// PageTransition (Client Component — view transitions)
+interface PageTransitionProps {
+  children: ReactNode;
 }
 ```
 
 ---
 
-## Validation Checklist (10-Point)
+## Appendix: The Meticulous Approach (Mandatory 6-Phase Workflow)
 
-Before considering this SKILL.md complete, verify against the actual codebase:
+All work on this codebase follows this workflow. **Non-negotiable.**
 
-1. ✅ **Tech stack versions match** — All versions in §2 verified against `package.json` at HEAD
-2. ✅ **Configuration files match** — `tsconfig.json`, `next.config.ts`, `eslint.config.mjs`, `vitest.config.ts` all verified
-3. ✅ **Design system tokens match** — All colors, fonts, utility classes verified against `src/app/globals.css`
-4. ✅ **Component architecture matches** — Button, ArticleCard, FeedGrid, NutritionLabel, PageTransition all verified against source
-5. ✅ **Hooks implementation matches** — `useDebounce` and `useReducedMotion` verified against `src/shared/hooks/*.ts`
-6. ✅ **Content ingestion patterns match** — `parseFeed.ts` (rss-parser + cheerio), `normalize.ts` (SHA-256), FlowProducer DAG all verified
-7. ✅ **Accessibility implementation matches** — skip link, focus rings, ARIA patterns, reduced motion all verified against `layout.tsx` + `globals.css`
-8. ✅ **Anti-patterns are documented correctly** — All 99 entries (89 original + 10 Phase 21) cross-referenced with `AGENTS.md` anti-patterns table
-9. ✅ **Color references match** — All hex values verified against `@theme` block in `globals.css`
-10. ✅ **TypeScript interfaces match** — All types verified against `schema.ts`, `domain/articles/types.ts`, `domain/ranking/score.ts`, `features/feed/queries.ts`, `features/search/types.ts`, `app/account/actions.ts`, `lib/network/getClientIp.ts`, `lib/queue/flows.ts`, `lib/ai/provenance.ts`
+1. **ANALYZE** — Deep requirement mining. Read actual source files (never assume). Identify explicit, implicit, and edge-case needs. Explore multiple approaches. Assess risks.
+2. **PLAN** — Structured execution roadmap. Present for explicit user confirmation before writing code.
+3. **VALIDATE** — Obtain user approval. Address concerns. Never proceed without alignment.
+4. **IMPLEMENT** — Modular, tested, documented builds. TDD: RED → GREEN → REFACTOR → COMMIT. Use library components before custom ones.
+5. **VERIFY** — Rigorous QA against success criteria. Test edge cases, accessibility (WCAG AAA), and performance.
+6. **DELIVER** — Complete handoff with instructions, documentation, and next steps.
+
+**Never write code without completing ANALYZE and PLAN. Never skip VALIDATE.**
 
 ---
 
-## Quick Reference: Key File Paths
+## Appendix: Quick Reference Card
 
-| What                             | Path                                                   |
-| :------------------------------- | :----------------------------------------------------- |
-| Next.js config                   | `next.config.ts`                                       |
-| TypeScript config                | `tsconfig.json`                                        |
-| ESLint config                    | `eslint.config.mjs`                                    |
-| Vitest config (unit)             | `vitest.config.ts`                                     |
-| Vitest config (integration)      | `vitest.integration.config.ts`                         |
-| Playwright config                | `playwright.config.ts`                                 |
-| PostCSS config                   | `postcss.config.mjs`                                   |
-| Global CSS + design tokens       | `src/app/globals.css`                                  |
-| Root layout (fonts + providers)  | `src/app/layout.tsx`                                   |
-| Network boundary                 | `proxy.ts` (repo root)                                 |
-| DB schema (11 tables, 4 enums)   | `src/lib/db/schema.ts`                                 |
-| Lazy DB proxy                    | `src/lib/db/index.ts`                                  |
-| Env validation (Zod)             | `src/lib/env/index.ts`                                 |
-| Auth config                      | `src/lib/auth/index.ts`                                |
-| Auth DAL (verifySession)         | `src/lib/auth/dal.ts`                                  |
-| Auth providers                   | `src/lib/auth/providers.ts`                            |
-| BullMQ queues                    | `src/lib/queue/index.ts`                               |
-| FlowProducer DAG                 | `src/lib/queue/flows.ts`                               |
-| AI prompts                       | `src/lib/ai/prompts.ts`                                |
-| 3-layer provenance               | `src/lib/ai/provenance.ts`                             |
-| Rate limiter                     | `src/lib/rateLimit.ts`                                 |
-| Trusted proxy CIDR walker        | `src/lib/network/getClientIp.ts`                       |
-| Push key encryption              | `src/lib/security/encrypt.ts`                          |
-| Worker entry                     | `src/workers/index.ts`                                 |
-| RSS parser                       | `src/workers/jobs/parseFeed.ts`                        |
-| AI summarizer                    | `src/workers/jobs/summarize.ts`                        |
-| Summary failure state            | `src/workers/jobs/summarizeFailure.ts`                 |
-| Content guard                    | `src/workers/jobs/determineContentAvailability.ts`     |
-| Job scheduler                    | `src/workers/jobs/scheduler.ts`                        |
-| needs_review alerting            | `src/workers/jobs/alerts.ts`                           |
-| Cache invalidation               | `src/workers/lib/cacheInvalidation.ts`                 |
-| DB integration test              | `src/workers/pipeline.db-integration.test.ts`          |
-| Feed queries                     | `src/features/feed/queries.ts`                         |
-| ArticleCard                      | `src/features/feed/components/ArticleCard.tsx`         |
-| FeedGrid                         | `src/features/feed/components/FeedGrid.tsx`            |
-| Summary actions                  | `src/features/summaries/actions.ts`                    |
-| NutritionLabel                   | `src/features/summaries/components/NutritionLabel.tsx` |
-| Account page (Phase 20)          | `src/app/account/page.tsx`                             |
-| Account actions (Phase 20)       | `src/app/account/actions.ts`                           |
-| Admin sources (Phase 21 path)    | `src/app/(admin)/admin/sources/page.tsx`               |
-| Admin sources actions (Phase 21) | `src/app/(admin)/admin/sources/actions.ts`             |
-| Admin summaries (Phase 21 path)  | `src/app/(admin)/admin/summaries/page.tsx`             |
-| Domain types                     | `src/domain/articles/types.ts`                         |
-| Domain normalize                 | `src/domain/articles/normalize.ts`                     |
-| Importance scoring               | `src/domain/ranking/score.ts`                          |
-| cn() utility                     | `src/shared/lib/utils.ts`                              |
-| Button                           | `src/shared/components/ui/Button.tsx`                  |
-| useDebounce                      | `src/shared/hooks/useDebounce.ts`                      |
-| useReducedMotion                 | `src/shared/hooks/useReducedMotion.ts`                 |
-| PageTransition                   | `src/components/primitives/PageTransition.tsx`         |
-| CI pipeline                      | `.github/workflows/ci.yml`                             |
-| E2E pipeline                     | `.github/workflows/e2e.yml`                            |
-| Pre-commit hook                  | `.husky/pre-commit`                                    |
-| MEP v6.0                         | `MASTER_EXECUTION_PLAN.md`                             |
-| AGENTS.md (canonical)            | `AGENTS.md`                                            |
-| CLAUDE.md (stub)                 | `CLAUDE.md`                                            |
+| What                            | Where                                                       |
+| :------------------------------ | :---------------------------------------------------------- |
+| Next.js config                  | `next.config.ts`                                            |
+| Next.js config regression tests | `next.config.test.ts` (Phase 22 — CSP/HSTS/XFO/XCTO guards) |
+| TypeScript config               | `tsconfig.json`                                             |
+| ESLint config                   | `eslint.config.mjs`                                         |
+| Vitest config (unit)            | `vitest.config.ts`                                          |
+| Vitest config (integration)     | `vitest.integration.config.ts`                              |
+| Playwright config               | `playwright.config.ts`                                      |
+| PostCSS config                  | `postcss.config.mjs`                                        |
+| Prettier ignore                 | `.prettierignore` (Phase 22 / N6)                           |
+| Global CSS + design tokens      | `src/app/globals.css`                                       |
+| Root layout                     | `src/app/layout.tsx`                                        |
+| Network boundary                | `proxy.ts` (repo root)                                      |
+| DB schema                       | `src/lib/db/schema.ts`                                      |
+| Lazy DB proxy                   | `src/lib/db/index.ts`                                       |
+| Env validation (Zod)            | `src/lib/env/index.ts`                                      |
+| Auth config                     | `src/lib/auth/index.ts`                                     |
+| Auth DAL                        | `src/lib/auth/dal.ts`                                       |
+| Auth providers                  | `src/lib/auth/providers.ts`                                 |
+| BullMQ queues                   | `src/lib/queue/index.ts`                                    |
+| FlowProducer DAG                | `src/lib/queue/flows.ts`                                    |
+| Rate limiter                    | `src/lib/rateLimit.ts`                                      |
+| Trusted proxy CIDR walker       | `src/lib/network/getClientIp.ts`                            |
+| Push key encryption             | `src/lib/security/encrypt.ts`                               |
+| AI prompts                      | `src/lib/ai/prompts.ts`                                     |
+| 3-layer provenance              | `src/lib/ai/provenance.ts`                                  |
+| Worker entry                    | `src/workers/index.ts`                                      |
+| RSS parser                      | `src/workers/jobs/parseFeed.ts`                             |
+| AI summarizer                   | `src/workers/jobs/summarize.ts`                             |
+| Content guard                   | `src/workers/jobs/determineContentAvailability.ts`          |
+| Cache invalidation              | `src/workers/lib/cacheInvalidation.ts`                      |
+| Feed queries                    | `src/features/feed/queries.ts`                              |
+| ArticleCard                     | `src/features/feed/components/ArticleCard.tsx`              |
+| Summary actions                 | `src/features/summaries/actions.ts`                         |
+| NutritionLabel                  | `src/features/summaries/components/NutritionLabel.tsx`      |
+| Account page                    | `src/app/account/page.tsx`                                  |
+| Admin sources actions           | `src/app/(admin)/admin/sources/actions.ts`                  |
+| Admin summaries page            | `src/app/(admin)/admin/summaries/page.tsx`                  |
+| Domain types                    | `src/domain/articles/types.ts`                              |
+| Domain normalize                | `src/domain/articles/normalize.ts`                          |
+| Importance scoring              | `src/domain/ranking/score.ts`                               |
+| `cn()` utility                  | `src/shared/lib/utils.ts`                                   |
+| Button                          | `src/shared/components/ui/Button.tsx`                       |
+| useDebounce                     | `src/shared/hooks/useDebounce.ts`                           |
+| useReducedMotion                | `src/shared/hooks/useReducedMotion.ts`                      |
+| PageTransition                  | `src/components/primitives/PageTransition.tsx`              |
+| CI pipeline                     | `.github/workflows/ci.yml`                                  |
+| E2E pipeline                    | `.github/workflows/e2e.yml`                                 |
+| Pre-commit hook                 | `.husky/pre-commit`                                         |
 
 ---
 
-_End of OneStopNews Complete Skill Reference. This document is the authoritative guide for replicating, extending, or debugging this codebase. Every claim is grounded in the actual source code at HEAD (post-Phase 21, June 23, 2026)._
+**End of `onestopnews_SKILL.md` v2.0.0**
+
+_This skill file is derived from `AGENTS.md` (canonical institutional knowledge), `MASTER_EXECUTION_PLAN.md` v7.0, `CLAUDE.md`, `README.md`, and the actual source tree. For exhaustive per-phase gotchas, consult `AGENTS.md` §Phase N directly. For the engineering blueprint, consult `MASTER_EXECUTION_PLAN.md` v7.0._
+
+**Last Updated:** June 24, 2026 (Phase 22 — Systematic Audit & TDD Remediation complete. 498 tests / 69 suites. All quality gates green.)

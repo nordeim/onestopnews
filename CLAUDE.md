@@ -327,89 +327,96 @@ NODE_ENV=development  # development | production | test (default: development)
 
 ### Key File Paths
 
-| What                        | Path                                                   |
-| :-------------------------- | :----------------------------------------------------- |
-| Next.js config              | `next.config.ts`                                       |
-| TypeScript config           | `tsconfig.json`                                        |
-| ESLint config               | `eslint.config.mjs`                                    |
-| Vitest config (unit)        | `vitest.config.ts`                                     |
-| Vitest config (integration) | `vitest.integration.config.ts`                         |
-| Playwright config           | `playwright.config.ts`                                 |
-| PostCSS config              | `postcss.config.mjs`                                   |
-| Global CSS + design tokens  | `src/app/globals.css`                                  |
-| Root layout                 | `src/app/layout.tsx`                                   |
-| Network boundary            | `proxy.ts` (repo root)                                 |
-| DB schema                   | `src/lib/db/schema.ts`                                 |
-| Lazy DB proxy               | `src/lib/db/index.ts`                                  |
-| Env validation (Zod)        | `src/lib/env/index.ts`                                 |
-| Auth config                 | `src/lib/auth/index.ts`                                |
-| Auth DAL                    | `src/lib/auth/dal.ts`                                  |
-| Auth providers              | `src/lib/auth/providers.ts`                            |
-| BullMQ queues               | `src/lib/queue/index.ts`                               |
-| FlowProducer DAG            | `src/lib/queue/flows.ts`                               |
-| Rate limiter                | `src/lib/rateLimit.ts`                                 |
-| Trusted proxy CIDR walker   | `src/lib/network/getClientIp.ts`                       |
-| Push key encryption         | `src/lib/security/encrypt.ts`                          |
-| AI prompts                  | `src/lib/ai/prompts.ts`                                |
-| 3-layer provenance          | `src/lib/ai/provenance.ts`                             |
-| Worker entry                | `src/workers/index.ts`                                 |
-| RSS parser                  | `src/workers/jobs/parseFeed.ts`                        |
-| AI summarizer               | `src/workers/jobs/summarize.ts`                        |
-| Content guard               | `src/workers/jobs/determineContentAvailability.ts`     |
-| Cache invalidation          | `src/workers/lib/cacheInvalidation.ts`                 |
-| Feed queries                | `src/features/feed/queries.ts`                         |
-| ArticleCard                 | `src/features/feed/components/ArticleCard.tsx`         |
-| Summary actions             | `src/features/summaries/actions.ts`                    |
-| NutritionLabel              | `src/features/summaries/components/NutritionLabel.tsx` |
-| Account page                | `src/app/account/page.tsx`                             |
-| Admin sources actions       | `src/app/(admin)/admin/sources/actions.ts`             |
-| Admin summaries page        | `src/app/(admin)/admin/summaries/page.tsx`             |
-| Domain types                | `src/domain/articles/types.ts`                         |
-| Domain normalize            | `src/domain/articles/normalize.ts`                     |
-| Importance scoring          | `src/domain/ranking/score.ts`                          |
-| `cn()` utility              | `src/shared/lib/utils.ts`                              |
-| Button                      | `src/shared/components/ui/Button.tsx`                  |
-| useDebounce                 | `src/shared/hooks/useDebounce.ts`                      |
-| useReducedMotion            | `src/shared/hooks/useReducedMotion.ts`                 |
-| PageTransition              | `src/components/primitives/PageTransition.tsx`         |
-| CI pipeline                 | `.github/workflows/ci.yml`                             |
-| E2E pipeline                | `.github/workflows/e2e.yml`                            |
-| Pre-commit hook             | `.husky/pre-commit`                                    |
+| What                            | Path                                                        |
+| :------------------------------ | :---------------------------------------------------------- |
+| Next.js config                  | `next.config.ts`                                            |
+| Next.js config regression tests | `next.config.test.ts` (Phase 22 — CSP/HSTS/XFO/XCTO guards) |
+| TypeScript config               | `tsconfig.json`                                             |
+| ESLint config                   | `eslint.config.mjs`                                         |
+| Vitest config (unit)            | `vitest.config.ts`                                          |
+| Vitest config (integration)     | `vitest.integration.config.ts`                              |
+| Playwright config               | `playwright.config.ts`                                      |
+| PostCSS config                  | `postcss.config.mjs`                                        |
+| Global CSS + design tokens      | `src/app/globals.css`                                       |
+| Root layout                     | `src/app/layout.tsx`                                        |
+| Network boundary                | `proxy.ts` (repo root)                                      |
+| DB schema                       | `src/lib/db/schema.ts`                                      |
+| Lazy DB proxy                   | `src/lib/db/index.ts`                                       |
+| Env validation (Zod)            | `src/lib/env/index.ts`                                      |
+| Auth config                     | `src/lib/auth/index.ts`                                     |
+| Auth DAL                        | `src/lib/auth/dal.ts`                                       |
+| Auth providers                  | `src/lib/auth/providers.ts`                                 |
+| BullMQ queues                   | `src/lib/queue/index.ts`                                    |
+| FlowProducer DAG                | `src/lib/queue/flows.ts`                                    |
+| Rate limiter                    | `src/lib/rateLimit.ts`                                      |
+| Trusted proxy CIDR walker       | `src/lib/network/getClientIp.ts`                            |
+| Push key encryption             | `src/lib/security/encrypt.ts`                               |
+| AI prompts                      | `src/lib/ai/prompts.ts`                                     |
+| 3-layer provenance              | `src/lib/ai/provenance.ts`                                  |
+| Worker entry                    | `src/workers/index.ts`                                      |
+| RSS parser                      | `src/workers/jobs/parseFeed.ts`                             |
+| AI summarizer                   | `src/workers/jobs/summarize.ts`                             |
+| Content guard                   | `src/workers/jobs/determineContentAvailability.ts`          |
+| Cache invalidation              | `src/workers/lib/cacheInvalidation.ts`                      |
+| Feed queries                    | `src/features/feed/queries.ts`                              |
+| ArticleCard                     | `src/features/feed/components/ArticleCard.tsx`              |
+| Summary actions                 | `src/features/summaries/actions.ts`                         |
+| NutritionLabel                  | `src/features/summaries/components/NutritionLabel.tsx`      |
+| Account page                    | `src/app/account/page.tsx`                                  |
+| Admin sources actions           | `src/app/(admin)/admin/sources/actions.ts`                  |
+| Admin summaries page            | `src/app/(admin)/admin/summaries/page.tsx`                  |
+| Domain types                    | `src/domain/articles/types.ts`                              |
+| Domain normalize                | `src/domain/articles/normalize.ts`                          |
+| Importance scoring              | `src/domain/ranking/score.ts`                               |
+| `cn()` utility                  | `src/shared/lib/utils.ts`                                   |
+| Button                          | `src/shared/components/ui/Button.tsx`                       |
+| useDebounce                     | `src/shared/hooks/useDebounce.ts`                           |
+| useReducedMotion                | `src/shared/hooks/useReducedMotion.ts`                      |
+| PageTransition                  | `src/components/primitives/PageTransition.tsx`              |
+| CI pipeline                     | `.github/workflows/ci.yml`                                  |
+| E2E pipeline                    | `.github/workflows/e2e.yml`                                 |
+| Pre-commit hook                 | `.husky/pre-commit`                                         |
 
 ---
 
 ## Anti-Patterns to Avoid
 
-| #   | Anti-Pattern                                                 | Fix                                                                                      |
-| :-- | :----------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
-| 1   | `any` in TypeScript                                          | `unknown` + type guards                                                                  |
-| 2   | `enum` / `namespace`                                         | String unions + ES modules (violates `erasableSyntaxOnly`)                               |
-| 3   | `throw new Error()` in RSC auth                              | `redirect('/sign-in')`                                                                   |
-| 4   | `drizzle-kit push` in production                             | `generate` + `migrate` only                                                              |
-| 5   | `process.env.*` outside `src/lib/env/`                       | Import `env` from `@/lib/env`                                                            |
-| 6   | Runtime imports from `@/lib/db*` in `src/domain/**`          | `import type` only (enforced by ESLint)                                                  |
-| 7   | `await` in page body without `<Suspense>`                    | Wrap in `<Suspense fallback={<Skeleton />}>`                                             |
-| 8   | `new Date()` in Server Components                            | Move to Client Component or compute from headers                                         |
-| 9   | JSON-LD via `metadata.other`                                 | Render `<script type="application/ld+json">` in page body                                |
-| 10  | Regex HTML stripping (`/<[^>]*>/g`)                          | Use `cheerio`                                                                            |
-| 11  | `window.matchMedia()` without `typeof === "function"` guard  | Add guard (crashes in jsdom + older browsers)                                            |
-| 12  | Server Action without `verifySession()`                      | Every action starts with auth check                                                      |
-| 13  | `vi.mock()` factory referencing `let`/`const` below it       | Use `vi.hoisted()`                                                                       |
-| 14  | `cacheLife()` in tests without `next/cache` mock             | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`                                  |
-| 15  | Missing `SessionProvider` in tests using `useSession()`      | Mock `next-auth/react` with passthrough `SessionProvider`                                |
-| 16  | `flowProducer.add()` without try/catch                       | Wrap + fallback to `scoreQueue.add()` + return status object                             |
-| 17  | `vi.clearAllMocks()` on structural mock chains               | Only reset leaf mocks via `mockResolvedValueOnce()`                                      |
-| 18  | Discriminated union assertions without `if` narrowing        | Use `if (result.status === "linked") { ... }`                                            |
-| 19  | Missing `@tailwindcss/postcss` plugin                        | Install + create `postcss.config.mjs` + clear `.next/` cache                             |
-| 20  | Raw hex colors in Tailwind classes                           | Use design tokens (`bg-ink-900`, `text-paper-50`)                                        |
-| 21  | `.env*` files committed to git                               | Add `.env`, `.env.*`, `!.env.example` to `.gitignore` (Phase 21)                         |
-| 22  | Route group `(admin)/` expected to produce `/admin/` URLs    | Add `admin/` subfolder inside route group: `(admin)/admin/sources/` (Phase 21)           |
-| 23  | `verifySession()` wrapped in try/catch (swallows redirect)   | Remove try/catch — let `NEXT_REDIRECT` propagate; use `auth()` for API routes (Phase 21) |
-| 24  | CSP with `'unsafe-eval'`                                     | Remove `'unsafe-eval'` — no code uses `eval()` (Phase 21)                                |
-| 25  | AES-256-GCM IV of 16 bytes (non-NIST-compliant)              | Use 12-byte IV per NIST SP 800-38D (Phase 21)                                            |
-| 26  | Rate limiter fails-closed (500) on Redis outage              | Wrap in try/catch, fail OPEN (200 + warning) (Phase 21)                                  |
-| 27  | `AUTH_SECRET` accepts known-weak values in production        | `superRefine` rejecting weak patterns in production (Phase 21)                           |
-| 28  | `deleteSource` identical to `pauseSource` (both soft delete) | `deleteSource` = hard delete (`db.delete` with cascade); `pauseSource` = soft (Phase 21) |
+| #   | Anti-Pattern                                                                   | Fix                                                                                                                                                                                                                                       |
+| :-- | :----------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `any` in TypeScript                                                            | `unknown` + type guards                                                                                                                                                                                                                   |
+| 2   | `enum` / `namespace`                                                           | String unions + ES modules (violates `erasableSyntaxOnly`)                                                                                                                                                                                |
+| 3   | `throw new Error()` in RSC auth                                                | `redirect('/sign-in')`                                                                                                                                                                                                                    |
+| 4   | `drizzle-kit push` in production                                               | `generate` + `migrate` only                                                                                                                                                                                                               |
+| 5   | `process.env.*` outside `src/lib/env/`                                         | Import `env` from `@/lib/env`                                                                                                                                                                                                             |
+| 6   | Runtime imports from `@/lib/db*` in `src/domain/**`                            | `import type` only (enforced by ESLint)                                                                                                                                                                                                   |
+| 7   | `await` in page body without `<Suspense>`                                      | Wrap in `<Suspense fallback={<Skeleton />}>`                                                                                                                                                                                              |
+| 8   | `new Date()` in Server Components                                              | Move to Client Component or compute from headers                                                                                                                                                                                          |
+| 9   | JSON-LD via `metadata.other`                                                   | Render `<script type="application/ld+json">` in page body                                                                                                                                                                                 |
+| 10  | Regex HTML stripping (`/<[^>]*>/g`)                                            | Use `cheerio`                                                                                                                                                                                                                             |
+| 11  | `window.matchMedia()` without `typeof === "function"` guard                    | Add guard (crashes in jsdom + older browsers)                                                                                                                                                                                             |
+| 12  | Server Action without `verifySession()`                                        | Every action starts with auth check                                                                                                                                                                                                       |
+| 13  | `vi.mock()` factory referencing `let`/`const` below it                         | Use `vi.hoisted()`                                                                                                                                                                                                                        |
+| 14  | `cacheLife()` in tests without `next/cache` mock                               | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`                                                                                                                                                                                   |
+| 15  | Missing `SessionProvider` in tests using `useSession()`                        | Mock `next-auth/react` with passthrough `SessionProvider`                                                                                                                                                                                 |
+| 16  | `flowProducer.add()` without try/catch                                         | Wrap + fallback to `scoreQueue.add()` + return status object                                                                                                                                                                              |
+| 17  | `vi.clearAllMocks()` on structural mock chains                                 | Only reset leaf mocks via `mockResolvedValueOnce()`                                                                                                                                                                                       |
+| 18  | Discriminated union assertions without `if` narrowing                          | Use `if (result.status === "linked") { ... }`                                                                                                                                                                                             |
+| 19  | Missing `@tailwindcss/postcss` plugin                                          | Install + create `postcss.config.mjs` + clear `.next/` cache                                                                                                                                                                              |
+| 20  | Raw hex colors in Tailwind classes                                             | Use design tokens (`bg-ink-900`, `text-paper-50`)                                                                                                                                                                                         |
+| 21  | `.env*` files committed to git                                                 | Add `.env`, `.env.*`, `!.env.example` to `.gitignore` (Phase 21)                                                                                                                                                                          |
+| 22  | Route group `(admin)/` expected to produce `/admin/` URLs                      | Add `admin/` subfolder inside route group: `(admin)/admin/sources/` (Phase 21)                                                                                                                                                            |
+| 23  | `verifySession()` wrapped in try/catch (swallows redirect)                     | Remove try/catch — let `NEXT_REDIRECT` propagate; use `auth()` for API routes (Phase 21)                                                                                                                                                  |
+| 24  | CSP with `'unsafe-eval'`                                                       | Remove `'unsafe-eval'` — no code uses `eval()` (Phase 21)                                                                                                                                                                                 |
+| 25  | AES-256-GCM IV of 16 bytes (non-NIST-compliant)                                | Use 12-byte IV per NIST SP 800-38D (Phase 21)                                                                                                                                                                                             |
+| 26  | Rate limiter fails-closed (500) on Redis outage                                | Wrap in try/catch, fail OPEN (200 + warning) (Phase 21)                                                                                                                                                                                   |
+| 27  | `AUTH_SECRET` accepts known-weak values in production                          | `superRefine` rejecting weak patterns in production (Phase 21)                                                                                                                                                                            |
+| 28  | `deleteSource` identical to `pauseSource` (both soft delete)                   | `deleteSource` = hard delete (`db.delete` with cascade); `pauseSource` = soft (Phase 21)                                                                                                                                                  |
+| 29  | Comment claims a directive was removed but the actual string still contains it | Add a regression test asserting the absence. CSP `'unsafe-eval'` regression survived 2 phases because no test verified the claim (Phase 22 / H1).                                                                                         |
+| 30  | Asymmetric rate-limiter protection across routes                               | When adding rate limiting to a new route, audit ALL existing rate-limited routes for the same patterns (fail-open, per-user keying, retry-after headers). `/api/summarize/[id]` was missing fail-open for 2 phases (Phase 22 / N1).       |
+| 31  | Server Actions tested but not wired to UI                                      | Server Actions are dead code if no `<form action={...}>` or `useActionState` calls them. Add a UI integration test that renders the consuming component and asserts the form binding. `pauseSource` was dead for 1 phase (Phase 22 / N5). |
+| 32  | Tarball remediation snapshots committed to repo root                           | Use git history or external storage for snapshots. Add `*.tar.gz` to `.gitignore` proactively. 119MB of stale archives removed (Phase 22 / N2).                                                                                           |
+| 33  | `pnpm format:check` scans vendored/historical docs by default                  | Create `.prettierignore` excluding `skills/`, `docs/`, `*.archived`, lockfiles, binary assets (Phase 22 / N6).                                                                                                                            |
+| 34  | `pnpm audit \|\| true` in CI                                                   | Promote to hard gate after mitigations reduce vuln count below threshold. Document the runbook for handling future high/critical vulns (Phase 22 / F4).                                                                                   |
 
 ---
 
@@ -433,46 +440,51 @@ NODE_ENV=development  # development | production | test (default: development)
 
 ### Common Debugging Scenarios
 
-| Symptom                                    | Cause                                          | Fix                                                              |
-| :----------------------------------------- | :--------------------------------------------- | :--------------------------------------------------------------- |
-| Page completely unstyled                   | Missing `@tailwindcss/postcss`                 | Install plugin + create `postcss.config.mjs` + `rm -rf .next/`   |
-| `blocking-route` error                     | Uncached data fetch outside `<Suspense>`       | Wrap in `<Suspense>`                                             |
-| `next-prerender-current-time`              | `new Date()` in Server Component               | Move to Client Component                                         |
-| Commit Mono not loading                    | Using `@fontsource/commit-mono`                | Self-host via `next/font/local`                                  |
-| 64 tsc errors in `skills/`                 | Vendored code not excluded                     | Add `"skills"` to tsconfig `exclude`                             |
-| `cacheLife is not a function` in tests     | No Next.js cache context                       | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`          |
-| `useSession` requires `SessionProvider`    | Test doesn't go through layout                 | Mock `next-auth/react`                                           |
-| Rate limit 429 behind CDN                  | Leftmost XFF IP spoofable                      | Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS`                 |
-| Admin sidebar links 404                    | Route group `(admin)/` doesn't affect URLs     | Add `admin/` subfolder: `(admin)/admin/sources/` (Phase 21)      |
-| `revalidatePath("/admin/sources")` no-op   | Same route group issue                         | Fixed by Phase 21 admin folder restructure                       |
-| API returns 500 instead of 401 (auth)      | `verifySession()` redirect caught by try/catch | Use `auth()` directly in API routes; remove try/catch (Phase 21) |
-| Redis outage takes down `/api/articles`    | Rate limiter throws uncaught                   | Fail-open try/catch around `checkRateLimit()` (Phase 21)         |
-| `pnpm build` fails: weak AUTH_SECRET       | Production rejects placeholder values          | Generate strong secret: `openssl rand -base64 33` (Phase 21)     |
-| `.env.local` with real keys in git history | `.gitignore` didn't exclude `.env*`            | Untrack + rotate exposed secrets (Phase 21)                      |
+| Symptom                                           | Cause                                                                     | Fix                                                                                                  |
+| :------------------------------------------------ | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------- |
+| Page completely unstyled                          | Missing `@tailwindcss/postcss`                                            | Install plugin + create `postcss.config.mjs` + `rm -rf .next/`                                       |
+| `blocking-route` error                            | Uncached data fetch outside `<Suspense>`                                  | Wrap in `<Suspense>`                                                                                 |
+| `next-prerender-current-time`                     | `new Date()` in Server Component                                          | Move to Client Component                                                                             |
+| Commit Mono not loading                           | Using `@fontsource/commit-mono`                                           | Self-host via `next/font/local`                                                                      |
+| 64 tsc errors in `skills/`                        | Vendored code not excluded                                                | Add `"skills"` to tsconfig `exclude`                                                                 |
+| `cacheLife is not a function` in tests            | No Next.js cache context                                                  | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`                                              |
+| `useSession` requires `SessionProvider`           | Test doesn't go through layout                                            | Mock `next-auth/react`                                                                               |
+| Rate limit 429 behind CDN                         | Leftmost XFF IP spoofable                                                 | Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS`                                                     |
+| Admin sidebar links 404                           | Route group `(admin)/` doesn't affect URLs                                | Add `admin/` subfolder: `(admin)/admin/sources/` (Phase 21)                                          |
+| `revalidatePath("/admin/sources")` no-op          | Same route group issue                                                    | Fixed by Phase 21 admin folder restructure                                                           |
+| API returns 500 instead of 401 (auth)             | `verifySession()` redirect caught by try/catch                            | Use `auth()` directly in API routes; remove try/catch (Phase 21)                                     |
+| Redis outage takes down `/api/articles`           | Rate limiter throws uncaught                                              | Fail-open try/catch around `checkRateLimit()` (Phase 21)                                             |
+| `pnpm build` fails: weak AUTH_SECRET              | Production rejects placeholder values                                     | Generate strong secret: `openssl rand -base64 33` (Phase 21)                                         |
+| `.env.local` with real keys in git history        | `.gitignore` didn't exclude `.env*`                                       | Untrack + rotate exposed secrets (Phase 21)                                                          |
+| CSP `'unsafe-eval'` "removed" but still present   | Comment claimed removal but the value was never edited                    | Regression test in `next.config.test.ts` asserts the absence (Phase 22 / H1)                         |
+| `/api/summarize/[id]` returns 500 on Redis outage | Rate limiter had no fail-open try/catch (asymmetric with `/api/articles`) | Wrap `checkRateLimit()` in try/catch + log warning (Phase 22 / N1)                                   |
+| Admin sources page has no Pause button            | `pauseSource` action existed but no UI consumed it                        | Wire `<form action={pauseSourceAction}>` + add `pauseSourceAction(formData)` wrapper (Phase 22 / N5) |
+| Repo bloat from `.tar.gz` remediation archives    | 119MB of phase snapshots committed to repo root                           | Delete + add `*.tar.gz` to `.gitignore` (Phase 22 / N2)                                              |
+| `pnpm format:check` fails on 226+ markdown files  | No `.prettierignore` — scans vendored skills/ + historical docs           | Create `.prettierignore` scoping format checks to src/ + active configs (Phase 22 / N6)              |
 
 ---
 
 ## Security & Compliance
 
-| Concern           | Posture                                                                                                            |
-| :---------------- | :----------------------------------------------------------------------------------------------------------------- |
-| Next.js version   | Pinned to `^16.2.9` (≥16.0.7 mitigates CVE-2025-55182)                                                             |
-| Auth              | Auth.js v5 beta (`5.0.0-beta.31`), HttpOnly session cookies                                                        |
-| AI Disclosure     | 3-layer: JSON-LD + HTTP header + HTML meta. EU AI Act Art. 50 compliant.                                           |
-| Push keys         | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex.                                             |
-| DB connections    | Lazy Proxy connection. `max: 10` for dedicated runtimes.                                                           |
-| Access control    | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins.                                                |
-| Rate limiting     | `GET /api/articles`: 20 req/s per IP (fail-open on Redis outage, Phase 21). `POST /api/summarize`: 5 req/min/user. |
-| Content hashing   | SHA-256 (`node:crypto`) of `title\|body\|publishedAt`.                                                             |
-| Env validation    | All required env vars validated by Zod at module load. `AUTH_SECRET` rejects weak values in production (Phase 21). |
-| Cursor validation | `/api/articles` cursor param validated as ISO 8601; returns `400` on invalid.                                      |
-| Secret hygiene    | `.env*` gitignored (only `.env.example` tracked). VAPID keys must be rotated if previously committed. (Phase 21)   |
-| CSP               | `script-src 'self' 'unsafe-inline'` — `unsafe-eval` removed (Phase 21). Migrate to nonce-based CSP in future.      |
-| Push key IV       | AES-256-GCM with 12-byte IV per NIST SP 800-38D (Phase 21). Backward-compatible with legacy 16-byte IV data.       |
-| CI security audit | `pnpm audit --audit-level=high --prod` runs in CI after install (Phase 21).                                        |
+| Concern           | Posture                                                                                                                                                                                                       |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Next.js version   | Pinned to `^16.2.9` (≥16.0.7 mitigates CVE-2025-55182)                                                                                                                                                        |
+| Auth              | Auth.js v5 beta (`5.0.0-beta.31`), HttpOnly session cookies                                                                                                                                                   |
+| AI Disclosure     | 3-layer: JSON-LD + HTTP header + HTML meta. EU AI Act Art. 50 compliant.                                                                                                                                      |
+| Push keys         | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex.                                                                                                                                        |
+| DB connections    | Lazy Proxy connection. `max: 10` for dedicated runtimes.                                                                                                                                                      |
+| Access control    | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins.                                                                                                                                           |
+| Rate limiting     | `GET /api/articles`: 20 req/s per IP (fail-open on Redis outage, Phase 21 S7). `POST /api/summarize`: 5 req/min/user (fail-open on Redis outage, Phase 22 N1 — symmetric with `/api/articles`).               |
+| Content hashing   | SHA-256 (`node:crypto`) of `title\|body\|publishedAt`.                                                                                                                                                        |
+| Env validation    | All required env vars validated by Zod at module load. `AUTH_SECRET` rejects weak values in production (Phase 21).                                                                                            |
+| Cursor validation | `/api/articles` cursor param validated as ISO 8601; returns `400` on invalid.                                                                                                                                 |
+| Secret hygiene    | `.env*` gitignored (only `.env.example` tracked). VAPID keys must be rotated if previously committed. (Phase 21)                                                                                              |
+| CSP               | `script-src 'self' 'unsafe-inline'` — `unsafe-eval` removed (Phase 22 / H1 with regression test in `next.config.test.ts`; Phase 21 S4 comment-only fix was incomplete). Migrate to nonce-based CSP in future. |
+| Push key IV       | AES-256-GCM with 12-byte IV per NIST SP 800-38D (Phase 21). Backward-compatible with legacy 16-byte IV data.                                                                                                  |
+| CI security audit | `pnpm audit --audit-level=high --prod` runs in CI after install — HARD GATE as of Phase 22 / F4 (was non-blocking `\|\| true` in Phase 21). Fails CI on any new high/critical vuln.                           |
 
 ---
 
 _This CLAUDE.md is derived from AGENTS.md (the canonical institutional knowledge base) and onestopnews_SKILL.md (the complete engineering reference). For exhaustive detail on any topic, consult those files directly._
 
-**Last Updated:** June 23, 2026 (Phase 21 — Security & Architecture Remediation: env file untracking, admin route fix, auth pattern correction, CSP hardening, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete). **Tests:** 472 across 67 suites + 10 E2E + 4 a11y + 4 DB-integration (all green).
+**Last Updated:** June 24, 2026 (Phase 22 — Systematic Audit & TDD Remediation: CSP `unsafe-eval` regression actually fixed with `next.config.test.ts` guard [H1], `/api/summarize/[id]` fail-open symmetric with `/api/articles` [N1], `pnpm audit` promoted to hard CI gate [F4], `pauseSource` wired to admin UI button [N5], 119MB of stale `.tar.gz` archives removed [N2], MEP updated to v7.0 [N3], `.prettierignore` created [N6], AGENTS.md duplicate recommendations removed [N7]). **Tests:** 498 across 69 suites + 10 E2E + 4 a11y + 4 DB-integration (all green).
