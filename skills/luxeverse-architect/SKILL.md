@@ -1,11 +1,32 @@
-# LuxeVerse Architect Skill
+---
+name: luxeverse-architect
+description: >
+  LuxeVerse Architect Skill
+  Comprehensive Architectural & Execution Framework for Cinematic, Production-Grade, Anti-Generic Web Platforms
+triggers: 
+  - "build luxury e-commerce"
+  - "cinematic UI architecture"
+  - "Next.js 16 phased rollout"
+  - "anti-generic design system"
+  - "tRPC Zustand commerce"
+  - "NextAuth v4 App Router tRPC"
+  - "Prisma Decimal service pattern"
+  - "RSC factory service"
+  - "cookies() Promise Next.js 15"
+  - "next-intl v4 configuration"
+  - "next-intl defineRouting getRequestConfig"
+  - "next-intl Turbopack alias"
+  - "next-intl middleware to proxy migration"
+  - "app router root layout tags"
+  - "locale route groups"
+  - "route restructuring hygiene"
+  - ".next cache staleness"
+  - "Turbopack resolveAlias"
+version: 5.0.0
+---
 
-## Comprehensive Architectural & Execution Framework for Cinematic, Production-Grade, Anti-Generic Web Platforms
-
-**Version**: 5.0.0
-**Date**: 2026-05-28
 **Scope**: Phases 0–5 verified (Foundation, Core Commerce, Cinematic Experience, AI Integration, Scale & Social Remediation, Hardening & Production Data Integration)
-**New Since v5.0.0**:
+
 - Next.js 16 App Router `root layout.tsx` **must include `<html>` and `<body>` tags** — missing them throws "Missing root layout tags" runtime error for all non-`[locale]` routes
 - Route restructuring: **all locale-dependent pages moved to `[locale]/(routes)` groups** to ensure `[locale]/layout.tsx` wraps them with `<html>` `<body>` and i18n providers
 - Root `layout.tsx` acts as a **minimal shell** — must not include `<Navbar>` or `<Footer>`; those belong in `[locale]/layout.tsx`

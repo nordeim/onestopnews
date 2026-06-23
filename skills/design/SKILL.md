@@ -1,6 +1,8 @@
 ---
-name: Design Skill
+name: design
 description: Route design-related HTML artifact tasks to the right artifact skill, reference, design system generation, or export skill.
+---
+
 mode: router
 platform: any
 scenario: design
@@ -19,7 +21,6 @@ default_for:
   - design system generation
   - export
 fidelity: adaptive
----
 
 # Design Skill
 

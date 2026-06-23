@@ -1,3 +1,8 @@
+---
+name: skill-creator-selector
+description: how to decide which skill-creator skill to choose from
+---
+
 Summary of the differences:
 
 1. **skill-creator** - The foundational/anatomy-focused skill. It's about the structure of skills: the directory layout, file organization (`SKILL.md`, `scripts/`, `references/`, `assets/`), the progressive disclosure principle, and packaging. It's more about the "what is a skill" and "how do I structure one" — a reference/guide for skill creation.
