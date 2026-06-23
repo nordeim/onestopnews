@@ -155,4 +155,40 @@ describe("next.config.ts — security headers", () => {
       expect(xcto?.value).toBe("nosniff");
     });
   });
+
+  // ── Phase 23 / BUG-2: X-AI-Provenance HTTP header for article routes ──────
+  // The live site E2E audit revealed that the X-AI-Provenance HTTP header
+  // was NOT being emitted. Root cause: metadata.other in Next.js 16 only
+  // emits <meta> tags, never HTTP headers. The fix: add a static
+  // X-AI-Provenance header in next.config.ts headers() for /article/:id*
+  // routes, indicating that AI provenance disclosure is present on the page
+  // (in the <meta name="ai-provenance"> tag + JSON-LD <script>).
+  describe("X-AI-Provenance header (Phase 23 / BUG-2 fix)", () => {
+    it("defines a header rule for /article/:id* routes", async () => {
+      const headersFn = nextConfig.headers;
+      if (!headersFn) throw new Error("no headers()");
+      const result = await headersFn();
+      const articleRoute = result.find((r) => r.source === "/article/:id*");
+      expect(
+        articleRoute,
+        "next.config.ts must define a header rule for /article/:id* routes",
+      ).toBeDefined();
+    });
+
+    it("sets X-AI-Provenance header on article routes", async () => {
+      const headersFn = nextConfig.headers;
+      if (!headersFn) throw new Error("no headers()");
+      const result = await headersFn();
+      const articleRoute = result.find((r) => r.source === "/article/:id*");
+      if (!articleRoute) throw new Error("no /article/:id* route rule");
+      const xAiProvenance = articleRoute.headers.find(
+        (h) => h.key === "X-AI-Provenance",
+      );
+      expect(
+        xAiProvenance,
+        "X-AI-Provenance header must be present on /article/:id* routes",
+      ).toBeDefined();
+      expect(xAiProvenance!.value).toContain("eu-ai-act-art50");
+    });
+  });
 });

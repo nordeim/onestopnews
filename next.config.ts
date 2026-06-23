@@ -133,6 +133,32 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // ── Phase 23 / BUG-2: X-AI-Provenance HTTP header for article routes ──
+      // The live site E2E audit revealed that the X-AI-Provenance HTTP header
+      // was NOT being emitted on article detail pages. Root cause: Next.js 16's
+      // `metadata.other` API only emits `<meta>` tags, never HTTP headers.
+      // The previous code set `"X-AI-Provenance"` in `metadata.other` (page.tsx),
+      // which created a `<meta name="X-AI-Provenance">` tag — NOT an HTTP header.
+      //
+      // This static header tells crawlers/API consumers: "This page may contain
+      // AI-generated content with EU AI Act Article 50 provenance disclosure.
+      // Check the `<meta name="ai-provenance">` tag and JSON-LD `<script>` for
+      // per-article details (model, coverage, sources cited)."
+      //
+      // The per-article provenance data (model, coverage, sources) is in:
+      //   Layer 1: JSON-LD `<script>` (rendered in ArticleData.tsx body)
+      //   Layer 3: `<meta name="ai-provenance">` (via metadata.other in page.tsx)
+      // This Layer 2 HTTP header is a static indicator — the dynamic data is in
+      // the meta tag + JSON-LD.
+      {
+        source: "/article/:id*",
+        headers: [
+          {
+            key: "X-AI-Provenance",
+            value: "eu-ai-act-art50-compliant; disclosure-in-meta-and-jsonld",
+          },
+        ],
+      },
     ];
   },
 

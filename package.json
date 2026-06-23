@@ -88,11 +88,6 @@
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.15.0",
-  "pnpm": {
-    "overrides": {
-      "cheerio>undici": "^8.5.0"
-    }
-  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --max-warnings 0 --fix",

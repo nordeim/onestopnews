@@ -25,10 +25,17 @@ interface ArticlePageProps {
  * generateMetadata — Emits SEO metadata + 3-layer AI provenance.
  *
  * When the article has an 'ok' summary, this function:
- *   1. Calls generateProvenanceMetadata() to produce all 3 layers
- *   2. Sets the JSON-LD as a <script type="application/ld+json"> tag via `other`
- *   3. Sets the X-AI-Provenance HTTP header via `other`
- *   4. Sets the <meta name="ai-provenance"> tag via `other`
+ *   1. Calls generateProvenanceMetadata() to produce the provenance data
+ *   2. Sets the <meta name="ai-provenance"> tag via `other` (Layer 3)
+ *   3. The JSON-LD <script> is rendered directly in ArticleData.tsx body (Layer 1)
+ *   4. The X-AI-Provenance HTTP header is set statically in next.config.ts
+ *      for /article/:id* routes (Layer 2)
+ *
+ * Phase 23 / BUG-2 fix: Previously, `metadata.other` was used to set
+ * "X-AI-Provenance" — but Next.js 16's `metadata.other` API only emits
+ * `<meta>` tags, never HTTP headers. The "X-AI-Provenance" key was creating
+ * a `<meta name="X-AI-Provenance">` tag (a useless duplicate), not an HTTP
+ * header. The HTTP header is now set statically in next.config.ts headers().
  *
  * This is the EU AI Act Article 50 compliant disclosure mechanism.
  */
@@ -63,12 +70,15 @@ export async function generateMetadata({
   };
 
   // Emit 3-layer provenance when an approved summary exists.
-  // Layer 1 (JSON-LD <script>) is rendered directly in ArticleData.tsx body
-  // (NOT via metadata.other — Next.js renders metadata.other keys as <meta>
-  // tags, not <script> tags, so JSON-LD via metadata.other is semantically
-  // wrong and was never actually emitted as a script tag).
-  // Layer 2 (HTTP header X-AI-Provenance) + Layer 3 (<meta name="ai-provenance">)
-  // are emitted here via metadata.other.
+  // Layer 1 (JSON-LD <script>): Rendered directly in ArticleData.tsx body
+  //   (NOT via metadata.other — Next.js renders metadata.other keys as <meta>
+  //   tags, not <script> tags).
+  // Layer 2 (HTTP header X-AI-Provenance): Set statically in next.config.ts
+  //   headers() for /article/:id* routes. Previously tried via metadata.other
+  //   but that only creates a <meta> tag, not an HTTP header (Phase 23 / BUG-2).
+  // Layer 3 (<meta name="ai-provenance">): Emitted here via metadata.other.
+  //   This is the ONLY layer emitted via metadata.other — it correctly becomes
+  //   a <meta> tag (which is what metadata.other does).
   if (article.summary && article.summary.status === "ok") {
     const provenance = generateProvenanceMetadata({
       summary: {
@@ -85,9 +95,11 @@ export async function generateMetadata({
       generatedAt: article.summary.generatedAt.toISOString(),
     });
 
+    // Layer 3: <meta name="ai-provenance" content="model:...;generated-at:...;...">
+    // NOTE: We do NOT set "X-AI-Provenance" here — metadata.other only emits
+    // <meta> tags, not HTTP headers. The HTTP header is in next.config.ts.
     metadata.other = {
       "ai-provenance": provenance.metaTag,
-      "X-AI-Provenance": provenance.httpHeader,
     };
   }
 

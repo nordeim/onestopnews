@@ -42,6 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${newsreader.variable} ${instrumentSans.variable} ${commitMono.variable}`}
       suppressHydrationWarning
     >
