@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
       // SEED DATA ONLY: picsum.photos generates random placeholder images
       // used by db:seed. For production news images, add the actual CDN
       // domains that serve article images (e.g., your CMS or image proxy).
-      { protocol: "https", hostname: "picsum.photos", pathname: "/**/" },
+      { protocol: "https", hostname: "picsum.photos", pathname: "/**" },
     ],
   },
 

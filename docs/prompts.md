@@ -50,6 +50,10 @@ Awesome meticulous job so far. Please keep up the good work. Now, please meticul
 
 ---
 
+awesome meticulouly job so far. please keep up the good work. now, please meticulously review the runtime error captured in @error.txt and validate it against the codebase to identify the root cause and the optimal fix. then meticulously plan to apply the validated optimal fix.
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously create a tar archive of the entire (remediated) codebase, excluding the `node_modules` , `.next` and `.git` folders, so I can download and use it to refresh my GitHub repo.
 
 ---
