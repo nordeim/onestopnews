@@ -48,11 +48,10 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24, // 24h minimum CDN TTL for news thumbnails
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "picsum.photos",
-        pathname: "/**",
-      },
+      // SEED DATA ONLY: picsum.photos generates random placeholder images
+      // used by db:seed. For production news images, add the actual CDN
+      // domains that serve article images (e.g., your CMS or image proxy).
+      { protocol: "https", hostname: "picsum.photos", pathname: "/**/" },
     ],
   },
 
@@ -105,17 +104,15 @@ const nextConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           // Content-Security-Policy — restricts resource loading to trusted
-          // sources. S4 fix: Removed 'unsafe-eval' (no code in src/ uses
-          // eval() or new Function() — verified by grep). 'unsafe-inline'
-          // remains as a transitional measure for Next.js inline scripts;
-          // production should migrate to nonce-based CSP via Next.js 16's
-          // headers() nonce pattern.
-	  // "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+          // sources. 'unsafe-eval' was removed (no code in src/ uses eval()
+          // or new Function()). 'unsafe-inline' remains as a transitional
+          // measure for Next.js inline scripts; production should migrate
+          // to nonce-based CSP via Next.js 16's headers() nonce pattern.
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https: data:",
               "font-src 'self' data:",

@@ -15,6 +15,7 @@
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
+import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import type { Provider } from "next-auth/providers/index";
@@ -65,7 +66,6 @@ const credentialsProvider = Credentials({
     if (!user) return null;
     if (!user.passwordHash) return null;
 
-    const bcrypt = await import("bcryptjs");
     const isValid = await bcrypt.compare(password, user.passwordHash);
     if (!isValid) return null;
 

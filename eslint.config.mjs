@@ -11,6 +11,7 @@ export default [
       "dist/**", 
       "playwright.config.ts", 
       "skills/**", 
+      "docs/**", 
       "coverage/**"
     ],
   },

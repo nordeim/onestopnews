@@ -1,0 +1,74 @@
+diff --git a/src/app/api/admin/route.ts b/src/app/api/admin/route.ts
+deleted file mode 100644
+index 648d9f8..0000000
+--- a/src/app/api/admin/route.ts
++++ /dev/null
+@@ -1,26 +0,0 @@
+-import { NextResponse } from "next/server";
+-import { verifyAdminSession } from "@/lib/auth/dal";
+-
+-/**
+- * Admin API Route — Stub for Phase 4
+- *
+- * Uses DAL-layer `verifyAdminSession()` which:
+- * - Redirects unauthenticated users to `/sign-in`
+- * - Redirects non-admin users to `/`
+- * - Only proceeds if the user has role === "admin"
+- *
+- * TODO: Replace stub with actual admin endpoints in Phase 4.
+- */
+-export async function GET() {
+-  const user = await verifyAdminSession();
+-
+-  return NextResponse.json({
+-    status: "ok",
+-    message: "Admin API — stub endpoint for Phase 4",
+-    user: {
+-      id: user.id,
+-      name: user.name,
+-      role: user.role,
+-    },
+-  });
+-}
+diff --git a/src/lib/auth/providers.ts b/src/lib/auth/providers.ts
+index e17fd84..ddd4987 100644
+--- a/src/lib/auth/providers.ts
++++ b/src/lib/auth/providers.ts
+@@ -15,6 +15,7 @@
+ import Credentials from "next-auth/providers/credentials";
+ import Google from "next-auth/providers/google";
+ import GitHub from "next-auth/providers/github";
++import bcrypt from "bcryptjs";
+ import { z } from "zod";
+ import { eq } from "drizzle-orm";
+ import type { Provider } from "next-auth/providers/index";
+@@ -65,7 +66,6 @@ const credentialsProvider = Credentials({
+     if (!user) return null;
+     if (!user.passwordHash) return null;
+ 
+-    const bcrypt = await import("bcryptjs");
+     const isValid = await bcrypt.compare(password, user.passwordHash);
+     if (!isValid) return null;
+ 
+diff --git a/src/lib/queue/index.ts b/src/lib/queue/index.ts
+index 17a4568..5a6c5bc 100644
+--- a/src/lib/queue/index.ts
++++ b/src/lib/queue/index.ts
+@@ -22,7 +22,7 @@ function getRedisUrlParts() {
+ export function createQueueConnection() {
+   return {
+     ...getRedisUrlParts(),
+-    maxRetriesPerRequest: undefined as unknown as null,
++    maxRetriesPerRequest: null,
+     enableOfflineQueue: false,
+   };
+ }
+@@ -35,7 +35,7 @@ export function createQueueConnection() {
+ export function createWorkerConnection() {
+   return {
+     ...getRedisUrlParts(),
+-    maxRetriesPerRequest: null as unknown as null,
++    maxRetriesPerRequest: null,
+     enableOfflineQueue: true,
+   };
+ }

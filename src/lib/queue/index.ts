@@ -22,7 +22,7 @@ function getRedisUrlParts() {
 export function createQueueConnection() {
   return {
     ...getRedisUrlParts(),
-    maxRetriesPerRequest: undefined as unknown as null,
+    maxRetriesPerRequest: null,
     enableOfflineQueue: false,
   };
 }
@@ -35,7 +35,7 @@ export function createQueueConnection() {
 export function createWorkerConnection() {
   return {
     ...getRedisUrlParts(),
-    maxRetriesPerRequest: null as unknown as null,
+    maxRetriesPerRequest: null,
     enableOfflineQueue: true,
   };
 }
