@@ -7,10 +7,10 @@
 [ ] IMPLEMENT: Execute Phase 5 sub-plan with TDD
 [ ] VERIFY: Run tsc --noEmit, lint, tests - all must pass
 [ ] DELIVER: Update documentation with Phase 5 status
-→Read MASTER*EXECUTION_PLAN.md [offset=578, limit=200]
+→Read MASTER\*EXECUTION_PLAN.md [offset=578, limit=200]
 →Read AGENTS.md [offset=1400, limit=50]
 I've completed the ANALYZE phase. Let me read the authoritative source documents to validate the requirements.
-✱Glob "src/features/\**/\_.ts" (2 matches)
+✱Glob "src/features/\*\*/\_.ts" (2 matches)
 →Read Project_Requirements_Document_v4.3.md [limit=50]
 
 # Todos

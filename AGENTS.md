@@ -2263,12 +2263,6 @@ Phase 19 conducted a systematic 7-dimension code audit (security, frontend, DB/w
 
 9. **AGENTS.md / CLAUDE.md consolidation (post-Phase 19)**: This file (AGENTS.md) is now the single source of truth. CLAUDE.md has been reduced to a stub that points here. The "Quick Reference: File Locations" table and the "Contact & Maintenance" footer below were migrated from CLAUDE.md during consolidation. Any future documentation updates should be applied ONLY to AGENTS.md (and reflected in README.md where appropriate) — CLAUDE.md will no longer be maintained as a parallel document.
 
-10. ~~**Coverage threshold calibration**~~ (RESOLVED — Phase 20 / T7): Coverage thresholds raised back to 80/80/70/80 after adding the missing unit tests in T1-T6 (FeedSkeleton, categories OPTIONS, push/subscribe OPTIONS+401, PageTransition clicks+reduced-motion, seed orchestration, queries.ts buildFeedQuery refactor). Current actual coverage: 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements — all above the raised 80/80/70/80 floor.
-
-11. ~~**Update `MASTER_EXECUTION_PLAN.md` to v6.0**~~ (RESOLVED — Phase 20 / D2): MEP rewritten as v6.0 with 19 phases, 12 corrected specs, errata section. v5.1 + `next.md` archived with `.archived` suffix. See `MASTER_EXECUTION_PLAN.md` for the current authoritative blueprint.
-
-12. ~~**Address the Phase 19 deferred items**~~ (MOSTLY RESOLVED — Phase 20): sync `pnpm-lock.yaml` (verified in sync), raise coverage thresholds back to 80/80/70/80 (T7 done), implement full TRUSTED_PROXY_CIDR chain walking (F1 done — `walkXffChain` in `src/lib/network/getClientIp.ts`), OAuth account-linking UI flow (F2 done — `/account` page + `linkOAuthProvider` action), testcontainers integration test (F3 done — `pipeline.db-integration.test.ts` + `vitest.integration.config.ts` + `test:integration` script). See "Phase 19 Deferred Items (Mostly RESOLVED — Phase 20)" in README.md for the full status.
-
 ---
 
 ## Phase 20: Post-Phase-19 Remediation Documentation Alignment — Lessons Learned

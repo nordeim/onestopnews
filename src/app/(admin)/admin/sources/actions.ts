@@ -60,6 +60,32 @@ export async function pauseSource(id: string) {
   return updated;
 }
 
+/**
+ * pauseSourceAction — FormData-bound wrapper for `pauseSource`.
+ *
+ * Phase 22 (N5 fix, audit Report 16): The admin sources table needed a UI
+ * button to call `pauseSource`. Server Actions invoked from `<form action>`
+ * receive a `FormData` argument, but `pauseSource(id: string)` takes a
+ * plain string. This wrapper extracts the `id` field from FormData and
+ * delegates to `pauseSource`.
+ *
+ * Used by: `src/features/sources/components/SourcesData.tsx`
+ *
+ * Symmetric `resumeSourceAction` is intentionally NOT provided here —
+ * `pauseSource` always sets `isActive: false`. A future Resume button
+ * should add a `resumeSource(id)` action that sets `isActive: true`.
+ * For now the UI button only renders "Pause" when the source is active
+ * (see SourcesData.tsx). The "Resume" label is rendered for paused
+ * sources as a no-op placeholder; a future Phase can wire it.
+ */
+export async function pauseSourceAction(formData: FormData): Promise<void> {
+  const id = formData.get("id");
+  if (typeof id !== "string" || id.length === 0) {
+    throw new Error("id field is required and must be a non-empty string");
+  }
+  await pauseSource(id);
+}
+
 export async function deleteSource(id: string) {
   await verifyAdminSession();
 

@@ -44,12 +44,30 @@ export async function POST(
   // unlimited BullMQ jobs by iterating distinct article UUIDs. Each user
   // gets 5 summarize requests per minute — sufficient for genuine use
   // while capping AI spend exposure.
-  const rateLimitResult = await checkRateLimit(
-    `api:summarize:${session.user.id}`,
-    SUMMARIZE_RATE_LIMIT_MAX,
-    SUMMARIZE_RATE_LIMIT_WINDOW_SEC,
-  );
-  if (!rateLimitResult.allowed) {
+  //
+  // Phase 22 (N1 fix, audit Report 16): Fail-OPEN on Redis outage, mirroring
+  // the pattern in /api/articles/route.ts (Phase 21 S7). When Redis is
+  // unreachable, checkRateLimit() throws. We catch this and fail OPEN
+  // (allow the request, log a warning) rather than returning 500. This is
+  // the standard pattern for rate limiting: a monitoring outage should not
+  // take down the API. The request proceeds without rate limiting — an
+  // acceptable degradation during Redis outages.
+  let rateLimitResult;
+  try {
+    rateLimitResult = await checkRateLimit(
+      `api:summarize:${session.user.id}`,
+      SUMMARIZE_RATE_LIMIT_MAX,
+      SUMMARIZE_RATE_LIMIT_WINDOW_SEC,
+    );
+  } catch (rateLimitError) {
+    console.warn(
+      "[API /summarize] Rate limiter unavailable (Redis down?), failing open:",
+      rateLimitError,
+    );
+    rateLimitResult = null;
+  }
+
+  if (rateLimitResult && !rateLimitResult.allowed) {
     const retryAfterSec = Math.max(
       1,
       Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),

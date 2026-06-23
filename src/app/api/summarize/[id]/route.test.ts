@@ -237,6 +237,61 @@ describe("POST /api/summarize/[id] — rate limiting (Phase 19 / Critical C2)", 
     });
     expect(mockUpdate).not.toHaveBeenCalled();
   });
+
+  // ── N1 fix (audit Report 16): Fail-open on Redis outage ─────────────────
+  // The /api/articles route already has this pattern (Phase 21 S7): when
+  // checkRateLimit() throws (Redis down), the route returns 200 with no
+  // rate-limit headers — a monitoring outage should NOT take down the API.
+  //
+  // /api/summarize/[id] was missing this pattern (asymmetric protection).
+  // When Redis is down, the throw propagated as an uncaught exception and
+  // the catch block at line 128 returned HTTP 500 — taking the AI summary
+  // endpoint down during Redis outages.
+  //
+  // Correct behavior: catch the throw, log a warning, proceed WITHOUT rate
+  // limiting (acceptable degradation during Redis outages). Return 202 on
+  // success — same as the normal happy path.
+  it("fails OPEN (returns 202) when checkRateLimit throws (Redis down)", async () => {
+    // Simulate Redis outage: checkRateLimit rejects
+    vi.mocked(checkRateLimit).mockRejectedValue(
+      new Error("Redis connection refused"),
+    );
+
+    const response = await POST(makeRequest(), {
+      params: Promise.resolve({ id: VALID_ARTICLE_ID }),
+    });
+
+    // Must NOT return 500 — Redis outage is a monitoring problem, not an
+    // application error. The request proceeds without rate limiting.
+    expect(response.status).not.toBe(500);
+    // Must NOT return 429 — we couldn't check the limit, so we can't claim
+    // the user is over it.
+    expect(response.status).not.toBe(429);
+    // Should succeed normally — the rate limiter was skipped.
+    expect(response.status).toBe(202);
+    const body = await response.json();
+    expect(body.jobId).toBe("job-1");
+    // The job must have been enqueued despite the rate limiter failure.
+    expect(mockAdd).toHaveBeenCalled();
+  });
+
+  it("logs a warning when checkRateLimit throws (visible in monitoring)", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.mocked(checkRateLimit).mockRejectedValue(
+      new Error("Redis connection refused"),
+    );
+
+    await POST(makeRequest(), {
+      params: Promise.resolve({ id: VALID_ARTICLE_ID }),
+    });
+
+    // The warning must be logged so monitoring can detect the Redis outage.
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/rate limit/i),
+      expect.any(Error),
+    );
+    warnSpy.mockRestore();
+  });
 });
 
 describe("POST /api/summarize/[id] — success path", () => {

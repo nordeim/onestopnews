@@ -9,6 +9,9 @@
  */
 
 import { getAllSources, getCategoryMap } from "@/features/sources/queries";
+// Phase 22 (N5 fix, audit Report 16): Import pauseSourceAction for the
+// Pause button in each active source row.
+import { pauseSourceAction } from "@/app/(admin)/admin/sources/actions";
 
 /** Source item as returned by the database query. */
 interface SourceRow {
@@ -20,7 +23,13 @@ interface SourceRow {
   failureCount: number;
 }
 
-function SourceTable({
+/**
+ * SourceTable — Pure presentational component for the sources list.
+ *
+ * Exported for direct unit testing (avoids needing to mock async DB queries
+ * that SourcesData wraps). Phase 22 (N5 fix, audit Report 16).
+ */
+export function SourceTable({
   sources,
   categoryMap,
 }: {
@@ -45,6 +54,9 @@ function SourceTable({
           </th>
           <th className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400">
             Failures
+          </th>
+          <th className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400">
+            Actions
           </th>
         </tr>
       </thead>
@@ -72,6 +84,39 @@ function SourceTable({
             </td>
             <td className="py-3 px-4 font-mono text-sm text-paper-400">
               {source.failureCount}
+            </td>
+            <td className="py-3 px-4">
+              {/* Phase 22 (N5 fix, audit Report 16): Wire pauseSource to UI.
+                  Previously the action existed in actions.ts and was tested
+                  in actions.test.ts but no UI button called it — making it
+                  dead code from the user's perspective. Now each active row
+                  has a Pause form button bound to the pauseSourceAction server
+                  action.
+
+                  Resume is intentionally NOT wired — that would require a
+                  symmetric `resumeSource` action which is out of scope for
+                  this fix. Paused sources show an em-dash placeholder so the
+                  column doesn't look broken. A future Phase can add the
+                  resume action and replace the placeholder with a Resume
+                  button. */}
+              {source.isActive ? (
+                <form action={pauseSourceAction}>
+                  <input type="hidden" name="id" value={source.id} />
+                  <button
+                    type="submit"
+                    className="font-mono text-[10px] uppercase tracking-widest text-paper-300 hover:text-dispatch-ember transition-colors"
+                  >
+                    Pause
+                  </button>
+                </form>
+              ) : (
+                <span
+                  className="font-mono text-[10px] uppercase tracking-widest text-paper-700"
+                  aria-label="No action available for paused sources"
+                >
+                  —
+                </span>
+              )}
             </td>
           </tr>
         ))}

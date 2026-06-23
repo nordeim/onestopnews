@@ -72,14 +72,26 @@ jobs:
           version: 9
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - name: Security Audit (S6)
+      - name: Security Audit (S6) — hard gate (Phase 22 / F4 fix)
         # S6 fix: Run pnpm audit to catch known vulnerabilities in dependencies.
         # Uses --audit-level=high to only fail on high/critical severity.
         # Production dependencies (--prod) are checked; dev dependencies are
-        # excluded since they don't ship to production. The audit step is
-        # non-blocking initially (|| true) — once the team is confident in
-        # the dependency tree, remove the || true to make it a hard gate.
-        run: pnpm audit --audit-level=high --prod || true
+        # excluded since they don't ship to production.
+        #
+        # Phase 22 (F4 fix, audit Report 16): The `|| true` was removed — the
+        # audit is now a HARD GATE that fails CI on any new high/critical
+        # vulnerability. This was deferred in Phase 21 S6 pending verification
+        # of the dependency tree. After H2 mitigation (cheerio>undici override
+        # to ^8.5.0), the audit now reports only 1 moderate vuln — well below
+        # the --audit-level=high threshold. The gate will fail if any new
+        # high/critical CVEs are introduced.
+        #
+        # If a new high/critical vuln is reported:
+        #   1. Investigate the affected package (pnpm audit --prod for full list)
+        #   2. Apply an override in package.json pnpm.overrides OR upgrade
+        #   3. If no fix is available, document the risk in AGENTS.md and
+        #      temporarily re-add `|| true` with a TODO + remediation date
+        run: pnpm audit --audit-level=high --prod
       - name: Check Formatting
         run: pnpm run format:check
       - name: Run Linter

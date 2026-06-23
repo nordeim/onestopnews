@@ -104,15 +104,24 @@ const nextConfig: NextConfig = {
             value: "max-age=63072000; includeSubDomains; preload",
           },
           // Content-Security-Policy — restricts resource loading to trusted
-          // sources. 'unsafe-eval' was removed (no code in src/ uses eval()
-          // or new Function()). 'unsafe-inline' remains as a transitional
-          // measure for Next.js inline scripts; production should migrate
-          // to nonce-based CSP via Next.js 16's headers() nonce pattern.
+          // sources.
+          //
+          // Phase 22 (H1 fix, audit Report 16): 'unsafe-eval' has been
+          // REMOVED from script-src. No code in src/ uses eval() or
+          // new Function() (verified by grep). The previous claim of
+          // removal in Phase 21 S4 was incorrect — only the comment was
+          // updated while the CSP string still contained the directive.
+          // A regression test in next.config.test.ts now locks this in.
+          //
+          // 'unsafe-inline' remains as a transitional measure for Next.js
+          // inline scripts + Tailwind runtime. Production should migrate
+          // to nonce-based CSP via Next.js 16's headers() nonce pattern
+          // (Phase 21 R2).
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https: data:",
               "font-src 'self' data:",
