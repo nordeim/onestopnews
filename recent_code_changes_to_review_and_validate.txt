@@ -1,74 +1,2426 @@
-diff --git a/src/app/api/admin/route.ts b/src/app/api/admin/route.ts
-deleted file mode 100644
-index 648d9f8..0000000
---- a/src/app/api/admin/route.ts
-+++ /dev/null
-@@ -1,26 +0,0 @@
--import { NextResponse } from "next/server";
--import { verifyAdminSession } from "@/lib/auth/dal";
--
--/**
-- * Admin API Route — Stub for Phase 4
-- *
-- * Uses DAL-layer `verifyAdminSession()` which:
-- * - Redirects unauthenticated users to `/sign-in`
-- * - Redirects non-admin users to `/`
-- * - Only proceeds if the user has role === "admin"
-- *
-- * TODO: Replace stub with actual admin endpoints in Phase 4.
-- */
--export async function GET() {
--  const user = await verifyAdminSession();
--
--  return NextResponse.json({
--    status: "ok",
--    message: "Admin API — stub endpoint for Phase 4",
--    user: {
--      id: user.id,
--      name: user.name,
--      role: user.role,
--    },
--  });
--}
-diff --git a/src/lib/auth/providers.ts b/src/lib/auth/providers.ts
-index e17fd84..ddd4987 100644
---- a/src/lib/auth/providers.ts
-+++ b/src/lib/auth/providers.ts
-@@ -15,6 +15,7 @@
- import Credentials from "next-auth/providers/credentials";
- import Google from "next-auth/providers/google";
- import GitHub from "next-auth/providers/github";
-+import bcrypt from "bcryptjs";
- import { z } from "zod";
- import { eq } from "drizzle-orm";
- import type { Provider } from "next-auth/providers/index";
-@@ -65,7 +66,6 @@ const credentialsProvider = Credentials({
-     if (!user) return null;
-     if (!user.passwordHash) return null;
+diff --git a/src/app/(admin)/admin/sources/actions.test.ts b/src/app/(admin)/admin/sources/actions.test.ts
+index 17b329b..cff9084 100644
+--- a/src/app/(admin)/admin/sources/actions.test.ts
++++ b/src/app/(admin)/admin/sources/actions.test.ts
+@@ -19,9 +19,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
+ // Drizzle's query builder chains: db.update().set().where().returning()
+ // and db.delete().where().returning(). We build self-referential mock objects
+ // so any chain depth works.
+-const mockReturning = vi.fn().mockResolvedValue([
+-  { id: "source-1", name: "Test Source" },
+-]);
++const mockReturning = vi
++  .fn()
++  .mockResolvedValue([{ id: "source-1", name: "Test Source" }]);
  
--    const bcrypt = await import("bcryptjs");
-     const isValid = await bcrypt.compare(password, user.passwordHash);
-     if (!isValid) return null;
+ function createChainableMock() {
+   const chain: Record<string, ReturnType<typeof vi.fn>> = {};
+diff --git a/src/app/(admin)/admin/sources/page.tsx b/src/app/(admin)/admin/sources/page.tsx
+index 55d0a65..127020e 100644
+--- a/src/app/(admin)/admin/sources/page.tsx
++++ b/src/app/(admin)/admin/sources/page.tsx
+@@ -16,9 +16,7 @@ export default function SourcesPage() {
+   return (
+     <div>
+       <header className="mb-8">
+-        <h1 className="font-editorial text-3xl text-paper-50">
+-          Sources
+-        </h1>
++        <h1 className="font-editorial text-3xl text-paper-50">Sources</h1>
+         <p className="mt-2 font-ui text-sm text-paper-300">
+           Manage RSS/Atom/JSON sources
+         </p>
+diff --git a/src/app/(admin)/layout.test.tsx b/src/app/(admin)/layout.test.tsx
+index 48d58fd..6f1873a 100644
+--- a/src/app/(admin)/layout.test.tsx
++++ b/src/app/(admin)/layout.test.tsx
+@@ -58,7 +58,7 @@ describe("(admin)/layout.tsx", () => {
+     const child = React.createElement("p", null, "Admin Content");
  
-diff --git a/src/lib/queue/index.ts b/src/lib/queue/index.ts
-index 17a4568..5a6c5bc 100644
---- a/src/lib/queue/index.ts
-+++ b/src/lib/queue/index.ts
-@@ -22,7 +22,7 @@ function getRedisUrlParts() {
- export function createQueueConnection() {
-   return {
-     ...getRedisUrlParts(),
--    maxRetriesPerRequest: undefined as unknown as null,
-+    maxRetriesPerRequest: null,
-     enableOfflineQueue: false,
-   };
+     const { container } = render(
+-      React.createElement(AdminLayout, { children: child })
++      React.createElement(AdminLayout, { children: child }),
+     );
+ 
+     const main = container.querySelector("main#main-content");
+diff --git a/src/app/(public)/search/page.tsx b/src/app/(public)/search/page.tsx
+index ceefb6e..d852fab 100644
+--- a/src/app/(public)/search/page.tsx
++++ b/src/app/(public)/search/page.tsx
+@@ -20,11 +20,12 @@ interface SearchPageProps {
+ 
+ export default function SearchPage({ searchParams }: SearchPageProps) {
+   return (
+-    <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
++    <main
++      id="main-content"
++      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
++    >
+       <header className="mb-8">
+-        <h1 className="font-editorial text-3xl text-ink-900">
+-          Search News
+-        </h1>
++        <h1 className="font-editorial text-3xl text-ink-900">Search News</h1>
+         <p className="mt-2 font-ui text-sm text-ink-600">
+           Find articles across all topics
+         </p>
+diff --git a/src/app/api/articles/route.test.ts b/src/app/api/articles/route.test.ts
+index 4ec8ee8..5caf0ed 100644
+--- a/src/app/api/articles/route.test.ts
++++ b/src/app/api/articles/route.test.ts
+@@ -80,20 +80,20 @@ describe("GET /api/articles — cursor validation", () => {
+ 
+   it("returns 400 for cursor with impossible date (month 13)", async () => {
+     const response = await GET(
+-      makeRequest("/api/articles?cursor=2024-13-45T00:00:00Z")
++      makeRequest("/api/articles?cursor=2024-13-45T00:00:00Z"),
+     );
+     expect(response.status).toBe(400);
+   });
+ 
+   it("accepts valid ISO 8601 cursor", async () => {
+     const response = await GET(
+-      makeRequest("/api/articles?cursor=2024-06-01T00:00:00Z")
++      makeRequest("/api/articles?cursor=2024-06-01T00:00:00Z"),
+     );
+     expect(response.status).toBe(200);
+     expect(getFeedArticles).toHaveBeenCalledWith(
+       expect.objectContaining({
+         cursor: new Date("2024-06-01T00:00:00Z"),
+-      })
++      }),
+     );
+   });
+ 
+@@ -101,7 +101,7 @@ describe("GET /api/articles — cursor validation", () => {
+     const response = await GET(makeRequest("/api/articles"));
+     expect(response.status).toBe(200);
+     expect(getFeedArticles).toHaveBeenCalledWith(
+-      expect.objectContaining({ cursor: undefined })
++      expect.objectContaining({ cursor: undefined }),
+     );
+   });
+ });
+@@ -138,7 +138,7 @@ describe("GET /api/articles — rate limiting", () => {
+     expect(checkRateLimit).toHaveBeenCalledWith(
+       expect.stringContaining("203.0.113.42"),
+       expect.any(Number),
+-      expect.any(Number)
++      expect.any(Number),
+     );
+   });
+ 
+@@ -152,7 +152,7 @@ describe("GET /api/articles — rate limiting", () => {
+     expect(checkRateLimit).toHaveBeenCalledWith(
+       "api:articles:1.2.3.4",
+       expect.any(Number),
+-      expect.any(Number)
++      expect.any(Number),
+     );
+   });
+ 
+@@ -173,7 +173,7 @@ describe("GET /api/articles — rate limiting", () => {
+     expect(checkRateLimit).toHaveBeenCalledWith(
+       "api:articles:192.168.1.1",
+       expect.any(Number),
+-      expect.any(Number)
++      expect.any(Number),
+     );
+   });
+ 
+@@ -185,7 +185,7 @@ describe("GET /api/articles — rate limiting", () => {
+     expect(checkRateLimit).toHaveBeenCalledWith(
+       "api:articles:198.51.100.42",
+       expect.any(Number),
+-      expect.any(Number)
++      expect.any(Number),
+     );
+   });
+ 
+@@ -195,7 +195,7 @@ describe("GET /api/articles — rate limiting", () => {
+     expect(checkRateLimit).toHaveBeenCalledWith(
+       "api:articles:unknown",
+       expect.any(Number),
+-      expect.any(Number)
++      expect.any(Number),
+     );
+   });
+ 
+@@ -221,7 +221,7 @@ describe("OPTIONS /api/articles", () => {
+     expect(response.status).toBe(200);
+     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+     expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
+-      "GET"
++      "GET",
+     );
+   });
+ });
+diff --git a/src/app/api/categories/route.ts b/src/app/api/categories/route.ts
+index 71f825b..6f9dd69 100644
+--- a/src/app/api/categories/route.ts
++++ b/src/app/api/categories/route.ts
+@@ -37,13 +37,13 @@ export async function GET() {
+           ...CORS_HEADERS,
+           "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
+         },
+-      }
++      },
+     );
+   } catch (error) {
+     console.error("[API /categories] Error:", error);
+     return NextResponse.json(
+       { error: "Internal server error" },
+-      { status: 500, headers: CORS_HEADERS }
++      { status: 500, headers: CORS_HEADERS },
+     );
+   }
  }
-@@ -35,7 +35,7 @@ export function createQueueConnection() {
- export function createWorkerConnection() {
-   return {
-     ...getRedisUrlParts(),
--    maxRetriesPerRequest: null as unknown as null,
-+    maxRetriesPerRequest: null,
-     enableOfflineQueue: true,
-   };
+diff --git a/src/app/api/health/route.ts b/src/app/api/health/route.ts
+index 781af9f..0e48b3d 100644
+--- a/src/app/api/health/route.ts
++++ b/src/app/api/health/route.ts
+@@ -39,6 +39,6 @@ export async function GET() {
+       deps,
+       timestamp: new Date().toISOString(),
+     },
+-    { status: statusCode }
++    { status: statusCode },
+   );
  }
+diff --git a/src/app/api/push/subscribe/route.test.ts b/src/app/api/push/subscribe/route.test.ts
+index 25e0b69..63b2967 100644
+--- a/src/app/api/push/subscribe/route.test.ts
++++ b/src/app/api/push/subscribe/route.test.ts
+@@ -40,7 +40,12 @@ vi.mock("@/lib/security/encrypt", () => ({
+ // unauthenticated, letting the route return a proper 401.
+ vi.mock("@/lib/auth", () => ({
+   auth: vi.fn().mockResolvedValue({
+-    user: { id: "user-123", role: "reader", name: "Test User", email: "test@test.com" },
++    user: {
++      id: "user-123",
++      role: "reader",
++      name: "Test User",
++      email: "test@test.com",
++    },
+   }),
+ }));
+ 
+diff --git a/src/app/api/push/subscribe/route.ts b/src/app/api/push/subscribe/route.ts
+index 83187de..d382197 100644
+--- a/src/app/api/push/subscribe/route.ts
++++ b/src/app/api/push/subscribe/route.ts
+@@ -37,7 +37,7 @@ export async function POST(request: Request) {
+   if (!session?.user?.id) {
+     return NextResponse.json(
+       { error: "Unauthorized. Sign in to subscribe to push notifications." },
+-      { status: 401 }
++      { status: 401 },
+     );
+   }
+ 
+@@ -52,8 +52,11 @@ export async function POST(request: Request) {
+   const parseResult = subscriptionSchema.safeParse(body);
+   if (!parseResult.success) {
+     return NextResponse.json(
+-      { error: "Invalid subscription format", details: parseResult.error.issues },
+-      { status: 400 }
++      {
++        error: "Invalid subscription format",
++        details: parseResult.error.issues,
++      },
++      { status: 400 },
+     );
+   }
+ 
+@@ -86,7 +89,7 @@ export async function POST(request: Request) {
+     console.error("[Push Subscribe] Error:", error);
+     return NextResponse.json(
+       { error: "Failed to store subscription" },
+-      { status: 500 }
++      { status: 500 },
+     );
+   }
+ }
+diff --git a/src/app/globals.css b/src/app/globals.css
+index 1a43c76..44acab1 100644
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -33,10 +33,10 @@
+      variant used Tailwind's default amber-* / red-* palette because no
+      matching semantic tokens existed. These tokens align the warning and
+      danger states with the design system. */
+-  --color-dispatch-warning: #b45309;        /* amber-700 equivalent */
+-  --color-dispatch-warning-light: #fef3c7;  /* amber-50 equivalent */
+-  --color-dispatch-danger: #dc2626;         /* red-600 equivalent */
+-  --color-dispatch-danger-dark: #b91c1c;    /* red-700 equivalent */
++  --color-dispatch-warning: #b45309; /* amber-700 equivalent */
++  --color-dispatch-warning-light: #fef3c7; /* amber-50 equivalent */
++  --color-dispatch-danger: #dc2626; /* red-600 equivalent */
++  --color-dispatch-danger-dark: #b91c1c; /* red-700 equivalent */
+ 
+   /* ── Typography Stack ── */
+   --font-editorial: "Newsreader", Georgia, "Times New Roman", serif;
+@@ -99,14 +99,22 @@ body {
+ }
+ 
+ @keyframes scroll-progress {
+-  from { transform: scaleX(0); }
+-  to { transform: scaleX(1); }
++  from {
++    transform: scaleX(0);
++  }
++  to {
++    transform: scaleX(1);
++  }
+ }
+ 
+ /* ── Ticker Animation ───────────────────────────────────────────────── */
+ @keyframes ticker-scroll {
+-  0% { transform: translateX(0); }
+-  100% { transform: translateX(-50%); }
++  0% {
++    transform: translateX(0);
++  }
++  100% {
++    transform: translateX(-50%);
++  }
+ }
+ 
+ .ticker-track {
+@@ -119,8 +127,13 @@ body {
+ 
+ /* ── Live Pulse Dot ──────────────────────────────────────────────────── */
+ @keyframes pulse-dot {
+-  0%, 100% { opacity: 1; }
+-  50% { opacity: 0.25; }
++  0%,
++  100% {
++    opacity: 1;
++  }
++  50% {
++    opacity: 0.25;
++  }
+ }
+ 
+ .pulse-dot {
+@@ -129,8 +142,9 @@ body {
+ 
+ /* ── Story Card (PRD §4.3: CSS Subgrid) ─────────────────────────────── */
+ .story-card {
+-  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+-              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
++  transition:
++    background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
++    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+ }
+ 
+ .story-card:hover {
+@@ -141,7 +155,11 @@ body {
+ /* ── Nutrition Label (PRD §4.4) ────────────────────────────────────── */
+ .nutrition-label {
+   border-left: 3px solid var(--color-dispatch-ember);
+-  background: linear-gradient(to right, var(--color-paper-100) 0%, var(--color-paper-50) 100%);
++  background: linear-gradient(
++    to right,
++    var(--color-paper-100) 0%,
++    var(--color-paper-50) 100%
++  );
+ }
+ 
+ /* ── Citation Refs ──────────────────────────────────────────────────── */
+@@ -157,9 +175,10 @@ body {
+ 
+ /* ── Buttons (Tactile Maximalism) ───────────────────────────────────── */
+ .btn-ember {
+-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+-              background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+-              box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
++  transition:
++    transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
++    background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
++    box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+ }
+ 
+ .btn-ember:hover {
+@@ -179,7 +198,7 @@ body {
+ }
+ 
+ .link-underline::after {
+-  content: '';
++  content: "";
+   position: absolute;
+   bottom: -2px;
+   left: 0;
+@@ -198,7 +217,9 @@ body {
+   background: rgba(255, 255, 255, 0.06);
+   border: 1px solid rgba(255, 255, 255, 0.15);
+   color: var(--color-paper-50);
+-  transition: border-color 150ms ease, background-color 150ms ease;
++  transition:
++    border-color 150ms ease,
++    background-color 150ms ease;
+ }
+ 
+ .cta-input::placeholder {
+@@ -208,7 +229,7 @@ body {
+ .cta-input:focus {
+   outline: none;
+   border-color: var(--color-dispatch-ember);
+-  background: rgba(255, 255, 255, 0.10);
++  background: rgba(255, 255, 255, 0.1);
+ }
+ 
+ /* ── Scrollbar Styling ───────────────────────────────────────────────── */
+@@ -269,12 +290,20 @@ html {
+ 
+ /* ── Accordion Animations (Radix) ───────────────────────────────────── */
+ @keyframes slideDown {
+-  from { height: 0; }
+-  to   { height: var(--radix-accordion-content-height); }
++  from {
++    height: 0;
++  }
++  to {
++    height: var(--radix-accordion-content-height);
++  }
+ }
+ @keyframes slideUp {
+-  from { height: var(--radix-accordion-content-height); }
+-  to   { height: 0; }
++  from {
++    height: var(--radix-accordion-content-height);
++  }
++  to {
++    height: 0;
++  }
+ }
+ .animate-slideDown {
+   animation: slideDown 300ms cubic-bezier(0.87, 0, 0.13, 1);
+@@ -287,8 +316,9 @@ html {
+ .reveal {
+   opacity: 0;
+   transform: translateY(24px);
+-  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
+-              transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
++  transition:
++    opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
++    transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+ }
+ 
+ .reveal.visible {
+@@ -296,10 +326,18 @@ html {
+   transform: translateY(0);
+ }
+ 
+-.reveal-delay-1 { transition-delay: 80ms; }
+-.reveal-delay-2 { transition-delay: 160ms; }
+-.reveal-delay-3 { transition-delay: 240ms; }
+-.reveal-delay-4 { transition-delay: 320ms; }
++.reveal-delay-1 {
++  transition-delay: 80ms;
++}
++.reveal-delay-2 {
++  transition-delay: 160ms;
++}
++.reveal-delay-3 {
++  transition-delay: 240ms;
++}
++.reveal-delay-4 {
++  transition-delay: 320ms;
++}
+ 
+ /* ── Commitment Number (Large Editorial Numerals) ──────────────────── */
+ .commitment-number {
+diff --git a/src/app/sign-in/SignInClient.test.tsx b/src/app/sign-in/SignInClient.test.tsx
+index dfe03ed..c44f160 100644
+--- a/src/app/sign-in/SignInClient.test.tsx
++++ b/src/app/sign-in/SignInClient.test.tsx
+@@ -18,48 +18,48 @@ describe("SignInClient", () => {
+   it("renders a submit button for credentials form", () => {
+     render(<SignInClient showGoogle={false} showGithub={false} />);
+     expect(
+-      screen.getByRole("button", { name: /sign in with credentials/i })
++      screen.getByRole("button", { name: /sign in with credentials/i }),
+     ).toBeDefined();
+   });
+ 
+   it("does NOT render Google button when showGoogle is false", () => {
+     render(<SignInClient showGoogle={false} showGithub={false} />);
+     expect(
+-      screen.queryByRole("button", { name: /sign in with google/i })
++      screen.queryByRole("button", { name: /sign in with google/i }),
+     ).toBeNull();
+   });
+ 
+   it("renders Google button when showGoogle is true", () => {
+     render(<SignInClient showGoogle={true} showGithub={false} />);
+     expect(
+-      screen.getByRole("button", { name: /sign in with google/i })
++      screen.getByRole("button", { name: /sign in with google/i }),
+     ).toBeDefined();
+   });
+ 
+   it("does NOT render GitHub button when showGithub is false", () => {
+     render(<SignInClient showGoogle={false} showGithub={false} />);
+     expect(
+-      screen.queryByRole("button", { name: /sign in with github/i })
++      screen.queryByRole("button", { name: /sign in with github/i }),
+     ).toBeNull();
+   });
+ 
+   it("renders GitHub button when showGithub is true", () => {
+     render(<SignInClient showGoogle={false} showGithub={true} />);
+     expect(
+-      screen.getByRole("button", { name: /sign in with github/i })
++      screen.getByRole("button", { name: /sign in with github/i }),
+     ).toBeDefined();
+   });
+ 
+   it("renders all three sign-in options when both OAuth providers are enabled", () => {
+     render(<SignInClient showGoogle={true} showGithub={true} />);
+     expect(
+-      screen.getByRole("button", { name: /sign in with google/i })
++      screen.getByRole("button", { name: /sign in with google/i }),
+     ).toBeDefined();
+     expect(
+-      screen.getByRole("button", { name: /sign in with github/i })
++      screen.getByRole("button", { name: /sign in with github/i }),
+     ).toBeDefined();
+     expect(
+-      screen.getByRole("button", { name: /sign in with credentials/i })
++      screen.getByRole("button", { name: /sign in with credentials/i }),
+     ).toBeDefined();
+   });
+ 
+@@ -74,7 +74,9 @@ describe("SignInClient", () => {
+     // The skip-to-content link in layout.tsx targets #main-content.
+     // Every page template must render <main id="main-content"> for the
+     // skip link to have a valid target on that page.
+-    const { container } = render(<SignInClient showGoogle={false} showGithub={false} />);
++    const { container } = render(
++      <SignInClient showGoogle={false} showGithub={false} />,
++    );
+     const main = container.querySelector("main#main-content");
+     expect(main).not.toBeNull();
+   });
+diff --git a/src/app/sign-in/SignInClient.tsx b/src/app/sign-in/SignInClient.tsx
+index b1f328b..6889fcc 100644
+--- a/src/app/sign-in/SignInClient.tsx
++++ b/src/app/sign-in/SignInClient.tsx
+@@ -25,7 +25,10 @@ interface SignInClientProps {
+ 
+ export function SignInClient({ showGoogle, showGithub }: SignInClientProps) {
+   return (
+-    <main id="main-content" className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16">
++    <main
++      id="main-content"
++      className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4 py-16"
++    >
+       <div className="w-full max-w-md">
+         {/* Heading */}
+         <header className="text-center mb-10">
+@@ -118,7 +121,11 @@ export function SignInClient({ showGoogle, showGithub }: SignInClientProps) {
+         )}
+ 
+         {/* Credentials form (server action) */}
+-        <form action="/api/auth/callback/credentials" method="post" className="space-y-4">
++        <form
++          action="/api/auth/callback/credentials"
++          method="post"
++          className="space-y-4"
++        >
+           <div>
+             <label
+               htmlFor="email"
+diff --git a/src/app/topics/[category]/page.tsx b/src/app/topics/[category]/page.tsx
+index 387687c..119ed93 100644
+--- a/src/app/topics/[category]/page.tsx
++++ b/src/app/topics/[category]/page.tsx
+@@ -25,7 +25,10 @@ export default function CategoryPage({
+       <Suspense fallback={null}>
+         <Header />
+       </Suspense>
+-      <main id="main-content" className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
++      <main
++        id="main-content"
++        className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12"
++      >
+         <Suspense fallback={<FeedSkeleton />}>
+           <FeedData params={params} searchParams={searchParams} limit={6} />
+         </Suspense>
+diff --git a/src/domain/articles/normalize.test.ts b/src/domain/articles/normalize.test.ts
+index 6b6bcd9..de6b06b 100644
+--- a/src/domain/articles/normalize.test.ts
++++ b/src/domain/articles/normalize.test.ts
+@@ -23,7 +23,9 @@ describe("normalizeCanonicalUrl", () => {
+ 
+   it("preserves path and non-UTM query params", () => {
+     const url = "https://example.com/article?page=2";
+-    expect(normalizeCanonicalUrl(url)).toBe("https://example.com/article?page=2");
++    expect(normalizeCanonicalUrl(url)).toBe(
++      "https://example.com/article?page=2",
++    );
+   });
+ 
+   it("returns invalid URL as-is", () => {
+@@ -69,7 +71,9 @@ describe("hashContent", () => {
+     const body = "Test body content for hashing";
+     const date = new Date("2024-06-01T00:00:00Z");
+     const expectedData = `${title.trim()}|${body}|${date.toISOString()}`;
+-    const expected = createHash("sha256").update(expectedData, "utf8").digest("hex");
++    const expected = createHash("sha256")
++      .update(expectedData, "utf8")
++      .digest("hex");
+ 
+     expect(hashContent(title, body, date)).toBe(expected);
+   });
+diff --git a/src/domain/articles/normalize.ts b/src/domain/articles/normalize.ts
+index c67c312..73c64d8 100644
+--- a/src/domain/articles/normalize.ts
++++ b/src/domain/articles/normalize.ts
+@@ -60,7 +60,7 @@ export function normalizeCanonicalUrl(url: string): string {
+ export function hashContent(
+   title: string,
+   body: string | null | undefined,
+-  publishedAt: Date
++  publishedAt: Date,
+ ): string {
+   const data = `${title.trim()}|${body ?? ""}|${publishedAt.toISOString()}`;
+   return createHash("sha256").update(data, "utf8").digest("hex");
+diff --git a/src/domain/ranking/score.test.ts b/src/domain/ranking/score.test.ts
+index 96299a1..6ba9909 100644
+--- a/src/domain/ranking/score.test.ts
++++ b/src/domain/ranking/score.test.ts
+@@ -14,7 +14,8 @@ type SchemaContentAvailability =
+ // diverges from the schema-derived type. The `satisfies` clause enforces
+ // that the literal "full_text" is assignable to BOTH types — if either type
+ // narrows, this breaks.
+-const _typeCheck = "full_text" as ScoringInputs["contentAvailability"] satisfies SchemaContentAvailability;
++const _typeCheck =
++  "full_text" as ScoringInputs["contentAvailability"] satisfies SchemaContentAvailability;
+ void _typeCheck;
+ 
+ describe("calculateImportanceScore", () => {
+diff --git a/src/features/articles/components/ArticleData.tsx b/src/features/articles/components/ArticleData.tsx
+index ccca03a..3b98bbd 100644
+--- a/src/features/articles/components/ArticleData.tsx
++++ b/src/features/articles/components/ArticleData.tsx
+@@ -39,7 +39,10 @@ export async function ArticleData({ params }: ArticleDataProps) {
+     return (
+       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+         <div className="max-w-3xl mx-auto py-24 text-center">
+-          <span className="block w-1.5 h-1.5 rounded-full bg-dispatch-ember mx-auto mb-4" aria-hidden="true" />
++          <span
++            className="block w-1.5 h-1.5 rounded-full bg-dispatch-ember mx-auto mb-4"
++            aria-hidden="true"
++          />
+           <p className="font-mono text-[11px] uppercase tracking-widest text-ink-300 mb-2">
+             404
+           </p>
+@@ -47,7 +50,8 @@ export async function ArticleData({ params }: ArticleDataProps) {
+             Article not found
+           </h1>
+           <p className="font-ui text-sm text-ink-600 mb-8">
+-            The article you&apos;re looking for may have been removed or is no longer available.
++            The article you&apos;re looking for may have been removed or is no
++            longer available.
+           </p>
+           <Link
+             href="/"
+@@ -146,13 +150,17 @@ export async function ArticleData({ params }: ArticleDataProps) {
+           <SummaryPanel
+             articleId={article.id}
+             initialStatus={article.summaryStatus}
+-            summary={article.summary ? {
+-              summaryText: article.summary.summaryText,
+-              keyPoints: article.summary.keyPoints,
+-              sourcesCited: article.summary.sourcesCited,
+-              aiStatement: article.summary.aiStatement,
+-              coveragePercentage: article.summary.coveragePercentage,
+-            } : null}
++            summary={
++              article.summary
++                ? {
++                    summaryText: article.summary.summaryText,
++                    keyPoints: article.summary.keyPoints,
++                    sourcesCited: article.summary.sourcesCited,
++                    aiStatement: article.summary.aiStatement,
++                    coveragePercentage: article.summary.coveragePercentage,
++                  }
++                : null
++            }
+           />
+ 
+           {/* Back link */}
+diff --git a/src/features/articles/queries.test.ts b/src/features/articles/queries.test.ts
+index 83d4b7b..8c9333a 100644
+--- a/src/features/articles/queries.test.ts
++++ b/src/features/articles/queries.test.ts
+@@ -36,7 +36,11 @@ vi.mock("@/lib/db/schema", () => ({
+   articles: { id: "articles.id", publishedAt: "articles.published_at" },
+   sources: { id: "sources.id" },
+   categories: { id: "categories.id" },
+-  summaries: { id: "summaries.id", articleId: "summaries.article_id", status: "summaries.status" },
++  summaries: {
++    id: "summaries.id",
++    articleId: "summaries.article_id",
++    status: "summaries.status",
++  },
+ }));
+ 
+ vi.mock("drizzle-orm", () => ({
+diff --git a/src/features/articles/queries.ts b/src/features/articles/queries.ts
+index 3e8d997..4e428da 100644
+--- a/src/features/articles/queries.ts
++++ b/src/features/articles/queries.ts
+@@ -24,7 +24,7 @@ import type { ArticleWithSummary } from "@/domain/articles/types";
+  * @returns ArticleWithSummary if found, null otherwise
+  */
+ export async function getArticleWithSummary(
+-  id: string
++  id: string,
+ ): Promise<ArticleWithSummary | null> {
+   const rows = await db
+     .select({
+diff --git a/src/features/feed/components/ArticleCard.tsx b/src/features/feed/components/ArticleCard.tsx
+index edac02f..f7951ec 100644
+--- a/src/features/feed/components/ArticleCard.tsx
++++ b/src/features/feed/components/ArticleCard.tsx
+@@ -21,7 +21,6 @@ interface ArticleCardProps {
+  *   Feed queries MUST use getFeedArticles() which includes this JOIN.
+  */
+ export function ArticleCard({ article }: ArticleCardProps) {
+-
+   return (
+     <article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6 transition-colors duration-300 hover:bg-paper-100/50">
+       {/* ROW 1: Headline */}
+diff --git a/src/features/feed/components/FeedContainer.tsx b/src/features/feed/components/FeedContainer.tsx
+index b836944..92b4475 100644
+--- a/src/features/feed/components/FeedContainer.tsx
++++ b/src/features/feed/components/FeedContainer.tsx
+@@ -38,8 +38,11 @@ export function FeedContainer({
+   initialNextCursor,
+   initialHasMore,
+ }: FeedContainerProps) {
+-  const [articles, setArticles] = useState<ArticleWithSource[]>(initialArticles);
+-  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
++  const [articles, setArticles] =
++    useState<ArticleWithSource[]>(initialArticles);
++  const [nextCursor, setNextCursor] = useState<string | null>(
++    initialNextCursor,
++  );
+   const [hasMore, setHasMore] = useState<boolean>(initialHasMore);
+   const [isLoading, setIsLoading] = useState<boolean>(false);
+   const [error, setError] = useState<string | null>(null);
+diff --git a/src/features/feed/components/LeadStory.test.tsx b/src/features/feed/components/LeadStory.test.tsx
+index e7da969..bedaa45 100644
+--- a/src/features/feed/components/LeadStory.test.tsx
++++ b/src/features/feed/components/LeadStory.test.tsx
+@@ -23,4 +23,4 @@ describe("LeadStory", () => {
+     const link = container.querySelector("a[href='#ai-summary-demo']");
+     expect(link).toBeDefined();
+   });
+-});
+\ No newline at end of file
++});
+diff --git a/src/features/feed/components/LeadStory.tsx b/src/features/feed/components/LeadStory.tsx
+index f78355c..81d5388 100644
+--- a/src/features/feed/components/LeadStory.tsx
++++ b/src/features/feed/components/LeadStory.tsx
+@@ -8,7 +8,10 @@ export function LeadStory() {
+     <section aria-label="Lead story">
+       {/* Category label */}
+       <div className="flex items-center gap-3 mb-5">
+-        <span className="w-2.5 h-2.5 rounded-full bg-dispatch-slate" aria-hidden="true" />
++        <span
++          className="w-2.5 h-2.5 rounded-full bg-dispatch-slate"
++          aria-hidden="true"
++        />
+         <span className="font-mono text-[11px] cat-label text-dispatch-slate font-semibold">
+           Tech News / AI &amp; ML
+         </span>
+@@ -29,8 +32,13 @@ export function LeadStory() {
+             />
+             {/* Breaking badge */}
+             <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-dispatch-ember/95 px-2.5 py-1">
+-              <span className="w-1.5 h-1.5 rounded-full bg-white pulse-dot" aria-hidden="true" />
+-              <span className="font-mono text-[10px] text-white font-semibold cat-label">Breaking</span>
++              <span
++                className="w-1.5 h-1.5 rounded-full bg-white pulse-dot"
++                aria-hidden="true"
++              />
++              <span className="font-mono text-[10px] text-white font-semibold cat-label">
++                Breaking
++              </span>
+             </div>
+           </div>
+         </div>
+@@ -55,9 +63,10 @@ export function LeadStory() {
+           </div>
+ 
+           <p className="mt-5 text-ink-600 text-[15px] leading-relaxed">
+-            As the EU's AI Act enforcement framework enters its final legislative stage, the debate
+-            has shifted from technical alignment to geopolitical competition. Three major outlets now
+-            cover the rift between member states on enforcement timelines.
++            As the EU's AI Act enforcement framework enters its final
++            legislative stage, the debate has shifted from technical alignment
++            to geopolitical competition. Three major outlets now cover the rift
++            between member states on enforcement timelines.
+           </p>
+ 
+           <div className="mt-6 flex flex-wrap items-center gap-3">
+diff --git a/src/features/feed/components/LoadMoreButton.test.tsx b/src/features/feed/components/LoadMoreButton.test.tsx
+index 7a23b9b..1b0c12c 100644
+--- a/src/features/feed/components/LoadMoreButton.test.tsx
++++ b/src/features/feed/components/LoadMoreButton.test.tsx
+@@ -6,22 +6,14 @@ import { LoadMoreButton } from "./LoadMoreButton";
+ describe("LoadMoreButton", () => {
+   it("renders the button when hasMore is true", () => {
+     render(
+-      <LoadMoreButton
+-        hasMore={true}
+-        isLoading={false}
+-        onClick={vi.fn()}
+-      />
++      <LoadMoreButton hasMore={true} isLoading={false} onClick={vi.fn()} />,
+     );
+     expect(screen.getByRole("button", { name: /load more/i })).toBeDefined();
+   });
+ 
+   it("does not render the button when hasMore is false", () => {
+     const { container } = render(
+-      <LoadMoreButton
+-        hasMore={false}
+-        isLoading={false}
+-        onClick={vi.fn()}
+-      />
++      <LoadMoreButton hasMore={false} isLoading={false} onClick={vi.fn()} />,
+     );
+     expect(container.querySelector("button")).toBeNull();
+   });
+@@ -29,11 +21,7 @@ describe("LoadMoreButton", () => {
+   it("calls onClick when clicked", () => {
+     const onClick = vi.fn();
+     render(
+-      <LoadMoreButton
+-        hasMore={true}
+-        isLoading={false}
+-        onClick={onClick}
+-      />
++      <LoadMoreButton hasMore={true} isLoading={false} onClick={onClick} />,
+     );
+     fireEvent.click(screen.getByRole("button", { name: /load more/i }));
+     expect(onClick).toHaveBeenCalledTimes(1);
+@@ -42,11 +30,7 @@ describe("LoadMoreButton", () => {
+   it("shows loading state and disables button when isLoading is true", () => {
+     const onClick = vi.fn();
+     render(
+-      <LoadMoreButton
+-        hasMore={true}
+-        isLoading={true}
+-        onClick={onClick}
+-      />
++      <LoadMoreButton hasMore={true} isLoading={true} onClick={onClick} />,
+     );
+     const button = screen.getByRole("button");
+     expect(button.hasAttribute("disabled")).toBe(true);
+@@ -58,11 +42,7 @@ describe("LoadMoreButton", () => {
+   it("does not call onClick when already loading (defensive double-click guard)", () => {
+     const onClick = vi.fn();
+     render(
+-      <LoadMoreButton
+-        hasMore={true}
+-        isLoading={true}
+-        onClick={onClick}
+-      />
++      <LoadMoreButton hasMore={true} isLoading={true} onClick={onClick} />,
+     );
+     // Button is disabled, so clicks shouldn't fire
+     fireEvent.click(screen.getByRole("button"));
+diff --git a/src/features/search/actions.ts b/src/features/search/actions.ts
+index b0c40eb..f52b551 100644
+--- a/src/features/search/actions.ts
++++ b/src/features/search/actions.ts
+@@ -15,6 +15,8 @@ import type { SearchParams, SearchPage } from "./types";
+  *
+  * Called from client components. Delegates to queries.ts for actual DB access.
+  */
+-export async function searchArticlesAction(params: SearchParams): Promise<SearchPage> {
++export async function searchArticlesAction(
++  params: SearchParams,
++): Promise<SearchPage> {
+   return searchArticlesQuery(params);
+ }
+diff --git a/src/features/search/components/SearchBar.tsx b/src/features/search/components/SearchBar.tsx
+index 9f32276..3c6c6ba 100644
+--- a/src/features/search/components/SearchBar.tsx
++++ b/src/features/search/components/SearchBar.tsx
+@@ -17,7 +17,11 @@ interface SearchBarProps {
+   isLoading?: boolean;
+ }
+ 
+-export function SearchBar({ defaultValue = "", onSearch, isLoading = false }: SearchBarProps) {
++export function SearchBar({
++  defaultValue = "",
++  onSearch,
++  isLoading = false,
++}: SearchBarProps) {
+   const [query, setQuery] = useState(defaultValue);
+   const debouncedQuery = useDebounce(query, 300);
+   const inputRef = useRef<HTMLInputElement>(null);
+@@ -45,7 +49,11 @@ export function SearchBar({ defaultValue = "", onSearch, isLoading = false }: Se
+   }, []);
+ 
+   return (
+-    <div className="relative w-full max-w-2xl" role="search" aria-label="Search news articles">
++    <div
++      className="relative w-full max-w-2xl"
++      role="search"
++      aria-label="Search news articles"
++    >
+       <div className="relative">
+         <Search
+           className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-300"
+@@ -84,7 +92,11 @@ export function SearchBar({ defaultValue = "", onSearch, isLoading = false }: Se
+       </div>
+       <div className="mt-2 flex items-center gap-2">
+         <span className="font-mono text-[10px] text-ink-400">
+-          Press <kbd className="px-1.5 py-0.5 bg-paper-200 rounded-sm font-mono text-[10px]">⌘K</kbd> to focus
++          Press{" "}
++          <kbd className="px-1.5 py-0.5 bg-paper-200 rounded-sm font-mono text-[10px]">
++            ⌘K
++          </kbd>{" "}
++          to focus
+         </span>
+       </div>
+     </div>
+diff --git a/src/features/search/components/SearchData.tsx b/src/features/search/components/SearchData.tsx
+index cc78580..c181ebe 100644
+--- a/src/features/search/components/SearchData.tsx
++++ b/src/features/search/components/SearchData.tsx
+@@ -20,5 +20,10 @@ export async function SearchData({ searchParams }: SearchDataProps) {
+     ? await searchArticles({ query: q })
+     : { results: [], hasMore: false, nextCursor: null };
+ 
+-  return <SearchPageClient initialResults={initialResults.results} initialQuery={q} />;
++  return (
++    <SearchPageClient
++      initialResults={initialResults.results}
++      initialQuery={q}
++    />
++  );
+ }
+diff --git a/src/features/search/components/SearchSkeleton.tsx b/src/features/search/components/SearchSkeleton.tsx
+index edc401e..90012ba 100644
+--- a/src/features/search/components/SearchSkeleton.tsx
++++ b/src/features/search/components/SearchSkeleton.tsx
+@@ -6,7 +6,12 @@
+ 
+ export function SearchSkeleton() {
+   return (
+-    <div className="space-y-8" role="status" aria-label="Loading search results" aria-busy="true">
++    <div
++      className="space-y-8"
++      role="status"
++      aria-label="Loading search results"
++      aria-busy="true"
++    >
+       {/* SearchBar placeholder */}
+       <div className="h-12 bg-paper-200 rounded-lg animate-pulse" />
+ 
+diff --git a/src/features/sources/components/SourcesSkeleton.tsx b/src/features/sources/components/SourcesSkeleton.tsx
+index 15c5909..30b1b40 100644
+--- a/src/features/sources/components/SourcesSkeleton.tsx
++++ b/src/features/sources/components/SourcesSkeleton.tsx
+@@ -6,18 +6,25 @@
+ 
+ export function SourcesSkeleton() {
+   return (
+-    <div className="overflow-x-auto" role="status" aria-label="Loading sources" aria-busy="true">
++    <div
++      className="overflow-x-auto"
++      role="status"
++      aria-label="Loading sources"
++      aria-busy="true"
++    >
+       <table className="w-full text-left">
+         <thead>
+           <tr className="border-b border-ink-700">
+-            {["Name", "Feed URL", "Category", "Status", "Failures"].map((header) => (
+-              <th
+-                key={header}
+-                className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400"
+-              >
+-                {header}
+-              </th>
+-            ))}
++            {["Name", "Feed URL", "Category", "Status", "Failures"].map(
++              (header) => (
++                <th
++                  key={header}
++                  className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400"
++                >
++                  {header}
++                </th>
++              ),
++            )}
+           </tr>
+         </thead>
+         <tbody>
+diff --git a/src/features/summaries/components/DisclosureBadge.test.tsx b/src/features/summaries/components/DisclosureBadge.test.tsx
+index c426d77..8610783 100644
+--- a/src/features/summaries/components/DisclosureBadge.test.tsx
++++ b/src/features/summaries/components/DisclosureBadge.test.tsx
+@@ -31,7 +31,14 @@ describe("DisclosureBadge", () => {
+ 
+   it("calls onClick when clicked", () => {
+     let clicked = false;
+-    render(<DisclosureBadge status="ok" onClick={() => { clicked = true; }} />);
++    render(
++      <DisclosureBadge
++        status="ok"
++        onClick={() => {
++          clicked = true;
++        }}
++      />,
++    );
+     screen.getByRole("button").click();
+     expect(clicked).toBe(true);
+   });
+diff --git a/src/features/summaries/components/NutritionLabel.test.tsx b/src/features/summaries/components/NutritionLabel.test.tsx
+index 935d862..f424609 100644
+--- a/src/features/summaries/components/NutritionLabel.test.tsx
++++ b/src/features/summaries/components/NutritionLabel.test.tsx
+@@ -47,7 +47,7 @@ describe("NutritionLabel", () => {
+   it("renders aria-label for accessibility", () => {
+     render(<NutritionLabel summary={mockSummary} />);
+     expect(
+-      screen.getByLabelText("AI-generated summary transparency label")
++      screen.getByLabelText("AI-generated summary transparency label"),
+     ).toBeDefined();
+   });
+ });
+diff --git a/src/features/summaries/components/NutritionLabel.tsx b/src/features/summaries/components/NutritionLabel.tsx
+index 5910618..e9c24e4 100644
+--- a/src/features/summaries/components/NutritionLabel.tsx
++++ b/src/features/summaries/components/NutritionLabel.tsx
+@@ -21,7 +21,10 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
+     >
+       {/* Header */}
+       <div className="mb-4 flex items-center gap-2">
+-        <span className="h-2 w-2 rounded-full bg-dispatch-ember" aria-hidden="true" />
++        <span
++          className="h-2 w-2 rounded-full bg-dispatch-ember"
++          aria-hidden="true"
++        />
+         <span className="font-mono text-[10px] uppercase tracking-widest text-ink-300">
+           AI-Generated Summary
+         </span>
+@@ -49,7 +52,9 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
+         <ul className="space-y-2">
+           {summary.sourcesCited.map((source, index) => (
+             <li key={index} className="flex items-start gap-2">
+-              <span className="font-mono text-xs text-ink-300">[{index + 1}]</span>
++              <span className="font-mono text-xs text-ink-300">
++                [{index + 1}]
++              </span>
+               <a
+                 href={source.url}
+                 target="_blank"
+@@ -79,7 +84,9 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
+       </div>
+ 
+       {/* AI Statement */}
+-      <p className="mt-2 font-mono text-[10px] text-ink-300">{summary.aiStatement}</p>
++      <p className="mt-2 font-mono text-[10px] text-ink-300">
++        {summary.aiStatement}
++      </p>
+     </aside>
+   );
+ }
+diff --git a/src/features/summaries/components/NutritionLabelDemo.test.tsx b/src/features/summaries/components/NutritionLabelDemo.test.tsx
+index b0f74bd..24b6610 100644
+--- a/src/features/summaries/components/NutritionLabelDemo.test.tsx
++++ b/src/features/summaries/components/NutritionLabelDemo.test.tsx
+@@ -5,7 +5,9 @@ import { NutritionLabelDemo } from "./NutritionLabelDemo";
+ describe("NutritionLabelDemo", () => {
+   it("renders the nutrition label section", () => {
+     const { container } = render(<NutritionLabelDemo />);
+-    expect(container.querySelector("[data-testid='nutrition-label-demo']")).toBeDefined();
++    expect(
++      container.querySelector("[data-testid='nutrition-label-demo']"),
++    ).toBeDefined();
+   });
+ 
+   it("displays the model name", () => {
+@@ -17,4 +19,4 @@ describe("NutritionLabelDemo", () => {
+     const { container } = render(<NutritionLabelDemo />);
+     expect(container.textContent).toContain("87%");
+   });
+-});
+\ No newline at end of file
++});
+diff --git a/src/features/summaries/components/NutritionLabelDemo.tsx b/src/features/summaries/components/NutritionLabelDemo.tsx
+index c1300d3..6d32122 100644
+--- a/src/features/summaries/components/NutritionLabelDemo.tsx
++++ b/src/features/summaries/components/NutritionLabelDemo.tsx
+@@ -15,13 +15,13 @@ export function NutritionLabelDemo() {
+               AI Summary Nutrition Label
+             </h2>
+             <p className="text-[15px] leading-relaxed text-ink-600 mb-6">
+-              Every AI summary comes with a Nutrition Label — a transparent breakdown of the model,
+-              data sources, and confidence levels. We believe you have the right to know how your
+-              news was summarised.
++              Every AI summary comes with a Nutrition Label — a transparent
++              breakdown of the model, data sources, and confidence levels. We
++              believe you have the right to know how your news was summarised.
+             </p>
+             <p className="text-[15px] leading-relaxed text-ink-600 mb-8">
+-              This is our response to EU AI Act Article 50: mandatory AI provenance disclosure at
+-              the point of generation.
++              This is our response to EU AI Act Article 50: mandatory AI
++              provenance disclosure at the point of generation.
+             </p>
+             <div className="flex flex-wrap gap-2">
+               <span className="inline-flex items-center px-2.5 py-1 bg-dispatch-ember/10 text-dispatch-ember font-mono text-[11px] font-semibold cat-label">
+@@ -39,34 +39,50 @@ export function NutritionLabelDemo() {
+               {/* Header */}
+               <div className="flex items-center justify-between mb-6 pb-4 border-b border-paper-200">
+                 <div>
+-                  <h3 className="font-editorial text-xl text-ink-900">Nutrition Label</h3>
++                  <h3 className="font-editorial text-xl text-ink-900">
++                    Nutrition Label
++                  </h3>
+                   <p className="font-mono text-[10px] text-ink-400 mt-1 cat-label">
+                     Generated: 10 Jun 2026, 14:30 SGT
+                   </p>
+                 </div>
+                 <div className="text-right">
+-                  <span className="text-dispatch-ember font-bold font-mono text-sm">A-</span>
+-                  <p className="font-mono text-[10px] text-ink-400 cat-label">Overall Grade</p>
++                  <span className="text-dispatch-ember font-bold font-mono text-sm">
++                    A-
++                  </span>
++                  <p className="font-mono text-[10px] text-ink-400 cat-label">
++                    Overall Grade
++                  </p>
+                 </div>
+               </div>
+ 
+               {/* Model Info */}
+               <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                 <div>
+-                  <p className="font-mono text-[10px] text-ink-400 cat-label mb-1">Model</p>
++                  <p className="font-mono text-[10px] text-ink-400 cat-label mb-1">
++                    Model
++                  </p>
+                   <p className="text-ink-900 font-medium">claude-3-5-sonnet</p>
+                 </div>
+                 <div>
+-                  <p className="font-mono text-[10px] text-ink-400 cat-label mb-1">Temperature</p>
+-                  <p className="text-ink-900 font-medium">0.25 (Conservative)</p>
++                  <p className="font-mono text-[10px] text-ink-400 cat-label mb-1">
++                    Temperature
++                  </p>
++                  <p className="text-ink-900 font-medium">
++                    0.25 (Conservative)
++                  </p>
+                 </div>
+               </div>
+ 
+               {/* Coverage Bar */}
+               <div className="mb-6">
+                 <div className="flex items-center justify-between mb-2">
+-                  <span className="font-mono text-[10px] text-ink-400 cat-label">Source Coverage</span>
+-                  <span className="font-mono text-sm font-semibold text-ink-900">87%</span>
++                  <span className="font-mono text-[10px] text-ink-400 cat-label">
++                    Source Coverage
++                  </span>
++                  <span className="font-mono text-sm font-semibold text-ink-900">
++                    87%
++                  </span>
+                 </div>
+                 <div className="w-full bg-paper-200 rounded-full h-4">
+                   <div
+@@ -82,18 +98,32 @@ export function NutritionLabelDemo() {
+ 
+               {/* Citations */}
+               <div className="space-y-2">
+-                <p className="font-mono text-[10px] text-ink-400 cat-label mb-2">Sources Cited</p>
++                <p className="font-mono text-[10px] text-ink-400 cat-label mb-2">
++                  Sources Cited
++                </p>
+                 {[
+-                  { rank: "A", source: "Reuters", url: "reuters.com/2026/ai-act" },
++                  {
++                    rank: "A",
++                    source: "Reuters",
++                    url: "reuters.com/2026/ai-act",
++                  },
+                   { rank: "A", source: "AP", url: "apnews.com/2026/ai-act" },
+-                  { rank: "B", source: "Politico EU", url: "politico.eu/2026/ai-act" },
++                  {
++                    rank: "B",
++                    source: "Politico EU",
++                    url: "politico.eu/2026/ai-act",
++                  },
+                 ].map((c) => (
+                   <div key={c.url} className="flex items-center gap-3 py-1.5">
+                     <span className="w-6 h-6 rounded-full bg-dispatch-sage/10 flex items-center justify-center text-dispatch-sage font-mono text-xs font-bold">
+                       {c.rank}
+                     </span>
+-                    <span className="text-sm text-ink-900 font-medium">{c.source}</span>
+-                    <span className="text-xs text-ink-400 font-mono">{c.url}</span>
++                    <span className="text-sm text-ink-900 font-medium">
++                      {c.source}
++                    </span>
++                    <span className="text-xs text-ink-400 font-mono">
++                      {c.url}
++                    </span>
+                   </div>
+                 ))}
+               </div>
+diff --git a/src/features/summaries/components/SummariesSkeleton.tsx b/src/features/summaries/components/SummariesSkeleton.tsx
+index 8399624..3ebf773 100644
+--- a/src/features/summaries/components/SummariesSkeleton.tsx
++++ b/src/features/summaries/components/SummariesSkeleton.tsx
+@@ -6,18 +6,25 @@
+ 
+ export function SummariesSkeleton() {
+   return (
+-    <div className="overflow-x-auto" role="status" aria-label="Loading summaries" aria-busy="true">
++    <div
++      className="overflow-x-auto"
++      role="status"
++      aria-label="Loading summaries"
++      aria-busy="true"
++    >
+       <table className="w-full text-left">
+         <thead>
+           <tr className="border-b border-ink-700">
+-            {["Article", "Flag Reason", "Model", "Generated", "Actions"].map((header) => (
+-              <th
+-                key={header}
+-                className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400"
+-              >
+-                {header}
+-              </th>
+-            ))}
++            {["Article", "Flag Reason", "Model", "Generated", "Actions"].map(
++              (header) => (
++                <th
++                  key={header}
++                  className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400"
++                >
++                  {header}
++                </th>
++              ),
++            )}
+           </tr>
+         </thead>
+         <tbody>
+diff --git a/src/features/summaries/lib/summariseSchema.test.ts b/src/features/summaries/lib/summariseSchema.test.ts
+index 3f7ae84..d8c89c2 100644
+--- a/src/features/summaries/lib/summariseSchema.test.ts
++++ b/src/features/summaries/lib/summariseSchema.test.ts
+@@ -13,7 +13,7 @@ describe("sourceCitationSchema", () => {
+ 
+   it("rejects invalid URL", () => {
+     expect(() =>
+-      sourceCitationSchema.parse({ url: "not-a-url", title: "Test" })
++      sourceCitationSchema.parse({ url: "not-a-url", title: "Test" }),
+     ).toThrow();
+   });
+ 
+@@ -22,7 +22,7 @@ describe("sourceCitationSchema", () => {
+       sourceCitationSchema.parse({
+         url: "https://example.com",
+         title: "",
+-      })
++      }),
+     ).toThrow();
+   });
+ });
+diff --git a/src/features/summaries/lib/summariseSchema.ts b/src/features/summaries/lib/summariseSchema.ts
+index 1d962c5..8c269fd 100644
+--- a/src/features/summaries/lib/summariseSchema.ts
++++ b/src/features/summaries/lib/summariseSchema.ts
+@@ -74,8 +74,10 @@ export type SummarisationOutput = z.infer<typeof summarisationOutputSchema>;
+  * Pure function — no side effects.
+  */
+ export function validateSummarisationOutput(
+-  raw: unknown
+-): { success: true; data: SummarisationOutput } | { success: false; error: string } {
++  raw: unknown,
++):
++  | { success: true; data: SummarisationOutput }
++  | { success: false; error: string } {
+   const result = summarisationOutputSchema.safeParse(raw);
+   if (result.success) {
+     return { success: true, data: result.data };
+diff --git a/src/lib/ai/provenance.ts b/src/lib/ai/provenance.ts
+index 6495609..8390e9e 100644
+--- a/src/lib/ai/provenance.ts
++++ b/src/lib/ai/provenance.ts
+@@ -41,7 +41,7 @@ export interface ProvenanceResult {
+  * Pure function — no side effects.
+  */
+ export function generateProvenanceMetadata(
+-  input: ProvenanceInput
++  input: ProvenanceInput,
+ ): ProvenanceResult {
+   return {
+     jsonLd: generateJsonLd(input),
+diff --git a/src/lib/env/index.test.ts b/src/lib/env/index.test.ts
+index 1a1b406..a2ea33f 100644
+--- a/src/lib/env/index.test.ts
++++ b/src/lib/env/index.test.ts
+@@ -120,7 +120,8 @@ describe("envSchema — AUTH_SECRET weak-value rejection (S8)", () => {
+   it("accepts a strong random AUTH_SECRET in production (64 chars, not in blocklist)", () => {
+     const result = envSchema.safeParse({
+       ...BASE_REQUIRED,
+-      AUTH_SECRET: "k7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sTk7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sT",
++      AUTH_SECRET:
++        "k7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sTk7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sT",
+       NODE_ENV: "production",
+     });
+     expect(result.success).toBe(true);
+diff --git a/src/lib/env/index.ts b/src/lib/env/index.ts
+index 27d011e..5d98b05 100644
+--- a/src/lib/env/index.ts
++++ b/src/lib/env/index.ts
+@@ -6,128 +6,133 @@ import { z } from "zod";
+  * This ensures the app fails fast with a clear error if any required
+  * variable is missing or invalid.
+  */
+-export const envSchema = z.object({
+-  // ── Database ────────────────────────────────────────────────────────────
+-  DATABASE_URL: z
+-    .string()
+-    .min(1, "DATABASE_URL is required")
+-    .refine(
+-      (val) => val.startsWith("postgres://") || val.startsWith("postgresql://"),
+-      "DATABASE_URL must start with postgres:// or postgresql://",
+-    ),
+-
+-  // ── Redis (BullMQ) ──────────────────────────────────────────────────────
+-  REDIS_URL: z
+-    .string()
+-    .min(1, "REDIS_URL is required")
+-    .refine(
+-      (val) => val.startsWith("redis://"),
+-      "REDIS_URL must start with redis://",
+-    ),
+-
+-  // ── Auth.js ─────────────────────────────────────────────────────────────
+-  // S8 fix: AUTH_SECRET uses a basic min(32) check here. The production-only
+-  // weak-value rejection is enforced via superRefine below (which has access
+-  // to the parsed NODE_ENV value, not process.env.NODE_ENV).
+-  AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
+-  AUTH_URL: z.string().min(1, "AUTH_URL is required"),
+-
+-  // ── AI Providers ────────────────────────────────────────────────────────
+-  ANTHROPIC_API_KEY: z
+-    .string()
+-    .min(1, "ANTHROPIC_API_KEY is required")
+-    .refine(
+-      (val) => val.startsWith("sk-ant-"),
+-      "ANTHROPIC_API_KEY must start with sk-ant-",
+-    ),
+-  OPENAI_API_KEY: z
+-    .string()
+-    .min(1, "OPENAI_API_KEY is required")
+-    .refine(
+-      (val) => val.startsWith("sk-"),
+-      "OPENAI_API_KEY must start with sk-",
+-    ),
+-
+-  // ── Push Notifications ──────────────────────────────────────────────────
+-  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
+-  VAPID_PRIVATE_KEY: z.string().min(1),
+-  VAPID_SUBJECT: z.string().min(1),
+-
+-  // ── Push Key Encryption ─────────────────────────────────────────────────
+-  PUSH_KEY_ENCRYPTION_KEY: z
+-    .string()
+-    .length(64, "PUSH_KEY_ENCRYPTION_KEY must be exactly 64 hex characters")
+-    .refine(
+-      (val) => /^[0-9a-fA-F]{64}$/.test(val),
+-      "PUSH_KEY_ENCRYPTION_KEY must be 64 hex characters",
+-    ),
+-
+-  // ── OAuth Providers (optional) ──────────────────────────────────────────
+-  // When both CLIENT_ID and CLIENT_SECRET for a given provider are present,
+-  // the provider is enabled in src/lib/auth/providers.ts. When absent, the
+-  // app falls back to Credentials-only auth (backward compat).
+-  GOOGLE_CLIENT_ID: z.string().optional(),
+-  GOOGLE_CLIENT_SECRET: z.string().optional(),
+-  GITHUB_CLIENT_ID: z.string().optional(),
+-  GITHUB_CLIENT_SECRET: z.string().optional(),
+-
+-  // ── Trusted Proxy (optional) ────────────────────────────────────────────
+-  // When set to "true", the rate limiter (src/lib/rateLimit.ts consumer
+-  // in /api/articles) uses the RIGHTMOST IP from x-forwarded-for — the
+-  // trusted proxy's view of the client. This prevents IP spoofing behind
+-  // a CDN/reverse proxy. Default (unset) uses the leftmost IP, which is
+-  // spoofable but acceptable for direct-exposure deployments.
+-  // The string is intentionally permissive (z.string().optional()) rather
+-  // than a boolean enum so any truthy string can be set; the route handler
+-  // checks === "true" specifically.
+-  TRUSTED_PROXY: z.string().optional(),
+-
+-  // ── Trusted Proxy CIDRs (optional, Phase 19 / M2) ──────────────────────
+-  // Comma-separated list of trusted proxy CIDRs (e.g., "10.0.0.0/8,172.16.0.0/12").
+-  // When TRUSTED_PROXY=true AND TRUSTED_PROXY_CIDRS is set, the rate limiter
+-  // walks the x-forwarded-for chain from the right, skipping IPs that belong
+-  // to a trusted CIDR, and returns the first untrusted IP. This is the gold
+-  // standard for proxy-chain IP extraction (vs. the binary toggle which
+-  // trusts the rightmost IP unconditionally).
+-  //
+-  // When TRUSTED_PROXY=true but TRUSTED_PROXY_CIDRS is unset, falls back to
+-  // the simpler rightmost-IP behavior (the historical default).
+-  TRUSTED_PROXY_CIDRS: z.string().optional(),
+-
+-  // ── Node Environment ────────────────────────────────────────────────────
+-  NODE_ENV: z
+-    .enum(["development", "production", "test"])
+-    .default("development"),
+-}).superRefine((data, ctx) => {
+-  // S8 fix: In production, reject known-weak AUTH_SECRET values that are
+-  // committed to the public .env.example file or commonly used in dev.
+-  // This prevents accidental deployment with a publicly known secret
+-  // (which would allow JWT session forgery). In development/test, weak
+-  // secrets are allowed for developer convenience.
+-  //
+-  // Uses superRefine (not per-field refine) because we need access to the
+-  // PARSED NODE_ENV value, not process.env.NODE_ENV (which may differ in
+-  // tests that call envSchema.safeParse() directly with a custom NODE_ENV).
+-  if (data.NODE_ENV === "production") {
+-    const weakPatterns = [
+-      /dev[-_ ]?secret/i,
+-      /test[-_ ]?(secret|ing)/i,
+-      /ci[-_ ]?dummy/i,
+-      /do[-_ ]?not[-_ ]?use/i,
+-      /not[-_ ]?for[-_ ]?production/i,
+-      /change[-_ ]?me/i,
+-      /placeholder/i,
+-    ];
+-    if (weakPatterns.some((pattern) => pattern.test(data.AUTH_SECRET))) {
+-      ctx.addIssue({
+-        code: z.ZodIssueCode.custom,
+-        path: ["AUTH_SECRET"],
+-        message:
+-          "AUTH_SECRET appears to be a known-weak/placeholder value. Generate a strong random secret with: openssl rand -base64 33",
+-      });
++export const envSchema = z
++  .object({
++    // ── Database ────────────────────────────────────────────────────────────
++    DATABASE_URL: z
++      .string()
++      .min(1, "DATABASE_URL is required")
++      .refine(
++        (val) =>
++          val.startsWith("postgres://") || val.startsWith("postgresql://"),
++        "DATABASE_URL must start with postgres:// or postgresql://",
++      ),
++
++    // ── Redis (BullMQ) ──────────────────────────────────────────────────────
++    REDIS_URL: z
++      .string()
++      .min(1, "REDIS_URL is required")
++      .refine(
++        (val) => val.startsWith("redis://"),
++        "REDIS_URL must start with redis://",
++      ),
++
++    // ── Auth.js ─────────────────────────────────────────────────────────────
++    // S8 fix: AUTH_SECRET uses a basic min(32) check here. The production-only
++    // weak-value rejection is enforced via superRefine below (which has access
++    // to the parsed NODE_ENV value, not process.env.NODE_ENV).
++    AUTH_SECRET: z
++      .string()
++      .min(32, "AUTH_SECRET must be at least 32 characters"),
++    AUTH_URL: z.string().min(1, "AUTH_URL is required"),
++
++    // ── AI Providers ────────────────────────────────────────────────────────
++    ANTHROPIC_API_KEY: z
++      .string()
++      .min(1, "ANTHROPIC_API_KEY is required")
++      .refine(
++        (val) => val.startsWith("sk-ant-"),
++        "ANTHROPIC_API_KEY must start with sk-ant-",
++      ),
++    OPENAI_API_KEY: z
++      .string()
++      .min(1, "OPENAI_API_KEY is required")
++      .refine(
++        (val) => val.startsWith("sk-"),
++        "OPENAI_API_KEY must start with sk-",
++      ),
++
++    // ── Push Notifications ──────────────────────────────────────────────────
++    NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1),
++    VAPID_PRIVATE_KEY: z.string().min(1),
++    VAPID_SUBJECT: z.string().min(1),
++
++    // ── Push Key Encryption ─────────────────────────────────────────────────
++    PUSH_KEY_ENCRYPTION_KEY: z
++      .string()
++      .length(64, "PUSH_KEY_ENCRYPTION_KEY must be exactly 64 hex characters")
++      .refine(
++        (val) => /^[0-9a-fA-F]{64}$/.test(val),
++        "PUSH_KEY_ENCRYPTION_KEY must be 64 hex characters",
++      ),
++
++    // ── OAuth Providers (optional) ──────────────────────────────────────────
++    // When both CLIENT_ID and CLIENT_SECRET for a given provider are present,
++    // the provider is enabled in src/lib/auth/providers.ts. When absent, the
++    // app falls back to Credentials-only auth (backward compat).
++    GOOGLE_CLIENT_ID: z.string().optional(),
++    GOOGLE_CLIENT_SECRET: z.string().optional(),
++    GITHUB_CLIENT_ID: z.string().optional(),
++    GITHUB_CLIENT_SECRET: z.string().optional(),
++
++    // ── Trusted Proxy (optional) ────────────────────────────────────────────
++    // When set to "true", the rate limiter (src/lib/rateLimit.ts consumer
++    // in /api/articles) uses the RIGHTMOST IP from x-forwarded-for — the
++    // trusted proxy's view of the client. This prevents IP spoofing behind
++    // a CDN/reverse proxy. Default (unset) uses the leftmost IP, which is
++    // spoofable but acceptable for direct-exposure deployments.
++    // The string is intentionally permissive (z.string().optional()) rather
++    // than a boolean enum so any truthy string can be set; the route handler
++    // checks === "true" specifically.
++    TRUSTED_PROXY: z.string().optional(),
++
++    // ── Trusted Proxy CIDRs (optional, Phase 19 / M2) ──────────────────────
++    // Comma-separated list of trusted proxy CIDRs (e.g., "10.0.0.0/8,172.16.0.0/12").
++    // When TRUSTED_PROXY=true AND TRUSTED_PROXY_CIDRS is set, the rate limiter
++    // walks the x-forwarded-for chain from the right, skipping IPs that belong
++    // to a trusted CIDR, and returns the first untrusted IP. This is the gold
++    // standard for proxy-chain IP extraction (vs. the binary toggle which
++    // trusts the rightmost IP unconditionally).
++    //
++    // When TRUSTED_PROXY=true but TRUSTED_PROXY_CIDRS is unset, falls back to
++    // the simpler rightmost-IP behavior (the historical default).
++    TRUSTED_PROXY_CIDRS: z.string().optional(),
++
++    // ── Node Environment ────────────────────────────────────────────────────
++    NODE_ENV: z
++      .enum(["development", "production", "test"])
++      .default("development"),
++  })
++  .superRefine((data, ctx) => {
++    // S8 fix: In production, reject known-weak AUTH_SECRET values that are
++    // committed to the public .env.example file or commonly used in dev.
++    // This prevents accidental deployment with a publicly known secret
++    // (which would allow JWT session forgery). In development/test, weak
++    // secrets are allowed for developer convenience.
++    //
++    // Uses superRefine (not per-field refine) because we need access to the
++    // PARSED NODE_ENV value, not process.env.NODE_ENV (which may differ in
++    // tests that call envSchema.safeParse() directly with a custom NODE_ENV).
++    if (data.NODE_ENV === "production") {
++      const weakPatterns = [
++        /dev[-_ ]?secret/i,
++        /test[-_ ]?(secret|ing)/i,
++        /ci[-_ ]?dummy/i,
++        /do[-_ ]?not[-_ ]?use/i,
++        /not[-_ ]?for[-_ ]?production/i,
++        /change[-_ ]?me/i,
++        /placeholder/i,
++      ];
++      if (weakPatterns.some((pattern) => pattern.test(data.AUTH_SECRET))) {
++        ctx.addIssue({
++          code: z.ZodIssueCode.custom,
++          path: ["AUTH_SECRET"],
++          message:
++            "AUTH_SECRET appears to be a known-weak/placeholder value. Generate a strong random secret with: openssl rand -base64 33",
++        });
++      }
+     }
+-  }
+-});
++  });
+ 
+ type Env = z.infer<typeof envSchema>;
+ 
+diff --git a/src/lib/rateLimit.test.ts b/src/lib/rateLimit.test.ts
+index 9bac722..04c5b54 100644
+--- a/src/lib/rateLimit.test.ts
++++ b/src/lib/rateLimit.test.ts
+@@ -70,7 +70,7 @@ describe("checkRateLimit", () => {
+     expect(mockRedis.expire).toHaveBeenCalledTimes(1);
+     expect(mockRedis.expire).toHaveBeenCalledWith(
+       expect.stringContaining("test-id"),
+-      60
++      60,
+     );
+   });
+ 
+@@ -111,7 +111,7 @@ describe("checkRateLimit", () => {
+     await checkRateLimit("api:articles:1.2.3.4", 20, 60);
+ 
+     expect(mockRedis.incr).toHaveBeenCalledWith(
+-      "ratelimit:api:articles:1.2.3.4"
++      "ratelimit:api:articles:1.2.3.4",
+     );
+   });
+ });
+diff --git a/src/lib/rateLimit.ts b/src/lib/rateLimit.ts
+index fd661cd..bafd037 100644
+--- a/src/lib/rateLimit.ts
++++ b/src/lib/rateLimit.ts
+@@ -54,7 +54,7 @@ function getRedis(): Redis {
+ export async function checkRateLimit(
+   identifier: string,
+   limit: number,
+-  windowSec: number
++  windowSec: number,
+ ): Promise<RateLimitResult> {
+   const redis = getRedis();
+   const key = `ratelimit:${identifier}`;
+diff --git a/src/shared/components/auth/AdminGuard.test.tsx b/src/shared/components/auth/AdminGuard.test.tsx
+index 8148110..6b80807 100644
+--- a/src/shared/components/auth/AdminGuard.test.tsx
++++ b/src/shared/components/auth/AdminGuard.test.tsx
+@@ -61,7 +61,9 @@ describe("AdminGuard", () => {
+     });
+ 
+     const { AdminGuard } = await import("./AdminGuard");
+-    await AdminGuard({ children: React.createElement("p", null, "Should Not Render") });
++    await AdminGuard({
++      children: React.createElement("p", null, "Should Not Render"),
++    });
+     expect(mockRedirect).toHaveBeenCalledWith("/");
+   });
+ 
+@@ -75,7 +77,9 @@ describe("AdminGuard", () => {
+     });
+ 
+     const { AdminGuard } = await import("./AdminGuard");
+-    await AdminGuard({ children: React.createElement("p", null, "Should Not Render") });
++    await AdminGuard({
++      children: React.createElement("p", null, "Should Not Render"),
++    });
+     expect(mockRedirect).toHaveBeenCalledWith("/sign-in");
+   });
+ 
+diff --git a/src/shared/components/auth/AdminGuard.tsx b/src/shared/components/auth/AdminGuard.tsx
+index ade96d6..141dbae 100644
+--- a/src/shared/components/auth/AdminGuard.tsx
++++ b/src/shared/components/auth/AdminGuard.tsx
+@@ -38,7 +38,9 @@ export interface AdminGuardProps {
+   children: React.ReactNode;
+ }
+ 
+-export async function AdminGuard({ children }: AdminGuardProps): Promise<React.ReactElement> {
++export async function AdminGuard({
++  children,
++}: AdminGuardProps): Promise<React.ReactElement> {
+   // verifyAdminSession() redirects internally on failure; if it returns,
+   // the user is an admin and we can render the children.
+   await verifyAdminSession();
+diff --git a/src/shared/components/layout/Footer.tsx b/src/shared/components/layout/Footer.tsx
+index 74e15be..53409b2 100644
+--- a/src/shared/components/layout/Footer.tsx
++++ b/src/shared/components/layout/Footer.tsx
+@@ -38,8 +38,8 @@ export function Footer({ className }: FooterProps) {
+               OneStopNews
+             </span>
+             <p className="font-ui text-sm text-ink-600 leading-relaxed mb-4">
+-              Topic-first news aggregation with source-cited AI summaries.
+-              EU AI Act Article 50 compliant.
++              Topic-first news aggregation with source-cited AI summaries. EU AI
++              Act Article 50 compliant.
+             </p>
+             <div className="flex items-center gap-2 font-mono text-[10px] text-ink-300">
+               <span
+@@ -99,8 +99,8 @@ export function Footer({ className }: FooterProps) {
+               aria-hidden="true"
+             />
+             AI Disclosure: Every AI summary includes a Nutrition Label showing
+-            model, temperature, source coverage, and citations.
+-            EU AI Act Article 50 compliant.
++            model, temperature, source coverage, and citations. EU AI Act
++            Article 50 compliant.
+           </p>
+         </div>
+ 
+diff --git a/src/shared/components/layout/Masthead.test.tsx b/src/shared/components/layout/Masthead.test.tsx
+index d91934b..58f00ae 100644
+--- a/src/shared/components/layout/Masthead.test.tsx
++++ b/src/shared/components/layout/Masthead.test.tsx
+@@ -25,4 +25,4 @@ describe("Masthead", () => {
+     // The masthead should be wrapped in a <header> element
+     expect(container.querySelector("header")).toBeDefined();
+   });
+-});
+\ No newline at end of file
++});
+diff --git a/src/shared/components/layout/Masthead.tsx b/src/shared/components/layout/Masthead.tsx
+index d0ded50..a36639b 100644
+--- a/src/shared/components/layout/Masthead.tsx
++++ b/src/shared/components/layout/Masthead.tsx
+@@ -6,15 +6,30 @@ export function Masthead() {
+         <div className="flex items-center justify-between py-2.5 border-b border-paper-200 font-mono text-[11px] text-ink-400">
+           <div className="flex items-center gap-4">
+             <span className="cat-label">Edition 3.1</span>
+-            <span className="hidden sm:inline text-paper-300" aria-hidden="true">&mdash;</span>
++            <span
++              className="hidden sm:inline text-paper-300"
++              aria-hidden="true"
++            >
++              &mdash;
++            </span>
+             <span className="hidden sm:inline">10 June 2026</span>
+-            <span className="hidden sm:inline text-paper-300" aria-hidden="true">&middot;</span>
++            <span
++              className="hidden sm:inline text-paper-300"
++              aria-hidden="true"
++            >
++              &middot;
++            </span>
+             <span className="hidden sm:inline">Singapore</span>
+           </div>
+           <div className="flex items-center gap-4">
+             <span className="flex items-center gap-1.5">
+-              <span className="w-1.5 h-1.5 rounded-full bg-dispatch-ember pulse-dot" aria-hidden="true" />
+-              <span className="text-dispatch-ember font-medium cat-label">Live</span>
++              <span
++                className="w-1.5 h-1.5 rounded-full bg-dispatch-ember pulse-dot"
++                aria-hidden="true"
++              />
++              <span className="text-dispatch-ember font-medium cat-label">
++                Live
++              </span>
+             </span>
+             <span className="hidden sm:inline">SGT 14:30</span>
+           </div>
+@@ -34,7 +49,10 @@ export function Masthead() {
+         </div>
+ 
+         {/* Column rules — broadsheet aesthetic */}
+-        <div className="hidden lg:flex justify-between px-[12%] pb-3" aria-hidden="true">
++        <div
++          className="hidden lg:flex justify-between px-[12%] pb-3"
++          aria-hidden="true"
++        >
+           {[...Array(6)].map((_, i) => (
+             <div key={i} className="w-px h-4 bg-paper-300" />
+           ))}
+diff --git a/src/shared/components/layout/NewsTicker.tsx b/src/shared/components/layout/NewsTicker.tsx
+index be2709e..fc79f9f 100644
+--- a/src/shared/components/layout/NewsTicker.tsx
++++ b/src/shared/components/layout/NewsTicker.tsx
+@@ -9,12 +9,36 @@ export interface TickerItem {
+ }
+ 
+ export const tickerItems: TickerItem[] = [
+-  { label: "Breaking", text: "EU Parliament votes on AI Act enforcement framework — 142 in favor, 37 against", labelColor: "text-dispatch-ember" },
+-  { label: "Finance", text: "Global markets rally as inflation data cools across G7 nations", labelColor: "text-dispatch-sage" },
+-  { label: "Tech", text: "SpaceX Starship completes first orbital refueling test", labelColor: "text-dispatch-slate" },
+-  { label: "Politics", text: "Japan central bank signals end to negative interest rate era", labelColor: "text-dispatch-clay" },
+-  { label: "Culture", text: "WHO declares new mpox variant a public health emergency", labelColor: "text-dispatch-violet" },
+-  { label: "Breaking", text: "Singapore MRT Cross Island Line Phase 2 alignment confirmed", labelColor: "text-dispatch-ember" },
++  {
++    label: "Breaking",
++    text: "EU Parliament votes on AI Act enforcement framework — 142 in favor, 37 against",
++    labelColor: "text-dispatch-ember",
++  },
++  {
++    label: "Finance",
++    text: "Global markets rally as inflation data cools across G7 nations",
++    labelColor: "text-dispatch-sage",
++  },
++  {
++    label: "Tech",
++    text: "SpaceX Starship completes first orbital refueling test",
++    labelColor: "text-dispatch-slate",
++  },
++  {
++    label: "Politics",
++    text: "Japan central bank signals end to negative interest rate era",
++    labelColor: "text-dispatch-clay",
++  },
++  {
++    label: "Culture",
++    text: "WHO declares new mpox variant a public health emergency",
++    labelColor: "text-dispatch-violet",
++  },
++  {
++    label: "Breaking",
++    text: "Singapore MRT Cross Island Line Phase 2 alignment confirmed",
++    labelColor: "text-dispatch-ember",
++  },
+ ];
+ 
+ export function NewsTicker() {
+@@ -35,7 +59,10 @@ export function NewsTicker() {
+         ))}
+         {/* Duplicate set for seamless scroll */}
+         {tickerItems.map((item, i) => (
+-          <span key={`second-${i}`} className="flex items-center gap-2 shrink-0">
++          <span
++            key={`second-${i}`}
++            className="flex items-center gap-2 shrink-0"
++          >
+             <span className={cn("font-semibold cat-label", item.labelColor)}>
+               {item.label}
+             </span>
+diff --git a/src/shared/components/providers/RevealProvider.test.tsx b/src/shared/components/providers/RevealProvider.test.tsx
+index 34698de..78b30dc 100644
+--- a/src/shared/components/providers/RevealProvider.test.tsx
++++ b/src/shared/components/providers/RevealProvider.test.tsx
+@@ -1,6 +1,14 @@
+ "use client";
+ 
+-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
++import {
++  describe,
++  it,
++  expect,
++  vi,
++  beforeEach,
++  afterEach,
++  type Mock,
++} from "vitest";
+ import { render } from "@testing-library/react";
+ import { RevealProvider } from "./RevealProvider";
+ 
+@@ -25,7 +33,9 @@ class MockIntersectionObserver {
+   }
+ 
+   static get last() {
+-    return MockIntersectionObserver.instances[MockIntersectionObserver.instances.length - 1];
++    return MockIntersectionObserver.instances[
++      MockIntersectionObserver.instances.length - 1
++    ];
+   }
+ 
+   static reset() {
+@@ -57,7 +67,7 @@ describe("RevealProvider", () => {
+     const { getByText } = render(
+       <RevealProvider>
+         <p>Child content</p>
+-      </RevealProvider>
++      </RevealProvider>,
+     );
+     expect(getByText("Child content")).toBeDefined();
+   });
+@@ -77,7 +87,7 @@ describe("RevealProvider", () => {
+     render(
+       <RevealProvider>
+         <div />
+-      </RevealProvider>
++      </RevealProvider>,
+     );
+ 
+     expect(revealEl.classList.contains("visible")).toBe(true);
+@@ -94,7 +104,7 @@ describe("RevealProvider", () => {
+     render(
+       <RevealProvider>
+         <div />
+-      </RevealProvider>
++      </RevealProvider>,
+     );
+ 
+     const observer = MockIntersectionObserver.last;
+@@ -114,12 +124,15 @@ describe("RevealProvider", () => {
+     render(
+       <RevealProvider>
+         <div />
+-      </RevealProvider>
++      </RevealProvider>,
+     );
+ 
+     const observer = MockIntersectionObserver.last;
+     if (!observer) throw new Error("No observer created");
+-    const mockEntry = { isIntersecting: true, target: revealEl } as unknown as IntersectionObserverEntry;
++    const mockEntry = {
++      isIntersecting: true,
++      target: revealEl,
++    } as unknown as IntersectionObserverEntry;
+     observer.callback([mockEntry], {} as IntersectionObserver);
+ 
+     expect(revealEl.classList.contains("visible")).toBe(true);
+@@ -132,7 +145,7 @@ describe("RevealProvider", () => {
+     const { unmount } = render(
+       <RevealProvider>
+         <div />
+-      </RevealProvider>
++      </RevealProvider>,
+     );
+ 
+     const observer = MockIntersectionObserver.last;
+diff --git a/src/shared/components/providers/RevealProvider.tsx b/src/shared/components/providers/RevealProvider.tsx
+index ebd892e..c620d6a 100644
+--- a/src/shared/components/providers/RevealProvider.tsx
++++ b/src/shared/components/providers/RevealProvider.tsx
+@@ -38,7 +38,7 @@ export function RevealProvider({ children }: { children: React.ReactNode }) {
+       {
+         threshold: 0.1,
+         rootMargin: "0px 0px -40px 0px",
+-      }
++      },
+     );
+ 
+     document.querySelectorAll(".reveal").forEach((el) => {
+diff --git a/src/shared/components/ui/Badge.tsx b/src/shared/components/ui/Badge.tsx
+index e9f1e9f..0b2978b 100644
+--- a/src/shared/components/ui/Badge.tsx
++++ b/src/shared/components/ui/Badge.tsx
+@@ -25,17 +25,14 @@ const badgeVariants = cva(
+         slate:
+           "bg-dispatch-slate/10 text-dispatch-slate border border-dispatch-slate/20 px-2 py-1",
+         /* Sage — positive / finance */
+-        sage:
+-          "bg-dispatch-sage/10 text-dispatch-sage border border-dispatch-sage/20 px-2 py-1",
++        sage: "bg-dispatch-sage/10 text-dispatch-sage border border-dispatch-sage/20 px-2 py-1",
+         /* Clay — politics / culture */
+-        clay:
+-          "bg-dispatch-clay/10 text-dispatch-clay border border-dispatch-clay/20 px-2 py-1",
++        clay: "bg-dispatch-clay/10 text-dispatch-clay border border-dispatch-clay/20 px-2 py-1",
+         /* Violet — science / culture */
+         violet:
+           "bg-dispatch-violet/10 text-dispatch-violet border border-dispatch-violet/20 px-2 py-1",
+         /* Muted — placeholder / disabled state */
+-        muted:
+-          "bg-paper-100 text-ink-300 border border-ink-100 px-2 py-1",
++        muted: "bg-paper-100 text-ink-300 border border-ink-100 px-2 py-1",
+         /* Plain — no border, no background, for inline metadata */
+         plain: "text-ink-300",
+       },
+@@ -43,12 +40,13 @@ const badgeVariants = cva(
+     defaultVariants: {
+       variant: "ember",
+     },
+-  }
++  },
+ );
+ 
+ /* ─── Component Interface ─────────────────────────────────────────────── */
+ export interface BadgeProps
+-  extends React.HTMLAttributes<HTMLSpanElement>,
++  extends
++    React.HTMLAttributes<HTMLSpanElement>,
+     VariantProps<typeof badgeVariants> {
+   /* Optional: show a small coloured dot before the text */
+   dot?: boolean;
+@@ -58,7 +56,10 @@ export interface BadgeProps
+ 
+ /* ─── Component ───────────────────────────────────────── */
+ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+-  ({ className, variant, dot = false, dotColorClass, children, ...props }, ref) => {
++  (
++    { className, variant, dot = false, dotColorClass, children, ...props },
++    ref,
++  ) => {
+     return (
+       <span
+         ref={ref}
+@@ -75,7 +76,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+                   (variant === "sage" && "bg-dispatch-sage") ||
+                   (variant === "clay" && "bg-dispatch-clay") ||
+                   (variant === "violet" && "bg-dispatch-violet") ||
+-                  "bg-ink-300")
++                  "bg-ink-300"),
+             )}
+             aria-hidden="true"
+           />
+@@ -83,7 +84,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
+         {children}
+       </span>
+     );
+-  }
++  },
+ );
+ Badge.displayName = "Badge";
+ 
+diff --git a/src/shared/components/ui/NewsletterCTA.tsx b/src/shared/components/ui/NewsletterCTA.tsx
+index f3910a4..3d4de25 100644
+--- a/src/shared/components/ui/NewsletterCTA.tsx
++++ b/src/shared/components/ui/NewsletterCTA.tsx
+@@ -6,7 +6,9 @@ import { Zap, Shield, Clock } from "lucide-react";
+ 
+ export function NewsletterCTA() {
+   const [email, setEmail] = useState("");
+-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
++  const [status, setStatus] = useState<
++    "idle" | "submitting" | "success" | "error"
++  >("idle");
+ 
+   function handleSubmit(e: React.FormEvent) {
+     e.preventDefault();
+@@ -27,8 +29,9 @@ export function NewsletterCTA() {
+             Get Your Daily Briefing
+           </h2>
+           <p className="text-paper-200/80 mb-8 leading-relaxed">
+-            Start your day with a concise, AI-summarised briefing of the most important stories —
+-            delivered straight to your inbox every morning at 7 AM.
++            Start your day with a concise, AI-summarised briefing of the most
++            important stories — delivered straight to your inbox every morning
++            at 7 AM.
+           </p>
+ 
+           {status === "success" ? (
+@@ -36,7 +39,10 @@ export function NewsletterCTA() {
+               <p>Thanks for subscribing! Check your inbox shortly. 🎉</p>
+             </div>
+           ) : (
+-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 mb-8">
++            <form
++              onSubmit={handleSubmit}
++              className="flex flex-col sm:flex-row gap-3 mb-8"
++            >
+               <input
+                 type="email"
+                 value={email}
+@@ -51,7 +57,9 @@ export function NewsletterCTA() {
+                 disabled={status === "submitting"}
+                 className="btn-ember bg-dispatch-ember text-white px-6 py-3 rounded-sm font-mono text-[11px] font-semibold cat-label tracking-wider uppercase"
+               >
+-                {status === "submitting" ? "Subscribing..." : "Get Daily Briefing"}
++                {status === "submitting"
++                  ? "Subscribing..."
++                  : "Get Daily Briefing"}
+               </button>
+             </form>
+           )}
+diff --git a/src/shared/components/ui/Skeleton.tsx b/src/shared/components/ui/Skeleton.tsx
+index f84866d..f4db7c5 100644
+--- a/src/shared/components/ui/Skeleton.tsx
++++ b/src/shared/components/ui/Skeleton.tsx
+@@ -24,7 +24,7 @@ export function SkeletonLine({ className, width = "100%" }: SkeletonLineProps) {
+         "h-4 rounded-sm bg-paper-200",
+         /* Animate only if motion is not reduced */
+         "motion-safe:animate-pulse",
+-        className
++        className,
+       )}
+       style={{ width }}
+       aria-hidden="true"
+@@ -58,7 +58,7 @@ export function ArticleCardSkeleton({ className }: ArticleCardSkeletonProps) {
+     <article
+       className={cn(
+         "grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 border-b border-paper-200 pb-6",
+-        className
++        className,
+       )}
+       aria-hidden="true"
+     >
+@@ -86,7 +86,7 @@ export function FeedSkeleton({ count = 6, className }: FeedSkeletonProps) {
+     <div
+       className={cn(
+         "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8",
+-        className
++        className,
+       )}
+       aria-label="Loading news articles"
+       role="feed"
+diff --git a/src/shared/components/ui/StatsSection.test.tsx b/src/shared/components/ui/StatsSection.test.tsx
+index 59847c7..1da5955 100644
+--- a/src/shared/components/ui/StatsSection.test.tsx
++++ b/src/shared/components/ui/StatsSection.test.tsx
+@@ -12,11 +12,13 @@ describe("StatsSection", () => {
+ 
+   it("renders the section heading", () => {
+     render(<StatsSection />);
+-    expect(screen.queryByRole("heading", { name: /Our Commitment/ })).toBeDefined();
++    expect(
++      screen.queryByRole("heading", { name: /Our Commitment/ }),
++    ).toBeDefined();
+   });
+ 
+   it("has three feature check marks", () => {
+     const { container } = render(<StatsSection />);
+     expect(container.textContent).toContain("EU AI Act");
+   });
+-});
+\ No newline at end of file
++});
+diff --git a/src/shared/components/ui/StatsSection.tsx b/src/shared/components/ui/StatsSection.tsx
+index b3fcfd9..c791e8f 100644
+--- a/src/shared/components/ui/StatsSection.tsx
++++ b/src/shared/components/ui/StatsSection.tsx
+@@ -58,7 +58,9 @@ export function StatsSection() {
+               <span className="w-5 h-5 rounded-full bg-dispatch-sage flex items-center justify-center shrink-0">
+                 <Check className="w-3 h-3 text-white" />
+               </span>
+-              <span className="text-sm text-ink-700 font-medium">{feature}</span>
++              <span className="text-sm text-ink-700 font-medium">
++                {feature}
++              </span>
+             </div>
+           ))}
+         </div>
+diff --git a/src/shared/hooks/useDebounce.test.tsx b/src/shared/hooks/useDebounce.test.tsx
+index 71227cd..941eb65 100644
+--- a/src/shared/hooks/useDebounce.test.tsx
++++ b/src/shared/hooks/useDebounce.test.tsx
+@@ -12,7 +12,7 @@ describe("useDebounce", () => {
+     vi.useFakeTimers();
+     const { result, rerender } = renderHook(
+       ({ value }) => useDebounce(value, 300),
+-      { initialProps: { value: "initial" } }
++      { initialProps: { value: "initial" } },
+     );
+ 
+     expect(result.current).toBe("initial");
+@@ -32,7 +32,7 @@ describe("useDebounce", () => {
+     vi.useFakeTimers();
+     const { result, rerender } = renderHook(
+       ({ value }) => useDebounce(value, 100),
+-      { initialProps: { value: "a" } }
++      { initialProps: { value: "a" } },
+     );
+ 
+     rerender({ value: "b" });
+diff --git a/src/test/setup.ts b/src/test/setup.ts
+index c53c414..572591f 100644
+--- a/src/test/setup.ts
++++ b/src/test/setup.ts
+@@ -13,7 +13,8 @@ import { beforeAll, afterAll } from "vitest";
+ // property (because @types/node declares it as such). Use Object.defineProperty
+ // to bypass the type check at runtime — vitest already sets NODE_ENV="test",
+ // so this is just a defensive explicit set.
+-process.env.DATABASE_URL = "postgres://test:test@localhost:5432/test?sslmode=disable";
++process.env.DATABASE_URL =
++  "postgres://test:test@localhost:5432/test?sslmode=disable";
+ process.env.REDIS_URL = "redis://localhost:6379";
+ process.env.AUTH_SECRET = "test-secret-at-least-32-characters-long-xxx";
+ process.env.AUTH_URL = "http://localhost:3000";
+diff --git a/src/workers/jobs/determineContentAvailability.ts b/src/workers/jobs/determineContentAvailability.ts
+index b9bb2fe..4f209d8 100644
+--- a/src/workers/jobs/determineContentAvailability.ts
++++ b/src/workers/jobs/determineContentAvailability.ts
+@@ -1,7 +1,6 @@
+ import type { contentAvailabilityEnum } from "@/lib/db/schema";
+ 
+-type ContentAvailability =
+-  (typeof contentAvailabilityEnum.enumValues)[number];
++type ContentAvailability = (typeof contentAvailabilityEnum.enumValues)[number];
+ 
+ interface ParsedContent {
+   title?: string;
+@@ -27,7 +26,7 @@ interface ParsedContent {
+  * @returns ContentAvailability enum value
+  */
+ export function determineContentAvailability(
+-  parsed: ParsedContent
++  parsed: ParsedContent,
+ ): ContentAvailability {
+   const { title, excerpt, body } = parsed;
+ 
+diff --git a/src/workers/jobs/scheduler.ts b/src/workers/jobs/scheduler.ts
+index ec80114..ed6a07f 100644
+--- a/src/workers/jobs/scheduler.ts
++++ b/src/workers/jobs/scheduler.ts
+@@ -35,7 +35,7 @@ export async function syncSchedulers(): Promise<number> {
+         name: "ingest-source",
+         data: { sourceId: source.id, schedulerId },
+         opts: { priority: source.priority },
+-      }
++      },
+     );
+   }
+ 
+diff --git a/src/workers/jobs/summarize.test.ts b/src/workers/jobs/summarize.test.ts
+index d0a16cd..dbed5c0 100644
+--- a/src/workers/jobs/summarize.test.ts
++++ b/src/workers/jobs/summarize.test.ts
+@@ -84,7 +84,9 @@ describe("callAISummary", () => {
+     expect(result.keyPoints).toEqual(validSummaryOutput.keyPoints);
+     expect(result.sourcesCited).toEqual(validSummaryOutput.sourcesCited);
+     expect(result.aiStatement).toBe(validSummaryOutput.aiStatement);
+-    expect(result.coveragePercentage).toBe(validSummaryOutput.coveragePercentage);
++    expect(result.coveragePercentage).toBe(
++      validSummaryOutput.coveragePercentage,
++    );
+     expect(result.model).toBe("claude-haiku-4-5");
+     expect(result.tokensUsed).toBe(250);
+   });
+@@ -111,7 +113,9 @@ describe("callAISummary", () => {
+       .mockRejectedValueOnce(new Error("Anthropic down"))
+       .mockRejectedValueOnce(new Error("OpenAI also down"));
+ 
+-    await expect(callAISummary(baseArticle)).rejects.toThrow(/OpenAI also down/);
++    await expect(callAISummary(baseArticle)).rejects.toThrow(
++      /OpenAI also down/,
++    );
+   });
+ 
+   it("uses article body as content when available", async () => {
+@@ -119,7 +123,7 @@ describe("callAISummary", () => {
+ 
+     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
+     const userMessage = callArgs.messages.find(
+-      (m: { role: string }) => m.role === "user"
++      (m: { role: string }) => m.role === "user",
+     );
+     expect(userMessage.content).toContain(baseArticle.body);
+   });
+@@ -134,7 +138,7 @@ describe("callAISummary", () => {
+ 
+     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
+     const userMessage = callArgs.messages.find(
+-      (m: { role: string }) => m.role === "user"
++      (m: { role: string }) => m.role === "user",
+     );
+     expect(userMessage.content).toContain(baseArticle.excerpt);
+   });
+@@ -150,7 +154,7 @@ describe("callAISummary", () => {
+ 
+     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
+     const userMessage = callArgs.messages.find(
+-      (m: { role: string }) => m.role === "user"
++      (m: { role: string }) => m.role === "user",
+     );
+     expect(userMessage.content).toContain(baseArticle.title);
+   });
+@@ -160,7 +164,7 @@ describe("callAISummary", () => {
+ 
+     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
+     const userMessage = callArgs.messages.find(
+-      (m: { role: string }) => m.role === "user"
++      (m: { role: string }) => m.role === "user",
+     );
+     expect(userMessage.content).toContain(baseArticle.sourceName);
+     expect(userMessage.content).toContain(baseArticle.sourceUrl);
+diff --git a/src/workers/jobs/summarize.ts b/src/workers/jobs/summarize.ts
+index fa84a71..84a9c3c 100644
+--- a/src/workers/jobs/summarize.ts
++++ b/src/workers/jobs/summarize.ts
+@@ -54,7 +54,7 @@ const TEMPERATURE = 0.1; // Factual-only mode per Nutrition Label display
+  * @throws When both Anthropic and OpenAI fail (caller should reset summaryStatus)
+  */
+ export async function callAISummary(
+-  article: ArticleForSummarization
++  article: ArticleForSummarization,
+ ): Promise<SummarizationResult> {
+   // Content priority: body > excerpt > title. The content availability guard
+   // (enforced upstream in processSummarizeJob) ensures we never reach here
+@@ -85,7 +85,7 @@ export async function callAISummary(
+   } catch (primaryError) {
+     console.warn(
+       "[Summarize] Anthropic failed, falling back to OpenAI:",
+-      primaryError
++      primaryError,
+     );
+   }
+ 
+diff --git a/src/workers/jobs/summarizeFailure.ts b/src/workers/jobs/summarizeFailure.ts
+index 3e43062..cabb220 100644
+--- a/src/workers/jobs/summarizeFailure.ts
++++ b/src/workers/jobs/summarizeFailure.ts
+@@ -28,7 +28,7 @@ export interface SummaryFailureState {
+  */
+ export function getSummaryFailureState(
+   attemptsMade: number,
+-  maxAttempts: number = 3
++  maxAttempts: number = 3,
+ ): SummaryFailureState {
+   // If this is NOT the final retry, allow BullMQ to retry again.
+   // summaryStatus stays 'none' so the summarize worker can retry.
+diff --git a/src/workers/lib/cacheInvalidation.test.ts b/src/workers/lib/cacheInvalidation.test.ts
+index 6dc9ec7..f2fcf6a 100644
+--- a/src/workers/lib/cacheInvalidation.test.ts
++++ b/src/workers/lib/cacheInvalidation.test.ts
+@@ -57,7 +57,7 @@ describe("cacheInvalidation", () => {
+       expect(result).toBe(true);
+       expect(mockPublish).toHaveBeenCalledWith(
+         "cache:invalidate:feed:tech",
+-        expect.stringContaining("feed:tech")
++        expect.stringContaining("feed:tech"),
+       );
+     });
+ 
+@@ -80,7 +80,7 @@ describe("cacheInvalidation", () => {
+       // Verify the channel uses the correct format
+       expect(mockPublish).toHaveBeenCalledWith(
+         "cache:invalidate:topic-shell",
+-        expect.any(String)
++        expect.any(String),
+       );
+     });
+ 
+diff --git a/src/workers/pipeline.integration.test.ts b/src/workers/pipeline.integration.test.ts
+index 9fdd379..25d7eb2 100644
+--- a/src/workers/pipeline.integration.test.ts
++++ b/src/workers/pipeline.integration.test.ts
+@@ -61,7 +61,7 @@ describe("Ingest Pipeline Integration", () => {
+           title: item.title,
+           excerpt: item.excerpt,
+           body: item.body,
+-        })
++        }),
+       );
+ 
+       // Item 1: has body > 500 chars → full_text
+@@ -73,7 +73,11 @@ describe("Ingest Pipeline Integration", () => {
+ 
+       // Step 3: Hash each item — verify uniqueness
+       const hashes = items.map((item) =>
+-        hashContent(item.title, item.body ?? null, item.publishedAt ?? new Date())
++        hashContent(
++          item.title,
++          item.body ?? null,
++          item.publishedAt ?? new Date(),
++        ),
+       );
+ 
+       // All hashes should be unique (different titles)
+@@ -117,7 +121,8 @@ describe("Ingest Pipeline Integration", () => {
+     });
+ 
+     it("handles empty feed gracefully", async () => {
+-      const emptyRss = '<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>';
++      const emptyRss =
++        '<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>';
+       const items = await parseFeed(emptyRss, "rss");
+ 
+       expect(items).toEqual([]);
+@@ -181,7 +186,7 @@ describe("Ingest Pipeline Integration", () => {
+           title: item.title,
+           excerpt: item.excerpt,
+           body: item.body,
+-        })
++        }),
+       );
+ 
+       expect(classifications[0]).toBe("full_text");
+diff --git a/src/workers/push/isWithinQuietHours.test.ts b/src/workers/push/isWithinQuietHours.test.ts
+index d34113f..9bfecac 100644
+--- a/src/workers/push/isWithinQuietHours.test.ts
++++ b/src/workers/push/isWithinQuietHours.test.ts
+@@ -18,15 +18,24 @@ import { isWithinQuietHours } from "./isWithinQuietHours";
+ describe("isWithinQuietHours", () => {
+   it("fails open (returns false) when preferences are incomplete", () => {
+     const now = new Date("2026-06-15T14:00:00Z");
+-    expect(isWithinQuietHours({ pushQuietStart: null, pushQuietEnd: null, briefingTimezone: null }, now)).toBe(false);
++    expect(
++      isWithinQuietHours(
++        { pushQuietStart: null, pushQuietEnd: null, briefingTimezone: null },
++        now,
++      ),
++    ).toBe(false);
+   });
+ 
+   it("returns false when current time is outside quiet hours", () => {
+     // 17:00 UTC in June = 13:00 EDT (1:00 PM) in New York — outside 22:00-07:00 quiet hours
+     const now = new Date("2026-06-15T17:00:00Z");
+     const result = isWithinQuietHours(
+-      { pushQuietStart: "22:00:00", pushQuietEnd: "07:00:00", briefingTimezone: "America/New_York" },
+-      now
++      {
++        pushQuietStart: "22:00:00",
++        pushQuietEnd: "07:00:00",
++        briefingTimezone: "America/New_York",
++      },
++      now,
+     );
+     expect(result).toBe(false);
+   });
+@@ -35,8 +44,12 @@ describe("isWithinQuietHours", () => {
+     // Simulate 02:00 in New York (which is 06:00 UTC)
+     const now = new Date("2026-06-15T06:00:00Z"); // 02:00 in NY (EDT)
+     const result = isWithinQuietHours(
+-      { pushQuietStart: "22:00:00", pushQuietEnd: "07:00:00", briefingTimezone: "America/New_York" },
+-      now
++      {
++        pushQuietStart: "22:00:00",
++        pushQuietEnd: "07:00:00",
++        briefingTimezone: "America/New_York",
++      },
++      now,
+     );
+     expect(result).toBe(true);
+   });
+@@ -45,8 +58,12 @@ describe("isWithinQuietHours", () => {
+     // 15:00 in London during BST (which is 14:00 UTC)
+     const now = new Date("2026-06-15T14:00:00Z"); // 15:00 in London (BST)
+     const result = isWithinQuietHours(
+-      { pushQuietStart: "14:00:00", pushQuietEnd: "16:00:00", briefingTimezone: "Europe/London" },
+-      now
++      {
++        pushQuietStart: "14:00:00",
++        pushQuietEnd: "16:00:00",
++        briefingTimezone: "Europe/London",
++      },
++      now,
+     );
+     expect(result).toBe(true);
+   });
+@@ -55,8 +72,12 @@ describe("isWithinQuietHours", () => {
+     // March 8, 2026 2:00 AM - clocks spring forward in US
+     const now = new Date("2026-03-08T07:00:00Z"); // 02:00 EST became 03:00 EDT
+     const result = isWithinQuietHours(
+-      { pushQuietStart: "22:00:00", pushQuietEnd: "07:00:00", briefingTimezone: "America/New_York" },
+-      now
++      {
++        pushQuietStart: "22:00:00",
++        pushQuietEnd: "07:00:00",
++        briefingTimezone: "America/New_York",
++      },
++      now,
+     );
+     // Should correctly handle the DST gap
+     expect(result).toBe(true);
+@@ -66,8 +87,12 @@ describe("isWithinQuietHours", () => {
+     // November 1, 2026 2:00 AM - clocks fall back in US
+     const now = new Date("2026-11-01T06:00:00Z"); // 01:00 EDT became 01:00 EST
+     const result = isWithinQuietHours(
+-      { pushQuietStart: "22:00:00", pushQuietEnd: "07:00:00", briefingTimezone: "America/New_York" },
+-      now
++      {
++        pushQuietStart: "22:00:00",
++        pushQuietEnd: "07:00:00",
++        briefingTimezone: "America/New_York",
++      },
++      now,
+     );
+     expect(result).toBe(true);
+   });
+diff --git a/src/workers/push/isWithinQuietHours.ts b/src/workers/push/isWithinQuietHours.ts
+index 0e3e9c0..10080e4 100644
+--- a/src/workers/push/isWithinQuietHours.ts
++++ b/src/workers/push/isWithinQuietHours.ts
+@@ -17,24 +17,34 @@ interface UserPreferences {
+  */
+ export function isWithinQuietHours(
+   preferences: UserPreferences,
+-  nowUtc: Date
++  nowUtc: Date,
+ ): boolean {
+   // Fail open if preferences are incomplete
+-  if (!preferences.pushQuietStart || !preferences.pushQuietEnd || !preferences.briefingTimezone) {
++  if (
++    !preferences.pushQuietStart ||
++    !preferences.pushQuietEnd ||
++    !preferences.briefingTimezone
++  ) {
+     return false;
+   }
+ 
+   // Convert current UTC time to the user's local timezone
+-  const localNow = DateTime.fromJSDate(nowUtc, { zone: preferences.briefingTimezone });
++  const localNow = DateTime.fromJSDate(nowUtc, {
++    zone: preferences.briefingTimezone,
++  });
+ 
+   // Validate timezone
+   if (!localNow.isValid) {
+-    console.warn(`[QuietHours] Invalid timezone: ${preferences.briefingTimezone}`);
++    console.warn(
++      `[QuietHours] Invalid timezone: ${preferences.briefingTimezone}`,
++    );
+     return false;
+   }
+ 
+   // Parse quiet hours start/end
+-  const [startHour, startMinute] = preferences.pushQuietStart.split(":").map(Number);
++  const [startHour, startMinute] = preferences.pushQuietStart
++    .split(":")
++    .map(Number);
+   const [endHour, endMinute] = preferences.pushQuietEnd.split(":").map(Number);
+ 
+   const startMinutes = (startHour ?? 0) * 60 + (startMinute ?? 0);

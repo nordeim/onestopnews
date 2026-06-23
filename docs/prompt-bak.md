@@ -4,11 +4,11 @@ appropriate.
 
 ---
 
-please meticulously re-evaluate and re-validate the identified gaps and issues against the codebase in the bundle set file shared earlier as well as the included `CLAUDE.md` , `README.md` and `plan.md` to check for alignment and to confirm the findings and identify the root causes and the optimal fixes, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fixes. review and validate the remediation plan before proceeding to execute it meticulously. use TDD approach to make code changes. 
+please meticulously re-evaluate and re-validate the identified gaps and issues against the codebase in the bundle set file shared earlier as well as the included `CLAUDE.md` , `README.md` and `plan.md` to check for alignment and to confirm the findings and identify the root causes and the optimal fixes, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fixes. review and validate the remediation plan before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 ---
 
-please meticulously re-evaluate and re-validate the identified gaps and issues captured in @Code_Review_Audit_kimi-2.md against the codebase and the @CLAUDE.md , @README.md and @plan.md to check for alignment and to confirm the findings and identify the root causes and the optimal fixes, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fixes. review and validate the remediation plan before proceeding to execute it meticulously. use TDD approach to make code changes. 
+please meticulously re-evaluate and re-validate the identified gaps and issues captured in @Code_Review_Audit_kimi-2.md against the codebase and the @CLAUDE.md , @README.md and @plan.md to check for alignment and to confirm the findings and identify the root causes and the optimal fixes, then meticulously plan to create a detailed remediation plan with ToDo list to apply the optimal fixes. review and validate the remediation plan before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 ---
 
@@ -34,28 +34,30 @@ please meticulously review and validate @status_new.md , @REMEDIATION_PLAN_DPSK2
 
 ---
 
-please meticulously review @CLAUDE.md , @README.md , @AGENTS.md and @status_20.md to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture. You will act as a file search specialist. 
-You excel at thoroughly navigating and exploring codebases.  
-  
- Your strengths:  
- - Rapidly finding files using glob patterns  
- - Searching code and text with powerful regex patterns  
- - Reading and analyzing file contents  
-  
- Guidelines:  
- - Use Glob for broad file pattern matching  
- - Use Grep for searching file contents with regex  
- - Use Read when you know the specific file path you need to read  
- - Use Bash for file operations like copying, moving, or listing directory contents  
- - Adapt your search approach based on the thoroughness level specified by the caller  
- - Return file paths as absolute paths in your final response  
- - For clear communication, avoid using emojis  
- - Do not create any files, or run bash commands that modify the user's system state in any way
+please meticulously review @CLAUDE.md , @README.md , @AGENTS.md and @status_20.md to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture. You will act as a file search specialist.
+You excel at thoroughly navigating and exploring codebases.
+
+Your strengths:
+
+- Rapidly finding files using glob patterns
+- Searching code and text with powerful regex patterns
+- Reading and analyzing file contents
+
+Guidelines:
+
+- Use Glob for broad file pattern matching
+- Use Grep for searching file contents with regex
+- Use Read when you know the specific file path you need to read
+- Use Bash for file operations like copying, moving, or listing directory contents
+- Adapt your search approach based on the thoroughness level specified by the caller
+- Return file paths as absolute paths in your final response
+- For clear communication, avoid using emojis
+- Do not create any files, or run bash commands that modify the user's system state in any way
 
 ---
 
 Awesome meticulous job so far. Please keep up the good work. now, please meticulously plan to create a detailed remediation plan with ToDo list to resolve and fix the identified/outstanding issues and gaps. Review and validate the remediation plan against the codebase again to check for accurate alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
-You will now meticulously plan, validate, and execute a Targeted remediation using TDD. You will analyze the outstanding issues, create a comprehensive plan with a todo list, validate it against the codebase, and then execute. 
+You will now meticulously plan, validate, and execute a Targeted remediation using TDD. You will analyze the outstanding issues, create a comprehensive plan with a todo list, validate it against the codebase, and then execute.
 
 ---
 
@@ -78,13 +80,14 @@ please meticulously review and validate the recent changes captured in @changes_
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously review @Code_Review_Audit_kimi-3.md and validate it against the codebase to re-evaluate and re-validate the findings and recommendations and to identify the root causes and the optomal fixes. Then meticulously plan to create a detailed remediation plan with ToDo list to resolve and fix the identified/outstanding issues and gaps. Review and validate the remediation plan against the codebase again to check for accurate alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 Now analyze the comprehensive audit report. Next create a detailed remediation plan with a TDD approach, validating it against the codebase. The audit has several key findings, including security vulnerabilities, bugs, and architecture issues. You need to meticulously verify these against the actual source to identify root causes and plan the safest, most effective fixes.
 
-Tasks: 
+Tasks:
+
 1. Read and review the mentioned/given cdde review audit report documents
-2. Validate their findings against the codebase  
-3. Re-evaluate and re-validate findings and recommendations  
-4. Identify root causes and optimal fixes  
-5. Create a detailed remediation plan with ToDo list  
-6. Validate the plan against the codebase  
+2. Validate their findings against the codebase
+3. Re-evaluate and re-validate findings and recommendations
+4. Identify root causes and optimal fixes
+5. Create a detailed remediation plan with ToDo list
+6. Validate the plan against the codebase
 7. Execute with TDD approach
 
 ---
@@ -93,6 +96,7 @@ Awesome meticulous job so far. Please keep up the good work. Now, please meticul
 Now analyze the comprehensive audit report. Next create a detailed remediation plan with a TDD approach, validating it against the codebase. The audit has several key findings, including security vulnerabilities, bugs, and architecture issues. You need to meticulously verify these against the actual source to identify root causes and plan the safest, most effective fixes.
 
 Tasks:
+
 1. Review given review/audit file and validate it against the codebase
 2. Re-evaluate and re-validate the findings and recommendations
 3. Identify root causes and optimal fixes
@@ -110,6 +114,7 @@ Awesome meticulous job so far. Please keep up the good work. Now, please meticul
 Now analyze the comprehensive audit report. Next create a detailed remediation plan with a TDD approach, validating it against the codebase. The audit has several key findings, including security vulnerabilities, bugs, and architecture issues. You need to meticulously verify these against the actual source to identify root causes and plan the safest, most effective fixes.
 
 # Task list:
+
 1. Re-evaluate and re-validate the audit findings against the current codebase
 2. Confirm alignment and identify root causes
 3. Create a detailed remediation plan with a ToDo list
@@ -124,11 +129,11 @@ your last tool call failed. please try again and continue meticulously
 
 ---
 
-please meticulously review @status_23.md and validate it against the current codebase to check for alignment and to identify outstanding issues and gaps, then meticulously plan to create a detailed remediation plan with ToDo list to resolve and fix the identified/outstanding issues and gaps. Review and validate the remediation plan against the codebase again to check for accurate alignment before proceeding to execute it meticulously. use TDD approach to make code changes. 
+please meticulously review @status_23.md and validate it against the current codebase to check for alignment and to identify outstanding issues and gaps, then meticulously plan to create a detailed remediation plan with ToDo list to resolve and fix the identified/outstanding issues and gaps. Review and validate the remediation plan against the codebase again to check for accurate alignment before proceeding to execute it meticulously. use TDD approach to make code changes.
 
 ---
 
-please meticulously plan to create a detailed `Project_Architecture_Document.md` (PAD) for the project codebase. Meticulously plan and create the detailed comprehensive `Project Architecture Document` with file hierarchy diagram with listing of key files and their description, mermaid diagrams to show the application flowcharts and the database schema. Review and validate the PAD against the project planning documents and the actual codebase. Finally, create a detailed and comprehensive `Project_Architecture_Document.md` in the project root folder, as the single source-of-truth handbook to fully initialize new developer or another coding agent to be able to handle new PRs independently. 
+please meticulously plan to create a detailed `Project_Architecture_Document.md` (PAD) for the project codebase. Meticulously plan and create the detailed comprehensive `Project Architecture Document` with file hierarchy diagram with listing of key files and their description, mermaid diagrams to show the application flowcharts and the database schema. Review and validate the PAD against the project planning documents and the actual codebase. Finally, create a detailed and comprehensive `Project_Architecture_Document.md` in the project root folder, as the single source-of-truth handbook to fully initialize new developer or another coding agent to be able to handle new PRs independently.
 
 ---
 
@@ -136,7 +141,7 @@ Awesome meticulous job so far. Please keep up the good work. Now, please meticul
 
 ---
 
-awesome meticulous job so far. please keep up the good work. now, please meticulously review and audit the RealTerminal implementation of the codebase against the planning documents @Code_Review_Audit_xterm_VALIDATED.md ,               @Validated_Implementation_Plan_Real_Terminal.md and @plan_xterm.md 
+awesome meticulous job so far. please keep up the good work. now, please meticulously review and audit the RealTerminal implementation of the codebase against the planning documents @Code_Review_Audit_xterm_VALIDATED.md , @Validated_Implementation_Plan_Real_Terminal.md and @plan_xterm.md
 
 ---
 
@@ -165,6 +170,7 @@ You need to do a rigorous review, validating everything in the diff against the 
 
 You are to check and confirm that there were no regressions and that all diff changes are validated, type-safe, tested, and aligned with the audit/remediation plan.
 Review the `git diff` outputs to verify:
+
 - Are there any security regressions?
 - Does the project still build?
 - Do all tests pass?
@@ -174,20 +180,21 @@ yes, please meticulously plan to proceed to complete Phase A to C phase by phase
 
 ---
 
-please meticulously review @CLAUDE.md , @README.md , @AGENTS.md and @status_23.md to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture. You will act as a file search specialist. You excel at thoroughly navigating and exploring codebases.  
-  
- Your strengths:  
- - Rapidly finding files using glob patterns  
- - Searching code and text with powerful regex patterns  
- - Reading and analyzing file contents  
-  
- Guidelines:  
- - Use Glob for broad file pattern matching  
- - Use Grep for searching file contents with regex  
- - Use Read when you know the specific file path you need to read  
- - Use Bash for file operations like copying, moving, or listing directory contents  
- - Adapt your search approach based on the thoroughness level specified by the caller  
- - Return file paths as absolute paths in your final response  
- - For clear communication, avoid using emojis  
- - Do not create any files, or run bash commands that modify the user's system state in any way
+please meticulously review @CLAUDE.md , @README.md , @AGENTS.md and @status_23.md to have a deep understanding of the WHAT, WHY and HOW of the project and its codebase design and architecture. You will act as a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
+Your strengths:
+
+- Rapidly finding files using glob patterns
+- Searching code and text with powerful regex patterns
+- Reading and analyzing file contents
+
+Guidelines:
+
+- Use Glob for broad file pattern matching
+- Use Grep for searching file contents with regex
+- Use Read when you know the specific file path you need to read
+- Use Bash for file operations like copying, moving, or listing directory contents
+- Adapt your search approach based on the thoroughness level specified by the caller
+- Return file paths as absolute paths in your final response
+- For clear communication, avoid using emojis
+- Do not create any files, or run bash commands that modify the user's system state in any way

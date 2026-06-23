@@ -10,10 +10,10 @@
 
 Next.js 16 types `params` as `Promise<any>` for page components. The runtime behavior differs by layer:
 
-| Layer | Runtime Type | Must Use |
-|-------|-------------|---------|
-| **Layouts** (`layout.tsx`) | `Promise<...>` | `const { slug } = await params;` |
-| **Pages** (`page.tsx`) | Plain object `{}` | `const { slug } = params;` (no await) |
+| Layer                      | Runtime Type      | Must Use                              |
+| -------------------------- | ----------------- | ------------------------------------- |
+| **Layouts** (`layout.tsx`) | `Promise<...>`    | `const { slug } = await params;`      |
+| **Pages** (`page.tsx`)     | Plain object `{}` | `const { slug } = params;` (no await) |
 
 **Safe universal pattern** — type as `Promise<T>` and always `await`. It works for both cases because `await` on a plain object returns the same value:
 
@@ -29,7 +29,11 @@ export default async function Page({ params }: PageProps) {
 
 ```tsx
 // ✅ Layout — MUST await (always a real Promise)
-export default async function Layout({ params }: { params: Promise<{ locale: string }> }) {
+export default async function Layout({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const { locale } = await params;
 }
 ```
@@ -58,7 +62,13 @@ The global error boundary **replaces** the root layout entirely. It must render 
 
 ```tsx
 "use client";
-export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
   return (
     <html>
       <body>
@@ -82,14 +92,21 @@ This is the single most confusing Next.js 16 layout rule:
 
 ```tsx
 // app/layout.tsx — minimal pass-through (safe when ALL pages are under [locale]/)
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <>{children}</>;
 }
 ```
 
 ```tsx
 // app/[locale]/layout.tsx — SOLE owner of <html>/<body>
-export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
+export default async function LocaleLayout({
+  children,
+  params,
+}: LocaleLayoutProps) {
   const { locale } = await params;
   return (
     <html lang={locale}>
@@ -103,7 +120,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
 ```tsx
 // app/layout.tsx — fallback for non-locale routes
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
@@ -113,6 +134,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 ```
 
 **Root layout anti-patterns**:
+
 - Do NOT put `<Navbar>` or `<Footer>` in the root layout — those belong in the nested layout.
 - Do NOT put provider context (`NextIntlClientProvider`, etc.) in the root layout.
 - Root layout is a **structural shell only** — fonts, metadata, and `children`.
@@ -145,6 +167,7 @@ app/
 ```
 
 **Migration steps**:
+
 1. Create the `(routes)` directory.
 2. Move all dependent pages into it.
 3. Update all relative imports (`../../stores/`) to path aliases (`@/stores/`).
@@ -159,6 +182,7 @@ Only one layout in the tree should render `<html>` and `<body>`. If both root an
 ### 1.10 Stale `.next/types/` Cache After Route Changes (CRITICAL)
 
 **Symptom**: After deleting or moving routes/pages:
+
 ```
 TS2307: Cannot find module '../../../.../old-route/page' or its corresponding type declarations.
 ```
@@ -166,6 +190,7 @@ TS2307: Cannot find module '../../../.../old-route/page' or its corresponding ty
 **Cause**: Next.js auto-generates `.next/types/` `.d.ts` files that point to old route locations. These are **not** deleted when you remove the source files.
 
 **Fix**:
+
 ```bash
 rm -rf .next/
 tsc --noEmit  # Regenerates from the new source tree
@@ -197,14 +222,20 @@ The global `JSX` namespace no longer exists. Do not use `JSX.Element` as a retur
 
 ```tsx
 // ❌ BANNED
-function Component(): JSX.Element { return <div />; }
+function Component(): JSX.Element {
+  return <div />;
+}
 
 // ⚠️ Legacy — do not use in new code
 import type { ReactElement } from "react";
-function Component(): ReactElement { return <div />; }
+function Component(): ReactElement {
+  return <div />;
+}
 
 // ✅ CORRECT — inferred return type (preferred for all components)
-function Component() { return <div />; }
+function Component() {
+  return <div />;
+}
 ```
 
 **Migration**: Remove ALL `import type { ReactElement }` and `: ReactElement` / `: Promise<ReactElement>` annotations from existing components.
@@ -221,7 +252,7 @@ function Form() {
       // Server action or async logic
       return { success: true, errors: {} };
     },
-    { success: false, errors: {} }
+    { success: false, errors: {} },
   );
   return <form action={formAction}>...</form>;
 }
@@ -232,10 +263,10 @@ function Form() {
 For complex state that needs instant feedback with server confirmation:
 
 ```tsx
-const [optimisticItems, addOptimistic] = useOptimistic(items, (state, newItem) => [
-  ...state,
-  { ...newItem, pending: true },
-]);
+const [optimisticItems, addOptimistic] = useOptimistic(
+  items,
+  (state, newItem) => [...state, { ...newItem, pending: true }],
+);
 
 function handleAdd(item: Item) {
   startTransition(async () => {
@@ -277,19 +308,21 @@ No `tailwind.config.js` / `tailwind.config.ts`. All configuration lives in `glob
 
 ### 3.2 Critical Utility Migrations
 
-| v3 Utility | v4 Replacement | Why |
-|-----------|---------------|-----|
-| `bg-gradient-to-r` | `bg-linear-to-r` | Build error if not migrated |
-| `bg-gradient-to-t` | `bg-linear-to-t` | Build error if not migrated |
-| `outline-none` | `outline-hidden` | **Critical a11y fix** — preserves Forced Colors Mode |
-| `flex-shrink-0` | `shrink-0` | Silent style failure |
+| v3 Utility         | v4 Replacement   | Why                                                  |
+| ------------------ | ---------------- | ---------------------------------------------------- |
+| `bg-gradient-to-r` | `bg-linear-to-r` | Build error if not migrated                          |
+| `bg-gradient-to-t` | `bg-linear-to-t` | Build error if not migrated                          |
+| `outline-none`     | `outline-hidden` | **Critical a11y fix** — preserves Forced Colors Mode |
+| `flex-shrink-0`    | `shrink-0`       | Silent style failure                                 |
 
 ### 3.3 Custom Utilities
 
 ```css
 /* ❌ v3 style */
 @layer utilities {
-  .font-display { font-family: var(--font-display); }
+  .font-display {
+    font-family: var(--font-display);
+  }
 }
 
 /* ✅ v4 style */
@@ -341,23 +374,34 @@ grep -rEn 'text-\[#[0-9A-Fa-f]{3,6}\]|bg-\[#[0-9A-Fa-f]{3,6}\]' src/
 
 ```ts
 // ❌ BANNED (erasableSyntaxOnly)
-enum Status { ACTIVE = "ACTIVE", DRAFT = "DRAFT" }
-namespace MySpace { export interface Config {} }
+enum Status {
+  ACTIVE = "ACTIVE",
+  DRAFT = "DRAFT",
+}
+namespace MySpace {
+  export interface Config {}
+}
 
 // ✅ CORRECT
 type Status = "ACTIVE" | "DRAFT";
-interface Config { /* ... */ }
+interface Config {
+  /* ... */
+}
 ```
 
 ### 4.2 No `any` — Use `unknown` or Typed Interfaces
 
 ```ts
 // ❌ BANNED
-function process(data: any) { /* ... */ }
+function process(data: any) {
+  /* ... */
+}
 const ctx = {} as any;
 
 // ✅ CORRECT
-function process(data: unknown) { /* ... */ }
+function process(data: unknown) {
+  /* ... */
+}
 const ctx: Record<string, never> = {};
 ```
 
@@ -417,7 +461,7 @@ Drizzle's `decimal` type returns strings by default. Convert in your service lay
 ```ts
 // Service layer
 const products = await db.select().from(productsTable);
-return products.map(p => ({
+return products.map((p) => ({
   ...p,
   price: Number(p.price),
 }));
@@ -451,7 +495,9 @@ const pool = new Pool({
 });
 
 // Always use pool.query() or pool.connect() with release
-const { rows } = await pool.query("SELECT * FROM users WHERE id = $1", [userId]);
+const { rows } = await pool.query("SELECT * FROM users WHERE id = $1", [
+  userId,
+]);
 ```
 
 ### 5.6 Service Factory Pattern (RSC-First)
@@ -474,7 +520,7 @@ export function createProductsService() {
         .where(eq(products.status, "ACTIVE"))
         .orderBy(desc(products.createdAt))
         .limit(limit);
-      return rows.map(p => ({ ...p, price: Number(p.price) }));
+      return rows.map((p) => ({ ...p, price: Number(p.price) }));
     },
     async getBySlug(slug: string) {
       return db.query.products.findFirst({ where: eq(products.slug, slug) });
@@ -501,7 +547,7 @@ export default async function ShopPage() {
 }
 
 // Client Component — handles interactivity
-"use client";
+("use client");
 export function ProductGrid({ products }: { products: Product[] }) {
   // interactive UI here
 }
@@ -530,7 +576,7 @@ export default function Page() {
 }
 
 // ✅ Extract to client component
-"use client";
+("use client");
 import { useState, useEffect } from "react";
 export function WindowWidth() {
   const [width, setWidth] = useState(0);
@@ -577,13 +623,19 @@ export function captureException(error: Error): void {
 "use client";
 import { useEffect } from "react";
 
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+export default function GlobalError({
+  error,
+}: {
+  error: Error & { digest?: string };
+}) {
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       import("@sentry/nextjs")
         .then((Sentry) => Sentry.captureException(error))
         .catch(() =>
-          import("@/lib/sentry").then(({ captureException }) => captureException(error))
+          import("@/lib/sentry").then(({ captureException }) =>
+            captureException(error),
+          ),
         );
     }
   }, [error]);
@@ -605,14 +657,14 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
 
 Follow this sequence for every non-trivial task:
 
-| Phase | Objective | Gate |
-|---|---|---|
-| **ANALYZE** | Deep requirement mining, risk assessment, ambiguity identification | Existing code audited. Multiple approaches explored. |
-| **PLAN** | File matrix, success criteria, timeline | No code without documented plan. |
-| **VALIDATE** | Confirm alignment, address concerns | User explicitly confirms. |
-| **IMPLEMENT** | Modular components, TDD, inline docs | Zero console errors, all states handled. |
-| **VERIFY** | `tsc --noEmit`, lint, test, build | All checks green. |
-| **DELIVER** | Handoff docs, runbook, next steps | Future agent can onboard from docs alone. |
+| Phase         | Objective                                                          | Gate                                                 |
+| ------------- | ------------------------------------------------------------------ | ---------------------------------------------------- |
+| **ANALYZE**   | Deep requirement mining, risk assessment, ambiguity identification | Existing code audited. Multiple approaches explored. |
+| **PLAN**      | File matrix, success criteria, timeline                            | No code without documented plan.                     |
+| **VALIDATE**  | Confirm alignment, address concerns                                | User explicitly confirms.                            |
+| **IMPLEMENT** | Modular components, TDD, inline docs                               | Zero console errors, all states handled.             |
+| **VERIFY**    | `tsc --noEmit`, lint, test, build                                  | All checks green.                                    |
+| **DELIVER**   | Handoff docs, runbook, next steps                                  | Future agent can onboard from docs alone.            |
 
 ---
 
@@ -662,7 +714,10 @@ export default function ScrollReveal({
   }, []);
 
   return (
-    <div ref={ref} className={clsx("reveal", isVisible && "visible", className)}>
+    <div
+      ref={ref}
+      className={clsx("reveal", isVisible && "visible", className)}
+    >
       {children}
     </div>
   );
@@ -690,7 +745,9 @@ const el = container.querySelector('[data-testid="sale-badge"]');
 
 ```ts
 vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => Promise.resolve({ get: vi.fn().mockReturnValue(undefined) })),
+  cookies: vi.fn(() =>
+    Promise.resolve({ get: vi.fn().mockReturnValue(undefined) }),
+  ),
 }));
 ```
 
@@ -698,7 +755,9 @@ vi.mock("next/headers", () => ({
 
 ```ts
 // In setup.ts
-vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => setTimeout(cb, 0));
+vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
+  setTimeout(cb, 0),
+);
 vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
 ```
 
@@ -714,7 +773,9 @@ vi.mock("@/db", () => ({
 }));
 
 vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => Promise.resolve({ get: vi.fn().mockReturnValue(undefined) })),
+  cookies: vi.fn(() =>
+    Promise.resolve({ get: vi.fn().mockReturnValue(undefined) }),
+  ),
 }));
 ```
 
@@ -782,21 +843,21 @@ grep -rn '<a href="/' src/ --include="*.tsx"
 
 ## 12. Common Error → Fix Reference
 
-| Error / Symptom | Cause | Fix |
-|----------------|-------|-----|
-| `TS2339: Property 'X' does not exist` | Stale generated types | Regenerate: `drizzle-kit generate` + `tsc --noEmit` |
-| `TS2307: Cannot find module` (after route move) | Stale `.next/types/` cache | `rm -rf .next/` then `tsc --noEmit` |
-| `Property 'get' does not exist on type 'Promise<...>'` | Missing `await cookies()` | `(await cookies()).get("key")` |
-| `JSX.Element` not found | React 19 removed global namespace | Use inferred return or `import type { ReactElement }` |
-| `outline-none` not working a11y | Tailwind v4 renamed it | Use `outline-hidden` |
-| `bg-gradient-to-r` build error | Tailwind v4 renamed it | Use `bg-linear-to-r` |
-| `flex-shrink-0` silent failure | Tailwind v4 renamed it | Use `shrink-0` |
-| `enum` / `namespace` errors | `erasableSyntaxOnly` bans them | Use string unions and ES modules |
-| `window is not defined` in RSC | Browser API in Server Component | Move to `"use client"` component |
-| `Type 'string' is not assignable to type 'Date'` | Decimal/date serialization | Convert in service layer before client |
-| `middleware.ts deprecation warning` | Next.js 16 deprecated it | Rename to `proxy.ts` |
-| Hydration mismatch on `<html>` | Two layouts render document shell | Root layout: pass-through only; nested layout: owns `<html>`/`<body>` |
-| Import breaks after page move | Relative paths invalidated | Convert to path aliases (`@/...`) |
+| Error / Symptom                                        | Cause                             | Fix                                                                   |
+| ------------------------------------------------------ | --------------------------------- | --------------------------------------------------------------------- |
+| `TS2339: Property 'X' does not exist`                  | Stale generated types             | Regenerate: `drizzle-kit generate` + `tsc --noEmit`                   |
+| `TS2307: Cannot find module` (after route move)        | Stale `.next/types/` cache        | `rm -rf .next/` then `tsc --noEmit`                                   |
+| `Property 'get' does not exist on type 'Promise<...>'` | Missing `await cookies()`         | `(await cookies()).get("key")`                                        |
+| `JSX.Element` not found                                | React 19 removed global namespace | Use inferred return or `import type { ReactElement }`                 |
+| `outline-none` not working a11y                        | Tailwind v4 renamed it            | Use `outline-hidden`                                                  |
+| `bg-gradient-to-r` build error                         | Tailwind v4 renamed it            | Use `bg-linear-to-r`                                                  |
+| `flex-shrink-0` silent failure                         | Tailwind v4 renamed it            | Use `shrink-0`                                                        |
+| `enum` / `namespace` errors                            | `erasableSyntaxOnly` bans them    | Use string unions and ES modules                                      |
+| `window is not defined` in RSC                         | Browser API in Server Component   | Move to `"use client"` component                                      |
+| `Type 'string' is not assignable to type 'Date'`       | Decimal/date serialization        | Convert in service layer before client                                |
+| `middleware.ts deprecation warning`                    | Next.js 16 deprecated it          | Rename to `proxy.ts`                                                  |
+| Hydration mismatch on `<html>`                         | Two layouts render document shell | Root layout: pass-through only; nested layout: owns `<html>`/`<body>` |
+| Import breaks after page move                          | Relative paths invalidated        | Convert to path aliases (`@/...`)                                     |
 
 ---
 
@@ -823,20 +884,20 @@ Before submitting code, verify:
 
 Here's what was incorporated from luxeverse-architect-skill.md:
 New sections added:
-Section	Topic	Source
-§1.5	Root Layout Paradox — must have <html>/<body> for non-locale routes, but must NOT when nested layout owns them	§7.1, §7.3
-§1.10	Stale .next/types/ Cache — rm -rf .next/ mandatory after route deletions	§8.1
-§1.11	Import Path Hygiene — relative imports break after moves, use @/ aliases	§8.2
-§5.6	Service Factory Pattern — encapsulate Drizzle queries in create*Service() factories	§9.1, §16.2
-§6.4	RSC Data Boundaries — zero client waterfall rationale	§16.3
-§7	Error Tracking — dynamic Sentry import with fallback stub	§16.5
-§8	6-Phase Execution Framework — ANALYZE→PLAN→VALIDATE→IMPLEMENT→VERIFY→DELIVER	§1
-§9	Accessibility Patterns — useReducedMotion hook, ScrollReveal component	§11.1, §11.2
-§10.4	Database Mocking — Drizzle mock pattern for server action tests	§16.6
-§11	Scan Commands — grep patterns for code quality checks	§22
+Section Topic Source
+§1.5 Root Layout Paradox — must have <html>/<body> for non-locale routes, but must NOT when nested layout owns them §7.1, §7.3
+§1.10 Stale .next/types/ Cache — rm -rf .next/ mandatory after route deletions §8.1
+§1.11 Import Path Hygiene — relative imports break after moves, use @/ aliases §8.2
+§5.6 Service Factory Pattern — encapsulate Drizzle queries in create\*Service() factories §9.1, §16.2
+§6.4 RSC Data Boundaries — zero client waterfall rationale §16.3
+§7 Error Tracking — dynamic Sentry import with fallback stub §16.5
+§8 6-Phase Execution Framework — ANALYZE→PLAN→VALIDATE→IMPLEMENT→VERIFY→DELIVER §1
+§9 Accessibility Patterns — useReducedMotion hook, ScrollReveal component §11.1, §11.2
+§10.4 Database Mocking — Drizzle mock pattern for server action tests §16.6
+§11 Scan Commands — grep patterns for code quality checks §22
 Existing sections updated:
+
 - §1.1 — Added interface PageProps pattern as the safe universal approach
 - §2.1 — ReactElement now explicitly marked as legacy, migration path added
 - §12 — Added 3 new error rows (TS2307 stale cache, import breaks, route moves)
 - §13 — Added 2 new checklist items (route deletions, path aliases)
-

@@ -13,6 +13,7 @@ I can see several tools available:
 Additionally, I see a list of available skills in the project context. These could be considered extensions. Let me list them both clearly.
 
 Actually, I should provide a clear, organized list. Let me structure this as:
+
 1. Core tools
 2. Available skills/extensions
 
@@ -23,25 +24,25 @@ Here's a complete list of what I have available:
 Core Tools
 
 ┌────────────────────┬──────────────────────────────────────────────────────────────────────────────┐
-│ Tool               │ Purpose                                                                      │
+│ Tool │ Purpose │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ read               │ Read file contents (text or images)                                          │
+│ read │ Read file contents (text or images) │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ bash               │ Execute bash commands in the current working directory                       │
+│ bash │ Execute bash commands in the current working directory │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ edit               │ Make precise, targeted file edits with exact text replacement                │
+│ edit │ Make precise, targeted file edits with exact text replacement │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ write              │ Create new files or overwrite existing ones                                  │
+│ write │ Create new files or overwrite existing ones │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ web_search         │ Search the web using Perplexity AI, Exa, or Gemini                           │
+│ web_search │ Search the web using Perplexity AI, Exa, or Gemini │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ code_search        │ Search for code examples, documentation, and API references                  │
+│ code_search │ Search for code examples, documentation, and API references │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ fetch_content      │ Extract readable content from URLs, YouTube, GitHub, or local videos         │
+│ fetch_content │ Extract readable content from URLs, YouTube, GitHub, or local videos │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
 │ get_search_content │ Retrieve full stored content from previous web_search or fetch_content calls │
 ├────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
-│ agent_browser      │ Browse and interact with websites via Chrome/Chromium                        │
+│ agent_browser │ Browse and interact with websites via Chrome/Chromium │
 └────────────────────┴──────────────────────────────────────────────────────────────────────────────┘
 
 Recommended Skills to Load for this Repo
@@ -110,4 +111,3 @@ I can activate these specialized skill files on-demand (they're located under /h
 ────────────────────────────────────────────────────────────────────────────────
 
 To use a skill: Just ask me to load it (e.g., "Load the avant-garde-design-v4 skill"), or mention a task that matches one (e.g., "Create a landing page" will trigger the design skills automatically).
-

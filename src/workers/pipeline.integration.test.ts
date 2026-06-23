@@ -61,7 +61,7 @@ describe("Ingest Pipeline Integration", () => {
           title: item.title,
           excerpt: item.excerpt,
           body: item.body,
-        })
+        }),
       );
 
       // Item 1: has body > 500 chars → full_text
@@ -73,7 +73,11 @@ describe("Ingest Pipeline Integration", () => {
 
       // Step 3: Hash each item — verify uniqueness
       const hashes = items.map((item) =>
-        hashContent(item.title, item.body ?? null, item.publishedAt ?? new Date())
+        hashContent(
+          item.title,
+          item.body ?? null,
+          item.publishedAt ?? new Date(),
+        ),
       );
 
       // All hashes should be unique (different titles)
@@ -117,7 +121,8 @@ describe("Ingest Pipeline Integration", () => {
     });
 
     it("handles empty feed gracefully", async () => {
-      const emptyRss = '<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>';
+      const emptyRss =
+        '<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>';
       const items = await parseFeed(emptyRss, "rss");
 
       expect(items).toEqual([]);
@@ -181,7 +186,7 @@ describe("Ingest Pipeline Integration", () => {
           title: item.title,
           excerpt: item.excerpt,
           body: item.body,
-        })
+        }),
       );
 
       expect(classifications[0]).toBe("full_text");

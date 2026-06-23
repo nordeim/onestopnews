@@ -12,7 +12,9 @@ describe("StatsSection", () => {
 
   it("renders the section heading", () => {
     render(<StatsSection />);
-    expect(screen.queryByRole("heading", { name: /Our Commitment/ })).toBeDefined();
+    expect(
+      screen.queryByRole("heading", { name: /Our Commitment/ }),
+    ).toBeDefined();
   });
 
   it("has three feature check marks", () => {

@@ -24,7 +24,7 @@ import type { ArticleWithSummary } from "@/domain/articles/types";
  * @returns ArticleWithSummary if found, null otherwise
  */
 export async function getArticleWithSummary(
-  id: string
+  id: string,
 ): Promise<ArticleWithSummary | null> {
   const rows = await db
     .select({

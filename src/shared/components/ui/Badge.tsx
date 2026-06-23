@@ -25,17 +25,14 @@ const badgeVariants = cva(
         slate:
           "bg-dispatch-slate/10 text-dispatch-slate border border-dispatch-slate/20 px-2 py-1",
         /* Sage — positive / finance */
-        sage:
-          "bg-dispatch-sage/10 text-dispatch-sage border border-dispatch-sage/20 px-2 py-1",
+        sage: "bg-dispatch-sage/10 text-dispatch-sage border border-dispatch-sage/20 px-2 py-1",
         /* Clay — politics / culture */
-        clay:
-          "bg-dispatch-clay/10 text-dispatch-clay border border-dispatch-clay/20 px-2 py-1",
+        clay: "bg-dispatch-clay/10 text-dispatch-clay border border-dispatch-clay/20 px-2 py-1",
         /* Violet — science / culture */
         violet:
           "bg-dispatch-violet/10 text-dispatch-violet border border-dispatch-violet/20 px-2 py-1",
         /* Muted — placeholder / disabled state */
-        muted:
-          "bg-paper-100 text-ink-300 border border-ink-100 px-2 py-1",
+        muted: "bg-paper-100 text-ink-300 border border-ink-100 px-2 py-1",
         /* Plain — no border, no background, for inline metadata */
         plain: "text-ink-300",
       },
@@ -43,12 +40,13 @@ const badgeVariants = cva(
     defaultVariants: {
       variant: "ember",
     },
-  }
+  },
 );
 
 /* ─── Component Interface ─────────────────────────────────────────────── */
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
+  extends
+    React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
   /* Optional: show a small coloured dot before the text */
   dot?: boolean;
@@ -58,7 +56,10 @@ export interface BadgeProps
 
 /* ─── Component ───────────────────────────────────────── */
 const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ className, variant, dot = false, dotColorClass, children, ...props }, ref) => {
+  (
+    { className, variant, dot = false, dotColorClass, children, ...props },
+    ref,
+  ) => {
     return (
       <span
         ref={ref}
@@ -75,7 +76,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
                   (variant === "sage" && "bg-dispatch-sage") ||
                   (variant === "clay" && "bg-dispatch-clay") ||
                   (variant === "violet" && "bg-dispatch-violet") ||
-                  "bg-ink-300")
+                  "bg-ink-300"),
             )}
             aria-hidden="true"
           />
@@ -83,7 +84,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
         {children}
       </span>
     );
-  }
+  },
 );
 Badge.displayName = "Badge";
 

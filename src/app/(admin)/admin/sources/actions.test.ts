@@ -19,9 +19,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Drizzle's query builder chains: db.update().set().where().returning()
 // and db.delete().where().returning(). We build self-referential mock objects
 // so any chain depth works.
-const mockReturning = vi.fn().mockResolvedValue([
-  { id: "source-1", name: "Test Source" },
-]);
+const mockReturning = vi
+  .fn()
+  .mockResolvedValue([{ id: "source-1", name: "Test Source" }]);
 
 function createChainableMock() {
   const chain: Record<string, ReturnType<typeof vi.fn>> = {};

@@ -38,8 +38,11 @@ export function FeedContainer({
   initialNextCursor,
   initialHasMore,
 }: FeedContainerProps) {
-  const [articles, setArticles] = useState<ArticleWithSource[]>(initialArticles);
-  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
+  const [articles, setArticles] =
+    useState<ArticleWithSource[]>(initialArticles);
+  const [nextCursor, setNextCursor] = useState<string | null>(
+    initialNextCursor,
+  );
   const [hasMore, setHasMore] = useState<boolean>(initialHasMore);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);

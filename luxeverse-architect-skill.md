@@ -6,6 +6,7 @@
 **Date**: 2026-05-28
 **Scope**: Phases 0–5 verified (Foundation, Core Commerce, Cinematic Experience, AI Integration, Scale & Social Remediation, Hardening & Production Data Integration)
 **New Since v5.0.0**:
+
 - Next.js 16 App Router `root layout.tsx` **must include `<html>` and `<body>` tags** — missing them throws "Missing root layout tags" runtime error for all non-`[locale]` routes
 - Route restructuring: **all locale-dependent pages moved to `[locale]/(routes)` groups** to ensure `[locale]/layout.tsx` wraps them with `<html>` `<body>` and i18n providers
 - Root `layout.tsx` acts as a **minimal shell** — must not include `<Navbar>` or `<Footer>`; those belong in `[locale]/layout.tsx`
@@ -37,20 +38,21 @@ Every section below was validated in battle. Skipping any section risks reproduc
 
 Follow this exact sequence for every task. No code without plan alignment. No "done" without verification.
 
-| Phase | Objective | Gate | Must Pass Before Proceeding |
-|---|---|---|---|
-| **ANALYZE** | Deep requirement mining, risk assessment, ambiguity identification | PRD/skill section read cover to cover. Existing code audited. Multiple approaches explored. | Never skip |
-| **PLAN** | File matrix, success criteria, timeline, effort estimation | Explicit user sign-off. Confirmation question asked. | Gate: no code without documented plan |
-| **VALIDATE** | Confirm alignment, address concerns, modify if needed | Documented approval. User explicitly confirms. | Gate: address all concerns |
-| **IMPLEMENT** | Modular components, TDD, inline docs | Component tests pass before integration. No error patterns present. | Gate: zero console errors, all states handled |
-| **VERIFY** | `tsc --noEmit`, a11y, perf, security | Axe-core ≥ 95, LCP < 2.5s, no critical audit, zero `test.skip` | Gate: all checks green |
-| **DELIVER** | Handoff docs, runbook, next steps, knowledge transfer | Complete documentation. Nothing ambiguous. | Gate: future agent can onboard from docs alone |
+| Phase         | Objective                                                          | Gate                                                                                        | Must Pass Before Proceeding                    |
+| ------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| **ANALYZE**   | Deep requirement mining, risk assessment, ambiguity identification | PRD/skill section read cover to cover. Existing code audited. Multiple approaches explored. | Never skip                                     |
+| **PLAN**      | File matrix, success criteria, timeline, effort estimation         | Explicit user sign-off. Confirmation question asked.                                        | Gate: no code without documented plan          |
+| **VALIDATE**  | Confirm alignment, address concerns, modify if needed              | Documented approval. User explicitly confirms.                                              | Gate: address all concerns                     |
+| **IMPLEMENT** | Modular components, TDD, inline docs                               | Component tests pass before integration. No error patterns present.                         | Gate: zero console errors, all states handled  |
+| **VERIFY**    | `tsc --noEmit`, a11y, perf, security                               | Axe-core ≥ 95, LCP < 2.5s, no critical audit, zero `test.skip`                              | Gate: all checks green                         |
+| **DELIVER**   | Handoff docs, runbook, next steps, knowledge transfer              | Complete documentation. Nothing ambiguous.                                                  | Gate: future agent can onboard from docs alone |
 
 ---
 
 ## 2. Complete Architecture Blueprint
 
 ### 2.1 Monorepo Structure (Exact)
+
 ```
 /
 ├── apps/
@@ -201,9 +203,7 @@ const nextConfig: NextConfig = {
   },
 
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "images.unsplash.com" },
-    ],
+    remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
   },
 
   // Next.js 16: Enforce strict handling for cookies & headers
@@ -264,11 +264,11 @@ Since Tailwind v4, `tailwind.config.js|ts` is **deprecated**. All configuration 
 
 ### 3.2 v4 Utility Migrations (Before → After)
 
-| Deprecated (v3) | Modern (v4) |
-|---|---|
+| Deprecated (v3)    | Modern (v4)      |
+| ------------------ | ---------------- |
 | `bg-gradient-to-r` | `bg-linear-to-r` |
-| `outline-none` | `outline-hidden` |
-| `flex-shrink-0` | `shrink-0` |
+| `outline-none`     | `outline-hidden` |
+| `flex-shrink-0`    | `shrink-0`       |
 
 ---
 
@@ -276,10 +276,10 @@ Since Tailwind v4, `tailwind.config.js|ts` is **deprecated**. All configuration 
 
 ### 4.1 Mandatory File Split (v4)
 
-| File | Runtime | Purpose | Consumed By |
-|------|---------|---------|-------------|
-| `routing.ts` | Edge | Routing rules, locale matching | `proxy.ts` (`createMiddleware`), `Navigation` APIs |
-| `request.ts` | Node.js | Per-request message loading | `createNextIntlPlugin`, Server Components (`getTranslations`) |
+| File         | Runtime | Purpose                        | Consumed By                                                   |
+| ------------ | ------- | ------------------------------ | ------------------------------------------------------------- |
+| `routing.ts` | Edge    | Routing rules, locale matching | `proxy.ts` (`createMiddleware`), `Navigation` APIs            |
+| `request.ts` | Node.js | Per-request message loading    | `createNextIntlPlugin`, Server Components (`getTranslations`) |
 
 **Anti-pattern**: Keeping a monolithic `i18n.ts` causes `TypeError: Cannot read property 'get' of undefined` because `createNextIntlPlugin` expects the Node.js `getRequestConfig` factory, while `createMiddleware` expects the Edge `defineRouting`.
 
@@ -331,11 +331,13 @@ export default getRequestConfig(async ({ requestLocale }) => {
 **Cause**: `createNextIntlPlugin("./src/i18n/routing.ts")` points to the Edge file (defining routing rules), but the plugin needs the Node.js file (`request.ts`) that provides `getRequestConfig()`.
 
 **Fix**:
+
 ```typescript
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 ```
 
 **Also required**: Turbopack must alias `next-intl/config` to the **same** file used by `createNextIntlPlugin`:
+
 ```typescript
 turbopack: {
   resolveAlias: {
@@ -349,6 +351,7 @@ turbopack: {
 **Cause**: When `next-intl` aliases `request.ts` at build time, dynamic `import()` paths resolve from the **alias target location**, not the source tree.
 
 **Before (broken)**:
+
 ```
 /home/project/LuxeVerse/apps/web/
 ├── messages/              ← at root
@@ -358,6 +361,7 @@ turbopack: {
 ```
 
 **After (fixed)**:
+
 ```
 /home/project/LuxeVerse/apps/web/
 ├── src/
@@ -374,12 +378,13 @@ turbopack: {
 
 **CRITICAL**: Next.js 16's `.next/types/` generator types `params` as `Promise<any>` for page components, even though at runtime `params` is a plain object.
 
-| Layer | Type | Must Use |
-|-------|------|---------|
-| **Runtime** | Plain object `{}` | `const { slug } = params` (direct destructuring) |
+| Layer                                | Type               | Must Use                                          |
+| ------------------------------------ | ------------------ | ------------------------------------------------- |
+| **Runtime**                          | Plain object `{}`  | `const { slug } = params` (direct destructuring)  |
 | **Generated Types** (`.next/types/`) | `Promise<{ ... }>` | `params: Promise<{...}>` + `await` to satisfy tsc |
 
 ### 6.1 Pages
+
 ```tsx
 // ✅ CORRECT — satisfies both runtime and generated types
 interface PageProps {
@@ -391,6 +396,7 @@ export default async function Page({ params }: PageProps) {
 ```
 
 ### 6.2 Layouts
+
 ```tsx
 // ✅ CORRECT — layouts always receive a real Promise
 export default async function Layout({
@@ -423,7 +429,11 @@ app/layout.tsx -> returns only <>{children}</>  ❌  (throws)
 
 ```tsx
 // app/layout.tsx (ROOT layout — minimal shell)
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
@@ -435,6 +445,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 **BUT**: When using `[locale]/layout.tsx` that also renders `<html>`/`<body>`, you MUST remove them from the root layout to prevent a **hydration mismatch** (see §7.3).
 
 **Root layout anti-patterns**:
+
 - ❌ Do NOT put `<Navbar>` or `<Footer>` in the root layout. Those are locale-dependent and belong in `[locale]/layout.tsx`.
 - ❌ Do NOT put `<NextIntlClientProvider>` or any i18n context in the root layout. Put it in `[locale]/layout.tsx`.
 - ✅ Root layout is a **structural shell only** — fonts, metadata, and `children`.
@@ -466,12 +477,14 @@ app/
 ```
 
 **Benefits**:
+
 - Every route automatically gets `locale` from the parent layout.
 - No duplicate `<html>`/`<body>` definitions across pages.
 - i18n context, fonts, and layout elements (Navbar/Footer) are injected once at the group level.
 - `(routes)` is a **route group** — it does not affect the URL path.
 
 **Migration steps** (Option B from status_18.md):
+
 1. Create `app/[locale]/(routes)/` directory.
 2. Move all root-level pages (`shop`, `editorial`, `checkout`, `search`, `loyalty`, `style-quiz`, `(auth)`) into `app/[locale]/(routes)/`.
 3. Update all **relative imports** (`../../stores/`) in moved pages to **path aliases** (`@/stores/`) to prevent breakage.
@@ -489,15 +502,19 @@ app/
 Result: Next.js server-renders one set of attributes on `<html>`/`<body>`, but the React client expects a different set from the locale layout, causing a hydration mismatch.
 
 **Root cause analysis**: The error trace from `error.txt` shows the exact conflict:
+
 ```
 <html lang="en" dir="ltr" className="font-variables...">
   <body className="bg-obsidian-50 text-obsidian-900 antialiased">
 ```
+
 However, `app/[locale]/layout.tsx` renders:
+
 ```
 <html lang={locale} dir={isRTL(locale) ? "rtl" : "ltr"} className={fontVars}>
   <body className="bg-obsidian-50 text-obsidian-900 antialiased">
 ```
+
 The server might render from the root layout, then the client re-hydrates with the locale layout, producing different attribute values for the same `<html>` and `<body>` DOM elements.
 
 **Fix**: Remove `<html>` and `<body>` from the root layout. Render them **only** in `app/[locale]/layout.tsx`.
@@ -512,18 +529,29 @@ export const metadata: Metadata = {
 };
 
 // ❌ DO NOT render <html> or <body> here if [locale]/layout.tsx renders them
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return <>{children}</>;
 }
 ```
 
 ```tsx
 // app/[locale]/layout.tsx (LOCALE layout — MUST render <html>/<body>)
-export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
+export default async function LocaleLayout({
+  children,
+  params,
+}: LocaleLayoutProps) {
   const { locale } = await params;
 
   return (
-    <html lang={locale} dir={isRTL(locale) ? "rtl" : "ltr"} className={fontVars}>
+    <html
+      lang={locale}
+      dir={isRTL(locale) ? "rtl" : "ltr"}
+      className={fontVars}
+    >
       <body className="bg-obsidian-50 text-obsidian-900 antialiased">
         {children}
       </body>
@@ -566,7 +594,11 @@ export default async function LocaleLayout({ children, params }) {
   const messages = (await import(`../../messages/${locale}.json`)).default;
 
   return (
-    <html lang={locale} dir={isRTL(locale) ? "rtl" : "ltr"} className={fontVars}>
+    <html
+      lang={locale}
+      dir={isRTL(locale) ? "rtl" : "ltr"}
+      className={fontVars}
+    >
       <body className="bg-obsidian-50 text-obsidian-900 antialiased">
         <ClientProviders locale={locale} messages={messages}>
           {children}
@@ -588,6 +620,7 @@ export default async function LocaleLayout({ children, params }) {
 ### 8.1 Stale `.next/types/` Cache
 
 **Symptom after deleting routes/pages**:
+
 ```
 TS2307: Cannot find module '../../../.../old-route/page' or its corresponding type declarations.
 ```
@@ -595,6 +628,7 @@ TS2307: Cannot find module '../../../.../old-route/page' or its corresponding ty
 **Cause**: Next.js auto-generates `.next/types/` `.d.ts` files that point to old route locations. These are **not** deleted when you remove the source files.
 
 **Fix**:
+
 ```bash
 rm -rf apps/web/.next/
 # Then re-run typecheck to regenerate from the new source tree
@@ -606,12 +640,14 @@ pnpm typecheck
 After moving pages deeper into `app/[locale]/(routes)/`, relative imports like `../../stores/style-quiz` will fail because the relative tree changed.
 
 **Before (broken after move)**:
+
 ```typescript
 // Was in: app/style-quiz/page.tsx
 import { useQuizStore } from "../../stores/style-quiz";
 ```
 
 **After (stable via alias)**:
+
 ```typescript
 // Now in: app/[locale]/(routes)/style-quiz/page.tsx
 import { useQuizStore } from "@/stores/style-quiz";
@@ -639,7 +675,10 @@ export function createFeaturedCollectionsService() {
     getAll: (args?: { include?: FeaturedCollectionsInclude }) =>
       prisma.featuredCollection.findMany({ include: args?.include }),
     getById: (id: string, args?: { include?: FeaturedCollectionsInclude }) =>
-      prisma.featuredCollection.findUnique({ where: { id }, include: args?.include }),
+      prisma.featuredCollection.findUnique({
+        where: { id },
+        include: args?.include,
+      }),
   };
 }
 ```
@@ -657,7 +696,7 @@ return prisma.product.findMany().then((products) =>
   products.map((p) => ({
     ...p,
     price: Number(p.price), // Decimal → number
-  }))
+  })),
 );
 ```
 
@@ -669,11 +708,16 @@ return prisma.product.findMany().then((products) =>
 
 ```typescript
 // ❌ Anti-pattern: object return causes re-render loops
-const { items, count } = useCartStore((s) => ({ items: s.items, count: s.count }));
+const { items, count } = useCartStore((s) => ({
+  items: s.items,
+  count: s.count,
+}));
 
 // ✅ Correct: use useShallow for stable object selectors
 import { useShallow } from "zustand/react/shallow";
-const { items, count } = useCartStore(useShallow((s) => ({ items: s.items, count: s.count })));
+const { items, count } = useCartStore(
+  useShallow((s) => ({ items: s.items, count: s.count })),
+);
 
 // ✅ Also correct: single primitive selector
 const count = useCartStore((s) => s.count);
@@ -720,9 +764,16 @@ export function useReducedMotion() {
 ### 11.2 Scroll Reveal (`IntersectionObserver`)
 
 Toggle `.reveal.visible` class based on intersection:
+
 ```tsx
 // components/shared/ScrollReveal.tsx
-export default function ScrollReveal({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export default function ScrollReveal({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
@@ -733,7 +784,10 @@ export default function ScrollReveal({ children, className = "" }: { children: R
     return () => observer.disconnect();
   }, []);
   return (
-    <div ref={ref} className={clsx("reveal", isVisible && "visible", className)}>
+    <div
+      ref={ref}
+      className={clsx("reveal", isVisible && "visible", className)}
+    >
       {children}
     </div>
   );
@@ -751,53 +805,55 @@ Always run the full pipeline before declaring "done":
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 ```
 
-| Check | Command | Target |
-|---|---|---|
-| TypeScript | `pnpm typecheck` | Zero errors |
-| Lint | `pnpm lint` | Tailwind v3 scan, raw hex scan, no `any`, no `enum` |
-| Test | `pnpm test` | All tests pass, zero `test.skip` |
-| Build | `pnpm build` | Production build succeeds |
-| Prisma Sync | `cd apps/web && pnpm db:generate` | Fresh client after schema changes |
+| Check       | Command                           | Target                                              |
+| ----------- | --------------------------------- | --------------------------------------------------- |
+| TypeScript  | `pnpm typecheck`                  | Zero errors                                         |
+| Lint        | `pnpm lint`                       | Tailwind v3 scan, raw hex scan, no `any`, no `enum` |
+| Test        | `pnpm test`                       | All tests pass, zero `test.skip`                    |
+| Build       | `pnpm build`                      | Production build succeeds                           |
+| Prisma Sync | `cd apps/web && pnpm db:generate` | Fresh client after schema changes                   |
 
 ---
 
 ## 13. Anti-Patterns Index
 
-| Anti-Pattern | Why It Breaks | The Fix |
-|---|---|---|
-| `enum` (TypeScript) | Violates `erasableSyntaxOnly` — compiles to runtime IIFE | `type Status = "ACTIVE" \| "DRAFT"` |
-| `namespace` | Violates `erasableSyntaxOnly` — compiles to runtime closure | Use ES modules |
-| `any` | Subverts strict mode and tRPC end-to-end safety | `unknown` or typed interface |
-| `bg-[#hex]` in className | Bypasses design system, breaks theming | `bg-obsidian-950` |
-| `bg-gradient-to-r` (v3) | Deprecated in Tailwind v4 | `bg-linear-to-r` |
-| `outline-none` | Deprecated in Tailwind v4 | `outline-hidden` |
-| `flex-shrink-0` | Deprecated in Tailwind v4 | `shrink-0` |
-| `getServerSession` | Deprecated in Auth.js v5 — returns `undefined` in Server Actions | `auth()` universal function |
-| Monolithic `i18n.ts` | Runtime crash in next-intl v4 | Split into `routing.ts` + `request.ts` |
-| Stale `.next/` after route changes | TS2307 "Cannot find module" from old generated types | `rm -rf .next/` |
-| Root `layout.tsx` without `<html>`/`<body>` | `/missing-root-layout-tags` runtime error | Always include `<html><body>{children}</body></html>` |
+| Anti-Pattern                                                                      | Why It Breaks                                                         | The Fix                                                                           |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `enum` (TypeScript)                                                               | Violates `erasableSyntaxOnly` — compiles to runtime IIFE              | `type Status = "ACTIVE" \| "DRAFT"`                                               |
+| `namespace`                                                                       | Violates `erasableSyntaxOnly` — compiles to runtime closure           | Use ES modules                                                                    |
+| `any`                                                                             | Subverts strict mode and tRPC end-to-end safety                       | `unknown` or typed interface                                                      |
+| `bg-[#hex]` in className                                                          | Bypasses design system, breaks theming                                | `bg-obsidian-950`                                                                 |
+| `bg-gradient-to-r` (v3)                                                           | Deprecated in Tailwind v4                                             | `bg-linear-to-r`                                                                  |
+| `outline-none`                                                                    | Deprecated in Tailwind v4                                             | `outline-hidden`                                                                  |
+| `flex-shrink-0`                                                                   | Deprecated in Tailwind v4                                             | `shrink-0`                                                                        |
+| `getServerSession`                                                                | Deprecated in Auth.js v5 — returns `undefined` in Server Actions      | `auth()` universal function                                                       |
+| Monolithic `i18n.ts`                                                              | Runtime crash in next-intl v4                                         | Split into `routing.ts` + `request.ts`                                            |
+| Stale `.next/` after route changes                                                | TS2307 "Cannot find module" from old generated types                  | `rm -rf .next/`                                                                   |
+| Root `layout.tsx` without `<html>`/`<body>`                                       | `/missing-root-layout-tags` runtime error                             | Always include `<html><body>{children}</body></html>`                             |
 | Root `layout.tsx` WITH `<html>`/`<body>` when `[locale]/layout.tsx` also has them | Hydration mismatch: conflicting `lang`, `dir`, `className` attributes | Remove `<html>`/`<body>` from root layout; let locale layout own them exclusively |
-| Relative imports (`../../`) in moved pages | Breaks after route restructuring | Use path aliases (`@/...`) |
-| Persisting UI state in Zustand | `isOpen` restored to `true` on page load, causing jarring popups | `partialize` to data fields only |
-| Direct Prisma in pages | Tight coupling, hard to test, no typed boundaries | **Service factory** (`createXxxService()`) |
-| tRPC hooks used without `TRPCProvider` | `Unable to find tRPC Context` runtime error | Mount `<TRPCProvider>` in a `'use client'` component inside your layout |
+| Relative imports (`../../`) in moved pages                                        | Breaks after route restructuring                                      | Use path aliases (`@/...`)                                                        |
+| Persisting UI state in Zustand                                                    | `isOpen` restored to `true` on page load, causing jarring popups      | `partialize` to data fields only                                                  |
+| Direct Prisma in pages                                                            | Tight coupling, hard to test, no typed boundaries                     | **Service factory** (`createXxxService()`)                                        |
+| tRPC hooks used without `TRPCProvider`                                            | `Unable to find tRPC Context` runtime error                           | Mount `<TRPCProvider>` in a `'use client'` component inside your layout           |
 
 ---
 
 ## 14. Design System & Choreography
 
 ### 14.1 Color Palette (OKLCH)
-| Token | Hex | Purpose |
-|---|---|---|
-| `obsidian-50` | `#fafafb` | Lightest background |
-| `obsidian-900` | `#1a1a24` | Primary text |
-| `obsidian-950` | `#111119` | Button/dark surfaces |
-| `neon-cyan` | `#00e1d9` | Focus indicators |
-| `neon-pink` | `#e6004d` | Errors/callouts |
-| `metallic-champagne` | `#d4af37` | Primary CTAs |
-| `metallic-gold` | `#bca13f` | Hover states |
+
+| Token                | Hex       | Purpose              |
+| -------------------- | --------- | -------------------- |
+| `obsidian-50`        | `#fafafb` | Lightest background  |
+| `obsidian-900`       | `#1a1a24` | Primary text         |
+| `obsidian-950`       | `#111119` | Button/dark surfaces |
+| `neon-cyan`          | `#00e1d9` | Focus indicators     |
+| `neon-pink`          | `#e6004d` | Errors/callouts      |
+| `metallic-champagne` | `#d4af37` | Primary CTAs         |
+| `metallic-gold`      | `#bca13f` | Hover states         |
 
 ### 14.2 Cinematic Animation System (`globals.css`)
+
 - **Hero reveal**: Staggered `opacity` + `translateY` (0.8s, `cubic-bezier(0.16, 1, 0.3, 1)`).
 - **Marquee**: `translateX(-50%)` infinite linear loop (30s).
 - **Scroll reveal**: `IntersectionObserver` toggles `.reveal.visible`.
@@ -823,7 +879,10 @@ pnpm typecheck && pnpm lint && pnpm test && pnpm build
 // src/app/actions/checkout.actions.ts
 import { auth } from "@/auth";
 
-export async function createCheckoutAction(prevState: CheckoutState, formData: FormData) {
+export async function createCheckoutAction(
+  prevState: CheckoutState,
+  formData: FormData,
+) {
   const session = await auth();
   if (!session?.user?.id) {
     return { status: "error", message: "Authentication required." };
@@ -834,6 +893,7 @@ export async function createCheckoutAction(prevState: CheckoutState, formData: F
 ```
 
 **Deprecated (v4 pattern — do not use)**:
+
 ```typescript
 // ❌ WRONG — getToken and getServerSession are deprecated in v5
 import { getToken } from "next-auth/jwt"; // BANNED
@@ -911,9 +971,9 @@ export async function NewArrivals() {
 
 ### 16.4 Next.js 15+ `cookies()` API: `Promise<ReadonlyRequestCookies>`
 
-| Next.js Version | API | Code |
-|---|---|---|
-| **Next.js 14** | `cookies()` returns `ReadonlyRequestCookies` | `cookies().get("key")` |
+| Next.js Version | API                                                   | Code                           |
+| --------------- | ----------------------------------------------------- | ------------------------------ |
+| **Next.js 14**  | `cookies()` returns `ReadonlyRequestCookies`          | `cookies().get("key")`         |
 | **Next.js 15+** | `cookies()` returns `Promise<ReadonlyRequestCookies>` | `(await cookies()).get("key")` |
 
 **Fix**: Always `await cookies()` in App Router Server Actions, Route Handlers, and Server Components.
@@ -927,17 +987,28 @@ export async function NewArrivals() {
 
 ```typescript
 // src/lib/sentry.ts
-export function captureException(error: Error, _context?: { extra: Record<string, unknown> }): void {
+export function captureException(
+  error: Error,
+  _context?: { extra: Record<string, unknown> },
+): void {
   console.error("[Telemetry] Captured exception:", error);
 }
 
 // src/app/global-error.tsx
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+export default function GlobalError({
+  error,
+}: {
+  error: Error & { digest?: string };
+}) {
   useEffect(() => {
     if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
       import("@sentry/nextjs")
         .then((Sentry) => Sentry.captureException(error))
-        .catch(() => import("@/lib/sentry").then(({ captureException }) => captureException(error)));
+        .catch(() =>
+          import("@/lib/sentry").then(({ captureException }) =>
+            captureException(error),
+          ),
+        );
     }
   }, [error]);
   // ...
@@ -953,7 +1024,9 @@ import { vi } from "vitest";
 
 // Mock next/headers (Next.js 15+ returns a Promise)
 vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => Promise.resolve({ get: vi.fn().mockReturnValue(undefined) })),
+  cookies: vi.fn(() =>
+    Promise.resolve({ get: vi.fn().mockReturnValue(undefined) }),
+  ),
 }));
 
 // Mock next-auth/jwt
@@ -969,7 +1042,6 @@ vi.mock("@/lib/prisma", () => ({
 }));
 ```
 
-
 ---
 
 ## 17. TypeScript & React 19 Strict Mode (Non-Negotiable)
@@ -978,8 +1050,13 @@ vi.mock("@/lib/prisma", () => ({
 
 ```typescript
 // ❌ WRONG — erasableSyntaxOnly rejects these
-enum Status { ACTIVE = "ACTIVE", DRAFT = "DRAFT" }
-namespace MyNamespace { export const x = 1; }
+enum Status {
+  ACTIVE = "ACTIVE",
+  DRAFT = "DRAFT",
+}
+namespace MyNamespace {
+  export const x = 1;
+}
 
 // ✅ CORRECT — string unions and ES modules only
 type Status = "ACTIVE" | "DRAFT";
@@ -1015,7 +1092,6 @@ function Component(): ReactElement { ... } // Legacy, do not use in new code
 
 **Migration path**: Remove ALL `import type { ReactElement }` and `: ReactElement` / `: Promise<ReactElement>` annotations from existing components. Use inferred return types exclusively.
 
-
 ---
 
 ## 18. Zustand v5 Selector Best Practices
@@ -1039,7 +1115,7 @@ import { useShallow } from "zustand/react/shallow";
 
 // ✅ CORRECT — useShallow with object selectors
 const { cart, user } = useCartStore(
-  useShallow((s) => ({ cart: s.cart, user: s.user }))
+  useShallow((s) => ({ cart: s.cart, user: s.user })),
 );
 
 // ❌ WRONG — object selector returns a new object reference every render
@@ -1061,7 +1137,6 @@ persist(
 )
 ```
 
-
 ---
 
 ## 19. Prisma Zero-Enum Pattern
@@ -1079,10 +1154,9 @@ model Product {
 
 ```typescript
 type CartWithItems = Prisma.CartGetPayload<{
-  include: { items: { include: { product: true } } }
+  include: { items: { include: { product: true } } };
 }>;
 ```
-
 
 ---
 
@@ -1092,10 +1166,10 @@ type CartWithItems = Prisma.CartGetPayload<{
 
 Since `next-intl@3.22` / `v4.0`, the monolithic `i18n.ts` config is **deprecated** and **will cause runtime crashes**. You **must** split into two files:
 
-| File | Purpose | Consumed By | Required Export |
-|------|---------|-------------|---------------|
-| `src/i18n/routing.ts` | Routing rules (locales, defaultLocale, localePrefix) | `proxy.ts` (`createMiddleware`), `Navigation` APIs | `defineRouting()` |
-| `src/i18n/request.ts` | Per-request message loading | `createNextIntlPlugin`, Server Components (`getTranslations`) | `getRequestConfig()` |
+| File                  | Purpose                                              | Consumed By                                                   | Required Export      |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------------------------- | -------------------- |
+| `src/i18n/routing.ts` | Routing rules (locales, defaultLocale, localePrefix) | `proxy.ts` (`createMiddleware`), `Navigation` APIs            | `defineRouting()`    |
+| `src/i18n/request.ts` | Per-request message loading                          | `createNextIntlPlugin`, Server Components (`getTranslations`) | `getRequestConfig()` |
 
 **Why the split matters**: `routing.ts` runs in the **Edge runtime** (middleware), while `request.ts` runs in **Node.js** (Server Components). Mixing them causes bundler errors and runtime crashes.
 
@@ -1145,6 +1219,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 ```
 
 **Critical**: The `request.ts` file is aliased by `next-intl/config` at build time. Dynamic import paths are resolved from the **aliased file's location**, not from the source tree. This means:
+
 - If `messages/` is at the project root, but `request.ts` is aliased from `node_modules/next-intl/`, the relative path will resolve to `node_modules/next-intl/messages/` (which doesn't exist).
 - **Fix**: Move `messages/` into `src/` so it's in the same directory tree as the aliased file, OR use a path alias.
 
@@ -1153,6 +1228,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 **Problem**: When `next-intl/config` is aliased, dynamic `import()` paths inside `request.ts` are resolved from the **alias target location** (inside `node_modules/next-intl/`), not from the source tree.
 
 **Example** (broken):
+
 ```
 /home/project/LuxeVerse/apps/web/
 ├── messages/              ← at root
@@ -1162,6 +1238,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 ```
 
 **Example** (fixed):
+
 ```
 /home/project/LuxeVerse/apps/web/
 ├── src/
@@ -1202,6 +1279,7 @@ export default withPWA({
 ```
 
 **Troubleshooting**: If you see `Error: Couldn't find next-intl config file`, check:
+
 1. `createNextIntlPlugin` points to `request.ts` (not `routing.ts`)
 2. `turbopack.resolveAlias` has `"next-intl/config": "./src/i18n/request.ts"`
 3. `request.ts` exports a `getRequestConfig()` factory, not a plain object
@@ -1223,19 +1301,19 @@ export const config = {
 
 **Warning**: Next.js 16 deprecates `middleware.ts` in favor of `proxy.ts`. The `createMiddleware` function works identically; only the filename changes.
 
-
 ---
 
 ## 21. Next.js 16 `params` Duality (Original Deep-Dive)
 
 **CRITICAL**: Next.js 16's `.next/types/` generator types `params` as `Promise<any>` for page components, even though at runtime `params` is a plain object.
 
-| Layer | Type | Must Use |
-|-------|------|---------|
-| **Runtime** | Plain object `{}` | `const { slug } = params` (direct destructuring) |
+| Layer                                | Type               | Must Use                                          |
+| ------------------------------------ | ------------------ | ------------------------------------------------- |
+| **Runtime**                          | Plain object `{}`  | `const { slug } = params` (direct destructuring)  |
 | **Generated Types** (`.next/types/`) | `Promise<{ ... }>` | `params: Promise<{...}>` + `await` to satisfy tsc |
 
 **For Pages (Updated for Next.js 16.2+)**:
+
 ```tsx
 // ✅ CORRECT — satisfies both runtime and generated types
 interface PageProps {
@@ -1247,15 +1325,19 @@ export default async function Page({ params }: PageProps) {
 ```
 
 **For Layouts** (always a real Promise):
+
 ```tsx
 // ✅ CORRECT — layouts always receive a Promise
-export default async function Layout({ params }: { params: Promise<{ locale: string }> }) {
+export default async function Layout({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const { locale } = await params; // Always correct for layouts
 }
 ```
 
 **Why the duality**: `.next/types/` generates `Promise<any>` to enable async prop resolution. At runtime, `await` on a non-Promise returns the same value (no runtime bug). TypeScript just needs the `Promise<T>` annotation to pass `tsc --noEmit`.
-
 
 ---
 
@@ -1283,4 +1365,3 @@ grep -rn 'enum ' src/ packages/ apps/ --include="*.ts" --include="*.tsx"
 # next-intl config file scan (should find request.ts, NOT i18n.ts monolith)
 grep -rn "createNextIntlPlugin" next.config.ts
 ```
-

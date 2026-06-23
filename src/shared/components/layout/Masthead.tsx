@@ -6,15 +6,30 @@ export function Masthead() {
         <div className="flex items-center justify-between py-2.5 border-b border-paper-200 font-mono text-[11px] text-ink-400">
           <div className="flex items-center gap-4">
             <span className="cat-label">Edition 3.1</span>
-            <span className="hidden sm:inline text-paper-300" aria-hidden="true">&mdash;</span>
+            <span
+              className="hidden sm:inline text-paper-300"
+              aria-hidden="true"
+            >
+              &mdash;
+            </span>
             <span className="hidden sm:inline">10 June 2026</span>
-            <span className="hidden sm:inline text-paper-300" aria-hidden="true">&middot;</span>
+            <span
+              className="hidden sm:inline text-paper-300"
+              aria-hidden="true"
+            >
+              &middot;
+            </span>
             <span className="hidden sm:inline">Singapore</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-dispatch-ember pulse-dot" aria-hidden="true" />
-              <span className="text-dispatch-ember font-medium cat-label">Live</span>
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-dispatch-ember pulse-dot"
+                aria-hidden="true"
+              />
+              <span className="text-dispatch-ember font-medium cat-label">
+                Live
+              </span>
             </span>
             <span className="hidden sm:inline">SGT 14:30</span>
           </div>
@@ -34,7 +49,10 @@ export function Masthead() {
         </div>
 
         {/* Column rules — broadsheet aesthetic */}
-        <div className="hidden lg:flex justify-between px-[12%] pb-3" aria-hidden="true">
+        <div
+          className="hidden lg:flex justify-between px-[12%] pb-3"
+          aria-hidden="true"
+        >
           {[...Array(6)].map((_, i) => (
             <div key={i} className="w-px h-4 bg-paper-300" />
           ))}

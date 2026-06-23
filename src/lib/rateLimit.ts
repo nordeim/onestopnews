@@ -54,7 +54,7 @@ function getRedis(): Redis {
 export async function checkRateLimit(
   identifier: string,
   limit: number,
-  windowSec: number
+  windowSec: number,
 ): Promise<RateLimitResult> {
   const redis = getRedis();
   const key = `ratelimit:${identifier}`;

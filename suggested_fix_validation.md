@@ -7,6 +7,7 @@
 ## 1. 核心问题验证：`blocking-route` 错误
 
 ### 日志中的描述
+
 > “The issue is that verifyAdminSession() in the page itself is performing a database query outside of <Suspense>. This triggers the blocking-route error”
 
 ### 验证结果：✅ 确认正确
@@ -16,6 +17,7 @@ Next.js 官方文档明确指出，当 `cacheComponents` 启用时，任何在 `
 > “When the `cacheComponents` feature is enabled, Next.js expects a parent Suspense boundary around any component that awaits data that should be accessed on every user request.”
 
 触发此错误的典型场景包括：
+
 - 在 Page 或 Layout 中 `await params`
 - 调用 `cookies()`、`headers()` 或 `connection()`
 - **获取未使用 `"use cache"` 缓存的数据**
@@ -37,6 +39,7 @@ Next.js 官方文档明确指出，当 `cacheComponents` 启用时，任何在 `
 ## 2. 错误原因验证：`cacheComponents` 改变了数据获取的默认行为
 
 ### 日志中的描述
+
 > “Next.js 16's cacheComponents treats ALL database queries as ‘uncached data’ unless wrapped in `<Suspense>`”
 
 ### 验证结果：✅ 确认正确
@@ -48,6 +51,7 @@ Next.js 官方文档明确指出，当 `cacheComponents` 启用时，任何在 `
 > “Next.js requires you to explicitly handle components that can't complete during prerendering. If they aren't wrapped in `<Suspense>` or marked with `use cache`, you'll see an **Uncached data was accessed outside of `<Suspense>`** error during development and build time.”
 
 这意味着：
+
 - **旧模型**（Next.js 15及之前）：默认会尝试缓存数据
 - **新模型**（Next.js 16 + `cacheComponents`）：数据获取**默认是动态的**，必须显式选择缓存（通过 `"use cache"`）或流式渲染（通过 `<Suspense>`）
 
@@ -62,6 +66,7 @@ Auth0 的官方文章也确认了这一点：
 ### 方案一：将数据访问移入 `<Suspense>` 边界
 
 #### 日志中的描述
+
 > “Move the await verifyAdminSession() call from the Page into SourcesData — because it's consistent with the Suspense + Data Component pattern”
 
 #### 验证结果：✅ 确认正确
@@ -69,14 +74,16 @@ Auth0 的官方文章也确认了这一点：
 官方文档提供了完全相同的模式：
 
 **Before（触发错误）**：
+
 ```javascript
 export default async function Page() {
   const transactions = await getLatestTransactions(token);
-  return <TransactionList transactions={transactions} />
+  return <TransactionList transactions={transactions} />;
 }
 ```
 
 **After（修复）**：
+
 ```javascript
 import { Suspense } from 'react'
 
@@ -105,6 +112,7 @@ export default async function Page() {
 ### 方案二：使用 `"use cache"` + `cacheLife`
 
 #### 日志中的描述
+
 > “Add ‘use cache’ + cacheLife to the auth DAL functions”
 
 #### 验证结果：✅ 确认可行，但在认证场景需谨慎
@@ -129,6 +137,7 @@ async function getRecentArticles() {
 > “We're struggling to figure out the right way to redirect users based on whether they're authenticated. Right now, we check for a user session in an RSC component on each page and redirect if the session is invalid...”
 
 对于认证场景，`"use cache"` 可能不是合适的选择，因为：
+
 1. 认证状态是**用户特定**的，不应跨用户共享缓存
 2. 使用 `"use cache: private"` 虽然可以处理用户特定数据，但仍需谨慎配置缓存生命周期
 
@@ -137,6 +146,7 @@ async function getRecentArticles() {
 ## 4. `redirect()` 在 Suspense 内部的行为验证
 
 ### 日志中的描述
+
 > “verifyAdminSession() redirects if no session. If we put it inside a Suspense-wrapped component, the component will call verifyAdminSession() which will redirect(‘/sign-in’). Next.js will handle the redirect.”
 
 ### 验证结果：✅ 确认正确
@@ -150,6 +160,7 @@ async function getRecentArticles() {
 > “in next16 you can put that in async component in `<Suspense>` and still have static shell (and the rest of the children)”
 
 这意味着：
+
 - `redirect()` 在 Suspense 内部的 Server Component 中调用时会被 Next.js 正确处理
 - 页面的静态外壳（header 等）会先渲染，然后 Suspense 边界内的组件执行 auth 检查，未认证用户会被重定向
 
@@ -184,12 +195,14 @@ export async function SourcesData() {
 ### 评估结果：✅ 方案合理且符合官方最佳实践
 
 **优点**：
+
 1. **符合 Next.js 16 的 `cacheComponents` 要求**：所有动态数据访问都在 Suspense 内部
 2. **页面静态外壳可立即渲染**：header 在 auth 检查完成前就已显示
 3. **认证检查按请求执行**：不会被错误缓存
 4. **与社区认可的“Suspense + Data Component”模式一致**
 
 **注意事项**：
+
 - 使用 `next build --debug-prerender` 可以获得更详细的错误堆栈，帮助定位问题组件
 - 如果未来需要缓存某些数据查询，可以使用 `"use cache"` + `cacheLife` 组合
 
@@ -197,14 +210,13 @@ export async function SourcesData() {
 
 ## 总结
 
-| 日志中的声明 | 验证状态 | 依据 |
-|---|---|---|
-| `verifyAdminSession()` 在 Suspense 外执行 DB 查询触发 blocking-route | ✅ 确认 | 官方文档 |
-| `cacheComponents` 将 DB 查询视为“uncached data” | ✅ 确认 | 官方文档 |
-| 需要将数据访问移入 Suspense 或使用 `"use cache"` | ✅ 确认 | 官方文档 |
-| 将 auth 检查移入 Suspense 包装的组件是有效修复 | ✅ 确认 | 官方示例+ 社区讨论 |
-| `redirect()` 在 Suspense 内部可正常工作 | ✅ 确认 | 官方文档+ 社区讨论 |
-| 认证状态不应使用 `"use cache"` 缓存 | ✅ 确认 | 认证是用户特定的 |
+| 日志中的声明                                                         | 验证状态 | 依据               |
+| -------------------------------------------------------------------- | -------- | ------------------ |
+| `verifyAdminSession()` 在 Suspense 外执行 DB 查询触发 blocking-route | ✅ 确认  | 官方文档           |
+| `cacheComponents` 将 DB 查询视为“uncached data”                      | ✅ 确认  | 官方文档           |
+| 需要将数据访问移入 Suspense 或使用 `"use cache"`                     | ✅ 确认  | 官方文档           |
+| 将 auth 检查移入 Suspense 包装的组件是有效修复                       | ✅ 确认  | 官方示例+ 社区讨论 |
+| `redirect()` 在 Suspense 内部可正常工作                              | ✅ 确认  | 官方文档+ 社区讨论 |
+| 认证状态不应使用 `"use cache"` 缓存                                  | ✅ 确认  | 认证是用户特定的   |
 
 日志中的分析和修复方案**完全正确**，与 Next.js 16 的官方文档和社区最佳实践一致。
-

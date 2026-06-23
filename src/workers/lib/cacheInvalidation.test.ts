@@ -57,7 +57,7 @@ describe("cacheInvalidation", () => {
       expect(result).toBe(true);
       expect(mockPublish).toHaveBeenCalledWith(
         "cache:invalidate:feed:tech",
-        expect.stringContaining("feed:tech")
+        expect.stringContaining("feed:tech"),
       );
     });
 
@@ -80,7 +80,7 @@ describe("cacheInvalidation", () => {
       // Verify the channel uses the correct format
       expect(mockPublish).toHaveBeenCalledWith(
         "cache:invalidate:topic-shell",
-        expect.any(String)
+        expect.any(String),
       );
     });
 

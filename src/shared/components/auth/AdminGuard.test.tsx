@@ -61,7 +61,9 @@ describe("AdminGuard", () => {
     });
 
     const { AdminGuard } = await import("./AdminGuard");
-    await AdminGuard({ children: React.createElement("p", null, "Should Not Render") });
+    await AdminGuard({
+      children: React.createElement("p", null, "Should Not Render"),
+    });
     expect(mockRedirect).toHaveBeenCalledWith("/");
   });
 
@@ -75,7 +77,9 @@ describe("AdminGuard", () => {
     });
 
     const { AdminGuard } = await import("./AdminGuard");
-    await AdminGuard({ children: React.createElement("p", null, "Should Not Render") });
+    await AdminGuard({
+      children: React.createElement("p", null, "Should Not Render"),
+    });
     expect(mockRedirect).toHaveBeenCalledWith("/sign-in");
   });
 

@@ -70,7 +70,7 @@ describe("checkRateLimit", () => {
     expect(mockRedis.expire).toHaveBeenCalledTimes(1);
     expect(mockRedis.expire).toHaveBeenCalledWith(
       expect.stringContaining("test-id"),
-      60
+      60,
     );
   });
 
@@ -111,7 +111,7 @@ describe("checkRateLimit", () => {
     await checkRateLimit("api:articles:1.2.3.4", 20, 60);
 
     expect(mockRedis.incr).toHaveBeenCalledWith(
-      "ratelimit:api:articles:1.2.3.4"
+      "ratelimit:api:articles:1.2.3.4",
     );
   });
 });

@@ -33,10 +33,10 @@
      variant used Tailwind's default amber-* / red-* palette because no
      matching semantic tokens existed. These tokens align the warning and
      danger states with the design system. */
-  --color-dispatch-warning: #b45309;        /* amber-700 equivalent */
-  --color-dispatch-warning-light: #fef3c7;  /* amber-50 equivalent */
-  --color-dispatch-danger: #dc2626;         /* red-600 equivalent */
-  --color-dispatch-danger-dark: #b91c1c;    /* red-700 equivalent */
+  --color-dispatch-warning: #b45309; /* amber-700 equivalent */
+  --color-dispatch-warning-light: #fef3c7; /* amber-50 equivalent */
+  --color-dispatch-danger: #dc2626; /* red-600 equivalent */
+  --color-dispatch-danger-dark: #b91c1c; /* red-700 equivalent */
 
   /* ── Typography Stack ── */
   --font-editorial: "Newsreader", Georgia, "Times New Roman", serif;
@@ -99,14 +99,22 @@ body {
 }
 
 @keyframes scroll-progress {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* ── Ticker Animation ───────────────────────────────────────────────── */
 @keyframes ticker-scroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .ticker-track {
@@ -119,8 +127,13 @@ body {
 
 /* ── Live Pulse Dot ──────────────────────────────────────────────────── */
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.25; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 .pulse-dot {
@@ -129,8 +142,9 @@ body {
 
 /* ── Story Card (PRD §4.3: CSS Subgrid) ─────────────────────────────── */
 .story-card {
-  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .story-card:hover {
@@ -141,7 +155,11 @@ body {
 /* ── Nutrition Label (PRD §4.4) ────────────────────────────────────── */
 .nutrition-label {
   border-left: 3px solid var(--color-dispatch-ember);
-  background: linear-gradient(to right, var(--color-paper-100) 0%, var(--color-paper-50) 100%);
+  background: linear-gradient(
+    to right,
+    var(--color-paper-100) 0%,
+    var(--color-paper-50) 100%
+  );
 }
 
 /* ── Citation Refs ──────────────────────────────────────────────────── */
@@ -157,9 +175,10 @@ body {
 
 /* ── Buttons (Tactile Maximalism) ───────────────────────────────────── */
 .btn-ember {
-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
-              background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
-              box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-ember:hover {
@@ -179,7 +198,7 @@ body {
 }
 
 .link-underline::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -2px;
   left: 0;
@@ -198,7 +217,9 @@ body {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: var(--color-paper-50);
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
 }
 
 .cta-input::placeholder {
@@ -208,7 +229,7 @@ body {
 .cta-input:focus {
   outline: none;
   border-color: var(--color-dispatch-ember);
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* ── Scrollbar Styling ───────────────────────────────────────────────── */
@@ -269,12 +290,20 @@ html {
 
 /* ── Accordion Animations (Radix) ───────────────────────────────────── */
 @keyframes slideDown {
-  from { height: 0; }
-  to   { height: var(--radix-accordion-content-height); }
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 @keyframes slideUp {
-  from { height: var(--radix-accordion-content-height); }
-  to   { height: 0; }
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 .animate-slideDown {
   animation: slideDown 300ms cubic-bezier(0.87, 0, 0.13, 1);
@@ -287,8 +316,9 @@ html {
 .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
-              transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    opacity 700ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 700ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .reveal.visible {
@@ -296,10 +326,18 @@ html {
   transform: translateY(0);
 }
 
-.reveal-delay-1 { transition-delay: 80ms; }
-.reveal-delay-2 { transition-delay: 160ms; }
-.reveal-delay-3 { transition-delay: 240ms; }
-.reveal-delay-4 { transition-delay: 320ms; }
+.reveal-delay-1 {
+  transition-delay: 80ms;
+}
+.reveal-delay-2 {
+  transition-delay: 160ms;
+}
+.reveal-delay-3 {
+  transition-delay: 240ms;
+}
+.reveal-delay-4 {
+  transition-delay: 320ms;
+}
 
 /* ── Commitment Number (Large Editorial Numerals) ──────────────────── */
 .commitment-number {

@@ -13,7 +13,7 @@ describe("sourceCitationSchema", () => {
 
   it("rejects invalid URL", () => {
     expect(() =>
-      sourceCitationSchema.parse({ url: "not-a-url", title: "Test" })
+      sourceCitationSchema.parse({ url: "not-a-url", title: "Test" }),
     ).toThrow();
   });
 
@@ -22,7 +22,7 @@ describe("sourceCitationSchema", () => {
       sourceCitationSchema.parse({
         url: "https://example.com",
         title: "",
-      })
+      }),
     ).toThrow();
   });
 });

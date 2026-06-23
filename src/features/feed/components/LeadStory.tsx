@@ -8,7 +8,10 @@ export function LeadStory() {
     <section aria-label="Lead story">
       {/* Category label */}
       <div className="flex items-center gap-3 mb-5">
-        <span className="w-2.5 h-2.5 rounded-full bg-dispatch-slate" aria-hidden="true" />
+        <span
+          className="w-2.5 h-2.5 rounded-full bg-dispatch-slate"
+          aria-hidden="true"
+        />
         <span className="font-mono text-[11px] cat-label text-dispatch-slate font-semibold">
           Tech News / AI &amp; ML
         </span>
@@ -29,8 +32,13 @@ export function LeadStory() {
             />
             {/* Breaking badge */}
             <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-dispatch-ember/95 px-2.5 py-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-white pulse-dot" aria-hidden="true" />
-              <span className="font-mono text-[10px] text-white font-semibold cat-label">Breaking</span>
+              <span
+                className="w-1.5 h-1.5 rounded-full bg-white pulse-dot"
+                aria-hidden="true"
+              />
+              <span className="font-mono text-[10px] text-white font-semibold cat-label">
+                Breaking
+              </span>
             </div>
           </div>
         </div>
@@ -55,9 +63,10 @@ export function LeadStory() {
           </div>
 
           <p className="mt-5 text-ink-600 text-[15px] leading-relaxed">
-            As the EU's AI Act enforcement framework enters its final legislative stage, the debate
-            has shifted from technical alignment to geopolitical competition. Three major outlets now
-            cover the rift between member states on enforcement timelines.
+            As the EU's AI Act enforcement framework enters its final
+            legislative stage, the debate has shifted from technical alignment
+            to geopolitical competition. Three major outlets now cover the rift
+            between member states on enforcement timelines.
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">

@@ -36,7 +36,11 @@ vi.mock("@/lib/db/schema", () => ({
   articles: { id: "articles.id", publishedAt: "articles.published_at" },
   sources: { id: "sources.id" },
   categories: { id: "categories.id" },
-  summaries: { id: "summaries.id", articleId: "summaries.article_id", status: "summaries.status" },
+  summaries: {
+    id: "summaries.id",
+    articleId: "summaries.article_id",
+    status: "summaries.status",
+  },
 }));
 
 vi.mock("drizzle-orm", () => ({

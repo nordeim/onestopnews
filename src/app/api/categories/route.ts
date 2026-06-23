@@ -37,13 +37,13 @@ export async function GET() {
           ...CORS_HEADERS,
           "Cache-Control": "public, max-age=300, stale-while-revalidate=3600",
         },
-      }
+      },
     );
   } catch (error) {
     console.error("[API /categories] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS }
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 }

@@ -23,7 +23,9 @@ describe("normalizeCanonicalUrl", () => {
 
   it("preserves path and non-UTM query params", () => {
     const url = "https://example.com/article?page=2";
-    expect(normalizeCanonicalUrl(url)).toBe("https://example.com/article?page=2");
+    expect(normalizeCanonicalUrl(url)).toBe(
+      "https://example.com/article?page=2",
+    );
   });
 
   it("returns invalid URL as-is", () => {
@@ -69,7 +71,9 @@ describe("hashContent", () => {
     const body = "Test body content for hashing";
     const date = new Date("2024-06-01T00:00:00Z");
     const expectedData = `${title.trim()}|${body}|${date.toISOString()}`;
-    const expected = createHash("sha256").update(expectedData, "utf8").digest("hex");
+    const expected = createHash("sha256")
+      .update(expectedData, "utf8")
+      .digest("hex");
 
     expect(hashContent(title, body, date)).toBe(expected);
   });

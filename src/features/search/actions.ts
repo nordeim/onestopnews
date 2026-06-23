@@ -15,6 +15,8 @@ import type { SearchParams, SearchPage } from "./types";
  *
  * Called from client components. Delegates to queries.ts for actual DB access.
  */
-export async function searchArticlesAction(params: SearchParams): Promise<SearchPage> {
+export async function searchArticlesAction(
+  params: SearchParams,
+): Promise<SearchPage> {
   return searchArticlesQuery(params);
 }

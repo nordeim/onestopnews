@@ -17,7 +17,11 @@ interface SearchBarProps {
   isLoading?: boolean;
 }
 
-export function SearchBar({ defaultValue = "", onSearch, isLoading = false }: SearchBarProps) {
+export function SearchBar({
+  defaultValue = "",
+  onSearch,
+  isLoading = false,
+}: SearchBarProps) {
   const [query, setQuery] = useState(defaultValue);
   const debouncedQuery = useDebounce(query, 300);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,7 +49,11 @@ export function SearchBar({ defaultValue = "", onSearch, isLoading = false }: Se
   }, []);
 
   return (
-    <div className="relative w-full max-w-2xl" role="search" aria-label="Search news articles">
+    <div
+      className="relative w-full max-w-2xl"
+      role="search"
+      aria-label="Search news articles"
+    >
       <div className="relative">
         <Search
           className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ink-300"
@@ -84,7 +92,11 @@ export function SearchBar({ defaultValue = "", onSearch, isLoading = false }: Se
       </div>
       <div className="mt-2 flex items-center gap-2">
         <span className="font-mono text-[10px] text-ink-400">
-          Press <kbd className="px-1.5 py-0.5 bg-paper-200 rounded-sm font-mono text-[10px]">⌘K</kbd> to focus
+          Press{" "}
+          <kbd className="px-1.5 py-0.5 bg-paper-200 rounded-sm font-mono text-[10px]">
+            ⌘K
+          </kbd>{" "}
+          to focus
         </span>
       </div>
     </div>

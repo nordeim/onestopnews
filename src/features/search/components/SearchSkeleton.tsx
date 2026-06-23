@@ -6,7 +6,12 @@
 
 export function SearchSkeleton() {
   return (
-    <div className="space-y-8" role="status" aria-label="Loading search results" aria-busy="true">
+    <div
+      className="space-y-8"
+      role="status"
+      aria-label="Loading search results"
+      aria-busy="true"
+    >
       {/* SearchBar placeholder */}
       <div className="h-12 bg-paper-200 rounded-lg animate-pulse" />
 

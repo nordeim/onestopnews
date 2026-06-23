@@ -1,6 +1,14 @@
 "use client";
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  type Mock,
+} from "vitest";
 import { render } from "@testing-library/react";
 import { RevealProvider } from "./RevealProvider";
 
@@ -25,7 +33,9 @@ class MockIntersectionObserver {
   }
 
   static get last() {
-    return MockIntersectionObserver.instances[MockIntersectionObserver.instances.length - 1];
+    return MockIntersectionObserver.instances[
+      MockIntersectionObserver.instances.length - 1
+    ];
   }
 
   static reset() {
@@ -57,7 +67,7 @@ describe("RevealProvider", () => {
     const { getByText } = render(
       <RevealProvider>
         <p>Child content</p>
-      </RevealProvider>
+      </RevealProvider>,
     );
     expect(getByText("Child content")).toBeDefined();
   });
@@ -77,7 +87,7 @@ describe("RevealProvider", () => {
     render(
       <RevealProvider>
         <div />
-      </RevealProvider>
+      </RevealProvider>,
     );
 
     expect(revealEl.classList.contains("visible")).toBe(true);
@@ -94,7 +104,7 @@ describe("RevealProvider", () => {
     render(
       <RevealProvider>
         <div />
-      </RevealProvider>
+      </RevealProvider>,
     );
 
     const observer = MockIntersectionObserver.last;
@@ -114,12 +124,15 @@ describe("RevealProvider", () => {
     render(
       <RevealProvider>
         <div />
-      </RevealProvider>
+      </RevealProvider>,
     );
 
     const observer = MockIntersectionObserver.last;
     if (!observer) throw new Error("No observer created");
-    const mockEntry = { isIntersecting: true, target: revealEl } as unknown as IntersectionObserverEntry;
+    const mockEntry = {
+      isIntersecting: true,
+      target: revealEl,
+    } as unknown as IntersectionObserverEntry;
     observer.callback([mockEntry], {} as IntersectionObserver);
 
     expect(revealEl.classList.contains("visible")).toBe(true);
@@ -132,7 +145,7 @@ describe("RevealProvider", () => {
     const { unmount } = render(
       <RevealProvider>
         <div />
-      </RevealProvider>
+      </RevealProvider>,
     );
 
     const observer = MockIntersectionObserver.last;

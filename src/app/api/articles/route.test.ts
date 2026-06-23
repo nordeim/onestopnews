@@ -80,20 +80,20 @@ describe("GET /api/articles — cursor validation", () => {
 
   it("returns 400 for cursor with impossible date (month 13)", async () => {
     const response = await GET(
-      makeRequest("/api/articles?cursor=2024-13-45T00:00:00Z")
+      makeRequest("/api/articles?cursor=2024-13-45T00:00:00Z"),
     );
     expect(response.status).toBe(400);
   });
 
   it("accepts valid ISO 8601 cursor", async () => {
     const response = await GET(
-      makeRequest("/api/articles?cursor=2024-06-01T00:00:00Z")
+      makeRequest("/api/articles?cursor=2024-06-01T00:00:00Z"),
     );
     expect(response.status).toBe(200);
     expect(getFeedArticles).toHaveBeenCalledWith(
       expect.objectContaining({
         cursor: new Date("2024-06-01T00:00:00Z"),
-      })
+      }),
     );
   });
 
@@ -101,7 +101,7 @@ describe("GET /api/articles — cursor validation", () => {
     const response = await GET(makeRequest("/api/articles"));
     expect(response.status).toBe(200);
     expect(getFeedArticles).toHaveBeenCalledWith(
-      expect.objectContaining({ cursor: undefined })
+      expect.objectContaining({ cursor: undefined }),
     );
   });
 });
@@ -138,7 +138,7 @@ describe("GET /api/articles — rate limiting", () => {
     expect(checkRateLimit).toHaveBeenCalledWith(
       expect.stringContaining("203.0.113.42"),
       expect.any(Number),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 
@@ -152,7 +152,7 @@ describe("GET /api/articles — rate limiting", () => {
     expect(checkRateLimit).toHaveBeenCalledWith(
       "api:articles:1.2.3.4",
       expect.any(Number),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 
@@ -173,7 +173,7 @@ describe("GET /api/articles — rate limiting", () => {
     expect(checkRateLimit).toHaveBeenCalledWith(
       "api:articles:192.168.1.1",
       expect.any(Number),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 
@@ -185,7 +185,7 @@ describe("GET /api/articles — rate limiting", () => {
     expect(checkRateLimit).toHaveBeenCalledWith(
       "api:articles:198.51.100.42",
       expect.any(Number),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 
@@ -195,7 +195,7 @@ describe("GET /api/articles — rate limiting", () => {
     expect(checkRateLimit).toHaveBeenCalledWith(
       "api:articles:unknown",
       expect.any(Number),
-      expect.any(Number)
+      expect.any(Number),
     );
   });
 
@@ -221,7 +221,7 @@ describe("OPTIONS /api/articles", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
     expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
-      "GET"
+      "GET",
     );
   });
 });

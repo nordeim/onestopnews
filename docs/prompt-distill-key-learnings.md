@@ -1,4 +1,4 @@
-please meticulously plan to distill from @CLAUDE.md , @README.md , @AGENTS.md and @ACCOMPLISHMENTS.md key learnings and tips that are helpful for coding and troubleshooting any project that uses tech stacks based on the following package info: 
+please meticulously plan to distill from @CLAUDE.md , @README.md , @AGENTS.md and @ACCOMPLISHMENTS.md key learnings and tips that are helpful for coding and troubleshooting any project that uses tech stacks based on the following package info:
 
 ```json
 {
@@ -32,11 +32,12 @@ please meticulously plan to distill from @CLAUDE.md , @README.md , @AGENTS.md an
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }
-} 
+}
 ```
 
 Task is to meticulously plan to distill key learnings and tips from the CLAUDE.md, README.md, AGENTS.md, and ACCOMPLISHMENTS.md files that are helpful for coding and troubleshooting projects using the tech stack specified in the package.json.
 The package.json shows:
+
 - Next.js 16
 - React 19
 - PostgreSQL (via pg)
@@ -46,12 +47,13 @@ The package.json shows:
 
 Start by analyzing the differences between LuxeVerse's tech stack and the package.json tech stack:
 LuxeVerse uses:
+
 - Prisma (not Drizzle)
 - tRPC
 - Zustand
 - next-intl
 - Auth.js
-The package.json uses:
+  The package.json uses:
 - Drizzle ORM
 - Plain pg driver
 
@@ -61,6 +63,7 @@ Let us read the CLAUDE.md file first, then create a comprehensive plan to update
 
 Now create the comprehensive distillation, organize by domain and make it practical for the specific tech stack in package.json.
 Key domains:
+
 1. Next.js 16 (App Router)
 2. React 19
 3. Tailwind CSS v4
@@ -71,6 +74,7 @@ Key domains:
 ---
 
 # Todos
+
 [✓] Analyze all 4 source files and map learnings to the package.json tech stack
 [✓] Create distilled learnings document organized by domain
 [✓] Filter out LuxeVerse-specific patterns (Prisma, tRPC, Zustand, next-intl) and adapt to Drizzle/plain pg

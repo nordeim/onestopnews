@@ -39,7 +39,10 @@ export async function ArticleData({ params }: ArticleDataProps) {
     return (
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-3xl mx-auto py-24 text-center">
-          <span className="block w-1.5 h-1.5 rounded-full bg-dispatch-ember mx-auto mb-4" aria-hidden="true" />
+          <span
+            className="block w-1.5 h-1.5 rounded-full bg-dispatch-ember mx-auto mb-4"
+            aria-hidden="true"
+          />
           <p className="font-mono text-[11px] uppercase tracking-widest text-ink-300 mb-2">
             404
           </p>
@@ -47,7 +50,8 @@ export async function ArticleData({ params }: ArticleDataProps) {
             Article not found
           </h1>
           <p className="font-ui text-sm text-ink-600 mb-8">
-            The article you&apos;re looking for may have been removed or is no longer available.
+            The article you&apos;re looking for may have been removed or is no
+            longer available.
           </p>
           <Link
             href="/"
@@ -146,13 +150,17 @@ export async function ArticleData({ params }: ArticleDataProps) {
           <SummaryPanel
             articleId={article.id}
             initialStatus={article.summaryStatus}
-            summary={article.summary ? {
-              summaryText: article.summary.summaryText,
-              keyPoints: article.summary.keyPoints,
-              sourcesCited: article.summary.sourcesCited,
-              aiStatement: article.summary.aiStatement,
-              coveragePercentage: article.summary.coveragePercentage,
-            } : null}
+            summary={
+              article.summary
+                ? {
+                    summaryText: article.summary.summaryText,
+                    keyPoints: article.summary.keyPoints,
+                    sourcesCited: article.summary.sourcesCited,
+                    aiStatement: article.summary.aiStatement,
+                    coveragePercentage: article.summary.coveragePercentage,
+                  }
+                : null
+            }
           />
 
           {/* Back link */}

@@ -1,7 +1,6 @@
 import type { contentAvailabilityEnum } from "@/lib/db/schema";
 
-type ContentAvailability =
-  (typeof contentAvailabilityEnum.enumValues)[number];
+type ContentAvailability = (typeof contentAvailabilityEnum.enumValues)[number];
 
 interface ParsedContent {
   title?: string;
@@ -27,7 +26,7 @@ interface ParsedContent {
  * @returns ContentAvailability enum value
  */
 export function determineContentAvailability(
-  parsed: ParsedContent
+  parsed: ParsedContent,
 ): ContentAvailability {
   const { title, excerpt, body } = parsed;
 

@@ -21,7 +21,10 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
     >
       {/* Header */}
       <div className="mb-4 flex items-center gap-2">
-        <span className="h-2 w-2 rounded-full bg-dispatch-ember" aria-hidden="true" />
+        <span
+          className="h-2 w-2 rounded-full bg-dispatch-ember"
+          aria-hidden="true"
+        />
         <span className="font-mono text-[10px] uppercase tracking-widest text-ink-300">
           AI-Generated Summary
         </span>
@@ -49,7 +52,9 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
         <ul className="space-y-2">
           {summary.sourcesCited.map((source, index) => (
             <li key={index} className="flex items-start gap-2">
-              <span className="font-mono text-xs text-ink-300">[{index + 1}]</span>
+              <span className="font-mono text-xs text-ink-300">
+                [{index + 1}]
+              </span>
               <a
                 href={source.url}
                 target="_blank"
@@ -79,7 +84,9 @@ export function NutritionLabel({ summary }: NutritionLabelProps) {
       </div>
 
       {/* AI Statement */}
-      <p className="mt-2 font-mono text-[10px] text-ink-300">{summary.aiStatement}</p>
+      <p className="mt-2 font-mono text-[10px] text-ink-300">
+        {summary.aiStatement}
+      </p>
     </aside>
   );
 }

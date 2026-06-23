@@ -93,33 +93,33 @@ Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects
 
 ### The Meticulous Approach Principles
 
-| Principle                   | Rationale                                                                                                                              |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| **Library Discipline**      | If Shadcn UI / Radix provides the primitive, use it. Wrap for bespoke styling. Never rebuild from scratch.                             |
-| **Single Source of Truth**  | The Drizzle schema is the only source of DB types. Types derive from schema via `(typeof enum.enumValues)[number]` and `$inferSelect`. |
-| **Opt-In Caching**          | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent.              |
-| **Progressive Enhancement** | View Transitions are progressive. They silently degrade on Firefox / reduced-motion. Never rely on them for core functionality.        |
-| **Zero `any`**              | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only.                   |
+| Principle                   | Rationale                                                                                                                                                                            |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Library Discipline**      | If Shadcn UI / Radix provides the primitive, use it. Wrap for bespoke styling. Never rebuild from scratch.                                                                           |
+| **Single Source of Truth**  | The Drizzle schema is the only source of DB types. Types derive from schema via `(typeof enum.enumValues)[number]` and `$inferSelect`.                                               |
+| **Opt-In Caching**          | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent.                                                            |
+| **Progressive Enhancement** | View Transitions are progressive. They silently degrade on Firefox / reduced-motion. Never rely on them for core functionality.                                                      |
+| **Zero `any`**              | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only.                                                                 |
 | **Auth at the DAL**         | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()` (Server Components/Actions) or `auth()` (API routes — Phase 21). |
-| **Content Guard**           | Never enqueue summarisation for `title_only` or `excerpt` articles. This prevents AI hallucination.                                    |
-| **Secret Hygiene**          | `.env*` files are gitignored (only `.env.example` tracked). `AUTH_SECRET` rejects known-weak values in production. Never commit real secrets. (Phase 21) |
+| **Content Guard**           | Never enqueue summarisation for `title_only` or `excerpt` articles. This prevents AI hallucination.                                                                                  |
+| **Secret Hygiene**          | `.env*` files are gitignored (only `.env.example` tracked). `AUTH_SECRET` rejects known-weak values in production. Never commit real secrets. (Phase 21)                             |
 
 ### Phase History (21 phases)
 
-| Phase  | Focus                                                                       | Key Deliverable                                                                                                         |
-| :----- | :-------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| 1–8    | Foundation → DB → Design System → Feed → AI → Search/Admin → Worker → CI/CD | V1 feature-complete                                                                                                     |
-| 9      | Blocking-route fix                                                          | `cacheComponents` + `<Suspense>` pattern                                                                                |
-| 10     | Landing page                                                                | 10-section editorial dispatch page                                                                                      |
-| 11–12  | Bug fixes + Tailwind v4 PostCSS                                             | `@tailwindcss/postcss` + self-hosted Commit Mono                                                                        |
-| 13     | Critical gaps remediation                                                   | Real RSS parsing, AI SDK v6, FlowProducer DAG, rate limiting                                                            |
-| 14     | Validated gaps closure                                                      | Article detail page, 3-layer provenance, E2E tests                                                                      |
-| 15     | Production readiness                                                        | Dockerfiles, OAuth, sign-in/auth-error pages                                                                            |
-| 16–17  | AdminGuard + skip-links + JSON-LD fix                                       | WCAG AAA compliance                                                                                                     |
-| 18     | DB reinit + skip-link supplement                                            | Operational tooling                                                                                                     |
-| 19     | Comprehensive code audit                                                    | 47 gaps, 39 remediated, +80 tests                                                                                       |
-| 20     | Post-Phase-19 remediation                                                   | +60 tests, walkXffChain, /account page, testcontainers, ESLint domain purity, MEP v6.0                                  |
-| **21** | **Security & architecture remediation (audit-driven)**                      | **11 findings fixed: .env* untracked, admin routes fixed, auth pattern corrected, CSP hardened, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete. +20 tests, +1 suite** |
+| Phase  | Focus                                                                       | Key Deliverable                                                                                                                                                                                               |
+| :----- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1–8    | Foundation → DB → Design System → Feed → AI → Search/Admin → Worker → CI/CD | V1 feature-complete                                                                                                                                                                                           |
+| 9      | Blocking-route fix                                                          | `cacheComponents` + `<Suspense>` pattern                                                                                                                                                                      |
+| 10     | Landing page                                                                | 10-section editorial dispatch page                                                                                                                                                                            |
+| 11–12  | Bug fixes + Tailwind v4 PostCSS                                             | `@tailwindcss/postcss` + self-hosted Commit Mono                                                                                                                                                              |
+| 13     | Critical gaps remediation                                                   | Real RSS parsing, AI SDK v6, FlowProducer DAG, rate limiting                                                                                                                                                  |
+| 14     | Validated gaps closure                                                      | Article detail page, 3-layer provenance, E2E tests                                                                                                                                                            |
+| 15     | Production readiness                                                        | Dockerfiles, OAuth, sign-in/auth-error pages                                                                                                                                                                  |
+| 16–17  | AdminGuard + skip-links + JSON-LD fix                                       | WCAG AAA compliance                                                                                                                                                                                           |
+| 18     | DB reinit + skip-link supplement                                            | Operational tooling                                                                                                                                                                                           |
+| 19     | Comprehensive code audit                                                    | 47 gaps, 39 remediated, +80 tests                                                                                                                                                                             |
+| 20     | Post-Phase-19 remediation                                                   | +60 tests, walkXffChain, /account page, testcontainers, ESLint domain purity, MEP v6.0                                                                                                                        |
+| **21** | **Security & architecture remediation (audit-driven)**                      | **11 findings fixed: .env\* untracked, admin routes fixed, auth pattern corrected, CSP hardened, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete. +20 tests, +1 suite** |
 
 ---
 
@@ -1337,18 +1337,18 @@ Complete list from `AGENTS.md`. Here are the most critical entries organized by 
 
 #### Phase 21 Security & Architecture Anti-Patterns (Audit-Driven)
 
-| # | Anti-Pattern                                                | Why Forbidden                                                                                              | Fix                                                                                                                          |
-| :- | :---------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| 1  | `.env*` files committed to git                              | Real VAPID keys, API keys, encryption keys in git history forever — secrets must be rotated                | Add `.env`, `.env.*`, `!.env.example` to `.gitignore`. `git rm --cached` the files. Rotate exposed secrets.                 |
-| 2  | Route group `(admin)/` expected to produce `/admin/` URLs   | Next.js route groups `(name)` don't affect URL structure. `(admin)/sources/` resolves to `/sources`       | Add `admin/` subfolder inside the route group: `(admin)/admin/sources/page.tsx` → URL `/admin/sources`                       |
-| 3  | `verifySession()` wrapped in try/catch                      | `redirect()` throws `NEXT_REDIRECT`. Standard try/catch catches it, swallowing the redirect → 500 instead of 401 | Server Actions: remove try/catch — let redirect propagate. API Routes: use `auth()` directly (returns null → 401 JSON).     |
-| 4  | Dead code `if (!session)` after `verifySession()`           | `verifySession()` NEVER returns null — it returns a session or throws via `redirect()`. The check is unreachable. | Remove the dead check. Understand that `verifySession()` returns `{ user, sessionId }` or throws — never null.              |
-| 5  | CSP with `'unsafe-eval'`                                     | Allows `eval()`, `Function()` — significant XSS enabler. No code in `src/` uses these.                    | Remove `'unsafe-eval'` from CSP. Keep `'unsafe-inline'` temporarily (Next.js needs it); plan nonce-based CSP migration.     |
-| 6  | AES-256-GCM IV of 16 bytes                                   | NIST SP 800-38D recommends 96-bit (12-byte) IV for GCM. 16-byte IV requires additional GHASH computation. | Change `randomBytes(16)` to `randomBytes(12)`. Decryption reads IV from stored hex — handles any length. Backward-compatible. |
-| 7  | Rate limiter fails-closed (500) on Redis outage              | `checkRateLimit()` throws when Redis is down. No try/catch → uncaught throw → HTTP 500. Redis outage takes down API. | Wrap in try/catch. Fail OPEN (allow request, log warning) — rate limiting is defense-in-depth, not critical path.           |
-| 8  | `AUTH_SECRET` accepts known-weak values in production        | `z.string().min(32)` accepts `dev-secret-do-not-use-in-production` from `.env.example`. JWT sessions forgeable. | `superRefine` rejecting weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`) in production only. |
-| 9  | `deleteSource` identical to `pauseSource` (both soft delete) | `deleteSource` set `isActive: false` — same as `pauseSource`. Misleading API. "delete" implies permanent removal. | `deleteSource` = hard delete (`db.delete` with cascade via `onDelete: "cascade"`). `pauseSource` = soft deactivation.        |
-| 10 | No `pnpm audit` in CI                                       | CI had no dependency security scanning. Known vulnerabilities in Auth.js v5 beta not caught.              | Add `pnpm audit --audit-level=high --prod` step to CI after install, before lint. Start with `\|\| true`; promote to hard gate. |
+| #   | Anti-Pattern                                                 | Why Forbidden                                                                                                        | Fix                                                                                                                             |
+| :-- | :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `.env*` files committed to git                               | Real VAPID keys, API keys, encryption keys in git history forever — secrets must be rotated                          | Add `.env`, `.env.*`, `!.env.example` to `.gitignore`. `git rm --cached` the files. Rotate exposed secrets.                     |
+| 2   | Route group `(admin)/` expected to produce `/admin/` URLs    | Next.js route groups `(name)` don't affect URL structure. `(admin)/sources/` resolves to `/sources`                  | Add `admin/` subfolder inside the route group: `(admin)/admin/sources/page.tsx` → URL `/admin/sources`                          |
+| 3   | `verifySession()` wrapped in try/catch                       | `redirect()` throws `NEXT_REDIRECT`. Standard try/catch catches it, swallowing the redirect → 500 instead of 401     | Server Actions: remove try/catch — let redirect propagate. API Routes: use `auth()` directly (returns null → 401 JSON).         |
+| 4   | Dead code `if (!session)` after `verifySession()`            | `verifySession()` NEVER returns null — it returns a session or throws via `redirect()`. The check is unreachable.    | Remove the dead check. Understand that `verifySession()` returns `{ user, sessionId }` or throws — never null.                  |
+| 5   | CSP with `'unsafe-eval'`                                     | Allows `eval()`, `Function()` — significant XSS enabler. No code in `src/` uses these.                               | Remove `'unsafe-eval'` from CSP. Keep `'unsafe-inline'` temporarily (Next.js needs it); plan nonce-based CSP migration.         |
+| 6   | AES-256-GCM IV of 16 bytes                                   | NIST SP 800-38D recommends 96-bit (12-byte) IV for GCM. 16-byte IV requires additional GHASH computation.            | Change `randomBytes(16)` to `randomBytes(12)`. Decryption reads IV from stored hex — handles any length. Backward-compatible.   |
+| 7   | Rate limiter fails-closed (500) on Redis outage              | `checkRateLimit()` throws when Redis is down. No try/catch → uncaught throw → HTTP 500. Redis outage takes down API. | Wrap in try/catch. Fail OPEN (allow request, log warning) — rate limiting is defense-in-depth, not critical path.               |
+| 8   | `AUTH_SECRET` accepts known-weak values in production        | `z.string().min(32)` accepts `dev-secret-do-not-use-in-production` from `.env.example`. JWT sessions forgeable.      | `superRefine` rejecting weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`) in production only. |
+| 9   | `deleteSource` identical to `pauseSource` (both soft delete) | `deleteSource` set `isActive: false` — same as `pauseSource`. Misleading API. "delete" implies permanent removal.    | `deleteSource` = hard delete (`db.delete` with cascade via `onDelete: "cascade"`). `pauseSource` = soft deactivation.           |
+| 10  | No `pnpm audit` in CI                                        | CI had no dependency security scanning. Known vulnerabilities in Auth.js v5 beta not caught.                         | Add `pnpm audit --audit-level=high --prod` step to CI after install, before lint. Start with `\|\| true`; promote to hard gate. |
 
 ---
 
@@ -2520,64 +2520,64 @@ Before considering this SKILL.md complete, verify against the actual codebase:
 
 ## Quick Reference: Key File Paths
 
-| What                            | Path                                                   |
-| :------------------------------ | :----------------------------------------------------- |
-| Next.js config                  | `next.config.ts`                                       |
-| TypeScript config               | `tsconfig.json`                                        |
-| ESLint config                   | `eslint.config.mjs`                                    |
-| Vitest config (unit)            | `vitest.config.ts`                                     |
-| Vitest config (integration)     | `vitest.integration.config.ts`                         |
-| Playwright config               | `playwright.config.ts`                                 |
-| PostCSS config                  | `postcss.config.mjs`                                   |
-| Global CSS + design tokens      | `src/app/globals.css`                                  |
-| Root layout (fonts + providers) | `src/app/layout.tsx`                                   |
-| Network boundary                | `proxy.ts` (repo root)                                 |
-| DB schema (11 tables, 4 enums)  | `src/lib/db/schema.ts`                                 |
-| Lazy DB proxy                   | `src/lib/db/index.ts`                                  |
-| Env validation (Zod)            | `src/lib/env/index.ts`                                 |
-| Auth config                     | `src/lib/auth/index.ts`                                |
-| Auth DAL (verifySession)        | `src/lib/auth/dal.ts`                                  |
-| Auth providers                  | `src/lib/auth/providers.ts`                            |
-| BullMQ queues                   | `src/lib/queue/index.ts`                               |
-| FlowProducer DAG                | `src/lib/queue/flows.ts`                               |
-| AI prompts                      | `src/lib/ai/prompts.ts`                                |
-| 3-layer provenance              | `src/lib/ai/provenance.ts`                             |
-| Rate limiter                    | `src/lib/rateLimit.ts`                                 |
-| Trusted proxy CIDR walker       | `src/lib/network/getClientIp.ts`                       |
-| Push key encryption             | `src/lib/security/encrypt.ts`                          |
-| Worker entry                    | `src/workers/index.ts`                                 |
-| RSS parser                      | `src/workers/jobs/parseFeed.ts`                        |
-| AI summarizer                   | `src/workers/jobs/summarize.ts`                        |
-| Summary failure state           | `src/workers/jobs/summarizeFailure.ts`                 |
-| Content guard                   | `src/workers/jobs/determineContentAvailability.ts`     |
-| Job scheduler                   | `src/workers/jobs/scheduler.ts`                        |
-| needs_review alerting           | `src/workers/jobs/alerts.ts`                           |
-| Cache invalidation              | `src/workers/lib/cacheInvalidation.ts`                 |
-| DB integration test             | `src/workers/pipeline.db-integration.test.ts`          |
-| Feed queries                    | `src/features/feed/queries.ts`                         |
-| ArticleCard                     | `src/features/feed/components/ArticleCard.tsx`         |
-| FeedGrid                        | `src/features/feed/components/FeedGrid.tsx`            |
-| Summary actions                 | `src/features/summaries/actions.ts`                    |
-| NutritionLabel                  | `src/features/summaries/components/NutritionLabel.tsx` |
-| Account page (Phase 20)         | `src/app/account/page.tsx`                             |
-| Account actions (Phase 20)      | `src/app/account/actions.ts`                           |
-| Admin sources (Phase 21 path)   | `src/app/(admin)/admin/sources/page.tsx`               |
-| Admin sources actions (Phase 21)| `src/app/(admin)/admin/sources/actions.ts`             |
-| Admin summaries (Phase 21 path) | `src/app/(admin)/admin/summaries/page.tsx`             |
-| Domain types                    | `src/domain/articles/types.ts`                         |
-| Domain normalize                | `src/domain/articles/normalize.ts`                     |
-| Importance scoring              | `src/domain/ranking/score.ts`                          |
-| cn() utility                    | `src/shared/lib/utils.ts`                              |
-| Button                          | `src/shared/components/ui/Button.tsx`                  |
-| useDebounce                     | `src/shared/hooks/useDebounce.ts`                      |
-| useReducedMotion                | `src/shared/hooks/useReducedMotion.ts`                 |
-| PageTransition                  | `src/components/primitives/PageTransition.tsx`         |
-| CI pipeline                     | `.github/workflows/ci.yml`                             |
-| E2E pipeline                    | `.github/workflows/e2e.yml`                            |
-| Pre-commit hook                 | `.husky/pre-commit`                                    |
-| MEP v6.0                        | `MASTER_EXECUTION_PLAN.md`                             |
-| AGENTS.md (canonical)           | `AGENTS.md`                                            |
-| CLAUDE.md (stub)                | `CLAUDE.md`                                            |
+| What                             | Path                                                   |
+| :------------------------------- | :----------------------------------------------------- |
+| Next.js config                   | `next.config.ts`                                       |
+| TypeScript config                | `tsconfig.json`                                        |
+| ESLint config                    | `eslint.config.mjs`                                    |
+| Vitest config (unit)             | `vitest.config.ts`                                     |
+| Vitest config (integration)      | `vitest.integration.config.ts`                         |
+| Playwright config                | `playwright.config.ts`                                 |
+| PostCSS config                   | `postcss.config.mjs`                                   |
+| Global CSS + design tokens       | `src/app/globals.css`                                  |
+| Root layout (fonts + providers)  | `src/app/layout.tsx`                                   |
+| Network boundary                 | `proxy.ts` (repo root)                                 |
+| DB schema (11 tables, 4 enums)   | `src/lib/db/schema.ts`                                 |
+| Lazy DB proxy                    | `src/lib/db/index.ts`                                  |
+| Env validation (Zod)             | `src/lib/env/index.ts`                                 |
+| Auth config                      | `src/lib/auth/index.ts`                                |
+| Auth DAL (verifySession)         | `src/lib/auth/dal.ts`                                  |
+| Auth providers                   | `src/lib/auth/providers.ts`                            |
+| BullMQ queues                    | `src/lib/queue/index.ts`                               |
+| FlowProducer DAG                 | `src/lib/queue/flows.ts`                               |
+| AI prompts                       | `src/lib/ai/prompts.ts`                                |
+| 3-layer provenance               | `src/lib/ai/provenance.ts`                             |
+| Rate limiter                     | `src/lib/rateLimit.ts`                                 |
+| Trusted proxy CIDR walker        | `src/lib/network/getClientIp.ts`                       |
+| Push key encryption              | `src/lib/security/encrypt.ts`                          |
+| Worker entry                     | `src/workers/index.ts`                                 |
+| RSS parser                       | `src/workers/jobs/parseFeed.ts`                        |
+| AI summarizer                    | `src/workers/jobs/summarize.ts`                        |
+| Summary failure state            | `src/workers/jobs/summarizeFailure.ts`                 |
+| Content guard                    | `src/workers/jobs/determineContentAvailability.ts`     |
+| Job scheduler                    | `src/workers/jobs/scheduler.ts`                        |
+| needs_review alerting            | `src/workers/jobs/alerts.ts`                           |
+| Cache invalidation               | `src/workers/lib/cacheInvalidation.ts`                 |
+| DB integration test              | `src/workers/pipeline.db-integration.test.ts`          |
+| Feed queries                     | `src/features/feed/queries.ts`                         |
+| ArticleCard                      | `src/features/feed/components/ArticleCard.tsx`         |
+| FeedGrid                         | `src/features/feed/components/FeedGrid.tsx`            |
+| Summary actions                  | `src/features/summaries/actions.ts`                    |
+| NutritionLabel                   | `src/features/summaries/components/NutritionLabel.tsx` |
+| Account page (Phase 20)          | `src/app/account/page.tsx`                             |
+| Account actions (Phase 20)       | `src/app/account/actions.ts`                           |
+| Admin sources (Phase 21 path)    | `src/app/(admin)/admin/sources/page.tsx`               |
+| Admin sources actions (Phase 21) | `src/app/(admin)/admin/sources/actions.ts`             |
+| Admin summaries (Phase 21 path)  | `src/app/(admin)/admin/summaries/page.tsx`             |
+| Domain types                     | `src/domain/articles/types.ts`                         |
+| Domain normalize                 | `src/domain/articles/normalize.ts`                     |
+| Importance scoring               | `src/domain/ranking/score.ts`                          |
+| cn() utility                     | `src/shared/lib/utils.ts`                              |
+| Button                           | `src/shared/components/ui/Button.tsx`                  |
+| useDebounce                      | `src/shared/hooks/useDebounce.ts`                      |
+| useReducedMotion                 | `src/shared/hooks/useReducedMotion.ts`                 |
+| PageTransition                   | `src/components/primitives/PageTransition.tsx`         |
+| CI pipeline                      | `.github/workflows/ci.yml`                             |
+| E2E pipeline                     | `.github/workflows/e2e.yml`                            |
+| Pre-commit hook                  | `.husky/pre-commit`                                    |
+| MEP v6.0                         | `MASTER_EXECUTION_PLAN.md`                             |
+| AGENTS.md (canonical)            | `AGENTS.md`                                            |
+| CLAUDE.md (stub)                 | `CLAUDE.md`                                            |
 
 ---
 

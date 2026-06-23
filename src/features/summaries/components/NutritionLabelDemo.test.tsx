@@ -5,7 +5,9 @@ import { NutritionLabelDemo } from "./NutritionLabelDemo";
 describe("NutritionLabelDemo", () => {
   it("renders the nutrition label section", () => {
     const { container } = render(<NutritionLabelDemo />);
-    expect(container.querySelector("[data-testid='nutrition-label-demo']")).toBeDefined();
+    expect(
+      container.querySelector("[data-testid='nutrition-label-demo']"),
+    ).toBeDefined();
   });
 
   it("displays the model name", () => {

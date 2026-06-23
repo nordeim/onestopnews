@@ -29,7 +29,9 @@ test.describe("Homepage", () => {
     await page.goto("/");
 
     // The masthead should have a live indicator
-    const liveBadge = page.locator("[class*='pulse-dot'], [class*='bg-dispatch-ember']").first();
+    const liveBadge = page
+      .locator("[class*='pulse-dot'], [class*='bg-dispatch-ember']")
+      .first();
     await expect(liveBadge).toBeVisible();
   });
 
@@ -89,7 +91,9 @@ test.describe("Search", () => {
     await page.goto("/search");
 
     // The search input should be present
-    const searchInput = page.locator("input[type='text'], input[type='search']").first();
+    const searchInput = page
+      .locator("input[type='text'], input[type='search']")
+      .first();
     await expect(searchInput).toBeVisible();
   });
 
@@ -130,12 +134,16 @@ test.describe("Category Navigation", () => {
 });
 
 test.describe("Accessibility", () => {
-  test("has a skip-to-content link for keyboard navigation", async ({ page }) => {
+  test("has a skip-to-content link for keyboard navigation", async ({
+    page,
+  }) => {
     await page.goto("/");
 
     // Skip link should exist (even if visually hidden)
     // Note: Skip link may not be implemented yet — this test documents the requirement
-    const skipLink = page.locator("a[href='#main-content'], a[href='#main']").first();
+    const skipLink = page
+      .locator("a[href='#main-content'], a[href='#main']")
+      .first();
     void skipLink; // Documents the requirement — will assert when implemented
   });
 

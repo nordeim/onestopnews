@@ -28,7 +28,7 @@ export interface SummaryFailureState {
  */
 export function getSummaryFailureState(
   attemptsMade: number,
-  maxAttempts: number = 3
+  maxAttempts: number = 3,
 ): SummaryFailureState {
   // If this is NOT the final retry, allow BullMQ to retry again.
   // summaryStatus stays 'none' so the summarize worker can retry.

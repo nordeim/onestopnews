@@ -16,9 +16,7 @@ export default function SourcesPage() {
   return (
     <div>
       <header className="mb-8">
-        <h1 className="font-editorial text-3xl text-paper-50">
-          Sources
-        </h1>
+        <h1 className="font-editorial text-3xl text-paper-50">Sources</h1>
         <p className="mt-2 font-ui text-sm text-paper-300">
           Manage RSS/Atom/JSON sources
         </p>

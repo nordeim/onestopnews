@@ -13,7 +13,8 @@ import { beforeAll, afterAll } from "vitest";
 // property (because @types/node declares it as such). Use Object.defineProperty
 // to bypass the type check at runtime — vitest already sets NODE_ENV="test",
 // so this is just a defensive explicit set.
-process.env.DATABASE_URL = "postgres://test:test@localhost:5432/test?sslmode=disable";
+process.env.DATABASE_URL =
+  "postgres://test:test@localhost:5432/test?sslmode=disable";
 process.env.REDIS_URL = "redis://localhost:6379";
 process.env.AUTH_SECRET = "test-secret-at-least-32-characters-long-xxx";
 process.env.AUTH_URL = "http://localhost:3000";

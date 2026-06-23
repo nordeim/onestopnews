@@ -41,7 +41,7 @@ export interface ProvenanceResult {
  * Pure function — no side effects.
  */
 export function generateProvenanceMetadata(
-  input: ProvenanceInput
+  input: ProvenanceInput,
 ): ProvenanceResult {
   return {
     jsonLd: generateJsonLd(input),

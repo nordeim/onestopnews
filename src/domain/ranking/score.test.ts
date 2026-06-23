@@ -14,7 +14,8 @@ type SchemaContentAvailability =
 // diverges from the schema-derived type. The `satisfies` clause enforces
 // that the literal "full_text" is assignable to BOTH types — if either type
 // narrows, this breaks.
-const _typeCheck = "full_text" as ScoringInputs["contentAvailability"] satisfies SchemaContentAvailability;
+const _typeCheck =
+  "full_text" as ScoringInputs["contentAvailability"] satisfies SchemaContentAvailability;
 void _typeCheck;
 
 describe("calculateImportanceScore", () => {

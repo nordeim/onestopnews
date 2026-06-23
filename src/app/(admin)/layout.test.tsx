@@ -58,7 +58,7 @@ describe("(admin)/layout.tsx", () => {
     const child = React.createElement("p", null, "Admin Content");
 
     const { container } = render(
-      React.createElement(AdminLayout, { children: child })
+      React.createElement(AdminLayout, { children: child }),
     );
 
     const main = container.querySelector("main#main-content");

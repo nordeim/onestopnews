@@ -35,7 +35,7 @@ export async function syncSchedulers(): Promise<number> {
         name: "ingest-source",
         data: { sourceId: source.id, schedulerId },
         opts: { priority: source.priority },
-      }
+      },
     );
   }
 

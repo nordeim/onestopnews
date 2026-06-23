@@ -31,7 +31,14 @@ describe("DisclosureBadge", () => {
 
   it("calls onClick when clicked", () => {
     let clicked = false;
-    render(<DisclosureBadge status="ok" onClick={() => { clicked = true; }} />);
+    render(
+      <DisclosureBadge
+        status="ok"
+        onClick={() => {
+          clicked = true;
+        }}
+      />,
+    );
     screen.getByRole("button").click();
     expect(clicked).toBe(true);
   });

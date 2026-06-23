@@ -60,7 +60,7 @@ export function normalizeCanonicalUrl(url: string): string {
 export function hashContent(
   title: string,
   body: string | null | undefined,
-  publishedAt: Date
+  publishedAt: Date,
 ): string {
   const data = `${title.trim()}|${body ?? ""}|${publishedAt.toISOString()}`;
   return createHash("sha256").update(data, "utf8").digest("hex");

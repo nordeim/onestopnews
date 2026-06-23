@@ -6,18 +6,25 @@
 
 export function SummariesSkeleton() {
   return (
-    <div className="overflow-x-auto" role="status" aria-label="Loading summaries" aria-busy="true">
+    <div
+      className="overflow-x-auto"
+      role="status"
+      aria-label="Loading summaries"
+      aria-busy="true"
+    >
       <table className="w-full text-left">
         <thead>
           <tr className="border-b border-ink-700">
-            {["Article", "Flag Reason", "Model", "Generated", "Actions"].map((header) => (
-              <th
-                key={header}
-                className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400"
-              >
-                {header}
-              </th>
-            ))}
+            {["Article", "Flag Reason", "Model", "Generated", "Actions"].map(
+              (header) => (
+                <th
+                  key={header}
+                  className="py-3 px-4 font-mono text-[10px] uppercase tracking-widest text-paper-400"
+                >
+                  {header}
+                </th>
+              ),
+            )}
           </tr>
         </thead>
         <tbody>

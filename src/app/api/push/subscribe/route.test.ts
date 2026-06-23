@@ -40,7 +40,12 @@ vi.mock("@/lib/security/encrypt", () => ({
 // unauthenticated, letting the route return a proper 401.
 vi.mock("@/lib/auth", () => ({
   auth: vi.fn().mockResolvedValue({
-    user: { id: "user-123", role: "reader", name: "Test User", email: "test@test.com" },
+    user: {
+      id: "user-123",
+      role: "reader",
+      name: "Test User",
+      email: "test@test.com",
+    },
   }),
 }));
 

@@ -38,8 +38,8 @@ export function Footer({ className }: FooterProps) {
               OneStopNews
             </span>
             <p className="font-ui text-sm text-ink-600 leading-relaxed mb-4">
-              Topic-first news aggregation with source-cited AI summaries.
-              EU AI Act Article 50 compliant.
+              Topic-first news aggregation with source-cited AI summaries. EU AI
+              Act Article 50 compliant.
             </p>
             <div className="flex items-center gap-2 font-mono text-[10px] text-ink-300">
               <span
@@ -99,8 +99,8 @@ export function Footer({ className }: FooterProps) {
               aria-hidden="true"
             />
             AI Disclosure: Every AI summary includes a Nutrition Label showing
-            model, temperature, source coverage, and citations.
-            EU AI Act Article 50 compliant.
+            model, temperature, source coverage, and citations. EU AI Act
+            Article 50 compliant.
           </p>
         </div>
 

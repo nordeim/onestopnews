@@ -84,7 +84,9 @@ describe("callAISummary", () => {
     expect(result.keyPoints).toEqual(validSummaryOutput.keyPoints);
     expect(result.sourcesCited).toEqual(validSummaryOutput.sourcesCited);
     expect(result.aiStatement).toBe(validSummaryOutput.aiStatement);
-    expect(result.coveragePercentage).toBe(validSummaryOutput.coveragePercentage);
+    expect(result.coveragePercentage).toBe(
+      validSummaryOutput.coveragePercentage,
+    );
     expect(result.model).toBe("claude-haiku-4-5");
     expect(result.tokensUsed).toBe(250);
   });
@@ -111,7 +113,9 @@ describe("callAISummary", () => {
       .mockRejectedValueOnce(new Error("Anthropic down"))
       .mockRejectedValueOnce(new Error("OpenAI also down"));
 
-    await expect(callAISummary(baseArticle)).rejects.toThrow(/OpenAI also down/);
+    await expect(callAISummary(baseArticle)).rejects.toThrow(
+      /OpenAI also down/,
+    );
   });
 
   it("uses article body as content when available", async () => {
@@ -119,7 +123,7 @@ describe("callAISummary", () => {
 
     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
     const userMessage = callArgs.messages.find(
-      (m: { role: string }) => m.role === "user"
+      (m: { role: string }) => m.role === "user",
     );
     expect(userMessage.content).toContain(baseArticle.body);
   });
@@ -134,7 +138,7 @@ describe("callAISummary", () => {
 
     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
     const userMessage = callArgs.messages.find(
-      (m: { role: string }) => m.role === "user"
+      (m: { role: string }) => m.role === "user",
     );
     expect(userMessage.content).toContain(baseArticle.excerpt);
   });
@@ -150,7 +154,7 @@ describe("callAISummary", () => {
 
     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
     const userMessage = callArgs.messages.find(
-      (m: { role: string }) => m.role === "user"
+      (m: { role: string }) => m.role === "user",
     );
     expect(userMessage.content).toContain(baseArticle.title);
   });
@@ -160,7 +164,7 @@ describe("callAISummary", () => {
 
     const callArgs = mockGenerateObject.mock.calls[0]?.[0];
     const userMessage = callArgs.messages.find(
-      (m: { role: string }) => m.role === "user"
+      (m: { role: string }) => m.role === "user",
     );
     expect(userMessage.content).toContain(baseArticle.sourceName);
     expect(userMessage.content).toContain(baseArticle.sourceUrl);

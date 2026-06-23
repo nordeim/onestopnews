@@ -1,6 +1,7 @@
 please meticulously plan to create an awesome static landing page mockup HTML based on your improved PRD design. Use the below original static HTML mockup to re-imagine your awesome landing page static HTML mockup.
 
 # app.js
+
 ```js
 const state = {
   categories: [],
@@ -51,16 +52,25 @@ function escapeHtml(value) {
 }
 
 function currentCategory() {
-  return state.categories.find((category) => category.id === state.selectedCategory) || state.categories[0];
+  return (
+    state.categories.find(
+      (category) => category.id === state.selectedCategory,
+    ) || state.categories[0]
+  );
 }
 
 function currentArticle() {
-  return state.articles.find((article) => article.id === state.selectedArticleId) || state.articles[0];
+  return (
+    state.articles.find((article) => article.id === state.selectedArticleId) ||
+    state.articles[0]
+  );
 }
 
 function visualMarkup(article) {
   const colors = visualByCategory[article?.category] || visualByCategory.top;
-  const label = article ? `${article.categoryLabel} / ${article.subcategory}` : "OneStopNews";
+  const label = article
+    ? `${article.categoryLabel} / ${article.subcategory}`
+    : "OneStopNews";
   return `<div class="news-art" style="--art-a: ${colors[0]}; --art-b: ${colors[1]}"><span>${escapeHtml(label)}</span></div>`;
 }
 
@@ -78,7 +88,10 @@ function articleMeta(article) {
 function timeAgo(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "recent";
-  const minutes = Math.max(1, Math.round((Date.now() - date.getTime()) / 60000));
+  const minutes = Math.max(
+    1,
+    Math.round((Date.now() - date.getTime()) / 60000),
+  );
   if (minutes < 60) return `${minutes} min ago`;
   const hours = Math.round(minutes / 60);
   if (hours < 24) return `${hours} hr ago`;
@@ -95,7 +108,9 @@ function articleCount(categoryId, subcategory = "") {
 function renderTopicNav() {
   els.topicNav.innerHTML = state.categories
     .map((category) => {
-      const subcategories = category.subcategories.filter((subcategory) => !subcategory.startsWith("All "));
+      const subcategories = category.subcategories.filter(
+        (subcategory) => !subcategory.startsWith("All "),
+      );
       return `
         <div class="topic-item ${state.openMenuId === category.id ? "open" : ""}">
           <button class="topic-button" type="button" data-menu="${category.id}" aria-expanded="${state.openMenuId === category.id}">
@@ -130,10 +145,17 @@ function renderTopicNav() {
 
 function renderSubcategories() {
   const category = currentCategory();
-  state.selectedSubcategory = category.subcategories.includes(state.selectedSubcategory) ? state.selectedSubcategory : category.subcategories[0];
+  state.selectedSubcategory = category.subcategories.includes(
+    state.selectedSubcategory,
+  )
+    ? state.selectedSubcategory
+    : category.subcategories[0];
   els.activeCategory.textContent = category.label;
   els.subcategorySelect.innerHTML = category.subcategories
-    .map((subcategory) => `<option value="${escapeHtml(subcategory)}" ${subcategory === state.selectedSubcategory ? "selected" : ""}>${escapeHtml(subcategory)}</option>`)
+    .map(
+      (subcategory) =>
+        `<option value="${escapeHtml(subcategory)}" ${subcategory === state.selectedSubcategory ? "selected" : ""}>${escapeHtml(subcategory)}</option>`,
+    )
     .join("");
 }
 
@@ -148,7 +170,10 @@ function renderFeed() {
     return;
   }
 
-  if (!state.selectedArticleId || !state.articles.some((article) => article.id === state.selectedArticleId)) {
+  if (
+    !state.selectedArticleId ||
+    !state.articles.some((article) => article.id === state.selectedArticleId)
+  ) {
     state.selectedArticleId = lead.id;
   }
 
@@ -229,7 +254,9 @@ function renderDetail() {
 }
 
 function renderStatus(payload) {
-  const online = Object.values(payload.sources || {}).filter((source) => source.state === "online").length;
+  const online = Object.values(payload.sources || {}).filter(
+    (source) => source.state === "online",
+  ).length;
   const total = Object.values(payload.sources || {}).length;
   els.statusPills.innerHTML = `
     <span>${online}/${total || "?"} feeds online</span>
@@ -257,7 +284,14 @@ async function loadArticles() {
   state.counts = payload.counts || {};
   state.indexed = payload.indexed || 0;
   state.summarized = payload.summarized || 0;
-  renderStatus({ sources: Object.fromEntries((await fetch("/api/source-health").then((res) => res.json())).sources.map((source) => [source.id, source.status])), lastIngestedAt: payload.lastIngestedAt });
+  renderStatus({
+    sources: Object.fromEntries(
+      (await fetch("/api/source-health").then((res) => res.json())).sources.map(
+        (source) => [source.id, source.status],
+      ),
+    ),
+    lastIngestedAt: payload.lastIngestedAt,
+  });
   renderTopicNav();
   renderSubcategories();
   renderFeed();
@@ -269,7 +303,10 @@ async function refreshFeeds() {
   try {
     const response = await fetch("/api/ingest", { method: "POST" });
     const payload = await response.json();
-    renderStatus({ sources: payload.sources, lastIngestedAt: payload.lastIngestedAt });
+    renderStatus({
+      sources: payload.sources,
+      lastIngestedAt: payload.lastIngestedAt,
+    });
     await loadArticles();
   } finally {
     els.refreshButton.disabled = false;
@@ -284,7 +321,9 @@ async function summarize(articleId) {
     button.textContent = "Summarizing...";
   }
 
-  const response = await fetch(`/api/summarize/${articleId}`, { method: "POST" });
+  const response = await fetch(`/api/summarize/${articleId}`, {
+    method: "POST",
+  });
   const payload = await response.json();
   const article = state.articles.find((item) => item.id === articleId);
   if (article && payload.summary) article.summary = payload.summary;
@@ -305,7 +344,10 @@ document.addEventListener("click", async (event) => {
   }
 
   if (menuButton) {
-    state.openMenuId = state.openMenuId === menuButton.dataset.menu ? "" : menuButton.dataset.menu;
+    state.openMenuId =
+      state.openMenuId === menuButton.dataset.menu
+        ? ""
+        : menuButton.dataset.menu;
     renderTopicNav();
   }
 
@@ -320,7 +362,9 @@ document.addEventListener("click", async (event) => {
     state.selectedArticleId = openButton.dataset.open;
     state.selectedMode = "summary";
     renderFeed();
-    document.querySelector("#detailPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .querySelector("#detailPanel")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (sourceButton) {
@@ -363,10 +407,10 @@ document.addEventListener("keydown", (event) => {
 
 await loadCategories();
 await loadArticles();
-
 ```
 
 # index.html
+
 ```html
 <!doctype html>
 <html lang="en">
@@ -406,13 +450,23 @@ await loadArticles();
           <div class="hero-actions">
             <label class="search">
               <span>Search</span>
-              <input id="searchInput" type="search" placeholder="Apple, Singapore, China, markets..." />
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Apple, Singapore, China, markets..."
+              />
             </label>
-            <button class="refresh-button" id="refreshButton" type="button">Refresh live feeds</button>
+            <button class="refresh-button" id="refreshButton" type="button">
+              Refresh live feeds
+            </button>
           </div>
         </section>
 
-        <nav class="topic-nav" id="topicNav" aria-label="Topic navigation"></nav>
+        <nav
+          class="topic-nav"
+          id="topicNav"
+          aria-label="Topic navigation"
+        ></nav>
 
         <section class="controls-panel">
           <div>
@@ -440,16 +494,20 @@ await loadArticles();
         </section>
       </main>
 
-      <aside class="detail-panel" id="detailPanel" aria-label="Selected article"></aside>
+      <aside
+        class="detail-panel"
+        id="detailPanel"
+        aria-label="Selected article"
+      ></aside>
     </div>
 
     <script src="/app.js" type="module"></script>
   </body>
 </html>
-
 ```
 
 # styles.css
+
 ```css
 :root {
   --ink-950: #151719;
@@ -481,7 +539,13 @@ body {
     linear-gradient(140deg, rgba(100, 120, 106, 0.09), transparent 30%),
     linear-gradient(20deg, rgba(184, 111, 82, 0.09), transparent 36%),
     var(--paper);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
 
 button,
@@ -833,8 +897,7 @@ button:focus-visible {
   padding: 18px;
   color: rgba(255, 255, 255, 0.88);
   background:
-    linear-gradient(135deg, var(--art-a), var(--art-b)),
-    var(--ink-800);
+    linear-gradient(135deg, var(--art-a), var(--art-b)), var(--ink-800);
 }
 
 .news-art span {
@@ -947,7 +1010,10 @@ button:focus-visible {
   min-height: 338px;
   overflow: hidden;
   text-align: left;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
 }
 
 .article-card:hover,
@@ -1144,5 +1210,4 @@ button:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
 ```

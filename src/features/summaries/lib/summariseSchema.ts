@@ -74,8 +74,10 @@ export type SummarisationOutput = z.infer<typeof summarisationOutputSchema>;
  * Pure function — no side effects.
  */
 export function validateSummarisationOutput(
-  raw: unknown
-): { success: true; data: SummarisationOutput } | { success: false; error: string } {
+  raw: unknown,
+):
+  | { success: true; data: SummarisationOutput }
+  | { success: false; error: string } {
   const result = summarisationOutputSchema.safeParse(raw);
   if (result.success) {
     return { success: true, data: result.data };

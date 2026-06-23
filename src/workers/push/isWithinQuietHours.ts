@@ -17,24 +17,34 @@ interface UserPreferences {
  */
 export function isWithinQuietHours(
   preferences: UserPreferences,
-  nowUtc: Date
+  nowUtc: Date,
 ): boolean {
   // Fail open if preferences are incomplete
-  if (!preferences.pushQuietStart || !preferences.pushQuietEnd || !preferences.briefingTimezone) {
+  if (
+    !preferences.pushQuietStart ||
+    !preferences.pushQuietEnd ||
+    !preferences.briefingTimezone
+  ) {
     return false;
   }
 
   // Convert current UTC time to the user's local timezone
-  const localNow = DateTime.fromJSDate(nowUtc, { zone: preferences.briefingTimezone });
+  const localNow = DateTime.fromJSDate(nowUtc, {
+    zone: preferences.briefingTimezone,
+  });
 
   // Validate timezone
   if (!localNow.isValid) {
-    console.warn(`[QuietHours] Invalid timezone: ${preferences.briefingTimezone}`);
+    console.warn(
+      `[QuietHours] Invalid timezone: ${preferences.briefingTimezone}`,
+    );
     return false;
   }
 
   // Parse quiet hours start/end
-  const [startHour, startMinute] = preferences.pushQuietStart.split(":").map(Number);
+  const [startHour, startMinute] = preferences.pushQuietStart
+    .split(":")
+    .map(Number);
   const [endHour, endMinute] = preferences.pushQuietEnd.split(":").map(Number);
 
   const startMinutes = (startHour ?? 0) * 60 + (startMinute ?? 0);

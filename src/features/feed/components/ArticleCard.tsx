@@ -21,7 +21,6 @@ interface ArticleCardProps {
  *   Feed queries MUST use getFeedArticles() which includes this JOIN.
  */
 export function ArticleCard({ article }: ArticleCardProps) {
-
   return (
     <article className="group relative grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 last:mb-0 border-b border-ink-100 pb-6 transition-colors duration-300 hover:bg-paper-100/50">
       {/* ROW 1: Headline */}

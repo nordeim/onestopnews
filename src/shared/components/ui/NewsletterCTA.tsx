@@ -6,7 +6,9 @@ import { Zap, Shield, Clock } from "lucide-react";
 
 export function NewsletterCTA() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "success" | "error"
+  >("idle");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,8 +29,9 @@ export function NewsletterCTA() {
             Get Your Daily Briefing
           </h2>
           <p className="text-paper-200/80 mb-8 leading-relaxed">
-            Start your day with a concise, AI-summarised briefing of the most important stories —
-            delivered straight to your inbox every morning at 7 AM.
+            Start your day with a concise, AI-summarised briefing of the most
+            important stories — delivered straight to your inbox every morning
+            at 7 AM.
           </p>
 
           {status === "success" ? (
@@ -36,7 +39,10 @@ export function NewsletterCTA() {
               <p>Thanks for subscribing! Check your inbox shortly. 🎉</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 mb-8">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col sm:flex-row gap-3 mb-8"
+            >
               <input
                 type="email"
                 value={email}
@@ -51,7 +57,9 @@ export function NewsletterCTA() {
                 disabled={status === "submitting"}
                 className="btn-ember bg-dispatch-ember text-white px-6 py-3 rounded-sm font-mono text-[11px] font-semibold cat-label tracking-wider uppercase"
               >
-                {status === "submitting" ? "Subscribing..." : "Get Daily Briefing"}
+                {status === "submitting"
+                  ? "Subscribing..."
+                  : "Get Daily Briefing"}
               </button>
             </form>
           )}

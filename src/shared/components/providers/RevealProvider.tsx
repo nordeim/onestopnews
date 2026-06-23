@@ -38,7 +38,7 @@ export function RevealProvider({ children }: { children: React.ReactNode }) {
       {
         threshold: 0.1,
         rootMargin: "0px 0px -40px 0px",
-      }
+      },
     );
 
     document.querySelectorAll(".reveal").forEach((el) => {

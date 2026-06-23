@@ -631,3 +631,58 @@ Total: 932 statements, 89.12% covered — above the 80% threshold.
 ├──────────┼────┼────────────────────────────────────────┼────────────────────────────────────┤
 │ P5 │ L3 │ Add format:check to CI │ Same as P4 │
 └──────────┴────┴────────────────────────────────────────┴────────────────────────────────────┘
+
+The warning is informational — pnpm.overrides in package.json is still read by pnpm 9.15 but shows a deprecation notice recommending pnpm settings in .npmrc instead. It doesn't affect functionality. The override is working correctly  
+(verified by pnpm ls). I'll leave it as-is since the fix is cosmetic and the alternative (.npmrc) would require a separate config file.
+
+---
+
+✅ Audit Remediation Complete
+
+### Summary of All Changes
+
+┌────────────────────┬────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Change │ Files Modified │ Rationale │
+├────────────────────┼────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ H2: undici CVE fix │ package.json │ Added pnpm.overrides pinning cheerio's transitive undici to 8.5.0. CVEs reduced from 8 → 1 moderate │
+├────────────────────┼────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ M1: FeedFormat DRY │ src/workers/jobs/parseFeed.ts │ Removed hand-written type, imports from @/lib/db/schema │
+├────────────────────┼────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ M2: Dead code docs │ src/app/(admin)/admin/sources/actions.ts │ Added TODO comment documenting the deleteSource UI gap │
+├────────────────────┼────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ M3: Formatting │ 67 source files + .github/workflows/ci.yml │ Ran pnpm format on all source files, added format:check to CI │
+└────────────────────┴────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+### Quality Gate Status
+
+┌──────────────────────────────────────┬─────────────────────────────────────┐
+│ Check │ Status │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ TypeScript tsc --noEmit │ ✅ Zero errors │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ ESLint --max-warnings 0 │ ✅ Zero warnings │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ Vitest │ ✅ 472 tests pass (67 suites) │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ Coverage │ ✅ 88/81/84/89% (above 80/80/70/80) │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ pnpm dev HTTP │ ✅ 200 OK │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ pnpm format:check (src/) │ ✅ Zero issues │
+├──────────────────────────────────────┼─────────────────────────────────────┤
+│ pnpm audit --audit-level=high --prod │ ✅ 0 HIGH vulns (was 3) │
+└──────────────────────────────────────┴─────────────────────────────────────┘
+
+### Deferred Items (Will Not Fix Now)
+
+┌─────────────────────────────────────┬───────────────────────────────────────────────────────────┐
+│ ID │ Reason │
+├─────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ H1: CSP unsafe-eval │ Skipped — breaks Next.js dev server page load as verified │
+├─────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ L1: AdminGuardSkeleton 0% coverage │ Expected — Suspense fallback never renders in tests │
+├─────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ L2: providers.ts 36% coverage │ Low priority — OAuth paths tested via integration │
+├─────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+│ L3: format:check for root .md files │ Cosmetic — only root-level docs unformatted │
+└─────────────────────────────────────┴───────────────────────────────────────────────────────────┘

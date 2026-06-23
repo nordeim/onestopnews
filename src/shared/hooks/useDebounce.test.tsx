@@ -12,7 +12,7 @@ describe("useDebounce", () => {
     vi.useFakeTimers();
     const { result, rerender } = renderHook(
       ({ value }) => useDebounce(value, 300),
-      { initialProps: { value: "initial" } }
+      { initialProps: { value: "initial" } },
     );
 
     expect(result.current).toBe("initial");
@@ -32,7 +32,7 @@ describe("useDebounce", () => {
     vi.useFakeTimers();
     const { result, rerender } = renderHook(
       ({ value }) => useDebounce(value, 100),
-      { initialProps: { value: "a" } }
+      { initialProps: { value: "a" } },
     );
 
     rerender({ value: "b" });

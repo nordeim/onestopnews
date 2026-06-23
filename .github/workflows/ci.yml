@@ -80,6 +80,8 @@ jobs:
         # non-blocking initially (|| true) — once the team is confident in
         # the dependency tree, remove the || true to make it a hard gate.
         run: pnpm audit --audit-level=high --prod || true
+      - name: Check Formatting
+        run: pnpm run format:check
       - name: Run Linter
         run: pnpm run lint
       - name: Run Unit Tests

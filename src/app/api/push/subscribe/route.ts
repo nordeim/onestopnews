@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json(
       { error: "Unauthorized. Sign in to subscribe to push notifications." },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -52,8 +52,11 @@ export async function POST(request: Request) {
   const parseResult = subscriptionSchema.safeParse(body);
   if (!parseResult.success) {
     return NextResponse.json(
-      { error: "Invalid subscription format", details: parseResult.error.issues },
-      { status: 400 }
+      {
+        error: "Invalid subscription format",
+        details: parseResult.error.issues,
+      },
+      { status: 400 },
     );
   }
 
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
     console.error("[Push Subscribe] Error:", error);
     return NextResponse.json(
       { error: "Failed to store subscription" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

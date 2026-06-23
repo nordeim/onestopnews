@@ -47,7 +47,7 @@ describe("NutritionLabel", () => {
   it("renders aria-label for accessibility", () => {
     render(<NutritionLabel summary={mockSummary} />);
     expect(
-      screen.getByLabelText("AI-generated summary transparency label")
+      screen.getByLabelText("AI-generated summary transparency label"),
     ).toBeDefined();
   });
 });

@@ -20,5 +20,10 @@ export async function SearchData({ searchParams }: SearchDataProps) {
     ? await searchArticles({ query: q })
     : { results: [], hasMore: false, nextCursor: null };
 
-  return <SearchPageClient initialResults={initialResults.results} initialQuery={q} />;
+  return (
+    <SearchPageClient
+      initialResults={initialResults.results}
+      initialQuery={q}
+    />
+  );
 }

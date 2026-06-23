@@ -8,6 +8,7 @@ Excellent — `globals.css` is rich with design tokens, custom classes, and anim
 Now let me read the ArticleCard, FeedGrid, Header, and Footer for component patterns, plus check z-index and breakpoints:
 Now let me grep for z-index usage and responsive breakpoints across the codebase:
 Now I have the full z-index layer map:
+
 - `z-10`: Stats section content (above background numbers)
 - `z-40`: Sticky Header
 - `z-50`: Mobile dialog overlay + content
@@ -15,6 +16,7 @@ Now I have the full z-index layer map:
 
 Let me also check responsive breakpoints used across components:
 I have comprehensive breakpoint data. The pattern is clear:
+
 - Container: `max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8`
 - Feed grid: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3`
 - Headlines: `text-3xl sm:text-4xl`
@@ -23,6 +25,7 @@ I have comprehensive breakpoint data. The pattern is clear:
 Let me also quickly read the RevealProvider and Button to complete the component patterns, plus check the Footer:
 I now have all the information I need. Let me also quickly read the Footer for the layout pattern:
 I now have all the information needed. Let me update the tracker and write the comprehensive SKILL.md:
+
 ## Phase 2: PLAN — SKILL.md Structure
 
 I'll organize the 20 sections as follows, adapting the user's template (which referenced a Vite/HeroKinetic project) to OneStopNews's actual Next.js 16 reality. The file will be ~2500-3000 lines, deeply code-referenced.
@@ -34,6 +37,7 @@ The SKILL.md is created. Now let me validate it against the codebase (Phase 3: V
 Let me run validation checks against the codebase:
 All validations pass. Let me run a few more checks — verify the TypeScript interfaces, component patterns, and Phase 13 anti-patterns are all accurately documented:
 All 10 validation points pass:
+
 - ✅ Tech stack versions match (Next.js 16.2.9, React 19.2.7, TS 5.9.3, Zod 4.4.3, Drizzle 0.45.2, BullMQ 5.78.0, AI SDK 6.0.201, Vitest 4.1.8)
 - ✅ Design tokens: 21 color tokens in globals.css, all documented
 - ✅ Custom classes: 33 in globals.css, key ones documented
@@ -45,8 +49,7 @@ All 10 validation points pass:
 - ✅ Fonts: Newsreader, Instrument Sans, Commit Mono (correct) + Inter/Roboto/Space Grotesk (as rejections)
 - ✅ Sections: exactly 20
 
-Now let me copy the SKILL.md to the download directory for easy retrieval:
----
+## Now let me copy the SKILL.md to the download directory for easy retrieval:
 
 # `onestopnews_SKILL.md` Created & Validated
 
@@ -54,14 +57,14 @@ I meticulously distilled the entire project knowledge into a comprehensive skill
 
 ## File Details
 
-| Property | Value |
-|---|---|
-| **Filename** | `onestopnews_SKILL.md` |
+| Property       | Value                                                                |
+| -------------- | -------------------------------------------------------------------- |
+| **Filename**   | `onestopnews_SKILL.md`                                               |
 | **Location 1** | `/home/z/my-project/onestopnews/onestopnews_SKILL.md` (project root) |
-| **Location 2** | `/home/z/my-project/download/onestopnews_SKILL.md` (download copy) |
-| **Size** | 83 KB |
-| **Lines** | 2,218 |
-| **Sections** | 20 (exactly as requested) |
+| **Location 2** | `/home/z/my-project/download/onestopnews_SKILL.md` (download copy)   |
+| **Size**       | 83 KB                                                                |
+| **Lines**      | 2,218                                                                |
+| **Sections**   | 20 (exactly as requested)                                            |
 
 ## All 20 Sections Covered
 
@@ -88,18 +91,18 @@ I meticulously distilled the entire project knowledge into a comprehensive skill
 
 ## Validation Results (All 10 Points Pass)
 
-| Validation | Result |
-|---|---|
-| 1. Tech stack versions match | ✅ All 8 packages verified against `node_modules/*/package.json` |
-| 2. Configuration files match | ✅ `next.config.ts`, `tsconfig.json`, `postcss.config.mjs`, `proxy.ts` |
-| 3. Design system tokens match | ✅ 21 color tokens in globals.css = 21 documented |
-| 4. Component architecture matches | ✅ 18 unique components referenced |
-| 5. Hooks implementation matches | ✅ `useDebounce` + `useReducedMotion` source quoted exactly |
-| 6. Content ingestion patterns match | ✅ `parseFeed.ts`, `summarize.ts`, `flows.ts` accurate |
-| 7. Accessibility implementation matches | ✅ Focus states, reduced motion, ARIA all verified |
-| 8. Anti-patterns documented correctly | ✅ 23 numbered gotchas with root causes + fixes |
-| 9. Color references match | ✅ All 21 tokens with hex + RGB + contrast |
-| 10. TypeScript interfaces match | ✅ 19 interfaces quoted from actual source |
+| Validation                              | Result                                                                 |
+| --------------------------------------- | ---------------------------------------------------------------------- |
+| 1. Tech stack versions match            | ✅ All 8 packages verified against `node_modules/*/package.json`       |
+| 2. Configuration files match            | ✅ `next.config.ts`, `tsconfig.json`, `postcss.config.mjs`, `proxy.ts` |
+| 3. Design system tokens match           | ✅ 21 color tokens in globals.css = 21 documented                      |
+| 4. Component architecture matches       | ✅ 18 unique components referenced                                     |
+| 5. Hooks implementation matches         | ✅ `useDebounce` + `useReducedMotion` source quoted exactly            |
+| 6. Content ingestion patterns match     | ✅ `parseFeed.ts`, `summarize.ts`, `flows.ts` accurate                 |
+| 7. Accessibility implementation matches | ✅ Focus states, reduced motion, ARIA all verified                     |
+| 8. Anti-patterns documented correctly   | ✅ 23 numbered gotchas with root causes + fixes                        |
+| 9. Color references match               | ✅ All 21 tokens with hex + RGB + contrast                             |
+| 10. TypeScript interfaces match         | ✅ 19 interfaces quoted from actual source                             |
 
 ## Key Adaptations from Template
 
@@ -113,5 +116,4 @@ The user's template referenced a Vite-based portfolio project (`HeroKinetic`, `B
 
 The SKILL.md is now the complete, code-validated reference for replicating the OneStopNews design, architecture, and quality. Other coding agents can use it to understand every design decision, avoid every resolved pitfall, and follow the established patterns.
 
-# https://chat.z.ai/s/f8a0f3d1-788a-4fd1-9332-06e2d15892ba 
-
+# https://chat.z.ai/s/f8a0f3d1-788a-4fd1-9332-06e2d15892ba

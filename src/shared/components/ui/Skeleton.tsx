@@ -24,7 +24,7 @@ export function SkeletonLine({ className, width = "100%" }: SkeletonLineProps) {
         "h-4 rounded-sm bg-paper-200",
         /* Animate only if motion is not reduced */
         "motion-safe:animate-pulse",
-        className
+        className,
       )}
       style={{ width }}
       aria-hidden="true"
@@ -58,7 +58,7 @@ export function ArticleCardSkeleton({ className }: ArticleCardSkeletonProps) {
     <article
       className={cn(
         "grid grid-rows-subgrid row-span-3 gap-y-3 mb-10 border-b border-paper-200 pb-6",
-        className
+        className,
       )}
       aria-hidden="true"
     >
@@ -86,7 +86,7 @@ export function FeedSkeleton({ count = 6, className }: FeedSkeletonProps) {
     <div
       className={cn(
         "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8",
-        className
+        className,
       )}
       aria-label="Loading news articles"
       role="feed"

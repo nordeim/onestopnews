@@ -38,7 +38,9 @@ export interface AdminGuardProps {
   children: React.ReactNode;
 }
 
-export async function AdminGuard({ children }: AdminGuardProps): Promise<React.ReactElement> {
+export async function AdminGuard({
+  children,
+}: AdminGuardProps): Promise<React.ReactElement> {
   // verifyAdminSession() redirects internally on failure; if it returns,
   // the user is an admin and we can render the children.
   await verifyAdminSession();

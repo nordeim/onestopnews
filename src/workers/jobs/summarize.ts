@@ -54,7 +54,7 @@ const TEMPERATURE = 0.1; // Factual-only mode per Nutrition Label display
  * @throws When both Anthropic and OpenAI fail (caller should reset summaryStatus)
  */
 export async function callAISummary(
-  article: ArticleForSummarization
+  article: ArticleForSummarization,
 ): Promise<SummarizationResult> {
   // Content priority: body > excerpt > title. The content availability guard
   // (enforced upstream in processSummarizeJob) ensures we never reach here
@@ -85,7 +85,7 @@ export async function callAISummary(
   } catch (primaryError) {
     console.warn(
       "[Summarize] Anthropic failed, falling back to OpenAI:",
-      primaryError
+      primaryError,
     );
   }
 

@@ -10,20 +10,20 @@ The 3 alleged "CRITICAL" findings from a prior review were comprehensively debun
 
 ## 1. Validated: What Phase 13 Fixed
 
-| # | Gap | Status |
-|---|---|---|
-| 1 | `parseFeed` stub (returns `[]`) | ✅ Real `rss-parser` implementation with 13 tests |
-| 2 | `callAISummary` stub (returns placeholders) | ✅ Real Vercel AI SDK integration with 8 tests |
-| 3 | `FlowProducer` atomic DAG missing | ✅ `enqueuePostIngestFlow()` implemented with 6 tests |
-| 4 | `sourceHealthSnapshots` doc drift | ✅ Docs updated to reference `sources.*` |
-| 5 | `/api/articles` no rate limit | ✅ `checkRateLimit()` implemented with 5 tests |
-| 6 | `/api/articles` no cursor validation | ✅ ISO 8601 cursor validation + 4 tests |
-| 7 | `hashContent` FNV-1a (not SHA-256) | ✅ `node:crypto` SHA-256 + wired into worker |
-| 8 | `cacheInvalidation` connection churn | ✅ Singleton publisher with 4 tests |
-| 9 | `/api/categories` missing | ✅ Built with TDD (5 tests) |
-| 10 | CI workflow broken (Node 22, missing env) | ✅ Node 24 + all 11 env vars |
-| 11 | UI CSS corruption (`font浃着`, `Monad`, etc.) | ✅ Fixed to `font-mono` |
-| 12 | `accountablePerson.name` missing model | ✅ Now `AI System: ${model}` |
+| #   | Gap                                           | Status                                                |
+| --- | --------------------------------------------- | ----------------------------------------------------- |
+| 1   | `parseFeed` stub (returns `[]`)               | ✅ Real `rss-parser` implementation with 13 tests     |
+| 2   | `callAISummary` stub (returns placeholders)   | ✅ Real Vercel AI SDK integration with 8 tests        |
+| 3   | `FlowProducer` atomic DAG missing             | ✅ `enqueuePostIngestFlow()` implemented with 6 tests |
+| 4   | `sourceHealthSnapshots` doc drift             | ✅ Docs updated to reference `sources.*`              |
+| 5   | `/api/articles` no rate limit                 | ✅ `checkRateLimit()` implemented with 5 tests        |
+| 6   | `/api/articles` no cursor validation          | ✅ ISO 8601 cursor validation + 4 tests               |
+| 7   | `hashContent` FNV-1a (not SHA-256)            | ✅ `node:crypto` SHA-256 + wired into worker          |
+| 8   | `cacheInvalidation` connection churn          | ✅ Singleton publisher with 4 tests                   |
+| 9   | `/api/categories` missing                     | ✅ Built with TDD (5 tests)                           |
+| 10  | CI workflow broken (Node 22, missing env)     | ✅ Node 24 + all 11 env vars                          |
+| 11  | UI CSS corruption (`font浃着`, `Monad`, etc.) | ✅ Fixed to `font-mono`                               |
+| 12  | `accountablePerson.name` missing model        | ✅ Now `AI System: ${model}`                          |
 
 ---
 
@@ -40,6 +40,7 @@ The 3 alleged "CRITICAL" findings from a prior review were comprehensively debun
 **Impact:** End users cannot view full stories or AI summaries. This is the highest-value user-facing remaining work.
 
 **Recommendation:**
+
 1. Create `getArticleWithSummary(id)` query (Server Component)
 2. Wire up `SummaryPanel` + `NutritionLabel` in the page component
 3. Call `generateProvenanceMetadata()` in `generateMetadata()` for the article page
@@ -55,6 +56,7 @@ The 3 alleged "CRITICAL" findings from a prior review were comprehensively debun
 **Impact:** A regression in the `FlowProducer` (e.g., wrong `data` shape passed to children) would not be caught by the current test suite.
 
 **Recommendation:**
+
 1. Write an integration test that enqueues an ingest job with a mock RSS feed, verifies the flow is created, then mocks the flow execution to verify scoring and summarization.
 2. Create `playwright.config.ts` and at least one E2E test for a杀伤性叙述.
 
@@ -65,9 +67,11 @@ The 3 alleged "CRITICAL" findings from a prior review were comprehensively debun
 **Location:** `src/app/api/push/subscribe/route.ts:71`
 
 **Description:** The encrypted push subscription keys are stored as:
+
 ```typescript
 keys: { p256dh: encryptedKeys, auth: "encrypted" }
 ```
+
 The entire encrypted JSON envelope (containing both p256dh and auth) is stuffed into the `p256dh` field, while `auth` is hardcoded to `"encrypted"`. This is semantically misleading — the schema type says `{ p256dh: string; auth: string }` but the actual storage convention is different.
 
 **Impact:** A developer debugging push notifications would look at the schema and think `keys.p256dh` is the actual p256dh key. This is schema debt.
@@ -92,16 +96,16 @@ The entire encrypted JSON envelope (containing both p256dh and auth) is stuffed 
 
 A prior review claimed 3 CRITICAL and 5 HIGH-severity issues. A meticulous re-validation against the actual codebase found these to be **entirely false**:
 
-| Claim | Verdict | Evidence |
-|---|---|---|
-| **CRITICAL-1:** `parseFeed()` never extracts `body` | ❌ **FALSE** | `parseFeed.ts:125` extracts body from `content:encoded` or `content`. `parseFeed.ts:145` includes `body` in the return object. All 13 tests pass, including body-extraction assertions. |
-| **CRITICAL-2:** `processSummarizeJob` passes `body: null` | ❌ **FALSE** | `workers/index.ts:175` selects `body: articles.body`. `workers/index.ts:209` passes `body: article.body` to `callAISummary`. |
-| **CRITICAL-3:** AI failure → infinite retry, no logging | ❌ **FALSE** | `summarize.ts` re-throws after both providers fail. `workers/index.ts:352` logs via `worker.on("failed")`. BullMQ retries 3x (not indefinitely), then moves to the failed set (DLQ). |
-| **HIGH-1:** `/api/articles` unbounded `limit` | ❌ **FALSE** | `route.ts:71` caps at 100 via `Math.min(..., 100)` and defaults to 31. |
-| **HIGH-2:** `FlowProducer` parent job has no handler | ❌ **FALSE** | `feed-slice` worker processes ALL jobs on its queue. The parent `refresh-feed-slice` job is handled by `processFeedSliceJob` which calls `publishCacheInvalidation()`. |
-| **HIGH-4:** `x-forwarded-for` is spoofable | ⚠️ **KNOWN LIMIT.** | A real but documented limitation. The code already uses `x-real-ip` fallback. Severity is MEDIUM, not HIGH. |
-| **HIGH-5:** `hashContent` test is brittle | ⚠️ **OVERSTATED** | 5 of 6 tests are property-based. The 1 hardcoded vector is a deliberate algorithm verification, not brittleness. Severity is LOW. |
-| **MEDIUM-1:** `sourceHealthSnapshots` in README | ❌ **FALSE** | 0 matches in `README.md`. Only found in historical planning docs (MEP, PAD). Phase 13 correctly cleaned all live docs. |
+| Claim                                                     | Verdict             | Evidence                                                                                                                                                                                |
+| --------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CRITICAL-1:** `parseFeed()` never extracts `body`       | ❌ **FALSE**        | `parseFeed.ts:125` extracts body from `content:encoded` or `content`. `parseFeed.ts:145` includes `body` in the return object. All 13 tests pass, including body-extraction assertions. |
+| **CRITICAL-2:** `processSummarizeJob` passes `body: null` | ❌ **FALSE**        | `workers/index.ts:175` selects `body: articles.body`. `workers/index.ts:209` passes `body: article.body` to `callAISummary`.                                                            |
+| **CRITICAL-3:** AI failure → infinite retry, no logging   | ❌ **FALSE**        | `summarize.ts` re-throws after both providers fail. `workers/index.ts:352` logs via `worker.on("failed")`. BullMQ retries 3x (not indefinitely), then moves to the failed set (DLQ).    |
+| **HIGH-1:** `/api/articles` unbounded `limit`             | ❌ **FALSE**        | `route.ts:71` caps at 100 via `Math.min(..., 100)` and defaults to 31.                                                                                                                  |
+| **HIGH-2:** `FlowProducer` parent job has no handler      | ❌ **FALSE**        | `feed-slice` worker processes ALL jobs on its queue. The parent `refresh-feed-slice` job is handled by `processFeedSliceJob` which calls `publishCacheInvalidation()`.                  |
+| **HIGH-4:** `x-forwarded-for` is spoofable                | ⚠️ **KNOWN LIMIT.** | A real but documented limitation. The code already uses `x-real-ip` fallback. Severity is MEDIUM, not HIGH.                                                                             |
+| **HIGH-5:** `hashContent` test is brittle                 | ⚠️ **OVERSTATED**   | 5 of 6 tests are property-based. The 1 hardcoded vector is a deliberate algorithm verification, not brittleness. Severity is LOW.                                                       |
+| **MEDIUM-1:** `sourceHealthSnapshots` in README           | ❌ **FALSE**        | 0 matches in `README.md`. Only found in historical planning docs (MEP, PAD). Phase 13 correctly cleaned all live docs.                                                                  |
 
 ---
 
@@ -113,12 +117,12 @@ Real RSS parser, real AI summarization worker, FlowProducer DAG, rate limiting, 
 
 ### Remaining (4 items)
 
-| # | Issue | Severity | Action Required |
-|---|---|---|---|
-| 1 | Article detail page is placeholder | **MEDIUM** | Wire database query, render SummaryPanel + NutritionLabel, emit provenance |
-| 2 | No E2E pipeline integration test | **MEDIUM** | Write integration test for full ingest→score→summarize flow; fix Playwright config |
-| 3 | `pushSubscriptions.keys` schema debt | **MEDIUM** | Refactor to store encrypted envelope in a dedicated column |
-| 4 | `contentHash` doesn't include body | **LOW** | Include body in hash calculation (minor design change) |
+| #   | Issue                                | Severity   | Action Required                                                                    |
+| --- | ------------------------------------ | ---------- | ---------------------------------------------------------------------------------- |
+| 1   | Article detail page is placeholder   | **MEDIUM** | Wire database query, render SummaryPanel + NutritionLabel, emit provenance         |
+| 2   | No E2E pipeline integration test     | **MEDIUM** | Write integration test for full ingest→score→summarize flow; fix Playwright config |
+| 3   | `pushSubscriptions.keys` schema debt | **MEDIUM** | Refactor to store encrypted envelope in a dedicated column                         |
+| 4   | `contentHash` doesn't include body   | **LOW**    | Include body in hash calculation (minor design change)                             |
 
 ---
 

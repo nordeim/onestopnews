@@ -58,7 +58,9 @@ export function StatsSection() {
               <span className="w-5 h-5 rounded-full bg-dispatch-sage flex items-center justify-center shrink-0">
                 <Check className="w-3 h-3 text-white" />
               </span>
-              <span className="text-sm text-ink-700 font-medium">{feature}</span>
+              <span className="text-sm text-ink-700 font-medium">
+                {feature}
+              </span>
             </div>
           ))}
         </div>

@@ -5,14 +5,14 @@ export default [
   {
     // "e2e/**" has been removed from this array
     ignores: [
-      ".next/**", 
-      "node_modules/**", 
-      "drizzle/**", 
-      "dist/**", 
-      "playwright.config.ts", 
-      "skills/**", 
-      "docs/**", 
-      "coverage/**"
+      ".next/**",
+      "node_modules/**",
+      "drizzle/**",
+      "dist/**",
+      "playwright.config.ts",
+      "skills/**",
+      "docs/**",
+      "coverage/**",
     ],
   },
   {

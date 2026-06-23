@@ -120,7 +120,8 @@ describe("envSchema — AUTH_SECRET weak-value rejection (S8)", () => {
   it("accepts a strong random AUTH_SECRET in production (64 chars, not in blocklist)", () => {
     const result = envSchema.safeParse({
       ...BASE_REQUIRED,
-      AUTH_SECRET: "k7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sTk7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sT",
+      AUTH_SECRET:
+        "k7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sTk7$mB2xQ9vL4nR8wY3pF6jH1cZ5aD0sT",
       NODE_ENV: "production",
     });
     expect(result.success).toBe(true);

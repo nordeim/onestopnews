@@ -1,4 +1,5 @@
 # skills/super-frontend-design/SKILL.md
+
 ```md
 ---
 name: super-frontend-design
@@ -23,6 +24,7 @@ version: 1.0.0
 ## When to Use This Skill
 
 **Trigger Phrases (Combined from all 10 source skills):**
+
 - "create a beautiful website" / "design a landing page" / "build a luxury UI"
 - "make it distinctive" / "avoid generic design" / "avant-garde UI"
 - "build React/TypeScript app" / "Next.js 16 project" / "Tailwind v4 migration"
@@ -33,6 +35,7 @@ version: 1.0.0
 - "mobile nav not working" / "debug Tailwind v4" / "security audit"
 
 **Use Cases:**
+
 1. Building new frontend projects from scratch (luxury, SaaS, e-commerce, portfolios)
 2. Migrating legacy projects to modern stacks (Tailwind v3→v4, Next.js 15→16)
 3. Conducting full-stack performance audits (57 Vercel rules + OWASP 2025)
@@ -44,45 +47,46 @@ version: 1.0.0
 ---
 
 ## Core Pillars (8 Unified Modules)
-
 ```
+
 ┌─────────────────────────────────────────────────────────────────────┐
-│           SUPER-FRONTEND-DESIGN MASTER ARCHITECTURE                 │
+│ SUPER-FRONTEND-DESIGN MASTER ARCHITECTURE │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. PHILOSOPHY & STRATEGY                                          │
-│     Anti-Generic Mandate • Strategic Positioning • Intentionality   │
-│     Source Skills: avant-garde-design-v4, aesthetic, frontend-design│
-│                                                                     │
-│  2. TECH STACK & SETUP                                              │
-│     Next.js 16 • Tailwind v4 • React 19 • TypeScript 5.9+          │
-│     Source Skills: nextjs16-tailwind4, frontend-development, web-frameworks │
-│                                                                     │
-│  3. DESIGN SYSTEM                                                   │
-│     Typography • Color (OKLCH) • Spacing • Container Queries        │
-│     Source Skills: tailwind-patterns, frontend-design, avant-garde-design-v4 │
-│                                                                     │
-│  4. COMPONENT ARCHITECTURE                                          │
-│     shadcn/ui • Radix UI • MUI v7 • Feature-Based Organization     │
-│     Source Skills: ui-styling, frontend-development, web-frameworks │
-│                                                                     │
-│  5. PERFORMANCE OPTIMIZATION                                        │
-│     57 Vercel Rules • Waterfall Elimination • Budget Tracking        │
-│     Source Skills: nextjs-react-expert, nextjs16-tailwind4, web-frameworks │
-│                                                                     │
-│  6. ACCESSIBILITY & COMPLIANCE                                      │
-│     WCAG AAA • ADA Title II • OWASP 2025 • Auto-Auditing           │
-│     Source Skills: web-design-guidelines, avant-garde-design-v4, ui-styling │
-│                                                                     │
-│  7. VISUAL DESIGN & MOTION                                          │
-│     4-Stage Framework • Micro-Interactions • Framer Motion          │
-│     Source Skills: aesthetic, avant-garde-design-v4, frontend-design │
-│                                                                     │
-│  8. QUALITY ASSURANCE                                               │
-│     6-Phase SOP • Verification Gates • Security • Anti-Patterns      │
-│     Source Skills: All 10 source skills                              │
-│                                                                     │
+│ │
+│ 1. PHILOSOPHY & STRATEGY │
+│ Anti-Generic Mandate • Strategic Positioning • Intentionality │
+│ Source Skills: avant-garde-design-v4, aesthetic, frontend-design│
+│ │
+│ 2. TECH STACK & SETUP │
+│ Next.js 16 • Tailwind v4 • React 19 • TypeScript 5.9+ │
+│ Source Skills: nextjs16-tailwind4, frontend-development, web-frameworks │
+│ │
+│ 3. DESIGN SYSTEM │
+│ Typography • Color (OKLCH) • Spacing • Container Queries │
+│ Source Skills: tailwind-patterns, frontend-design, avant-garde-design-v4 │
+│ │
+│ 4. COMPONENT ARCHITECTURE │
+│ shadcn/ui • Radix UI • MUI v7 • Feature-Based Organization │
+│ Source Skills: ui-styling, frontend-development, web-frameworks │
+│ │
+│ 5. PERFORMANCE OPTIMIZATION │
+│ 57 Vercel Rules • Waterfall Elimination • Budget Tracking │
+│ Source Skills: nextjs-react-expert, nextjs16-tailwind4, web-frameworks │
+│ │
+│ 6. ACCESSIBILITY & COMPLIANCE │
+│ WCAG AAA • ADA Title II • OWASP 2025 • Auto-Auditing │
+│ Source Skills: web-design-guidelines, avant-garde-design-v4, ui-styling │
+│ │
+│ 7. VISUAL DESIGN & MOTION │
+│ 4-Stage Framework • Micro-Interactions • Framer Motion │
+│ Source Skills: aesthetic, avant-garde-design-v4, frontend-design │
+│ │
+│ 8. QUALITY ASSURANCE │
+│ 6-Phase SOP • Verification Gates • Security • Anti-Patterns │
+│ Source Skills: All 10 source skills │
+│ │
 └─────────────────────────────────────────────────────────────────────┘
+
 ```
 
 ---
@@ -90,47 +94,49 @@ version: 1.0.0
 ## Quick Decision Tree
 
 ```
+
 What do you need to do?
 │
 ├─ 🎨 STRATEGY/DESIGN → Read references/01-philosophy-strategy.md
-│   ├─ Anti-generic positioning
-│   ├─ Audience psychographics
-│   └─ 4-Stage aesthetic framework
+│ ├─ Anti-generic positioning
+│ ├─ Audience psychographics
+│ └─ 4-Stage aesthetic framework
 │
 ├─ ⚙️ SETUP/STACK → Read references/02-tech-stack-setup.md
-│   ├─ Next.js 16 + Tailwind v4 config
-│   ├─ Monorepo (Turborepo) setup
-│   └─ TypeScript strict mode
+│ ├─ Next.js 16 + Tailwind v4 config
+│ ├─ Monorepo (Turborepo) setup
+│ └─ TypeScript strict mode
 │
 ├─ 🎨 DESIGN SYSTEM → Read references/03-design-system.md
-│   ├─ Typography pairing
-│   ├─ Color palette (OKLCH)
-│   └─ Spacing/layout rules
+│ ├─ Typography pairing
+│ ├─ Color palette (OKLCH)
+│ └─ Spacing/layout rules
 │
 ├─ 🧩 COMPONENTS → Read references/04-component-architecture.md
-│   ├─ shadcn/ui + Radix patterns
-│   ├─ MUI v7 integration
-│   └─ File organization
+│ ├─ shadcn/ui + Radix patterns
+│ ├─ MUI v7 integration
+│ └─ File organization
 │
 ├─ ⚡ PERFORMANCE → Read references/05-performance-optimization.md
-│   ├─ Waterfall elimination
-│   ├─ Bundle size optimization
-│   └─ Performance budgets
+│ ├─ Waterfall elimination
+│ ├─ Bundle size optimization
+│ └─ Performance budgets
 │
 ├─ ♿ ACCESSIBILITY → Read references/06-accessibility-compliance.md
-│   ├─ WCAG AAA audit
-│   ├─ ADA Title II compliance
-│   └─ Reduced motion handling
+│ ├─ WCAG AAA audit
+│ ├─ ADA Title II compliance
+│ └─ Reduced motion handling
 │
 ├─ ✨ VISUAL/MOTION → Read references/07-visual-design-motion.md
-│   ├─ Animation timing
-│   ├─ Micro-interactions
-│   └─ Storytelling design
+│ ├─ Animation timing
+│ ├─ Micro-interactions
+│ └─ Storytelling design
 │
 └─ ✅ QA/DELIVERY → Read references/08-quality-assurance.md
-    ├─ 6-Phase SOP
-    ├─ Verification checklists
-    └─ OWASP 2025 security
+├─ 6-Phase SOP
+├─ Verification checklists
+└─ OWASP 2025 security
+
 ```
 
 ---
@@ -248,6 +254,7 @@ New project? Follow this order:
 ```
 
 # skills/super-frontend-design/references/01-philosophy-strategy.md
+
 ```md
 # Philosophy & Strategy (Core Module 1)
 
@@ -260,15 +267,15 @@ New project? Follow this order:
 
 Every interface must have a **distinctive conceptual direction**. In 2026, the web is saturated with "AI-generated" aesthetics—perfect spacing, neutral gradients, same four fonts. Reject these clichés:
 
-| Reject | Why | Embrace Instead |
-|--------|-----|-----------------|
-| Bento grids | Modern cliché, every AI design | Question grid necessity; use asymmetry |
-| Hero split (left/right) | Predictable, boring | Massive typography or vertical narrative |
-| Mesh/Aurora gradients | Lazy "floating blobs" | Radical color pairing, high-contrast flat |
-| Glassmorphism (blue/white) | AI's idea of "premium" | Intentional color stories, solid surfaces |
-| Inter/Roboto without hierarchy | Safe = forgettable | Distinctive type pairings with purpose |
-| Purple-gradient-on-white | Overused cliché | Unexpected combinations |
-| "Calm Tech" taken too far | Can become boring | Inject "Tactile Maximalism"—squishy buttons, glass-like elements |
+| Reject                         | Why                            | Embrace Instead                                                  |
+| ------------------------------ | ------------------------------ | ---------------------------------------------------------------- |
+| Bento grids                    | Modern cliché, every AI design | Question grid necessity; use asymmetry                           |
+| Hero split (left/right)        | Predictable, boring            | Massive typography or vertical narrative                         |
+| Mesh/Aurora gradients          | Lazy "floating blobs"          | Radical color pairing, high-contrast flat                        |
+| Glassmorphism (blue/white)     | AI's idea of "premium"         | Intentional color stories, solid surfaces                        |
+| Inter/Roboto without hierarchy | Safe = forgettable             | Distinctive type pairings with purpose                           |
+| Purple-gradient-on-white       | Overused cliché                | Unexpected combinations                                          |
+| "Calm Tech" taken too far      | Can become boring              | Inject "Tactile Maximalism"—squishy buttons, glass-like elements |
 
 ---
 
@@ -284,34 +291,38 @@ Every interface must have a **distinctive conceptual direction**. In 2026, the w
 ## 3. Strategic Positioning Framework (avant-garde-design-v4)
 
 ### 3.1 Intentionality Compass (15min prep)
+
 Answer these 4 questions in writing before any design work:
 
-| Question | If Leans Toward... | Compass Points To... |
-|----------|-------------------|---------------------|
-| Primary fear? | "Wasting money on bad decision" | **Institutional Clarity** (Reduce risk) |
-| | "Missing out on next big thing" | **Dynamic Modernism** (Amplify FOMO) |
-| Decision style? | Rational, research-heavy | **Institutional Clarity** (Provide data) |
-| | Emotional, status-driven | **Dynamic Modernism** (Create desire) |
-| Trust source? | Institutions, credentials | **Institutional Clarity** (Signal legacy) |
-| | Innovators, peers | **Dynamic Modernism** (Signal community) |
-| Category relationship? | New, needs reassurance | **Institutional Clarity** (Build confidence) |
-| | Experienced, seeking best | **Dynamic Modernism** (Signal superiority) |
+| Question               | If Leans Toward...              | Compass Points To...                         |
+| ---------------------- | ------------------------------- | -------------------------------------------- |
+| Primary fear?          | "Wasting money on bad decision" | **Institutional Clarity** (Reduce risk)      |
+|                        | "Missing out on next big thing" | **Dynamic Modernism** (Amplify FOMO)         |
+| Decision style?        | Rational, research-heavy        | **Institutional Clarity** (Provide data)     |
+|                        | Emotional, status-driven        | **Dynamic Modernism** (Create desire)        |
+| Trust source?          | Institutions, credentials       | **Institutional Clarity** (Signal legacy)    |
+|                        | Innovators, peers               | **Dynamic Modernism** (Signal community)     |
+| Category relationship? | New, needs reassurance          | **Institutional Clarity** (Build confidence) |
+|                        | Experienced, seeking best       | **Dynamic Modernism** (Signal superiority)   |
 
 ### 3.2 Strategic Positioning Matrix (2026 Update)
 ```
+
                     RISK-AVERSE AUDIENCE    │    ASPIRATION-DRIVEN AUDIENCE
+
 ────────────────────────────────────────────┼──────────────────────────────────
-ESTABLISHED BRAND                           │
-  → Q1: THE GUARDIAN                       │    → Q2: LEGACY INNOVATOR
-    Perfect classic execution               │      Blend trusted + bold accents
-    Keywords: Reliable, Professional        │      Keywords: Prestigious, Forward
-    Example: iTrust Academy                 │      Example: Harvard AI Program
+ESTABLISHED BRAND │
+→ Q1: THE GUARDIAN │ → Q2: LEGACY INNOVATOR
+Perfect classic execution │ Blend trusted + bold accents
+Keywords: Reliable, Professional │ Keywords: Prestigious, Forward
+Example: iTrust Academy │ Example: Harvard AI Program
 ────────────────────────────────────────────┼──────────────────────────────────
-DISRUPTIVE BRAND                            │
-  → Q3: TRUSTWORTHY UPSTART                │    → Q4: THE VISIONARY
-    Modern + ultra-clear + trust signals    │      Full commitment to bold
-    Keywords: Fresh, Credible               │      Keywords: Innovative, Bold
-    Example: New fintech for boomers        │      Example: AI Academy (Kimi)
+DISRUPTIVE BRAND │
+→ Q3: TRUSTWORTHY UPSTART │ → Q4: THE VISIONARY
+Modern + ultra-clear + trust signals │ Full commitment to bold
+Keywords: Fresh, Credible │ Keywords: Innovative, Bold
+Example: New fintech for boomers │ Example: AI Academy (Kimi)
+
 ```
 
 ### 3.3 Anti-Generic Litmus Test
@@ -372,9 +383,11 @@ Elevate with narrative elements:
 
 ### 5.2 Emotional Design Levels
 ```
-VISCERAL (instant)  → First impression: colors, imagery, overall feel
-BEHAVIORAL (use)    → Using it: speed, feedback, efficiency
+
+VISCERAL (instant) → First impression: colors, imagery, overall feel
+BEHAVIORAL (use) → Using it: speed, feedback, efficiency
 REFLECTIVE (memory) → After: "I like what this says about me"
+
 ```
 
 ### 5.3 Trust Building Checklist
@@ -425,6 +438,7 @@ REFLECTIVE (memory) → After: "I like what this says about me"
 ```
 
 # skills/super-frontend-design/references/05-performance-optimization.md
+
 ```md
 # Performance Optimization (Core Module 5)
 
@@ -434,24 +448,25 @@ REFLECTIVE (memory) → After: "I like what this says about me"
 ---
 
 ## 1. Priority Order (Critical → Low)
-
 ```
+
 1️⃣ CRITICAL (Biggest Gains - Do First):
-   ├─ Eliminate Waterfalls (each adds 100-500ms+ latency)
-   └─ Bundle Size Optimization (affects TTI, LCP)
+├─ Eliminate Waterfalls (each adds 100-500ms+ latency)
+└─ Bundle Size Optimization (affects TTI, LCP)
 
 2️⃣ HIGH (Significant Impact - Do Second):
-   └─ Server-Side Performance (faster SSR, streaming)
+└─ Server-Side Performance (faster SSR, streaming)
 
 3️⃣ MEDIUM (Moderate Gains - Do Third):
-   ├─ Client-Side Data Fetching (SWR, deduplication)
-   ├─ Re-render Optimization (React.memo, useMemo)
-   └─ Rendering Performance (virtualization, images)
+├─ Client-Side Data Fetching (SWR, deduplication)
+├─ Re-render Optimization (React.memo, useMemo)
+└─ Rendering Performance (virtualization, images)
 
 4️⃣ LOW (Polish - Do Last):
-   ├─ JavaScript Micro-optimizations
-   └─ Advanced Patterns (useLatest, init-once)
-```
+├─ JavaScript Micro-optimizations
+└─ Advanced Patterns (useLatest, init-once)
+
+````
 
 ---
 
@@ -471,9 +486,10 @@ const [user, posts, comments] = await Promise.all([
   getPosts(user.id),
   getComments(posts[0].id), // Note: Still depends, restructure if possible
 ]);
-```
+````
 
 ### 2.2 Key Rules
+
 1. **Parallel Data Fetching**: Always use `Promise.all()` for independent calls
 2. **Server Components First**: No client-side waterfalls for initial data
 3. **Suspense Boundaries**: Wrap data-fetching components to avoid blocking
@@ -481,6 +497,7 @@ const [user, posts, comments] = await Promise.all([
 5. **Avoid Sequential Await**: Never chain awaits for independent operations
 
 ### 2.3 Verification
+
 ```bash
 # Check for sequential awaits in codebase
 grep -r "await" src/ --include="*.ts" | grep -A 2 "await"
@@ -491,14 +508,16 @@ grep -r "await" src/ --include="*.ts" | grep -A 2 "await"
 ## 3. CRITICAL: Bundle Size Optimization (10 Rules)
 
 ### 3.1 Budget Targets
-| Metric | Institutional | Dynamic | Balanced |
-|--------|---------------|---------|----------|
-| Initial JS bundle | < 150 KB | < 300 KB | < 200 KB |
-| First Contentful Paint | < 1.0s | < 1.5s | < 1.2s |
-| Largest Contentful Paint | < 1.5s | < 2.5s | < 2.0s |
-| Time to Interactive | < 2.0s | < 3.5s | < 2.5s |
+
+| Metric                   | Institutional | Dynamic  | Balanced |
+| ------------------------ | ------------- | -------- | -------- |
+| Initial JS bundle        | < 150 KB      | < 300 KB | < 200 KB |
+| First Contentful Paint   | < 1.0s        | < 1.5s   | < 1.2s   |
+| Largest Contentful Paint | < 1.5s        | < 2.5s   | < 2.0s   |
+| Time to Interactive      | < 2.0s        | < 3.5s   | < 2.5s   |
 
 ### 3.2 Key Rules
+
 1. **No Barrel Imports**: Avoid `index.ts` re-exports in app code
    ```typescript
    // ❌ BARREL IMPORT
@@ -525,6 +544,7 @@ grep -r "await" src/ --include="*.ts" | grep -A 2 "await"
 5. **Next.js Font**: Use `next/font/google` for zero-network font loading
 
 ### 3.3 Bundle Analysis
+
 ```bash
 # Install analyzer
 npm install @next/bundle-analyzer
@@ -544,6 +564,7 @@ ANALYZE=true npm run build
 ## 4. HIGH: Server-Side Performance (10 Rules)
 
 ### 4.1 Key Rules
+
 1. **Parallel Server Fetching**: Use `Promise.all()` in Server Components
 2. **Streaming SSR**: Use Suspense for slow server operations
 3. **API Route Optimization**: No N+1 queries, use ORMs properly
@@ -551,6 +572,7 @@ ANALYZE=true npm run build
 5. **PPR (Partial Prerendering)**: Hybrid static + dynamic pages
 
 ### 4.2 PPR Example
+
 ```typescript
 // next.config.ts
 const nextConfig = {
@@ -577,6 +599,7 @@ export default async function Page() {
 ## 5. MEDIUM: Re-render & Rendering Optimization (15 Rules)
 
 ### 5.1 Re-render Rules
+
 1. **React.memo**: Wrap expensive components
 2. **useMemo**: Cache expensive computations
 3. **useCallback**: Cache event handlers passed to children
@@ -584,6 +607,7 @@ export default async function Page() {
 5. **Virtualization**: Use for lists >100 items (`react-window`)
 
 ### 5.2 Rendering Rules
+
 1. **Compositor-Only Animations**: Animate only `transform` and `opacity`
 2. **Avoid Layout Thrashing**: Batch DOM reads/writes
 3. **next/image**: Always provide `width`/`height` to avoid CLS
@@ -594,6 +618,7 @@ export default async function Page() {
 ## 6. LOW: JavaScript Micro-optimizations (10 Rules)
 
 ### 6.1 Rules
+
 1. **Hoist RegExps**: Move regex to module scope
 2. **Cache Property Access**: In hot loops, cache `obj.prop`
 3. **Avoid `for...in`**: Use `for...of` or `forEach`
@@ -604,18 +629,19 @@ export default async function Page() {
 
 ## 7. Performance Budgets by Quadrant (avant-garde-design-v4)
 
-| Metric | Q1/Q3 (Institutional) | Q2/Q4 (Dynamic) |
-|--------|------------------------|------------------|
-| Initial JS bundle | < 150 KB | < 300 KB |
-| First Contentful Paint | < 1.0s | < 1.5s |
-| Cumulative Layout Shift | < 0.05 | < 0.1 |
-| Animation Frame Budget | N/A | < 16ms (60fps) |
+| Metric                  | Q1/Q3 (Institutional) | Q2/Q4 (Dynamic) |
+| ----------------------- | --------------------- | --------------- |
+| Initial JS bundle       | < 150 KB              | < 300 KB        |
+| First Contentful Paint  | < 1.0s                | < 1.5s          |
+| Cumulative Layout Shift | < 0.05                | < 0.1           |
+| Animation Frame Budget  | N/A                   | < 16ms (60fps)  |
 
 ---
 
 ## 8. Performance Review Checklist
 
 **Critical (Must Fix):**
+
 - [ ] No sequential data fetching (waterfalls eliminated)
 - [ ] Bundle size < 200KB for main bundle
 - [ ] No barrel imports in app code
@@ -623,18 +649,21 @@ export default async function Page() {
 - [ ] Parallel data fetching where possible
 
 **High Priority:**
+
 - [ ] Server components used where appropriate
 - [ ] API routes optimized (no N+1 queries)
 - [ ] Suspense boundaries for data fetching
 - [ ] Static generation used where possible
 
 **Medium Priority:**
+
 - [ ] Expensive computations memoized
 - [ ] List rendering virtualized (if > 100 items)
 - [ ] Images optimized with next/image
 - [ ] No unnecessary re-renders
 
 **Low Priority (Polish):**
+
 - [ ] Hot path loops optimized
 - [ ] RegExp patterns hoisted
 - [ ] Property access cached in loops
@@ -643,24 +672,25 @@ export default async function Page() {
 
 ## 9. Verification Scripts
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
+| Script                         | Purpose                 | Usage                                                        |
+| ------------------------------ | ----------------------- | ------------------------------------------------------------ |
 | `react_performance_checker.py` | Automated 57-rule audit | `python scripts/react_performance_checker.py <project_path>` |
 
 ---
 
 ## 10. Related References
+
 - [02-tech-stack-setup.md](02-tech-stack-setup.md) → Next.js, Tailwind setup
 - [04-component-architecture.md](04-component-architecture.md) → Component patterns
 - [08-quality-assurance.md](08-quality-assurance.md) → Anti-patterns, verification gates
 
-```
+````
 
 # skills/super-frontend-design/references/03-design-system.md
 ```md
 # Design System (Core Module 3)
 
-> **Source Skills:** tailwind-patterns, frontend-design, avant-garde-design-v4  
+> **Source Skills:** tailwind-patterns, frontend-design, avant-garde-design-v4
 > **Purpose:** Define cohesive typography, color, spacing, and responsive systems
 
 ---
@@ -682,36 +712,38 @@ export default async function Page() {
   --color-primary: oklch(0.7 0.15 250);
   --color-surface: oklch(0.98 0 0);
   --color-surface-dark: oklch(0.15 0 0);
-  
+
   /* Spacing Scale (dynamic values allowed) */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
   --spacing-md: 1rem;
   --spacing-lg: 2rem;
   --spacing-18: 4.5rem; /* Custom dynamic value */
-  
+
   /* Typography */
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --font-serif: 'Instrument Serif', Georgia, serif;
 }
-```
+````
 
 ### 1.3 v3 → v4 Migration Map
-| v3 Utility | v4 Replacement | Notes |
-|------------|----------------|-------|
-| `bg-opacity-50` | `bg-color/50` | Opacity modifier |
-| `shadow-sm` | `shadow-xs` | Explicit scale |
-| `blur-sm` | `blur-xs` | |
-| `bg-gradient-to-r` | `bg-linear-to-r` | New gradient type |
-| `outline-none` | `outline-hidden` | Semantic clarity |
-| `ring` | `ring-3` | Must specify width |
+
+| v3 Utility         | v4 Replacement   | Notes              |
+| ------------------ | ---------------- | ------------------ |
+| `bg-opacity-50`    | `bg-color/50`    | Opacity modifier   |
+| `shadow-sm`        | `shadow-xs`      | Explicit scale     |
+| `blur-sm`          | `blur-xs`        |                    |
+| `bg-gradient-to-r` | `bg-linear-to-r` | New gradient type  |
+| `outline-none`     | `outline-hidden` | Semantic clarity   |
+| `ring`             | `ring-3`         | Must specify width |
 
 ---
 
 ## 2. Color System
 
 ### 2.1 60-30-10 Rule (frontend-design)
+
 ```
 60% → Primary/Background (calm, neutral base)
 30% → Secondary (supporting areas)
@@ -719,44 +751,48 @@ export default async function Page() {
 ```
 
 ### 2.2 Color Psychology (frontend-design)
-| If You Need... | Consider Hues | Avoid |
-|----------------|---------------|-------|
-| Trust, calm | Blue family | Aggressive reds |
-| Growth, nature | Green family | Industrial grays |
-| Energy, urgency | Orange, red | Passive blues |
+
+| If You Need...     | Consider Hues            | Avoid                 |
+| ------------------ | ------------------------ | --------------------- |
+| Trust, calm        | Blue family              | Aggressive reds       |
+| Growth, nature     | Green family             | Industrial grays      |
+| Energy, urgency    | Orange, red              | Passive blues         |
 | Luxury, creativity | Deep Teal, Gold, Emerald | Cheap-feeling brights |
-| Clean, minimal | Neutrals | Overwhelming color |
+| Clean, minimal     | Neutrals                 | Overwhelming color    |
 
 ### 2.3 OKLCH vs RGB/HSL (tailwind-patterns)
-| Format | Advantage |
-|--------|-----------|
+
+| Format    | Advantage                                           |
+| --------- | --------------------------------------------------- |
 | **OKLCH** | Perceptually uniform, wider gamut, better gradients |
-| **HSL** | Intuitive hue/saturation |
-| **RGB** | Legacy compatibility |
+| **HSL**   | Intuitive hue/saturation                            |
+| **RGB**   | Legacy compatibility                                |
 
 ### 2.4 Institutional vs Dynamic Palette (avant-garde-design-v4)
 
 **Institutional Clarity (Trust-Based):**
+
 ```css
 @theme {
-  --color-primary: #F27A1A;                    /* Warm orange */
+  --color-primary: #f27a1a; /* Warm orange */
   --color-primary-subtle: rgba(242, 122, 26, 0.08);
-  --color-bg-primary: #FFFFFF;
-  --color-bg-secondary: #F8F9FA;
-  --color-text-primary: #111827;                /* Near-black */
-  --color-text-secondary: #6B7280;              /* Gray */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-text-primary: #111827; /* Near-black */
+  --color-text-secondary: #6b7280; /* Gray */
 }
 ```
 
 **Dynamic Modernism (Desire-Based):**
+
 ```css
 @theme {
-  --color-primary: #4F46E5;                    /* Indigo */
-  --color-bg-primary: #FAFAF9;                  /* Warm off-white */
-  --color-bg-dark: #1E293B;                     /* Slate-800 */
-  --color-accent-cyan: #06B6D4;
-  --color-accent-emerald: #10B981;
-  --color-urgency: #EF4444;
+  --color-primary: #4f46e5; /* Indigo */
+  --color-bg-primary: #fafaf9; /* Warm off-white */
+  --color-bg-dark: #1e293b; /* Slate-800 */
+  --color-accent-cyan: #06b6d4;
+  --color-accent-emerald: #10b981;
+  --color-urgency: #ef4444;
 }
 ```
 
@@ -765,14 +801,16 @@ export default async function Page() {
 ## 3. Typography System
 
 ### 3.1 Scale Selection (frontend-design)
-| Content Type | Scale Ratio | Feel |
-|--------------|-------------|------|
-| Dense UI | 1.125-1.2 | Compact, efficient |
-| General web | 1.25 | Balanced (most common) |
-| Editorial | 1.333 | Readable, spacious |
-| Hero/display | 1.5-1.618 | Dramatic impact |
+
+| Content Type | Scale Ratio | Feel                   |
+| ------------ | ----------- | ---------------------- |
+| Dense UI     | 1.125-1.2   | Compact, efficient     |
+| General web  | 1.25        | Balanced (most common) |
+| Editorial    | 1.333       | Readable, spacious     |
+| Hero/display | 1.5-1.618   | Dramatic impact        |
 
 ### 3.2 Pairing Concept (frontend-design)
+
 ```
 Contrast + Harmony:
 ├── DIFFERENT enough for hierarchy
@@ -781,15 +819,17 @@ Contrast + Harmony:
 ```
 
 ### 3.3 Typography Systems by Strategy (avant-garde-design-v4)
-| Strategy | Display Font | Body Font | H1 Scale |
-|----------|-------------|-----------|----------|
-| Single Family (Institutional) | DM Sans | DM Sans | 60-72px |
-| Expressive (Dynamic) | Space Grotesk | Inter | 64-77px |
-| Luxury/Refined | Instrument Serif | Inter | 60-72px |
-| Editorial/Magazine | Playfair Display | Source Sans | 64-80px |
-| Developer/Brutalist | JetBrains Mono | Inter | 56-68px |
+
+| Strategy                      | Display Font     | Body Font   | H1 Scale |
+| ----------------------------- | ---------------- | ----------- | -------- |
+| Single Family (Institutional) | DM Sans          | DM Sans     | 60-72px  |
+| Expressive (Dynamic)          | Space Grotesk    | Inter       | 64-77px  |
+| Luxury/Refined                | Instrument Serif | Inter       | 60-72px  |
+| Editorial/Magazine            | Playfair Display | Source Sans | 64-80px  |
+| Developer/Brutalist           | JetBrains Mono   | Inter       | 56-68px  |
 
 ### 3.4 Readability Rules (frontend-design)
+
 - **Line length**: 45-75 characters optimal
 - **Line height**: 1.4-1.6 for body text
 - **Contrast**: WCAG AA minimum (4.5:1 normal text)
@@ -801,6 +841,7 @@ Contrast + Harmony:
 ## 4. Spacing & Layout
 
 ### 4.1 8-Point Grid (frontend-design)
+
 ```
 All spacing in multiples of 8:
 ├── Tight: 4px (half-step)
@@ -811,6 +852,7 @@ All spacing in multiples of 8:
 ```
 
 ### 4.2 Golden Ratio (φ = 1.618) (frontend-design)
+
 ```
 Use for proportional harmony:
 ├── Content : Sidebar = ~62% : 38%
@@ -819,13 +861,14 @@ Use for proportional harmony:
 ```
 
 ### 4.3 Modern Layout Patterns (tailwind-patterns)
-| Pattern | Classes |
-|---------|---------|
-| Center (both axes) | `flex items-center justify-center` |
-| Vertical stack | `flex flex-col gap-4` |
-| Space between | `flex justify-between items-center` |
+
+| Pattern                  | Classes                                               |
+| ------------------------ | ----------------------------------------------------- |
+| Center (both axes)       | `flex items-center justify-center`                    |
+| Vertical stack           | `flex flex-col gap-4`                                 |
+| Space between            | `flex justify-between items-center`                   |
 | Auto-fit responsive grid | `grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))]` |
-| Asymmetric (Bento) | `grid grid-cols-3 grid-rows-2` with spans |
+| Asymmetric (Bento)       | `grid grid-cols-3 grid-rows-2` with spans             |
 
 > **Note:** Prefer asymmetric/Bento layouts over symmetric 3-column grids.
 
@@ -834,46 +877,52 @@ Use for proportional harmony:
 ## 5. Container Queries (tailwind-patterns)
 
 ### 5.1 Breakpoint vs Container
-| Type | Responds To |
-|------|-------------|
-| **Breakpoint** (`md:`) | Viewport width |
+
+| Type                         | Responds To          |
+| ---------------------------- | -------------------- |
+| **Breakpoint** (`md:`)       | Viewport width       |
 | **Container** (`@container`) | Parent element width |
 
 ### 5.2 Usage
-| Pattern | Classes |
-|---------|---------|
-| Define container | `@container` on parent |
+
+| Pattern              | Classes                            |
+| -------------------- | ---------------------------------- |
+| Define container     | `@container` on parent             |
 | Container breakpoint | `@sm:`, `@md:`, `@lg:` on children |
-| Named containers | `@container/card` for specificity |
+| Named containers     | `@container/card` for specificity  |
 
 ### 5.3 When to Use
-| Scenario | Use |
-|----------|-----|
-| Page-level layouts | Viewport breakpoints |
-| Component-level responsive | Container queries |
-| Reusable components | Container queries (context-independent) |
+
+| Scenario                   | Use                                     |
+| -------------------------- | --------------------------------------- |
+| Page-level layouts         | Viewport breakpoints                    |
+| Component-level responsive | Container queries                       |
+| Reusable components        | Container queries (context-independent) |
 
 ---
 
 ## 6. Dark Mode (tailwind-patterns)
 
 ### 6.1 Configuration Strategies
-| Method | Behavior | Use When |
-|--------|----------|----------|
-| `class` | `.dark` class toggles | Manual theme switcher |
-| `media` | Follows system preference | No user control |
-| `selector` | Custom selector (v4) | Complex theming |
+
+| Method     | Behavior                  | Use When              |
+| ---------- | ------------------------- | --------------------- |
+| `class`    | `.dark` class toggles     | Manual theme switcher |
+| `media`    | Follows system preference | No user control       |
+| `selector` | Custom selector (v4)      | Complex theming       |
 
 ### 6.2 Pattern
-| Element | Light | Dark |
-|---------|-------|------|
-| Background | `bg-white` | `dark:bg-zinc-900` |
-| Text | `text-zinc-900` | `dark:text-zinc-100` |
-| Borders | `border-zinc-200` | `dark:border-zinc-700` |
+
+| Element    | Light             | Dark                   |
+| ---------- | ----------------- | ---------------------- |
+| Background | `bg-white`        | `dark:bg-zinc-900`     |
+| Text       | `text-zinc-900`   | `dark:text-zinc-100`   |
+| Borders    | `border-zinc-200` | `dark:border-zinc-700` |
 
 ---
 
 ## 7. Z-Index Scale (avant-garde-design-v4)
+
 ```css
 @theme {
   --z-behind: -1;
@@ -893,6 +942,7 @@ Use for proportional harmony:
 ---
 
 ## 8. Verification Checklist
+
 - [ ] `@theme` directive in `globals.css` with project tokens
 - [ ] Color palette uses OKLCH for perceptual uniformity
 - [ ] Typography pairing matches strategic positioning (Q1-Q4)
@@ -904,24 +954,25 @@ Use for proportional harmony:
 ---
 
 ## 9. Related References
+
 - [01-philosophy-strategy.md](01-philosophy-strategy.md) → Anti-generic, positioning
 - [04-component-architecture.md](04-component-architecture.md) → shadcn/ui, MUI patterns
 - [07-visual-design-motion.md](07-visual-design-motion.md) → Animation, effects
 
-```
+````
 
 # skills/super-frontend-design/references/06-accessibility-compliance.md
 ```md
 # Accessibility & Compliance (Core Module 6)
 
-> **Source Skills:** web-design-guidelines, avant-garde-design-v4, ui-styling, frontend-design  
+> **Source Skills:** web-design-guidelines, avant-garde-design-v4, ui-styling, frontend-design
 > **Purpose:** Meet WCAG AAA + ADA Title II standards with automated auditing
 
 ---
 
 ## 1. Legal Requirement (April 24, 2026)
 
-**ADA Title II**: All digital content must meet **WCAG 2.1 Level AA** minimum.  
+**ADA Title II**: All digital content must meet **WCAG 2.1 Level AA** minimum.
 **Best Practice**: Target **WCAG AAA** for mastery and future-proofing.
 
 ---
@@ -933,12 +984,14 @@ Use for proportional harmony:
    ```bash
    # Use FetchURL to retrieve latest rules
    # URL: https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md
-   ```
+````
+
 2. **Read Files to Audit**: Specify files/patterns to review
 3. **Apply All Rules**: Check against every guideline
 4. **Output Findings**: `file:line` format as specified in guidelines
 
 ### 2.2 When to Run
+
 - After completing UI implementation
 - Before any production deployment
 - When user asks: "review my UI", "check accessibility", "audit design"
@@ -948,6 +1001,7 @@ Use for proportional harmony:
 ## 3. WCAG AAA Checklist (avant-garde-design-v4)
 
 ### 3.1 Mandatory Checks
+
 - [ ] **Images**: Every image has meaningful `alt` text (or `alt=""` if decorative)
 - [ ] **Text Size**: Minimum 14px (16px+ recommended)
 - [ ] **Color Contrast**:
@@ -961,25 +1015,28 @@ Use for proportional harmony:
 - [ ] **Reduced Motion**: All animations respect `prefers-reduced-motion`
 
 ### 3.2 Semantic HTML
-| Element | Use For |
-|---------|---------|
-| `<nav>` | Navigation menus |
-| `<main>` | Primary page content |
+
+| Element     | Use For                 |
+| ----------- | ----------------------- |
+| `<nav>`     | Navigation menus        |
+| `<main>`    | Primary page content    |
 | `<section>` | Thematic content groups |
-| `<article>` | Self-contained content |
-| `<aside>` | Complementary content |
+| `<article>` | Self-contained content  |
+| `<aside>`   | Complementary content   |
 
 ---
 
 ## 4. Radix UI Accessibility (ui-styling)
 
 ### 4.1 Built-In Features
+
 - Automatic ARIA role assignment
 - Keyboard navigation (Arrow keys, Escape, Tab)
 - Focus trap for modals/overlays
 - Screen reader announcements
 
 ### 4.2 Checklist for Radix Components
+
 - [ ] Dialog: Focus returns to trigger on close
 - [ ] Dropdown: Arrow key navigation, Escape closes
 - [ ] Tabs: `aria-selected` for active tab
@@ -991,6 +1048,7 @@ Use for proportional harmony:
 ## 5. Reduced Motion (Absolute Requirement)
 
 ### 5.1 Implementation
+
 ```tsx
 "use client";
 import { useEffect, useState } from "react";
@@ -1001,7 +1059,8 @@ export function useReducedMotion(): boolean {
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    const handler = (e: MediaQueryListEvent) =>
+      setPrefersReducedMotion(e.matches);
     mql.addEventListener("change", handler);
     return () => mql.removeEventListener("change", handler);
   }, []);
@@ -1011,6 +1070,7 @@ export function useReducedMotion(): boolean {
 ```
 
 ### 5.2 Usage in Animation
+
 ```tsx
 const prefersReducedMotion = useReducedMotion();
 const initial = prefersReducedMotion ? {} : { opacity: 0, y: 30 };
@@ -1021,44 +1081,46 @@ const initial = prefersReducedMotion ? {} : { opacity: 0, y: 30 };
   transition={{ duration: prefersReducedMotion ? 0 : 0.6 }}
 >
   Content
-</motion.div>
+</motion.div>;
 ```
 
 ### 5.3 Rule
+
 > When `prefers-reduced-motion: reduce`, **disable all animations entirely**—do not just slow them.
 
 ---
 
 ## 6. Accessibility Anti-Patterns (frontend-design)
 
-| ❌ Don't | ✅ Do |
-|----------|-----|
-| `<div onClick>` (not keyboard accessible) | `<button type="button">` |
-| `autoFocus` without justification | Use sparingly, desktop only |
-| Images without `alt` | Always provide meaningful `alt` |
-| Form inputs without labels | `<label>` or `aria-label` required |
-| Animating `width`/`height` | Use `transform: scale()` |
-| `outline-none` without replacement | `outline-hidden` + `focus-visible:ring-*` |
-| "Click here" links | Descriptive link text |
+| ❌ Don't                                  | ✅ Do                                     |
+| ----------------------------------------- | ----------------------------------------- |
+| `<div onClick>` (not keyboard accessible) | `<button type="button">`                  |
+| `autoFocus` without justification         | Use sparingly, desktop only               |
+| Images without `alt`                      | Always provide meaningful `alt`           |
+| Form inputs without labels                | `<label>` or `aria-label` required        |
+| Animating `width`/`height`                | Use `transform: scale()`                  |
+| `outline-none` without replacement        | `outline-hidden` + `focus-visible:ring-*` |
+| "Click here" links                        | Descriptive link text                     |
 
 ---
 
 ## 7. OWASP 2025 Security Checklist (nextjs16-tailwind4)
 
-| Category | Checks |
-|----------|--------|
-| **A01 Broken Access Control** | IDOR, auth checks, SSRF protection |
-| **A02 Security Misconfiguration** | Secure headers, no stack traces |
-| **A03 Supply Chain** | `npm audit`, lockfile integrity |
-| **A04 Cryptographic Failures** | bcrypt for passwords, jose for JWT |
-| **A05 Injection** | ORM to prevent SQL injection, XSS sanitization |
-| **A06 Insecure Design** | Input validation with Zod |
-| **A07 Authentication Failures** | Secure cookies (HttpOnly; SameSite=Strict) |
-| **A08 Integrity Failures** | Code signing, dependency verification |
-| **A09 Logging & Monitoring** | Failed auth logging |
-| **A10 Exceptional Conditions** | Fail-closed, proper error boundaries |
+| Category                          | Checks                                         |
+| --------------------------------- | ---------------------------------------------- |
+| **A01 Broken Access Control**     | IDOR, auth checks, SSRF protection             |
+| **A02 Security Misconfiguration** | Secure headers, no stack traces                |
+| **A03 Supply Chain**              | `npm audit`, lockfile integrity                |
+| **A04 Cryptographic Failures**    | bcrypt for passwords, jose for JWT             |
+| **A05 Injection**                 | ORM to prevent SQL injection, XSS sanitization |
+| **A06 Insecure Design**           | Input validation with Zod                      |
+| **A07 Authentication Failures**   | Secure cookies (HttpOnly; SameSite=Strict)     |
+| **A08 Integrity Failures**        | Code signing, dependency verification          |
+| **A09 Logging & Monitoring**      | Failed auth logging                            |
+| **A10 Exceptional Conditions**    | Fail-closed, proper error boundaries           |
 
 ### 7.1 Next.js Security Headers
+
 ```typescript
 // next.config.ts
 const nextConfig = {
@@ -1070,7 +1132,10 @@ const nextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
         ],
       },
     ];
@@ -1083,6 +1148,7 @@ const nextConfig = {
 ## 8. Verification Gates
 
 ### 8.1 Pre-Deploy Accessibility Check
+
 - [ ] Lighthouse Accessibility Score ≥ 95
 - [ ] No console errors related to ARIA
 - [ ] Keyboard-only operation confirmed
@@ -1092,6 +1158,7 @@ const nextConfig = {
 - [ ] `npm audit` returns no high/critical vulnerabilities
 
 ### 8.2 Design Quality Gate
+
 - [ ] Color contrast meets WCAG AAA
 - [ ] Touch targets ≥ 44×44px
 - [ ] Focus states visible on all interactive elements
@@ -1101,18 +1168,19 @@ const nextConfig = {
 ---
 
 ## 9. Related References
+
 - [01-philosophy-strategy.md](01-philosophy-strategy.md) → Intentionality, anti-generic
 - [05-performance-optimization.md](05-performance-optimization.md) → Performance budgets
 - [07-visual-design-motion.md](07-visual-design-motion.md) → Animation, reduced motion
 - [08-quality-assurance.md](08-quality-assurance.md) → OWASP, verification gates
 
-```
+````
 
 # skills/super-frontend-design/references/08-quality-assurance.md
 ```md
 # Quality Assurance (Core Module 8)
 
-> **Source Skills:** All 10 top frontend skills  
+> **Source Skills:** All 10 top frontend skills
 > **Purpose:** End-to-end validation, security, anti-patterns, and delivery readiness
 
 ---
@@ -1212,26 +1280,27 @@ const nextConfig = {
 ```bash
 # Run in order before every commit
 npx tsc --noEmit && npm run lint && npm test && npm run build
-```
+````
 
 ---
 
 ## 3. OWASP 2025 Security Checklist (nextjs16-tailwind4)
 
-| Category | Checks |
-|----------|--------|
-| **A01 Broken Access Control** | IDOR, auth checks, SSRF protection, Server Action guards |
-| **A02 Security Misconfiguration** | Secure headers, no default creds, no stack traces exposed |
-| **A03 Supply Chain** | `npm audit`, lockfile integrity, SBOM |
-| **A04 Cryptographic Failures** | bcrypt for passwords, jose for JWT, no hardcoded secrets |
-| **A05 Injection** | ORM to prevent SQL injection, XSS via sanitization |
-| **A06 Insecure Design** | Input validation with Zod, business logic reviews |
-| **A07 Authentication Failures** | Session management, secure cookies (HttpOnly; SameSite=Strict) |
-| **A08 Integrity Failures** | Code signing, dependency verification |
-| **A09 Logging & Monitoring** | Failed auth logging, security events |
-| **A10 Exceptional Conditions** | Fail-closed, proper error boundaries |
+| Category                          | Checks                                                         |
+| --------------------------------- | -------------------------------------------------------------- |
+| **A01 Broken Access Control**     | IDOR, auth checks, SSRF protection, Server Action guards       |
+| **A02 Security Misconfiguration** | Secure headers, no default creds, no stack traces exposed      |
+| **A03 Supply Chain**              | `npm audit`, lockfile integrity, SBOM                          |
+| **A04 Cryptographic Failures**    | bcrypt for passwords, jose for JWT, no hardcoded secrets       |
+| **A05 Injection**                 | ORM to prevent SQL injection, XSS via sanitization             |
+| **A06 Insecure Design**           | Input validation with Zod, business logic reviews              |
+| **A07 Authentication Failures**   | Session management, secure cookies (HttpOnly; SameSite=Strict) |
+| **A08 Integrity Failures**        | Code signing, dependency verification                          |
+| **A09 Logging & Monitoring**      | Failed auth logging, security events                           |
+| **A10 Exceptional Conditions**    | Fail-closed, proper error boundaries                           |
 
 **Next.js Security Headers** (add to `next.config.ts`):
+
 ```typescript
 async headers() {
   return [{ source: "/(.*)", headers: [
@@ -1248,6 +1317,7 @@ async headers() {
 ## 4. Design Quality Gate
 
 Before marking UI work complete:
+
 - [ ] Distinctive aesthetic (immediately recognisable, not generic)
 - [ ] Intentional whitespace (structural, not empty)
 - [ ] Typography hierarchy clear without colour (squint test passes)
@@ -1290,30 +1360,32 @@ Step 6: Production-only disappearance?
 ## 6. Anti-Pattern Catalog (Combined from All Skills)
 
 ### 6.1 Design Anti-Patterns (2026 Edition)
-| Anti-Pattern | Why It Fails | Correct Approach |
-|--------------|--------------|------------------|
-| **Bento grids** | Modern cliché, every AI design | Question grid necessity; use asymmetry |
-| **Purple-gradient-on-white** | Overused, AI-generated look | Unexpected color combinations |
-| **Glassmorphism (blue/white)** | AI's idea of "premium" | Intentional color stories, solid surfaces |
-| **Stock photography** | Generic, inauthentic | Custom illustrations or conceptual imagery |
-| **"Click here" links** | Useless for screen readers | Descriptive link text |
-| **Images of text** | Not readable, not resizable | Real text with proper styling |
-| **Infinite scroll without end** | No rest, overwhelming | Provide natural endpoints |
+
+| Anti-Pattern                    | Why It Fails                   | Correct Approach                           |
+| ------------------------------- | ------------------------------ | ------------------------------------------ |
+| **Bento grids**                 | Modern cliché, every AI design | Question grid necessity; use asymmetry     |
+| **Purple-gradient-on-white**    | Overused, AI-generated look    | Unexpected color combinations              |
+| **Glassmorphism (blue/white)**  | AI's idea of "premium"         | Intentional color stories, solid surfaces  |
+| **Stock photography**           | Generic, inauthentic           | Custom illustrations or conceptual imagery |
+| **"Click here" links**          | Useless for screen readers     | Descriptive link text                      |
+| **Images of text**              | Not readable, not resizable    | Real text with proper styling              |
+| **Infinite scroll without end** | No rest, overwhelming          | Provide natural endpoints                  |
 
 ### 6.2 Technical Anti-Patterns
-| Anti-Pattern | Why It Fails | Correct Approach |
-|--------------|--------------|------------------|
-| `tailwind.config.js` in v4 | v4 uses CSS-first | Use `@theme` directive in globals.css |
-| `outline-none` without replacement | Accessibility failure | `outline-hidden` + `focus-visible:ring-*` |
-| `<div onClick>` | Not keyboard accessible | `<button type="button">` |
-| `transition: all` | Performance issue | List specific properties |
-| Dynamic class strings | Purged in production | Use static class strings |
-| `autoFocus` without justification | UX disruption on mobile | Use sparingly, desktop only |
-| Images without dimensions | Layout shift (CLS) | Explicit `width` and `height` |
-| Form inputs without labels | Accessibility failure | `<label>` or `aria-label` required |
-| Animating `width`/`height` | Poor performance, repaints | Use `scale` transform |
-| Barrel imports (`index.ts` re-exports) | Bundle bloat | Direct imports from component files |
-| Sequential `await` for independent calls | Waterfalls (100-500ms+ per step) | Use `Promise.all()` |
+
+| Anti-Pattern                             | Why It Fails                     | Correct Approach                          |
+| ---------------------------------------- | -------------------------------- | ----------------------------------------- |
+| `tailwind.config.js` in v4               | v4 uses CSS-first                | Use `@theme` directive in globals.css     |
+| `outline-none` without replacement       | Accessibility failure            | `outline-hidden` + `focus-visible:ring-*` |
+| `<div onClick>`                          | Not keyboard accessible          | `<button type="button">`                  |
+| `transition: all`                        | Performance issue                | List specific properties                  |
+| Dynamic class strings                    | Purged in production             | Use static class strings                  |
+| `autoFocus` without justification        | UX disruption on mobile          | Use sparingly, desktop only               |
+| Images without dimensions                | Layout shift (CLS)               | Explicit `width` and `height`             |
+| Form inputs without labels               | Accessibility failure            | `<label>` or `aria-label` required        |
+| Animating `width`/`height`               | Poor performance, repaints       | Use `scale` transform                     |
+| Barrel imports (`index.ts` re-exports)   | Bundle bloat                     | Direct imports from component files       |
+| Sequential `await` for independent calls | Waterfalls (100-500ms+ per step) | Use `Promise.all()`                       |
 
 ---
 
@@ -1334,6 +1406,7 @@ Step 6: Production-only disappearance?
 ## 8. Pre-Deploy Verification Checklist
 
 ### Critical (Must Pass)
+
 - [ ] Lighthouse Performance ≥ 90
 - [ ] Lighthouse Accessibility ≥ 95
 - [ ] No console errors
@@ -1345,6 +1418,7 @@ Step 6: Production-only disappearance?
 - [ ] Production build validated (`grep` for expected utilities in CSS)
 
 ### High Priority
+
 - [ ] Strategic positioning approved
 - [ ] Distinctive aesthetic (not generic)
 - [ ] Color contrast meets WCAG AAA
@@ -1368,6 +1442,7 @@ Step 6: Production-only disappearance?
 ---
 
 ## 10. Related References
+
 - [01-philosophy-strategy.md](01-philosophy-strategy.md) → Anti-generic, positioning
 - [02-tech-stack-setup.md](02-tech-stack-setup.md) → Next.js, Tailwind setup
 - [03-design-system.md](03-design-system.md) → Typography, color
@@ -1376,13 +1451,13 @@ Step 6: Production-only disappearance?
 - [06-accessibility-compliance.md](06-accessibility-compliance.md) → WCAG, ADA
 - [07-visual-design-motion.md](07-visual-design-motion.md) → Animation, effects
 
-```
+````
 
 # skills/super-frontend-design/references/02-tech-stack-setup.md
 ```md
 # Tech Stack & Setup (Core Module 2)
 
-> **Source Skills:** nextjs16-tailwind4, frontend-development, web-frameworks  
+> **Source Skills:** nextjs16-tailwind4, frontend-development, web-frameworks
 > **Purpose:** Initialize production-grade frontend projects with validated modern stacks
 
 ---
@@ -1426,13 +1501,14 @@ Development:
   vitest: 2.x (Unit testing)
   playwright: 1.x (E2E testing)
   lighthouse-ci: Latest (Performance monitoring)
-```
+````
 
 ---
 
 ## 2. Project Initialization
 
 ### 2.1 Single Next.js Application
+
 ```bash
 # Create Next.js project (App Router + TypeScript)
 npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
@@ -1451,6 +1527,7 @@ npm run dev
 ```
 
 ### 2.2 Turborepo Monorepo (Multi-App)
+
 ```bash
 # Create Turborepo
 npx create-turbo@latest my-monorepo
@@ -1481,6 +1558,7 @@ npm run build
 ## 3. Tailwind v4 CSS-First Configuration
 
 ### 3.1 Critical: No `tailwind.config.js`
+
 All theme tokens live in CSS via `@theme` directive:
 
 ```css
@@ -1506,22 +1584,43 @@ All theme tokens live in CSS via `@theme` directive:
   /* Animations */
   --animate-aurora-slow: aurora-slow 20s ease-in-out infinite;
   @keyframes aurora-slow {
-    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
-    33% { transform: translate(30%, 20%) scale(1.1); opacity: 0.6; }
-    66% { transform: translate(-20%, 30%) scale(0.9); opacity: 0.7; }
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.8;
+    }
+    33% {
+      transform: translate(30%, 20%) scale(1.1);
+      opacity: 0.6;
+    }
+    66% {
+      transform: translate(-20%, 30%) scale(0.9);
+      opacity: 0.7;
+    }
   }
 }
 
 @layer base {
-  * { border-color: currentColor; }
-  html { scroll-behavior: smooth; }
+  * {
+    border-color: currentColor;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     background-color: var(--color-void);
     color: var(--color-slate-100);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4, h5, h6 { font-family: var(--font-serif); }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-serif);
+  }
 }
 
 @utility glass-panel {
@@ -1532,6 +1631,7 @@ All theme tokens live in CSS via `@theme` directive:
 ```
 
 ### 3.2 Vite Configuration (Recommended)
+
 ```javascript
 // vite.config.ts
 import { defineConfig } from "vite";
@@ -1544,6 +1644,7 @@ export default defineConfig({
 ```
 
 ### 3.3 PostCSS Legacy Configuration
+
 ```javascript
 // postcss.config.mjs
 export default { plugins: ["@tailwindcss/postcss"] };
@@ -1554,6 +1655,7 @@ export default { plugins: ["@tailwindcss/postcss"] };
 ## 4. Directory Structure
 
 ### 4.1 Single Next.js App
+
 ```
 project-root/
 ├── src/
@@ -1578,6 +1680,7 @@ project-root/
 ```
 
 ### 4.2 Turborepo Monorepo
+
 ```
 my-monorepo/
 ├── apps/
@@ -1594,6 +1697,7 @@ my-monorepo/
 ```
 
 **turbo.json pipeline:**
+
 ```json
 {
   "$schema": "https://turbo.build/schema.json",
@@ -1614,14 +1718,16 @@ my-monorepo/
 ## 5. React/TypeScript Patterns (frontend-development)
 
 ### 5.1 Import Aliases
-| Alias | Resolves To | Example |
-|-------|-------------|---------|
-| `@/` | `src/` | `import { apiClient } from '@/lib/apiClient'` |
-| `~types` | `src/types` | `import type { User } from '~types/user'` |
+
+| Alias         | Resolves To      | Example                                       |
+| ------------- | ---------------- | --------------------------------------------- |
+| `@/`          | `src/`           | `import { apiClient } from '@/lib/apiClient'` |
+| `~types`      | `src/types`      | `import type { User } from '~types/user'`     |
 | `~components` | `src/components` | `import { Button } from '~components/Button'` |
-| `~features` | `src/features` | `import { authApi } from '~features/auth'` |
+| `~features`   | `src/features`   | `import { authApi } from '~features/auth'`    |
 
 ### 5.2 Component Checklist
+
 - [ ] Use `React.FC<Props>` with TypeScript
 - [ ] Lazy load heavy components: `React.lazy(() => import())`
 - [ ] Wrap in `<SuspenseLoader>` for loading states
@@ -1632,6 +1738,7 @@ my-monorepo/
 - [ ] Use `useMuiSnackbar` for user notifications (if MUI)
 
 ### 5.3 Feature-Based Organization
+
 ```
 src/features/my-feature/
 ├── api/          # API service layer
@@ -1647,6 +1754,7 @@ src/features/my-feature/
 ## 6. RemixIcon Integration (web-frameworks)
 
 ### 6.1 Webfont Usage
+
 ```tsx
 // In layout.tsx
 import 'remixicon/fonts/remixicon.css';
@@ -1657,6 +1765,7 @@ import 'remixicon/fonts/remixicon.css';
 ```
 
 ### 6.2 React Component Usage
+
 ```tsx
 import { RiHomeLine, RiSearchFill } from "@remixicon/react";
 
@@ -1667,6 +1776,7 @@ import { RiHomeLine, RiSearchFill } from "@remixicon/react";
 ---
 
 ## 7. Verification Checklist
+
 - [ ] Tailwind v4 installed (no `tailwind.config.js` present)
 - [ ] `@theme` directive in `globals.css` with project tokens
 - [ ] TypeScript strict mode enabled
@@ -1678,17 +1788,18 @@ import { RiHomeLine, RiSearchFill } from "@remixicon/react";
 ---
 
 ## 8. Related References
+
 - [03-design-system.md](03-design-system.md) → Typography, color, spacing
 - [04-component-architecture.md](04-component-architecture.md) → shadcn/ui, MUI patterns
 - [05-performance-optimization.md](05-performance-optimization.md) → Bundle, waterfalls
 
-```
+````
 
 # skills/super-frontend-design/references/07-visual-design-motion.md
 ```md
 # Visual Design & Motion (Core Module 7)
 
-> **Source Skills:** aesthetic, avant-garde-design-v4, frontend-design  
+> **Source Skills:** aesthetic, avant-garde-design-v4, frontend-design
 > **Purpose:** Create memorable, performant, accessible visual experiences
 
 ---
@@ -1782,9 +1893,10 @@ button:hover {
 button:active {
   transform: scale(0.98);
 }
-```
+````
 
 ### 3.2 Form Focus
+
 ```css
 input:focus-visible {
   outline: 2px solid var(--color-champagne);
@@ -1794,6 +1906,7 @@ input:focus-visible {
 ```
 
 ### 3.3 Page Entrance (Framer Motion)
+
 ```tsx
 <motion.div
   initial={{ opacity: 0, y: 30 }}
@@ -1810,22 +1923,23 @@ input:focus-visible {
 
 Choose ONE direction and execute with precision:
 
-| Direction | Characteristics | When to Use | Keywords |
-|-----------|-----------------|-------------|----------|
-| **Brutally Minimal** | Extreme whitespace, single focal point | Luxury brands, portfolios | Calm, focused, editorial |
-| **Maximalist Chaos** | Layered textures, bold typography | Creative agencies, art | Rich, dense, energetic |
-| **Retro-Futuristic** | Neon, chrome, geometric patterns | Tech products, gaming | Neon, chrome, sci-fi |
-| **Organic/Natural** | Soft curves, earthy tones, fluid shapes | Wellness, sustainability | Earthy, soft, flowing |
-| **Luxury/Refined** | Serif fonts, gold accents, subtle gradients | Premium services, fashion | Elegant, restrained, premium |
-| **Editorial/Magazine** | Asymmetric layouts, oversized headlines | Media, publishing | Dynamic, typographic, bold |
-| **Brutalist/Raw** | Exposed structure, monospace, high contrast | Developer tools, portfolios | Raw, honest, functional |
-| **Tactile Maximalism** | "Squishy" buttons, glass-like elements | Web3, DeFi, NFT | Tangible, reactive, immersive |
+| Direction              | Characteristics                             | When to Use                 | Keywords                      |
+| ---------------------- | ------------------------------------------- | --------------------------- | ----------------------------- |
+| **Brutally Minimal**   | Extreme whitespace, single focal point      | Luxury brands, portfolios   | Calm, focused, editorial      |
+| **Maximalist Chaos**   | Layered textures, bold typography           | Creative agencies, art      | Rich, dense, energetic        |
+| **Retro-Futuristic**   | Neon, chrome, geometric patterns            | Tech products, gaming       | Neon, chrome, sci-fi          |
+| **Organic/Natural**    | Soft curves, earthy tones, fluid shapes     | Wellness, sustainability    | Earthy, soft, flowing         |
+| **Luxury/Refined**     | Serif fonts, gold accents, subtle gradients | Premium services, fashion   | Elegant, restrained, premium  |
+| **Editorial/Magazine** | Asymmetric layouts, oversized headlines     | Media, publishing           | Dynamic, typographic, bold    |
+| **Brutalist/Raw**      | Exposed structure, monospace, high contrast | Developer tools, portfolios | Raw, honest, functional       |
+| **Tactile Maximalism** | "Squishy" buttons, glass-like elements      | Web3, DeFi, NFT             | Tangible, reactive, immersive |
 
 ---
 
 ## 5. Visual Effects Principles (frontend-design)
 
 ### 5.1 Glassmorphism (Use Radically or Not At All)
+
 ```
 Key properties:
 ├── Semi-transparent background
@@ -1835,6 +1949,7 @@ Key properties:
 ```
 
 ### 5.2 Shadow Hierarchy
+
 ```
 Elevation concept:
 ├── Higher elements = larger shadows
@@ -1844,6 +1959,7 @@ Elevation concept:
 ```
 
 ### 5.3 Gradient Usage
+
 ```
 Harmonious gradients:
 ├── Adjacent colors on wheel (analogous)
@@ -1858,19 +1974,22 @@ Harmonious gradients:
 ## 6. Typography as Visual Hierarchy (frontend-design + avant-garde-design-v4)
 
 ### 6.1 Squint Test
+
 > If you squint at your design and can't tell the hierarchy, redesign it.
 
 ### 6.2 Fluid Typography
+
 ```css
 /* Use clamp() for responsive headings */
 h1 {
   font-size: clamp(2.5rem, 5vw, 4.5rem);
-  line-height: 1.0-1.06;
+  line-height: 1-1.06;
   letter-spacing: -0.02em to -0.04em;
 }
 ```
 
 ### 6.3 Typography Pairing Rules
+
 ```
 Contrast + Harmony:
 ├── DIFFERENT enough for hierarchy
@@ -1883,34 +2002,56 @@ Contrast + Harmony:
 ## 7. Mobile Navigation Patterns (avant-garde-design-v4)
 
 ### 7.1 Symmetrical Breakpoint Logic
-```tsx
-{/* Desktop */}
-<nav className="hidden md:flex items-center gap-8">...</nav>
 
-{/* Mobile trigger */}
-<button className="md:hidden" aria-label="Open menu">Menu</button>
+```tsx
+{
+  /* Desktop */
+}
+<nav className="hidden md:flex items-center gap-8">...</nav>;
+
+{
+  /* Mobile trigger */
+}
+<button className="md:hidden" aria-label="Open menu">
+  Menu
+</button>;
 ```
 
 ### 7.2 shadcn Sheet Mobile Nav (Complete)
+
 ```tsx
 "use client";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/Sheet";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/Sheet";
 import { NAV_ITEMS } from "@/data/navItems";
 
 export function MobileNavSheet() {
   const [open, setOpen] = React.useState(false);
   const pathname = usePathname();
 
-  React.useEffect(() => { setOpen(false); }, [pathname]);
+  React.useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open navigation">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          aria-label="Open navigation"
+        >
           <span className="sr-only">Menu</span>
           <span className="text-2xl leading-none">≡</span>
         </Button>
@@ -1920,9 +2061,12 @@ export function MobileNavSheet() {
           <SheetTitle className="text-white font-serif">Menu</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-2 p-6">
-          {NAV_ITEMS.map(item => (
+          {NAV_ITEMS.map((item) => (
             <SheetClose key={item.href} asChild>
-              <Link href={item.href} className="text-lg font-medium rounded-lg px-3 py-2 hover:bg-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-champagne">
+              <Link
+                href={item.href}
+                className="text-lg font-medium rounded-lg px-3 py-2 hover:bg-slate-800 transition-colors focus-visible:ring-2 focus-visible:ring-champagne"
+              >
                 {item.label}
               </Link>
             </SheetClose>
@@ -1935,22 +2079,24 @@ export function MobileNavSheet() {
 ```
 
 ### 7.3 Mobile Nav Failure Taxonomy
-| Class | Symptom | Fix |
-|-------|---------|-----|
-| **A** | No nav on mobile | Add mobile trigger + overlay |
-| **B** | Hidden by opacity/visibility | Verify JS toggle & CSS open state |
-| **C** | Clipped top items | Overlay `position: fixed`; `overflow-y: auto` |
-| **D** | Behind another layer | Use z-index scale (--z-overlay: 400) |
-| **E** | Breakpoint mismatch | Check viewport meta + breakpoint values |
-| **F** | JS error/selector miss | Guard querySelectors; check console |
-| **G** | Keyboard unreachable | Use real `<button>`, focus management |
-| **H** | Click-outside race condition | Exclude trigger from outside-click handler |
+
+| Class | Symptom                      | Fix                                           |
+| ----- | ---------------------------- | --------------------------------------------- |
+| **A** | No nav on mobile             | Add mobile trigger + overlay                  |
+| **B** | Hidden by opacity/visibility | Verify JS toggle & CSS open state             |
+| **C** | Clipped top items            | Overlay `position: fixed`; `overflow-y: auto` |
+| **D** | Behind another layer         | Use z-index scale (--z-overlay: 400)          |
+| **E** | Breakpoint mismatch          | Check viewport meta + breakpoint values       |
+| **F** | JS error/selector miss       | Guard querySelectors; check console           |
+| **G** | Keyboard unreachable         | Use real `<button>`, focus management         |
+| **H** | Click-outside race condition | Exclude trigger from outside-click handler    |
 
 ---
 
 ## 8. Verification Checklist
 
 **Visual Design:**
+
 - [ ] Distinctive aesthetic direction (not generic)
 - [ ] Intentional whitespace usage (structural, not empty)
 - [ ] Typography hierarchy clear (squint test passes)
@@ -1958,12 +2104,14 @@ export function MobileNavSheet() {
 - [ ] Micro-interactions are satisfying (150-300ms)
 
 **Motion:**
+
 - [ ] Animations respect `prefers-reduced-motion`
 - [ ] Only `transform` and `opacity` animated
 - [ ] 60fps on mid-range mobile devices
 - [ ] Reduced motion disables animations entirely
 
 **Mobile:**
+
 - [ ] Navigation works on all screen sizes
 - [ ] Touch targets ≥44×44px
 - [ ] No clipped content on small screens
@@ -1972,18 +2120,19 @@ export function MobileNavSheet() {
 ---
 
 ## 9. Related References
+
 - [01-philosophy-strategy.md](01-philosophy-strategy.md) → Anti-generic, positioning
 - [03-design-system.md](03-design-system.md) → Typography, color
 - [06-accessibility-compliance.md](06-accessibility-compliance.md) → WCAG, reduced motion
 - [08-quality-assurance.md](08-quality-assurance.md) → Anti-patterns, verification
 
-```
+````
 
 # skills/super-frontend-design/references/04-component-architecture.md
 ```md
 # Component Architecture (Core Module 4)
 
-> **Source Skills:** ui-styling, frontend-development, web-frameworks  
+> **Source Skills:** ui-styling, frontend-development, web-frameworks
 > **Purpose:** Build accessible, reusable, maintainable UI components
 
 ---
@@ -2003,9 +2152,10 @@ npx shadcn@latest init
 
 # Add components
 npx shadcn@latest add button card dialog form input
-```
+````
 
 ### 1.3 Example: Button Component (shadcn-style)
+
 ```tsx
 // src/components/ui/Button.tsx
 import { forwardRef, type ButtonHTMLAttributes } from "react";
@@ -2030,11 +2180,12 @@ const buttonVariants = cva(
       },
     },
     defaultVariants: { variant: "default", size: "default" },
-  }
+  },
 );
 
 export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;
 }
@@ -2052,13 +2203,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       )}
       {children}
     </button>
-  )
+  ),
 );
 
 Button.displayName = "Button";
 ```
 
 ### 1.4 Accessible Components Checklist
+
 - [ ] Dialog/Modal: Focus trap, Escape to close, scroll lock
 - [ ] Dropdown: Keyboard navigation (Arrow keys), ARIA roles
 - [ ] Form inputs: Associated `<label>` or `aria-label`
@@ -2070,26 +2222,28 @@ Button.displayName = "Button";
 ## 2. Next.js App Router Patterns (web-frameworks)
 
 ### 2.1 Server vs Client Components
-| Type | When to Use | Directive |
-|------|-------------|-----------|
+
+| Type                 | When to Use                                     | Directive              |
+| -------------------- | ----------------------------------------------- | ---------------------- |
 | **Server Component** | Static content, data fetching, no interactivity | Default (no directive) |
-| **Client Component** | Hooks, event handlers, browser APIs | `"use client"` at top |
+| **Client Component** | Hooks, event handlers, browser APIs             | `"use client"` at top  |
 
 ### 2.2 Data Fetching (Server Components)
+
 ```tsx
 // app/posts/[slug]/page.tsx
-import { notFound } from 'next/navigation';
+import { notFound } from "next/navigation";
 
 // Static generation at build time
 export async function generateStaticParams() {
   const posts = await getPosts();
-  return posts.map(post => ({ slug: post.slug }));
+  return posts.map((post) => ({ slug: post.slug }));
 }
 
 // Revalidate every hour
 async function getPost(slug: string) {
   const res = await fetch(`https://api.example.com/posts/${slug}`, {
-    next: { revalidate: 3600 }
+    next: { revalidate: 3600 },
   });
   if (!res.ok) return null;
   return res.json();
@@ -2103,6 +2257,7 @@ export default async function Post({ params }: { params: { slug: string } }) {
 ```
 
 ### 2.3 Dynamic Imports (Client Components)
+
 ```tsx
 import dynamic from "next/dynamic";
 const HeavyChart = dynamic(() => import("./HeavyChart"), {
@@ -2116,6 +2271,7 @@ const HeavyChart = dynamic(() => import("./HeavyChart"), {
 ## 3. Feature-Based Organization (frontend-development)
 
 ### 3.1 Directory Structure
+
 ```
 src/features/my-feature/
 ├── api/          # API service layer (axios/fetch)
@@ -2134,6 +2290,7 @@ src/features/my-feature/
 ```
 
 ### 3.2 API Service Layer Example
+
 ```typescript
 // src/features/auth/api/authApi.ts
 import { apiClient } from "@/lib/apiClient";
@@ -2147,6 +2304,7 @@ export const authApi = {
 ```
 
 ### 3.3 Component Pattern (React.FC + TypeScript)
+
 ```tsx
 import React, { useState, useCallback } from "react";
 import { Box, Paper } from "@mui/material";
@@ -2186,21 +2344,30 @@ export default MyComponent;
 ## 4. MUI v7 Styling (frontend-development)
 
 ### 4.1 Inline vs Separate Styles
-| Style Lines | Approach |
-|-------------|-----------|
-| <100 lines | Inline `const styles: Record<string, SxProps<Theme>>` |
-| >100 lines | Separate `.styles.ts` file |
+
+| Style Lines | Approach                                              |
+| ----------- | ----------------------------------------------------- |
+| <100 lines  | Inline `const styles: Record<string, SxProps<Theme>>` |
+| >100 lines  | Separate `.styles.ts` file                            |
 
 ### 4.2 MUI v7 Grid Syntax
-```tsx
-{/* ✅ v7 syntax */}
-<Grid size={{ xs: 12, md: 6 }}>Content</Grid>
 
-{/* ❌ Old syntax */}
-<Grid xs={12} md={6}>Content</Grid>
+```tsx
+{
+  /* ✅ v7 syntax */
+}
+<Grid size={{ xs: 12, md: 6 }}>Content</Grid>;
+
+{
+  /* ❌ Old syntax */
+}
+<Grid xs={12} md={6}>
+  Content
+</Grid>;
 ```
 
 ### 4.3 sx Prop Type Safety
+
 ```tsx
 import { Box } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
@@ -2217,6 +2384,7 @@ const styles: Record<string, SxProps<Theme>> = {
 ## 5. RemixIcon Integration (web-frameworks)
 
 ### 5.1 Webfont Usage
+
 ```tsx
 // In layout.tsx
 import "remixicon/fonts/remixicon.css";
@@ -2227,6 +2395,7 @@ import "remixicon/fonts/remixicon.css";
 ```
 
 ### 5.2 React Component Usage
+
 ```tsx
 import { RiHomeLine, RiSearchFill } from "@remixicon/react";
 
@@ -2235,6 +2404,7 @@ import { RiHomeLine, RiSearchFill } from "@remixicon/react";
 ```
 
 ### 5.3 Accessibility
+
 - Always provide `aria-label` for icon-only buttons
 - Use `currentColor` for flexible theming
 - Maintain 24x24 grid alignment for crisp rendering
@@ -2244,11 +2414,19 @@ import { RiHomeLine, RiSearchFill } from "@remixicon/react";
 ## 6. Form Components (ui-styling + frontend-development)
 
 ### 6.1 React Hook Form + Zod
+
 ```tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -2266,14 +2444,22 @@ export function LoginForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(console.log)} className="space-y-6">
-        <FormField control={form.control} name="email" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Email</FormLabel>
-            <FormControl><Input type="email" {...field} /></FormControl>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <Button type="submit" className="w-full">Sign In</Button>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="w-full">
+          Sign In
+        </Button>
       </form>
     </Form>
   );
@@ -2283,6 +2469,7 @@ export function LoginForm() {
 ---
 
 ## 7. Verification Checklist
+
 - [ ] shadcn/ui components initialized with Tailwind v4
 - [ ] Server vs Client Components correctly split
 - [ ] Feature-based directory structure implemented
@@ -2295,12 +2482,13 @@ export function LoginForm() {
 ---
 
 ## 8. Related References
+
 - [02-tech-stack-setup.md](02-tech-stack-setup.md) → Next.js, Tailwind setup
 - [03-design-system.md](03-design-system.md) → Typography, color
 - [05-performance-optimization.md](05-performance-optimization.md) → Bundle size, waterfalls
 - [06-accessibility-compliance.md](06-accessibility-compliance.md) → WCAG, ARIA
 
-```
+````
 
 # skills/super-frontend-design/scripts/react_performance_checker.py
 ```py
@@ -2557,9 +2745,10 @@ def main():
 if __name__ == '__main__':
     main()
 
-```
+````
 
 # skills/super-frontend-design/scripts/tailwind_config_gen.py
+
 ```py
 #!/usr/bin/env python3
 """
@@ -3021,6 +3210,7 @@ if __name__ == "__main__":
 ```
 
 # skills/super-frontend-design/scripts/ux_audit.py
+
 ```py
 #!/usr/bin/env python3
 """
@@ -3125,13 +3315,13 @@ class UXAuditor:
         self.warnings = []
         self.passed_count = 0
         self.files_checked = 0
-    
+
     def audit_file(self, filepath: str) -> None:
         try:
             with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
                 content = f.read()
         except: return
-        
+
         self.files_checked += 1
         filename = os.path.basename(filepath)
 
@@ -3145,16 +3335,16 @@ class UXAuditor:
         nav_items = len(re.findall(r'<NavLink|<Link|<a\s+href|nav-item', content, re.IGNORECASE))
         if nav_items > 7:
             self.issues.append(f"[Hick's Law] {filename}: {nav_items} nav items (Max 7)")
-        
+
         # Fitts' Law
         if re.search(r'height:\s*([0-3]\d)px', content) or re.search(r'h-[1-9]\b|h-10\b', content):
             self.warnings.append(f"[Fitts' Law] {filename}: Small targets (< 44px)")
-        
+
         # Miller's Law
         form_fields = len(re.findall(r'<input|<select|<textarea', content, re.IGNORECASE))
         if form_fields > 7 and not re.search(r'step|wizard|stage', content, re.IGNORECASE):
             self.warnings.append(f"[Miller's Law] {filename}: Complex form ({form_fields} fields)")
-            
+
         # Von Restorff
         if 'button' in content.lower() and not re.search(r'primary|bg-primary|Button.*primary|variant=["\']primary', content, re.IGNORECASE):
             self.warnings.append(f"[Von Restorff] {filename}: No primary CTA")
@@ -3401,18 +3591,18 @@ class UXAuditor:
                 self.warnings.append(f"[Typography] {filename}: Long content without subheadings. Add h2/h3 to break up text.")
 
         # --- 3. VISUAL EFFECTS (visual-effects.md) ---
-        
+
         # Glassmorphism Check
         if 'backdrop-filter' in content or 'blur(' in content:
             if not re.search(r'background:\s*rgba|bg-opacity|bg-[a-z0-9]+\/\d+', content):
                 self.warnings.append(f"[Visual] {filename}: Blur used without semi-transparent background (Glassmorphism fail)")
-        
+
         # GPU Acceleration / Performance
         if re.search(r'@keyframes|transition:', content):
             expensive_props = re.findall(r'width|height|top|left|right|bottom|margin|padding', content)
             if expensive_props:
                 self.warnings.append(f"[Performance] {filename}: Animating expensive properties ({', '.join(set(expensive_props))}). Use transform/opacity where possible.")
-            
+
             # Reduced Motion
             if not re.search(r'prefers-reduced-motion', content):
                 self.warnings.append(f"[Accessibility] {filename}: Animations found without prefers-reduced-motion check")
@@ -3714,16 +3904,16 @@ class UXAuditor:
 
 def main():
     if len(sys.argv) < 2: sys.exit(1)
-    
+
     path = sys.argv[1]
     is_json = "--json" in sys.argv
-    
+
     auditor = UXAuditor()
     if os.path.isfile(path): auditor.audit_file(path)
     else: auditor.audit_directory(path)
-    
+
     report = auditor.get_report()
-    
+
     if is_json:
         print(json.dumps(report))
     else:
@@ -3748,6 +3938,7 @@ if __name__ == "__main__":
 ```
 
 # skills/super-frontend-design/scripts/shadcn_add.py
+
 ```py
 #!/usr/bin/env python3
 """
@@ -4045,6 +4236,7 @@ if __name__ == "__main__":
 ```
 
 # skills/super-frontend-design/assets/design-story-template.md
+
 ```md
 # Design Story: [Project Name]
 
@@ -4053,12 +4245,15 @@ _Generated: [Date]_
 ## Project Context
 
 ### Purpose
+
 [What problem does this design solve?]
 
 ### Target Audience
+
 [Who is this design for?]
 
 ### Key Objectives
+
 1. [Objective 1]
 2. [Objective 2]
 3. [Objective 3]
@@ -4066,32 +4261,39 @@ _Generated: [Date]_
 ## Design Narrative
 
 ### Core Message
+
 [What story does this design tell?]
 
 ### Emotional Journey
+
 [What should users feel as they interact?]
 
 ### Visual Metaphor
+
 [What metaphor or theme unifies the design?]
 
 ## User Journey
 
 ### Entry Point
+
 **First Impression**: [What users see first]
 **Goal**: [What should users understand immediately]
 **Design Choices**: [How design supports this]
 
 ### Exploration Phase
+
 **User Actions**: [What users do next]
 **Design Response**: [How interface responds]
 **Micro-Interactions**: [Subtle feedback provided]
 
 ### Engagement Phase
+
 **Key Interactions**: [Main user activities]
 **Visual Feedback**: [How design reinforces actions]
 **Storytelling Elements**: [Narrative reinforcement]
 
 ### Peak Moment
+
 **Highlight**: [Most memorable interaction]
 **Implementation**: [How it's achieved technically]
 **Purpose**: [Why this moment matters]
@@ -4099,92 +4301,113 @@ _Generated: [Date]_
 ## Thematic Elements
 
 ### Visual Theme
+
 [Description of consistent visual approach]
 
 ### Narrative Devices
+
 - **Parallax**: [How depth is used]
 - **Transitions**: [How sections connect]
 - **Progressive Disclosure**: [How information unfolds]
 - **Motion**: [How animation tells the story]
 
 ### Symbolism
+
 [Meaning behind design choices]
 
 ## Design Decisions
 
 ### Why This Style?
+
 [Rationale for design style choice]
 
 ### Why These Colors?
+
 [Reasoning behind color palette]
 
 ### Why This Layout?
+
 [Logic behind structure and flow]
 
 ### Why These Interactions?
+
 [Purpose of micro-interactions chosen]
 
 ## Technical Storytelling
 
 ### Performance Story
+
 [How fast loading enhances narrative]
 
 ### Responsive Story
+
 [How design adapts across devices]
 
 ### Accessibility Story
+
 [How inclusive design supports everyone]
 
 ## Evolution
 
 ### Initial Concepts
+
 [Early ideas explored]
 
 ### Key Iterations
+
 [Major changes and why]
 
 ### Final Direction
+
 [Ultimate design rationale]
 
 ## Inspiration
 
 ### Design References
+
 - [Source 1]: [What inspired]
 - [Source 2]: [What inspired]
 - [Source 3]: [What inspired]
 
 ### Cultural Context
+
 [Broader design trends considered]
 
 ## Impact
 
 ### Intended Effect
+
 [What users should take away]
 
 ### Success Metrics
+
 [How to measure if story resonates]
 
 ### Future Chapters
+
 [How design can evolve]
 
 ## Reflections
 
 ### What Worked
+
 [Successful narrative elements]
 
 ### What We Learned
+
 [Insights gained from process]
 
 ### What's Next
+
 [Future storytelling opportunities]
 
 ---
 
 **Remember**: Every design tells a story. Make it intentional, coherent, and meaningful.
-
 ```
 
 # skills/super-frontend-design/assets/design-guideline-template.md
+
 ```md
 # Design Guidelines: [Project Name]
 
@@ -4197,31 +4420,37 @@ _Generated: [Date]_
 ## Color Palette
 
 ### Primary Colors
+
 - **Primary**: `#000000` - [Description/Usage]
 - **Secondary**: `#000000` - [Description/Usage]
 
 ### Accent Colors
+
 - **Accent**: `#000000` - [Description/Usage]
 - **Success**: `#000000` - [Description/Usage]
 - **Warning**: `#000000` - [Description/Usage]
 - **Error**: `#000000` - [Description/Usage]
 
 ### Neutral Colors
+
 - **Background**: `#000000` - [Description/Usage]
 - **Surface**: `#000000` - [Description/Usage]
 - **Border**: `#000000` - [Description/Usage]
 
 ### Color Psychology
+
 [Explain mood and emotions evoked by color choices]
 
 ## Typography System
 
 ### Font Families
+
 - **Primary Font**: [Font Name] - Body text, paragraphs
 - **Secondary Font**: [Font Name] - Headings, emphasis
 - **Monospace Font**: [Font Name] - Code, technical content
 
 ### Font Hierarchy
+
 - **H1**: [Size]px / [Weight] / [Line Height] - [Usage]
 - **H2**: [Size]px / [Weight] / [Line Height] - [Usage]
 - **H3**: [Size]px / [Weight] / [Line Height] - [Usage]
@@ -4229,6 +4458,7 @@ _Generated: [Date]_
 - **Small**: [Size]px / [Weight] / [Line Height] - [Usage]
 
 ### Typography Guidelines
+
 - Line length: [Character count] characters max
 - Paragraph spacing: [Value]
 - Letter spacing: [Value]
@@ -4236,12 +4466,14 @@ _Generated: [Date]_
 ## Layout Principles
 
 ### Grid System
+
 - Columns: [Number]
 - Gutter: [Size]px
 - Margin: [Size]px
 - Max width: [Size]px
 
 ### Spacing Scale
+
 - xs: [Size]px
 - sm: [Size]px
 - md: [Size]px
@@ -4250,6 +4482,7 @@ _Generated: [Date]_
 - 2xl: [Size]px
 
 ### Responsive Breakpoints
+
 - Mobile: [Width]px
 - Tablet: [Width]px
 - Desktop: [Width]px
@@ -4258,6 +4491,7 @@ _Generated: [Date]_
 ## Component Styling
 
 ### Buttons
+
 - **Primary**: [Description of style]
 - **Secondary**: [Description of style]
 - **Ghost**: [Description of style]
@@ -4265,41 +4499,49 @@ _Generated: [Date]_
 - **States**: Default, Hover, Active, Disabled
 
 ### Cards
+
 - Border radius: [Value]
 - Shadow: [Value]
 - Padding: [Value]
 - Background: [Color]
 
 ### Forms
+
 - Input height: [Value]
 - Border radius: [Value]
 - Focus state: [Description]
 - Error state: [Description]
 
 ### Navigation
+
 - [Description of nav patterns]
 
 ## Visual Hierarchy
 
 ### Emphasis Techniques
+
 - [List how to draw attention: size, color, placement, etc.]
 
 ### Content Flow
+
 - [Describe reading patterns: F-pattern, Z-pattern, etc.]
 
 ## Micro-Interactions
 
 ### Animation Timing
+
 - Fast: 150ms - [Usage]
 - Normal: 250ms - [Usage]
 - Slow: 350ms - [Usage]
 
 ### Easing Curves
+
 - Ease-out: [Usage]
 - Ease-in: [Usage]
 - Spring: [Usage]
 
 ### Interactive States
+
 - Hover: [Description]
 - Active: [Description]
 - Focus: [Description]
@@ -4308,51 +4550,62 @@ _Generated: [Date]_
 ## Accessibility
 
 ### Contrast Ratios
+
 - Text: [Ratio] (WCAG AA: 4.5:1 minimum)
 - Large text: [Ratio] (WCAG AA: 3:1 minimum)
 - UI elements: [Ratio]
 
 ### Focus Indicators
+
 - [Description of focus styles]
 
 ### Touch Targets
+
 - Minimum size: 44x44px
 
 ## Design Highlights
 
 ### What Works Well
+
 - [List successful design decisions]
 
 ### Unique Elements
+
 - [List distinctive design features]
 
 ### Brand Alignment
+
 - [Explain how design supports brand identity]
 
 ## Implementation Notes
 
 ### Technologies
+
 - [List frameworks, libraries, tools used]
 
 ### Performance Considerations
+
 - [List optimization strategies]
 
 ### Browser Support
+
 - [List supported browsers/versions]
 
 ## Resources
 
 ### Design Files
+
 - Figma: [Link]
 - Assets: [Link]
 
 ### Related Documentation
+
 - [Link to design-story.md]
 - [Link to component library]
-
 ```
 
 # skills/super-frontend-design/assets/decision-trees.md
+
 ```md
 # Decision Trees & Context Templates
 
@@ -4375,25 +4628,27 @@ This file helps you DECIDE, not copy.
 ---
 
 ## 1. Master Decision Tree
-
 ```
+
 ┌─────────────────────────────────────────────────────────────┐
-│                     WHAT ARE YOU BUILDING?                   │
+│ WHAT ARE YOU BUILDING? │
 └─────────────────────────────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-   E-COMMERCE            SaaS/APP              CONTENT
-   - Product pages       - Dashboard           - Blog
-   - Checkout            - Tools               - Portfolio
-   - Catalog             - Admin               - Landing
-        │                     │                     │
-        ▼                     ▼                     ▼
-   PRINCIPLES:           PRINCIPLES:           PRINCIPLES:
-   - Trust               - Functionality       - Storytelling
-   - Action              - Clarity             - Emotion
-   - Urgency             - Efficiency          - Creativity
+│
+┌─────────────────────┼─────────────────────┐
+│ │ │
+▼ ▼ ▼
+E-COMMERCE SaaS/APP CONTENT
+
+- Product pages - Dashboard - Blog
+- Checkout - Tools - Portfolio
+- Catalog - Admin - Landing
+  │ │ │
+  ▼ ▼ ▼
+  PRINCIPLES: PRINCIPLES: PRINCIPLES:
+- Trust - Functionality - Storytelling
+- Action - Clarity - Emotion
+- Urgency - Efficiency - Creativity
+
 ```
 
 ---
@@ -4403,42 +4658,44 @@ This file helps you DECIDE, not copy.
 ### Who is your target user?
 
 ```
+
 TARGET AUDIENCE
-      │
-      ├── Gen Z (18-25)
-      │   ├── Colors: Bold, vibrant, unexpected combinations
-      │   ├── Type: Large, expressive, variable
-      │   ├── Layout: Mobile-first, vertical, snackable
-      │   ├── Effects: Motion, gamification, interactive
-      │   └── Approach: Authentic, fast, no corporate feel
-      │
-      ├── Millennials (26-41)
-      │   ├── Colors: Muted, earthy, sophisticated
-      │   ├── Type: Clean, readable, functional
-      │   ├── Layout: Responsive, card-based, organized
-      │   ├── Effects: Subtle, purposeful only
-      │   └── Approach: Value-driven, transparent, sustainable
-      │
-      ├── Gen X (42-57)
-      │   ├── Colors: Professional, trusted, conservative
-      │   ├── Type: Familiar, clear, no-nonsense
-      │   ├── Layout: Traditional hierarchy, predictable
-      │   ├── Effects: Minimal, functional feedback
-      │   └── Approach: Direct, efficient, reliable
-      │
-      ├── Boomers (58+)
-      │   ├── Colors: High contrast, simple, clear
-      │   ├── Type: Large sizes, high readability
-      │   ├── Layout: Simple, linear, uncluttered
-      │   ├── Effects: None or very minimal
-      │   └── Approach: Clear, detailed, trustworthy
-      │
-      └── B2B / Enterprise
-          ├── Colors: Professional palette, muted
-          ├── Type: Clean, data-friendly, scannable
-          ├── Layout: Grid-based, organized, efficient
-          ├── Effects: Professional, subtle
-          └── Approach: Expert, solution-focused, ROI-driven
+│
+├── Gen Z (18-25)
+│ ├── Colors: Bold, vibrant, unexpected combinations
+│ ├── Type: Large, expressive, variable
+│ ├── Layout: Mobile-first, vertical, snackable
+│ ├── Effects: Motion, gamification, interactive
+│ └── Approach: Authentic, fast, no corporate feel
+│
+├── Millennials (26-41)
+│ ├── Colors: Muted, earthy, sophisticated
+│ ├── Type: Clean, readable, functional
+│ ├── Layout: Responsive, card-based, organized
+│ ├── Effects: Subtle, purposeful only
+│ └── Approach: Value-driven, transparent, sustainable
+│
+├── Gen X (42-57)
+│ ├── Colors: Professional, trusted, conservative
+│ ├── Type: Familiar, clear, no-nonsense
+│ ├── Layout: Traditional hierarchy, predictable
+│ ├── Effects: Minimal, functional feedback
+│ └── Approach: Direct, efficient, reliable
+│
+├── Boomers (58+)
+│ ├── Colors: High contrast, simple, clear
+│ ├── Type: Large sizes, high readability
+│ ├── Layout: Simple, linear, uncluttered
+│ ├── Effects: None or very minimal
+│ └── Approach: Clear, detailed, trustworthy
+│
+└── B2B / Enterprise
+├── Colors: Professional palette, muted
+├── Type: Clean, data-friendly, scannable
+├── Layout: Grid-based, organized, efficient
+├── Effects: Professional, subtle
+└── Approach: Expert, solution-focused, ROI-driven
+
 ```
 
 ---
@@ -4448,31 +4705,33 @@ TARGET AUDIENCE
 ### Instead of fixed hex codes, use this process:
 
 ```
+
 WHAT EMOTION/ACTION DO YOU WANT?
-            │
-            ├── Trust & Security
-            │   └── Consider: Blue family, professional neutrals
-            │       → ASK user for specific shade preference
-            │
-            ├── Growth & Health
-            │   └── Consider: Green family, natural tones
-            │       → ASK user if eco/nature/wellness focus
-            │
-            ├── Urgency & Action
-            │   └── Consider: Warm colors (orange/red) as ACCENTS
-            │       → Use sparingly, ASK if appropriate
-            │
-            ├── Luxury & Premium
-            │   └── Consider: Deep darks, metallics, restrained palette
-            │       → ASK about brand positioning
-            │
-            ├── Creative & Playful
-            │   └── Consider: Multi-color, unexpected combinations
-            │       → ASK about brand personality
-            │
-            └── Calm & Minimal
-                └── Consider: Neutrals with single accent
-                    → ASK what accent color fits brand
+│
+├── Trust & Security
+│ └── Consider: Blue family, professional neutrals
+│ → ASK user for specific shade preference
+│
+├── Growth & Health
+│ └── Consider: Green family, natural tones
+│ → ASK user if eco/nature/wellness focus
+│
+├── Urgency & Action
+│ └── Consider: Warm colors (orange/red) as ACCENTS
+│ → Use sparingly, ASK if appropriate
+│
+├── Luxury & Premium
+│ └── Consider: Deep darks, metallics, restrained palette
+│ → ASK about brand positioning
+│
+├── Creative & Playful
+│ └── Consider: Multi-color, unexpected combinations
+│ → ASK about brand personality
+│
+└── Calm & Minimal
+└── Consider: Neutrals with single accent
+→ ASK what accent color fits brand
+
 ```
 
 ### The Process:
@@ -4486,32 +4745,34 @@ WHAT EMOTION/ACTION DO YOU WANT?
 ## 4. Typography Decision Tree
 
 ```
+
 WHAT'S THE CONTENT TYPE?
-          │
-          ├── Data-Heavy (Dashboard, SaaS)
-          │   ├── Style: Sans-serif, clear, compact
-          │   ├── Scale: Tighter ratio (1.125-1.2)
-          │   └── Priority: Scannability, density
-          │
-          ├── Editorial (Blog, Magazine)
-          │   ├── Style: Serif heading + Sans body works well
-          │   ├── Scale: More dramatic (1.333+)
-          │   └── Priority: Reading comfort, hierarchy
-          │
-          ├── Modern Tech (Startup, SaaS Marketing)
-          │   ├── Style: Geometric or humanist sans
-          │   ├── Scale: Balanced (1.25)
-          │   └── Priority: Modern feel, clarity
-          │
-          ├── Luxury (Fashion, Premium)
-          │   ├── Style: Elegant serif or thin sans
-          │   ├── Scale: Dramatic (1.5-1.618)
-          │   └── Priority: Sophistication, whitespace
-          │
-          └── Playful (Kids, Games, Casual)
-              ├── Style: Rounded, friendly fonts
-              ├── Scale: Varied, expressive
-              └── Priority: Fun, approachable, readable
+│
+├── Data-Heavy (Dashboard, SaaS)
+│ ├── Style: Sans-serif, clear, compact
+│ ├── Scale: Tighter ratio (1.125-1.2)
+│ └── Priority: Scannability, density
+│
+├── Editorial (Blog, Magazine)
+│ ├── Style: Serif heading + Sans body works well
+│ ├── Scale: More dramatic (1.333+)
+│ └── Priority: Reading comfort, hierarchy
+│
+├── Modern Tech (Startup, SaaS Marketing)
+│ ├── Style: Geometric or humanist sans
+│ ├── Scale: Balanced (1.25)
+│ └── Priority: Modern feel, clarity
+│
+├── Luxury (Fashion, Premium)
+│ ├── Style: Elegant serif or thin sans
+│ ├── Scale: Dramatic (1.5-1.618)
+│ └── Priority: Sophistication, whitespace
+│
+└── Playful (Kids, Games, Casual)
+├── Style: Rounded, friendly fonts
+├── Scale: Varied, expressive
+└── Priority: Fun, approachable, readable
+
 ```
 
 ### Selection Process:
@@ -4531,38 +4792,42 @@ WHAT'S THE CONTENT TYPE?
 
 ### Color Thinking:
 ```
+
 E-commerce typically needs:
 ├── Trust color (often blue family) → ASK preference
 ├── Clean background (white/neutral) → depends on brand
 ├── Action accent (for CTAs, sales) → depends on urgency level
 ├── Success/error semantics → standard conventions work
 └── Brand integration → ASK about existing colors
+
 ```
 
 ### Layout Principles:
 ```
+
 ┌────────────────────────────────────────────────────┐
-│  HEADER: Brand + Search + Cart                      │
-│  (Keep essential actions visible)                   │
+│ HEADER: Brand + Search + Cart │
+│ (Keep essential actions visible) │
 ├────────────────────────────────────────────────────┤
-│  TRUST ZONE: Why trust this site?                   │
-│  (Shipping, returns, security - if applicable)      │
+│ TRUST ZONE: Why trust this site? │
+│ (Shipping, returns, security - if applicable) │
 ├────────────────────────────────────────────────────┤
-│  HERO: Primary message or offer                     │
-│  (Clear CTA, single focus)                          │
+│ HERO: Primary message or offer │
+│ (Clear CTA, single focus) │
 ├────────────────────────────────────────────────────┤
-│  CATEGORIES: Easy navigation                        │
-│  (Visual, filterable, scannable)                    │
+│ CATEGORIES: Easy navigation │
+│ (Visual, filterable, scannable) │
 ├────────────────────────────────────────────────────┤
-│  PRODUCTS: Easy comparison                          │
-│  (Price, rating, quick actions visible)             │
+│ PRODUCTS: Easy comparison │
+│ (Price, rating, quick actions visible) │
 ├────────────────────────────────────────────────────┤
-│  SOCIAL PROOF: Why others trust                     │
-│  (Reviews, testimonials - if available)             │
+│ SOCIAL PROOF: Why others trust │
+│ (Reviews, testimonials - if available) │
 ├────────────────────────────────────────────────────┤
-│  FOOTER: All the details                            │
-│  (Policies, contact, trust badges)                  │
+│ FOOTER: All the details │
+│ (Policies, contact, trust badges) │
 └────────────────────────────────────────────────────┘
+
 ```
 
 ### Psychology to Apply:
@@ -4582,16 +4847,19 @@ E-commerce typically needs:
 
 ### Color Thinking:
 ```
+
 Dashboard typically needs:
 ├── Background: Light OR dark (ASK preference)
 ├── Surface: Slight contrast from background
 ├── Primary accent: For key actions
 ├── Data colors: Success/warning/danger semantics
 └── Muted: For secondary information
+
 ```
 
 ### Layout Principles:
 ```
+
 Consider these patterns (not mandated):
 
 OPTION A: Sidebar + Content
@@ -4607,6 +4875,7 @@ OPTION C: Collapsed + Expandable
 └── Maximum content area
 
 → ASK user about their navigation preference
+
 ```
 
 ### Psychology to Apply:
@@ -4625,37 +4894,41 @@ OPTION C: Collapsed + Expandable
 
 ### Color Thinking:
 ```
+
 Landing page typically needs:
 ├── Brand primary: Hero background or accent
 ├── Clean secondary: Most of page
 ├── CTA color: Stands out from everything
 ├── Supporting: For sections, testimonials
 └── ASK about brand colors first!
+
 ```
 
 ### Structure Principles:
 ```
+
 ┌────────────────────────────────────────────────────┐
-│  Navigation: Minimal, CTA visible                   │
+│ Navigation: Minimal, CTA visible │
 ├────────────────────────────────────────────────────┤
-│  HERO: Hook + Value + CTA                          │
-│  (Most important section, biggest impact)           │
+│ HERO: Hook + Value + CTA │
+│ (Most important section, biggest impact) │
 ├────────────────────────────────────────────────────┤
-│  PROBLEM: What pain do they have?                   │
+│ PROBLEM: What pain do they have? │
 ├────────────────────────────────────────────────────┤
-│  SOLUTION: How you solve it                         │
+│ SOLUTION: How you solve it │
 ├────────────────────────────────────────────────────┤
-│  PROOF: Why believe you?                            │
-│  (Testimonials, logos, stats)                       │
+│ PROOF: Why believe you? │
+│ (Testimonials, logos, stats) │
 ├────────────────────────────────────────────────────┤
-│  HOW: Simple explanation of process                 │
+│ HOW: Simple explanation of process │
 ├────────────────────────────────────────────────────┤
-│  PRICING: If applicable                             │
+│ PRICING: If applicable │
 ├────────────────────────────────────────────────────┤
-│  FAQ: Address objections                            │
+│ FAQ: Address objections │
 ├────────────────────────────────────────────────────┤
-│  FINAL CTA: Repeat main action                      │
+│ FINAL CTA: Repeat main action │
 └────────────────────────────────────────────────────┘
+
 ```
 
 ### Psychology to Apply:
@@ -4674,31 +4947,35 @@ Landing page typically needs:
 
 ### Color Thinking:
 ```
+
 Portfolio is personal - many options:
 ├── Minimal: Neutrals + one signature accent
 ├── Bold: Unexpected color choices
 ├── Dark: Moody, artistic feel
 ├── Light: Clean, professional feel
 └── ASK about personal brand identity!
+
 ```
 
 ### Structure Principles:
 ```
+
 ┌────────────────────────────────────────────────────┐
-│  Navigation: Unique to your personality             │
+│ Navigation: Unique to your personality │
 ├────────────────────────────────────────────────────┤
-│  INTRO: Who you are, what you do                   │
-│  (Make it memorable, not generic)                   │
+│ INTRO: Who you are, what you do │
+│ (Make it memorable, not generic) │
 ├────────────────────────────────────────────────────┤
-│  WORK: Featured projects                            │
-│  (Large, visual, interactive)                       │
+│ WORK: Featured projects │
+│ (Large, visual, interactive) │
 ├────────────────────────────────────────────────────┤
-│  ABOUT: Personal story                              │
-│  (Creates connection)                               │
+│ ABOUT: Personal story │
+│ (Creates connection) │
 ├────────────────────────────────────────────────────┤
-│  CONTACT: Easy to reach                             │
-│  (Clear, direct)                                    │
+│ CONTACT: Easy to reach │
+│ (Clear, direct) │
 └────────────────────────────────────────────────────┘
+
 ```
 
 ### Psychology to Apply:
@@ -4744,28 +5021,34 @@ Portfolio is personal - many options:
 
 ### Quick Projects (Hours)
 ```
+
 Simple landing page
 Small portfolio
 Basic form
 Single component
+
 ```
 → Approach: Minimal decisions, focused execution
 
 ### Medium Projects (Days)
 ```
+
 Multi-page site
 Dashboard with modules
 E-commerce category
 Complex forms
+
 ```
 → Approach: Establish tokens, custom components
 
 ### Large Projects (Weeks)
 ```
+
 Full SaaS application
 E-commerce platform
 Custom design system
 Complex workflows
+
 ```
 → Approach: Full design system, documentation, testing
 
@@ -4776,6 +5059,7 @@ Complex workflows
 ```
 
 # skills/super-frontend-design/docs/wool-sneakers-design-story.md
+
 ```md
 # Design Story: WOOL RUNNERS SG
 
@@ -4787,15 +5071,17 @@ Complex workflows
 
 ## 1. The Hook (Visceral Level)
 
-**Hero Headline**: *"Wool for the Tropical Urbanite"*
+**Hero Headline**: _"Wool for the Tropical Urbanite"_
 
 **Visceral Impact**:
+
 - First impression: Warm white (#F5F0EB) evokes natural wool, not sterile tech
 - Oat-colored (#E8DCC8) cards feel like touching merino fiber
 - Foggy gray (#B8B0A8) suggests Singapore's urban haze, concrete jungle backdrop
 - Typography: Instrument Serif italic "Tropical Urbanite" — editorial luxury meets street smarts
 
 **Color Psychology**:
+
 - Warm neutrals = "This is natural, breathable, soft"
 - Charcoal accents = "This is urban, durable, serious footwear"
 - No bright colors = "We don't need gimmicks, the material speaks"
@@ -4805,42 +5091,53 @@ Complex workflows
 ## 2. The Journey (Behavioral Level)
 
 ### 2.1 Hero Section → "Shop Now" Click
+
 **Behavioral Experience**:
+
 - Foggy gradient background (135deg warm white → oat → foggy gray-light)
 - Wool texture overlay (opacity 0.08) — subconscious tactile cue
 - CTA buttons: Charcoal bg + warm white text (13.5:1 contrast)
 - Hover: Scale(1.05) — "This button invites clicking"
 
 ### 2.2 Brand Story Section
+
 **Narrative Flow**:
+
 1. **Natural Temperature Regulation** → "Merino adapts to your body" (scientific trust)
 2. **Urban Durability** → "From MRT stations to park connectors" (Singapore-specific)
 3. **Sustainable Choice** → "Carbon-neutral shipping to Singapore" (values alignment)
 
 **Behavioral Reinforcement**:
+
 - Each card: Warm white bg on oat section (clean information hierarchy)
 - Readable: 1.6 line-height, 0.875rem secondary text
 - Icons (🌡️💧🌿): Quick visual anchors, scannable
 
 ### 2.3 Product Grid (The Core Experience)
+
 **Product Names** (Behavioral Design):
+
 - **Urban Strider** → For the daily commute (MRT, office)
 - **Garden Runner** → For weekend BBT, park connectors
 - **Metro Hiker** → For the adventurous (exploring Singapore's neighborhoods)
 
 **Interactive Elements**:
+
 - Size selector: 44×44px buttons (WCAG AAA touch targets)
 - Selected state: Charcoal fill (clear visual feedback)
 - "Add to Cart": Tactile Maximalism — button squishes on click (scale 0.95 → 1.0)
 
 ### 2.4 Shopping Cart (The Climax)
+
 **Drawer Animation**:
+
 - Slide from right (translateX: 100% → 0) in 300ms cubic-bezier(0.4, 0, 0.2, 1)
 - Overlay fades in (opacity: 0 → 1) — focus is on cart
 - Items fade in sequentially (staggered 150ms delays)
 - Remove button: Underlined, red-hover (clear destructive action)
 
 **Behavioral Completions**:
+
 - Quantity updates → Total recalculates instantly
 - "Proceed to Checkout" → Green pasture icon (🌿) signals "eco-friendly purchase")
 
@@ -4849,24 +5146,28 @@ Complex workflows
 ## 3. The Memory (Reflective Level)
 
 ### 3.1 Post-Purchase Reflection
+
 **What the user remembers**:
+
 - "I bought wool sneakers designed for Singapore's heat" (functional uniqueness)
 - "The website felt like touching wool" (tactile UI differentiation)
 - "They get it — 32°C, 80% humidity is no joke" (market empathy)
 
 ### 3.2 Brand Story Arc (PEAK Stage)
 ```
+
 Act 1: PROBLEM (Hero)
-  "Synthetic sneakers + Singapore humidity = Sweaty disaster"
+"Synthetic sneakers + Singapore humidity = Sweaty disaster"
 
 Act 2: SOLUTION (Story + Materials)
-  "Merino wool: Naturally breathable, temperature-regulating, moisture-wicking"
+"Merino wool: Naturally breathable, temperature-regulating, moisture-wicking"
 
 Act 3: PROOF (Product Grid)
-  "3 styles, each engineered for Singapore's urban terrain"
+"3 styles, each engineered for Singapore's urban terrain"
 
 Act 4: ACTION (Cart + Checkout)
-  "Join the tropical urbanite movement — comfort without compromise"
+"Join the tropical urbanite movement — comfort without compromise"
+
 ```
 
 ---
@@ -4972,14 +5273,15 @@ Act 4: ACTION (Cart + Checkout)
 
 ---
 
-**Design Story Created**: 2026-05-07  
-**Next Step**: Launch Phase5 VERIFY (accessibility audit, performance check)  
+**Design Story Created**: 2026-05-07
+**Next Step**: Launch Phase5 VERIFY (accessibility audit, performance check)
 **Status**: PEAK stage complete — narrative framework established ✅
 
 ```
 
 # skills/super-frontend-design/docs/wool-sneakers-design-guideline.md
-```md
+
+````md
 # Design Guideline: WOOL RUNNERS SG
 
 > **Strategic Position**: Q4 - THE VISIONARY (Dynamic Modernism)  
@@ -4991,12 +5293,13 @@ Act 4: ACTION (Cart + Checkout)
 ## 1. Strategic Foundation
 
 ### Intentionality Compass Results
-| Question | Answer |
-|----------|-------|
-| **Primary fear?** | "Wasting money on poor quality shoes" + "Uncomfortable in Singapore humidity" |
-| **Decision style?** | Rational + research-heavy (check materials, reviews, heat management) |
-| **Trust source?** | Innovators/peers (Instagram, TikTok), but value credentials (merino wool certification) |
-| **Category relationship?** | Experienced with sneaker culture, seeking BEST comfort for tropical urban life |
+
+| Question                   | Answer                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| **Primary fear?**          | "Wasting money on poor quality shoes" + "Uncomfortable in Singapore humidity"           |
+| **Decision style?**        | Rational + research-heavy (check materials, reviews, heat management)                   |
+| **Trust source?**          | Innovators/peers (Instagram, TikTok), but value credentials (merino wool certification) |
+| **Category relationship?** | Experienced with sneaker culture, seeking BEST comfort for tropical urban life          |
 
 **Positioning**: Disruptive Brand + Aspiration-Driven Audience = **Q4: THE VISIONARY**
 
@@ -5005,39 +5308,44 @@ Act 4: ACTION (Cart + Checkout)
 ## 2. Color Palette (OKLCH-Based, 60-30-10 Rule)
 
 ### 2.1 Primary Palette
+
 ```css
 :root {
   /* 60% - Background (calm, neutral base) */
-  --color-warm-white: #F5F0EB;    /* oklch(0.96 0.02 85) */
-  --color-oat: #E8DCC8;           /* oklch(0.88 0.04 82) */
-  
+  --color-warm-white: #f5f0eb; /* oklch(0.96 0.02 85) */
+  --color-oat: #e8dcc8; /* oklch(0.88 0.04 82) */
+
   /* 30% - Secondary (supporting areas) */
-  --color-foggy-gray: #B8B0A8;    /* oklch(0.76 0.03 75) */
-  --color-foggy-gray-light: #C8C0B8; /* Lighter variant */
-  
+  --color-foggy-gray: #b8b0a8; /* oklch(0.76 0.03 75) */
+  --color-foggy-gray-light: #c8c0b8; /* Lighter variant */
+
   /* 10% - Accent (CTAs, highlights) */
-  --color-charcoal: #5C5750;      /* oklch(0.35 0.02 65) */
-  --color-sage: #8BA87A;         /* oklch(0.68 0.08 140) */
+  --color-charcoal: #5c5750; /* oklch(0.35 0.02 65) */
+  --color-sage: #8ba87a; /* oklch(0.68 0.08 140) */
 }
 ```
+````
 
 ### 2.2 Color Usage
-| Element | Color | Hex | Purpose |
-|---------|-------|-----|---------|
-| Page Background | `warm-white` | #F5F0EB | Calm, neutral base (60%) |
-| Card Background | `oat` | #E8DCC8 | Soft wool texture base (30%) |
-| Primary Text | `charcoal` | #5C5750 | High contrast readability |
-| Secondary Text | `foggy-gray` | #B8B0A8 | Supporting information |
-| Primary CTA | `charcoal` bg + `warm-white` text | Contrast 13.5:1 |
-| Secondary CTA | `oat` bg + `charcoal` text | Tactile feel |
+
+| Element         | Color                             | Hex             | Purpose                      |
+| --------------- | --------------------------------- | --------------- | ---------------------------- |
+| Page Background | `warm-white`                      | #F5F0EB         | Calm, neutral base (60%)     |
+| Card Background | `oat`                             | #E8DCC8         | Soft wool texture base (30%) |
+| Primary Text    | `charcoal`                        | #5C5750         | High contrast readability    |
+| Secondary Text  | `foggy-gray`                      | #B8B0A8         | Supporting information       |
+| Primary CTA     | `charcoal` bg + `warm-white` text | Contrast 13.5:1 |
+| Secondary CTA   | `oat` bg + `charcoal` text        | Tactile feel    |
 
 ### 2.3 Color Psychology
+
 - **Warm White + Oat**: Evokes natural wool, softness, comfort
 - **Foggy Gray**: Urban sophistication, Singapore skyline mist
 - **Charcoal**: Grounding, premium, ties to shoe soles
 - **Sage** (secondary): Eco-friendly, merino pasture
 
 **WCAG AAA Compliance:**
+
 - Charcoal (#5C5750) on Warm White (#F5F0EB) = **8.2:1** ✅ Pass AAA
 - Warm White on Charcoal = **13.5:1** ✅ Pass AAA
 
@@ -5046,24 +5354,27 @@ Act 4: ACTION (Cart + Checkout)
 ## 3. Typography System (Luxury/Refined Strategy)
 
 ### 3.1 Type Scale
-| Role | Font | Size (clamp) | Weight | Line Height | Purpose |
-|------|------|--------------|--------|-------------|---------|
-| **H1 (Hero)** | Instrument Serif | `clamp(2.5rem, 5vw, 4.5rem)` | 400 | 1.06 | Massive visual impact |
-| **H2 (Section)** | Instrument Serif | `clamp(1.8rem, 3vw, 2.5rem)` | 400 | 1.2 | Section hierarchy |
-| **H3 (Card Title)** | Instrument Serif | `1.25rem` | 500 | 1.3 | Product names |
-| **Body** | Inter | `1rem` | 400 | 1.6 | Readable content |
-| **Small/Caption** | Inter | `0.875rem` | 400 | 1.5 | Secondary info |
-| **Button** | Inter | `0.9375rem` | 500 | 1.2 | Clear CTAs |
+
+| Role                | Font             | Size (clamp)                 | Weight | Line Height | Purpose               |
+| ------------------- | ---------------- | ---------------------------- | ------ | ----------- | --------------------- |
+| **H1 (Hero)**       | Instrument Serif | `clamp(2.5rem, 5vw, 4.5rem)` | 400    | 1.06        | Massive visual impact |
+| **H2 (Section)**    | Instrument Serif | `clamp(1.8rem, 3vw, 2.5rem)` | 400    | 1.2         | Section hierarchy     |
+| **H3 (Card Title)** | Instrument Serif | `1.25rem`                    | 500    | 1.3         | Product names         |
+| **Body**            | Inter            | `1rem`                       | 400    | 1.6         | Readable content      |
+| **Small/Caption**   | Inter            | `0.875rem`                   | 400    | 1.5         | Secondary info        |
+| **Button**          | Inter            | `0.9375rem`                  | 500    | 1.2         | Clear CTAs            |
 
 ### 3.2 Font Pairing Rationale
+
 - **Instrument Serif (Display)**: Luxury, editorial feel — "premium wool" positioning
 - **Inter (Body)**: Highly legible at small sizes, modern sans-serif
 - **Contrast + Harmony**: Different enough for hierarchy, similar enough for cohesion
 
 ### 3.3 Fluid Typography Implementation
+
 ```css
 h1 {
-  font-family: 'Instrument Serif', Georgia, serif;
+  font-family: "Instrument Serif", Georgia, serif;
   font-size: clamp(2.5rem, 5vw, 4.5rem);
   line-height: 1.06;
   letter-spacing: -0.02em;
@@ -5076,29 +5387,31 @@ h1 {
 
 Following `tailwind-patterns.md` and `frontend-design.md`:
 
-| Token | Value | Pixels | Usage |
-|-------|------|-------|-------|
-| `--spacing-xs` | 0.25rem | 4px | Tight spacing, micro-adjustments |
-| `--spacing-sm` | 0.5rem | 8px | Small gaps, compact layouts |
-| `--spacing-md` | 1rem | 16px | Standard padding, medium gaps |
-| `--spacing-lg` | 1.5rem | 24px | Section padding, large gaps |
-| `--spacing-xl` | 2rem | 32px | Major spacing, breathing room |
-| `--spacing-2xl` | 3rem | 48px | Section separation |
-| `--spacing-3xl` | 4rem | 64px | Hero sections |
-| `--spacing-4xl` | 5rem | 80px | Major page sections |
+| Token           | Value   | Pixels | Usage                            |
+| --------------- | ------- | ------ | -------------------------------- |
+| `--spacing-xs`  | 0.25rem | 4px    | Tight spacing, micro-adjustments |
+| `--spacing-sm`  | 0.5rem  | 8px    | Small gaps, compact layouts      |
+| `--spacing-md`  | 1rem    | 16px   | Standard padding, medium gaps    |
+| `--spacing-lg`  | 1.5rem  | 24px   | Section padding, large gaps      |
+| `--spacing-xl`  | 2rem    | 32px   | Major spacing, breathing room    |
+| `--spacing-2xl` | 3rem    | 48px   | Section separation               |
+| `--spacing-3xl` | 4rem    | 64px   | Hero sections                    |
+| `--spacing-4xl` | 5rem    | 80px   | Major page sections              |
 
 ---
 
 ## 5. Layout Patterns
 
 ### 5.1 Responsive Grid (Mobile-First)
-| Breakpoint | Product Grid | Navigation |
-|-----------|--------------|-------------|
-| **Mobile (<768px)** | 1 column | Hamburger → Sheet overlay |
-| **Tablet (768px+)** | 2 columns | Inline flex |
-| **Desktop (1024px+)** | 3 columns | Inline flex, gap-8 |
+
+| Breakpoint            | Product Grid | Navigation                |
+| --------------------- | ------------ | ------------------------- |
+| **Mobile (<768px)**   | 1 column     | Hamburger → Sheet overlay |
+| **Tablet (768px+)**   | 2 columns    | Inline flex               |
+| **Desktop (1024px+)** | 3 columns    | Inline flex, gap-8        |
 
 ### 5.2 Golden Ratio Application
+
 - **Hero Content**: ~62% width on desktop (max-width: 42rem)
 - **Card Aspect Ratio**: 4:3 (padding-bottom: 75%)
 - **Heading Scale**: H1 → H2 = ×1.618 ratio
@@ -5108,24 +5421,27 @@ Following `tailwind-patterns.md` and `frontend-design.md`:
 ## 6. Visual Effects (Tactile Maximalism)
 
 ### 6.1 Wool Texture Integration
+
 - **Hero Section**: Full-width subtle wool knit pattern (opacity 0.08)
 - **Product Cards**: Corner wool fiber macro (opacity 0.12)
 - **Footer**: Horizontal wool weave stripe (height: 4px, opacity 0.15)
 
 ### 6.2 Anti-Patterns Avoided (from avant-garde-design-v4)
-| Rejected | Why | Embraced Instead |
-|----------|-----|-----------------|
-| Bento grids | Modern cliché | Asymmetric layout, massive typography |
-| Glassmorphism (blue/white) | AI's idea of "premium" | Warm white + oat color story |
-| Mesh/Aurora gradients | Lazy "floating blobs" | Foggy gradient (135deg, warm tones) |
-| Purple-gradient-on-white | Overused cliché | Charcoal + oat high-contrast |
+
+| Rejected                   | Why                    | Embraced Instead                      |
+| -------------------------- | ---------------------- | ------------------------------------- |
+| Bento grids                | Modern cliché          | Asymmetric layout, massive typography |
+| Glassmorphism (blue/white) | AI's idea of "premium" | Warm white + oat color story          |
+| Mesh/Aurora gradients      | Lazy "floating blobs"  | Foggy gradient (135deg, warm tones)   |
+| Purple-gradient-on-white   | Overused cliché        | Charcoal + oat high-contrast          |
 
 ### 6.3 Shadow Hierarchy
-| Element | Shadow | Purpose |
-|---------|--------|---------|
-| **Product Card (hover)** | `0 12px 24px rgba(92,87,80,0.1)` | Lift effect, depth |
-| **Cart Drawer** | `-4px 0 24px rgba(92,87,80,0.15)` | Slide-in depth |
-| **Navigation** | `border-bottom: 1px solid` | Subtle separation |
+
+| Element                  | Shadow                            | Purpose            |
+| ------------------------ | --------------------------------- | ------------------ |
+| **Product Card (hover)** | `0 12px 24px rgba(92,87,80,0.1)`  | Lift effect, depth |
+| **Cart Drawer**          | `-4px 0 24px rgba(92,87,80,0.15)` | Slide-in depth     |
+| **Navigation**           | `border-bottom: 1px solid`        | Subtle separation  |
 
 ---
 
@@ -5133,18 +5449,21 @@ Following `tailwind-patterns.md` and `frontend-design.md`:
 
 Following `07-visual-design-motion.md`:
 
-| Element | Interaction | Duration | Easing | Properties |
-|---------|-------------|----------|--------|-----------|
-| **Primary Button (hover)** | Scale(1.05) | 150ms | ease-out | transform, background-color |
-| **Primary Button (active)** | Scale(0.98) | 100ms | ease-in | transform |
-| **Product Card (hover)** | translateY(-4px) | 150ms | ease-out | transform, box-shadow |
-| **Cart Drawer (open)** | translateX(0) | 300ms | cubic-bezier(0.4,0,0.2,1) | transform |
-| **Hero Content (fade-in)** | opacity: 0→1, translateY(20px→0) | 600ms | cubic-bezier(0.4,0,0.2,1) | opacity, transform |
+| Element                     | Interaction                      | Duration | Easing                    | Properties                  |
+| --------------------------- | -------------------------------- | -------- | ------------------------- | --------------------------- |
+| **Primary Button (hover)**  | Scale(1.05)                      | 150ms    | ease-out                  | transform, background-color |
+| **Primary Button (active)** | Scale(0.98)                      | 100ms    | ease-in                   | transform                   |
+| **Product Card (hover)**    | translateY(-4px)                 | 150ms    | ease-out                  | transform, box-shadow       |
+| **Cart Drawer (open)**      | translateX(0)                    | 300ms    | cubic-bezier(0.4,0,0.2,1) | transform                   |
+| **Hero Content (fade-in)**  | opacity: 0→1, translateY(20px→0) | 600ms    | cubic-bezier(0.4,0,0.2,1) | opacity, transform          |
 
 **Reduced Motion Support:**
+
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
@@ -5156,6 +5475,7 @@ Following `07-visual-design-motion.md`:
 ## 8. Accessibility (WCAG AAA + ADA Title II)
 
 ### 8.1 Compliance Checklist
+
 - [✅] **Text Contrast**: 8.2:1 (AAA passes for normal text at 7:1)
 - [✅] **Touch Targets**: Minimum 44×44px (all buttons)
 - [✅] **Focus States**: Visible `outline: 2px solid` on all interactive elements
@@ -5165,6 +5485,7 @@ Following `07-visual-design-motion.md`:
 - [✅] **Alt Text**: Placeholder images have descriptive alt (simulated)
 
 ### 8.2 Keyboard Navigation
+
 - Tab order follows visual order
 - Escape key closes cart drawer and mobile nav
 - Focus trap active when modals open
@@ -5175,11 +5496,13 @@ Following `07-visual-design-motion.md`:
 ## 9. Singapore-Specific Adaptations
 
 ### 9.1 Climate Considerations
+
 - **Temperature**: 32°C average, performance data displayed
 - **Humidity**: 80%, merino wool wicking claims highlighted
 - **Urban Environment**: MRT, park connectors, uneven city terrain
 
 ### 9.2 Trust Signals
+
 - "Tested at 32°C, 80% humidity — Singapore Climate Certified"
 - "Free shipping above S$150 (local)"
 - "30-day comfort guarantee"
@@ -5189,11 +5512,11 @@ Following `07-visual-design-motion.md`:
 
 ## 10. Competitive Differentiation
 
-| Competitor | Weakness | Our Advantage |
-|------------|----------|----------------|
-| **Allbirds** | Generic aesthetic, over-saturated | Tactile UI, Singapore-specific positioning |
-| **Baabuk** | Heavy aesthetic, not tropical-optimized | Humidity-wicking data, lightweight (18% lighter) |
-| **Generic Eco-Shoes** | No technical differentiation | Merino micron rating (18.5), urban durability |
+| Competitor            | Weakness                                | Our Advantage                                    |
+| --------------------- | --------------------------------------- | ------------------------------------------------ |
+| **Allbirds**          | Generic aesthetic, over-saturated       | Tactile UI, Singapore-specific positioning       |
+| **Baabuk**            | Heavy aesthetic, not tropical-optimized | Humidity-wicking data, lightweight (18% lighter) |
+| **Generic Eco-Shoes** | No technical differentiation            | Merino micron rating (18.5), urban durability    |
 
 ---
 
@@ -5201,13 +5524,13 @@ Following `07-visual-design-motion.md`:
 
 From `05-performance-optimization.md`:
 
-| Metric | Target (Q4 Dynamic) | Actual (Static HTML) |
-|--------|---------------------|----------------------|
-| Initial JS bundle | < 300 KB | ~0 KB (vanilla JS only) |
-| First Contentful Paint | < 1.5s | < 0.5s (static HTML) |
-| Largest Contentful Paint | < 2.5s | < 1.0s |
-| Time to Interactive | < 3.5s | < 1.0s |
-| Cumulative Layout Shift | < 0.1 | 0 (fixed dimensions) |
+| Metric                   | Target (Q4 Dynamic) | Actual (Static HTML)    |
+| ------------------------ | ------------------- | ----------------------- |
+| Initial JS bundle        | < 300 KB            | ~0 KB (vanilla JS only) |
+| First Contentful Paint   | < 1.5s              | < 0.5s (static HTML)    |
+| Largest Contentful Paint | < 2.5s              | < 1.0s                  |
+| Time to Interactive      | < 3.5s              | < 1.0s                  |
+| Cumulative Layout Shift  | < 0.1               | 0 (fixed dimensions)    |
 
 ---
 
@@ -5216,3 +5539,4 @@ From `05-performance-optimization.md`:
 
 ```
 
+```

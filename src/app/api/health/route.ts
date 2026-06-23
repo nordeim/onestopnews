@@ -39,6 +39,6 @@ export async function GET() {
       deps,
       timestamp: new Date().toISOString(),
     },
-    { status: statusCode }
+    { status: statusCode },
   );
 }

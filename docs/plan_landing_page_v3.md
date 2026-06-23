@@ -2,6 +2,7 @@ I'll begin by reading all the attached documents to understand the full scope of
 Now I have a thorough understanding of all six documents. Let me synthesize everything and create a meticulous design plan that evolves the existing work into something truly distinctive.
 
 **Key observations from my analysis:**
+
 - The existing sample page (`sample_landing_page_to_re-imagine.html`) is a solid "Editorial Dispatch" foundation with wire ticker, masthead, category nav, lead story, asymmetric grid, AI summary demo, trust section, and footer
 - The v2 plan identified enhancements ("Ink & Signal" direction) that were never implemented
 - The PRD defines a Q1 Guardian positioning with Dynamic Modernism accents — "Institutional Clarity" with AI-driven features
@@ -10,6 +11,7 @@ Now I have a thorough understanding of all six documents. Let me synthesize ever
 My plan will push beyond the existing implementation with a refined conceptual direction, sophisticated motion design, and enhanced interactivity — while maintaining the editorial gravitas that makes OneStopNews distinctive.
 
 ---
+
 ---
 
 ## Design Plan Complete — OneStopNews Landing Page
@@ -29,15 +31,15 @@ The evolved aesthetic pushes beyond the existing "Editorial Dispatch" sample int
 
 ### Key Enhancements Over the Existing Sample
 
-| Dimension | Existing Sample | This Plan |
-|-----------|----------------|-----------|
-| **Display typeface** | Newsreader | **Instrument Serif** — more distinctive, better stroke contrast |
-| **Ink depth** | #111111 | **#0A0A0A** — higher contrast, more gravitas |
-| **Color system** | Hex-only | **OKLCH-specified** — perceptually uniform, accessible |
-| **Scroll animations** | None | **Intersection Observer reveals** — purposeful, comprehension-serving |
-| **Confidence bar** | Static | **Animated on scroll** — draws attention to AI transparency |
-| **Category colors** | Lighter tones | **Deeper signal colors** — higher contrast, more editorial weight |
-| **Live indicator** | Red (#EF4444) | **Signal-rose** (#9F1239) — harmonized with dispatch palette |
+| Dimension             | Existing Sample | This Plan                                                             |
+| --------------------- | --------------- | --------------------------------------------------------------------- |
+| **Display typeface**  | Newsreader      | **Instrument Serif** — more distinctive, better stroke contrast       |
+| **Ink depth**         | #111111         | **#0A0A0A** — higher contrast, more gravitas                          |
+| **Color system**      | Hex-only        | **OKLCH-specified** — perceptually uniform, accessible                |
+| **Scroll animations** | None            | **Intersection Observer reveals** — purposeful, comprehension-serving |
+| **Confidence bar**    | Static          | **Animated on scroll** — draws attention to AI transparency           |
+| **Category colors**   | Lighter tones   | **Deeper signal colors** — higher contrast, more editorial weight     |
+| **Live indicator**    | Red (#EF4444)   | **Signal-rose** (#9F1239) — harmonized with dispatch palette          |
 
 ---
 
@@ -62,16 +64,16 @@ The evolved aesthetic pushes beyond the existing "Editorial Dispatch" sample int
 
 ### Animation Strategy (Purposeful Only)
 
-| Element | Animation | Trigger |
-|---------|-----------|---------|
-| Section reveals | Fade-up, 600ms | Scroll into view |
-| Staggered items | 50ms sequential delay | Scroll into view |
-| Confidence bar | Width 0→87%, 800ms | Scroll into view |
-| Card hover | translateY(-2px) + bg shift | Mouseenter |
-| Tab switch | Animated underline | Click |
-| Accordion | max-height expand + chevron rotate | Click |
-| Ticker | Infinite scroll, 80s | Page load |
-| LIVE dot | Opacity pulse, 2s | Infinite |
+| Element         | Animation                          | Trigger          |
+| --------------- | ---------------------------------- | ---------------- |
+| Section reveals | Fade-up, 600ms                     | Scroll into view |
+| Staggered items | 50ms sequential delay              | Scroll into view |
+| Confidence bar  | Width 0→87%, 800ms                 | Scroll into view |
+| Card hover      | translateY(-2px) + bg shift        | Mouseenter       |
+| Tab switch      | Animated underline                 | Click            |
+| Accordion       | max-height expand + chevron rotate | Click            |
+| Ticker          | Infinite scroll, 80s               | Page load        |
+| LIVE dot        | Opacity pulse, 2s                  | Infinite         |
 
 All animations respect `prefers-reduced-motion: reduce`.
 
@@ -107,4 +109,3 @@ Before I proceed to **Phase 4: IMPLEMENTATION**, I need your explicit confirmati
 2. ✅ **Scroll-triggered animations** — purposeful reveals, confidence bar animation
 3. ✅ **12-section architecture** — as specified above
 4. ✅ **Single-file HTML deliverable** — zero build tools
-
