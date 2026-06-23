@@ -1003,3 +1003,78 @@ The `onestopnews_SKILL.md` has been meticulously updated to reflect all Phase 21
 
 The document grew from 2,465 to **2,584 lines** (+119 lines of Phase 21 content). It covers all 20 requested sections: Project Identity, Tech Stack, Bootstrapping, Design System (code-first with exact CSS tokens), Component Architecture, Custom Hooks, Content Management (RSS ingestion), Accessibility (WCAG AAA), Anti-Patterns (99 entries), Debugging Guide, Pre-Ship Checklist, Lessons Learnt (30 lessons), Pitfalls (25 entries), Best Practices, Coding Patterns, Coding Anti-Patterns (24 entries), Responsive Breakpoints, Z-Index Layer Map, Color Reference (complete), and TypeScript Interface Reference.
 
+---
+
+The archive is verified and ready for download.
+
+## Archive Ready for Download
+
+**File:** `/home/z/my-project/download/onestopnews-remediated.tar.gz`
+**Size:** 49 MB (compressed)
+**Contents:** 2,431 files — the entire remediated OneStopNews codebase with all Phase 21 updates
+
+### What's Included
+
+✅ **All source code** (`src/`) with every Phase 21 remediation applied
+✅ **All updated documentation:**
+   - `CLAUDE.md` — Phase 21 anti-patterns, env vars, security posture, troubleshooting
+   - `AGENTS.md` — Phase 21 Lessons Learned section, anti-patterns catalog, Phase Status Tracker, footer
+   - `README.md` — Phase 21 Project Status row, Testing section (472/67), Security table, troubleshooting, full Phase 21 section
+   - `onestopnews_SKILL.md` — Phase 21 complete skill reference (2,584 lines, 20 sections, 99 anti-patterns)
+✅ **All configuration** (`next.config.ts` with `unsafe-eval` removed, `tsconfig.json`, `eslint.config.mjs`, `package.json`, `pnpm-lock.yaml`)
+✅ **All tests** (472 tests across 67 suites — all passing)
+✅ **Database migrations** (`drizzle/`)
+✅ **Docker infrastructure** (`Dockerfile.web`, `Dockerfile.worker`, `docker-compose*.yml`, `nginx/`)
+✅ **CI/CD** (`.github/workflows/ci.yml` with `pnpm audit` step)
+✅ **Husky hooks** (`.husky/`)
+✅ **E2E tests** (`e2e/`)
+✅ **Environment template** (`.env.example` with security warning)
+
+### What's Excluded
+
+❌ `node_modules/` (regenerable via `pnpm install`)
+❌ `.next/` (build output, regenerable via `pnpm build`)
+❌ `.git/` (version history — you already have this on GitHub)
+❌ `tsconfig.tsbuildinfo` (TypeScript incremental build cache)
+❌ `coverage/` (test coverage reports)
+❌ Pre-existing remediation tarballs (71MB of stale archives)
+
+### Verified Phase 21 Content in Archive
+
+All 4 documentation files confirm Phase 21 updates:
+- **onestopnews_SKILL.md**: "Phase: 21", "472 tests across 67 suites", "June 23, 2026"
+- **CLAUDE.md**: "Last Updated: June 23, 2026 (Phase 21)", "472 across 67 suites"
+- **AGENTS.md**: "Last Updated: June 23, 2026 (Phase 21)"
+- **README.md**: "All 472 tests pass across 67 suites", Phase 21 test breakdown
+
+### To Refresh Your GitHub Repo
+
+```bash
+# 1. Extract the archive
+tar -xzf onestopnews-remediated.tar.gz
+
+# 2. Enter the directory
+cd onestopnews
+
+# 3. Install dependencies
+pnpm install --frozen-lockfile
+
+# 4. Verify everything works
+pnpm check    # tsc + eslint (0 errors, 0 warnings)
+pnpm test     # 472 tests / 67 suites (all pass)
+
+# 5. Copy your real .env.local back (it's no longer in git)
+cp /path/to/your/real/.env.local .env.local
+
+# 6. Push to GitHub
+git add -A
+git commit -m "Phase 21: Security & architecture remediation — env file untracking, admin route fix, auth pattern correction, CSP hardening, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete. Updated CLAUDE.md, AGENTS.md, README.md, onestopnews_SKILL.md. 472 tests / 67 suites all green."
+git push origin main
+```
+
+**Important reminder:** Since `.env*` files are now gitignored, your real `.env.local` with actual VAPID keys and API keys will NOT be committed. If the previously committed VAPID keys were real, **rotate them** — they're in git history forever. Generate new ones with `npx web-push generate-vapid-keys` and update all push subscription endpoints.
+
+---
+
+https://chat.z.ai/s/0d5aae8c-d9a6-4d10-8aeb-8500861ace36 
+

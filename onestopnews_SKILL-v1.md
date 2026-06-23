@@ -1,13 +1,13 @@
 # OneStopNews — Complete Skill Reference
 
 > **Classification:** Definitive Engineering Knowledge Base
-> **Phase:** 21 (Security & Architecture Remediation — COMPLETE)
-> **Last Updated:** June 23, 2026
-> **Test Status:** 472 tests across 67 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests — all green
+> **Phase:** 20 (Post-Phase-19 Remediation Documentation Alignment — COMPLETE)
+> **Last Updated:** June 22, 2026
+> **Test Status:** 452 tests across 66 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests — all green
 > **Coverage:** 88.82% lines / 80.35% branches / 84.83% functions / 89.93% statements (thresholds 80/80/70/80)
-> **Quality Gate:** `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) + `pnpm test -- --coverage` (CI-enforced) + `pnpm audit --audit-level=high --prod` (Phase 21)
+> **Quality Gate:** `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) + `pnpm test -- --coverage` (CI-enforced)
 
-This document is the complete, code-first reference for the OneStopNews codebase. Every section is grounded in the actual source code at HEAD (post-Phase 21). Any coding agent (or senior engineer) who reads this file top-to-bottom will have the institutional knowledge required to extend, debug, or replicate this project.
+This document is the complete, code-first reference for the OneStopNews codebase. Every section is grounded in the actual source code at HEAD (post-Phase 20). Any coding agent (or senior engineer) who reads this file top-to-bottom will have the institutional knowledge required to extend, debug, or replicate this project.
 
 ---
 
@@ -100,11 +100,10 @@ Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects
 | **Opt-In Caching**          | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent.              |
 | **Progressive Enhancement** | View Transitions are progressive. They silently degrade on Firefox / reduced-motion. Never rely on them for core functionality.        |
 | **Zero `any`**              | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only.                   |
-| **Auth at the DAL**         | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()` (Server Components/Actions) or `auth()` (API routes — Phase 21). |
+| **Auth at the DAL**         | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()`.                   |
 | **Content Guard**           | Never enqueue summarisation for `title_only` or `excerpt` articles. This prevents AI hallucination.                                    |
-| **Secret Hygiene**          | `.env*` files are gitignored (only `.env.example` tracked). `AUTH_SECRET` rejects known-weak values in production. Never commit real secrets. (Phase 21) |
 
-### Phase History (21 phases)
+### Phase History (19 phases + Phase 20 remediation)
 
 | Phase  | Focus                                                                       | Key Deliverable                                                                                                         |
 | :----- | :-------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
@@ -118,8 +117,7 @@ Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects
 | 16–17  | AdminGuard + skip-links + JSON-LD fix                                       | WCAG AAA compliance                                                                                                     |
 | 18     | DB reinit + skip-link supplement                                            | Operational tooling                                                                                                     |
 | 19     | Comprehensive code audit                                                    | 47 gaps, 39 remediated, +80 tests                                                                                       |
-| 20     | Post-Phase-19 remediation                                                   | +60 tests, walkXffChain, /account page, testcontainers, ESLint domain purity, MEP v6.0                                  |
-| **21** | **Security & architecture remediation (audit-driven)**                      | **11 findings fixed: .env* untracked, admin routes fixed, auth pattern corrected, CSP hardened, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete. +20 tests, +1 suite** |
+| **20** | **Post-Phase-19 remediation**                                               | **+60 tests, walkXffChain, /account page, testcontainers, ESLint domain purity, MEP v6.0, AGENTS/CLAUDE consolidation** |
 
 ---
 
@@ -210,18 +208,15 @@ Layer 4: Infrastructure       — Drizzle, Auth.js, BullMQ, AI SDK. Side effects
 | `noImplicitOverride: true`               | Requires `override` keyword                            | Silent method shadowing                         |
 | `forceConsistentCasingInFileNames: true` | Case-sensitive imports                                 | Cross-platform import failures (macOS vs Linux) |
 
-### Environment Variables (17 total: 10 required + 6 optional + 1 with default)
+### Environment Variables (19 total: 12 required + 7 optional)
 
 All validated by Zod at module load in `src/lib/env/index.ts`. The app fails fast with a descriptive error if any required var is missing or invalid.
-
-**Phase 21 Security:** `.env`, `.env.docker`, `.env.local` are gitignored. Only `.env.example` is tracked (placeholder values). `AUTH_SECRET` rejects known-weak values (containing `dev`, `test`, `ci-dummy`, `change-me`, `placeholder`, etc.) in production via `superRefine`.
 
 ```bash
 # ── Required (10) ─────────────────────────────────────────
 DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews
 REDIS_URL=redis://localhost:6379
 AUTH_SECRET=  # min 32 chars, generate: openssl rand -base64 33
-                 # Phase 21: rejects known-weak values in production
 AUTH_URL=http://localhost:3000
 ANTHROPIC_API_KEY=sk-ant-...  # must start with sk-ant-
 OPENAI_API_KEY=sk-...  # must start with sk-
@@ -1335,21 +1330,6 @@ Complete list from `AGENTS.md`. Here are the most critical entries organized by 
 | Regex-based HTML stripping (`/<[^>]*>/g`)     | Strips TAGS but not TEXT CONTENT — `<script>alert('evil')</script>` leaks into AI prompts | Use `cheerio.load(html); $("script, style, noscript, iframe, object, embed").remove(); $.text()`    |
 | JSON-LD via `metadata.other`                  | Next.js renders `metadata.other` as `<meta>` tags, NOT `<script>` tags                    | Render JSON-LD in page body via `<script type="application/ld+json" dangerouslySetInnerHTML={...}>` |
 
-#### Phase 21 Security & Architecture Anti-Patterns (Audit-Driven)
-
-| # | Anti-Pattern                                                | Why Forbidden                                                                                              | Fix                                                                                                                          |
-| :- | :---------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| 1  | `.env*` files committed to git                              | Real VAPID keys, API keys, encryption keys in git history forever — secrets must be rotated                | Add `.env`, `.env.*`, `!.env.example` to `.gitignore`. `git rm --cached` the files. Rotate exposed secrets.                 |
-| 2  | Route group `(admin)/` expected to produce `/admin/` URLs   | Next.js route groups `(name)` don't affect URL structure. `(admin)/sources/` resolves to `/sources`       | Add `admin/` subfolder inside the route group: `(admin)/admin/sources/page.tsx` → URL `/admin/sources`                       |
-| 3  | `verifySession()` wrapped in try/catch                      | `redirect()` throws `NEXT_REDIRECT`. Standard try/catch catches it, swallowing the redirect → 500 instead of 401 | Server Actions: remove try/catch — let redirect propagate. API Routes: use `auth()` directly (returns null → 401 JSON).     |
-| 4  | Dead code `if (!session)` after `verifySession()`           | `verifySession()` NEVER returns null — it returns a session or throws via `redirect()`. The check is unreachable. | Remove the dead check. Understand that `verifySession()` returns `{ user, sessionId }` or throws — never null.              |
-| 5  | CSP with `'unsafe-eval'`                                     | Allows `eval()`, `Function()` — significant XSS enabler. No code in `src/` uses these.                    | Remove `'unsafe-eval'` from CSP. Keep `'unsafe-inline'` temporarily (Next.js needs it); plan nonce-based CSP migration.     |
-| 6  | AES-256-GCM IV of 16 bytes                                   | NIST SP 800-38D recommends 96-bit (12-byte) IV for GCM. 16-byte IV requires additional GHASH computation. | Change `randomBytes(16)` to `randomBytes(12)`. Decryption reads IV from stored hex — handles any length. Backward-compatible. |
-| 7  | Rate limiter fails-closed (500) on Redis outage              | `checkRateLimit()` throws when Redis is down. No try/catch → uncaught throw → HTTP 500. Redis outage takes down API. | Wrap in try/catch. Fail OPEN (allow request, log warning) — rate limiting is defense-in-depth, not critical path.           |
-| 8  | `AUTH_SECRET` accepts known-weak values in production        | `z.string().min(32)` accepts `dev-secret-do-not-use-in-production` from `.env.example`. JWT sessions forgeable. | `superRefine` rejecting weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`) in production only. |
-| 9  | `deleteSource` identical to `pauseSource` (both soft delete) | `deleteSource` set `isActive: false` — same as `pauseSource`. Misleading API. "delete" implies permanent removal. | `deleteSource` = hard delete (`db.delete` with cascade via `onDelete: "cascade"`). `pauseSource` = soft deactivation.        |
-| 10 | No `pnpm audit` in CI                                       | CI had no dependency security scanning. Known vulnerabilities in Auth.js v5 beta not caught.              | Add `pnpm audit --audit-level=high --prod` step to CI after install, before lint. Start with `\|\| true`; promote to hard gate. |
-
 ---
 
 ## 10. Debugging Guide
@@ -1497,42 +1477,6 @@ vi.mock("@/lib/env", () => ({ env: mockEnv }));
 
 **Fix (Phase 20 / F2):** The `/auth-error` page now links to `/account` where the user can click "Link Google/GitHub" to pre-create the `accounts` row, then retry the OAuth flow.
 
-### Symptom: Admin sidebar links return 404 (Phase 21)
-
-**Cause:** Next.js route groups `(name)` don't affect URL structure. If admin pages are at `src/app/(admin)/sources/page.tsx`, the URL is `/sources`, NOT `/admin/sources`.
-
-**Fix:** Ensure admin pages are inside an `admin/` subfolder within the route group: `src/app/(admin)/admin/sources/page.tsx` → URL `/admin/sources`. The route group `(admin)` provides the shared layout (`AdminGuard`); the `admin/` folder provides the URL prefix.
-
-### Symptom: `revalidatePath("/admin/sources")` doesn't invalidate cache (Phase 21)
-
-**Cause:** Same route group issue. If the page is at `(admin)/sources/` (URL `/sources`), then `revalidatePath("/admin/sources")` targets a non-existent path.
-
-**Fix:** Ensure the page is at `(admin)/admin/sources/` (URL `/admin/sources`), then `revalidatePath("/admin/sources")` works correctly.
-
-### Symptom: API returns 500 instead of 401 for unauthenticated requests (Phase 21)
-
-**Cause:** `verifySession()` calls `redirect()` which throws `NEXT_REDIRECT`. If wrapped in try/catch, the redirect is caught and the catch block returns 500 "Internal server error".
-
-**Fix:** API routes should use `auth()` directly (returns null when unauthenticated) instead of `verifySession()` (which redirects). Never wrap `verifySession()` in try/catch. See `src/app/api/summarize/[id]/route.ts` for the correct pattern.
-
-### Symptom: Redis outage takes down `/api/articles` (Phase 21)
-
-**Cause:** `checkRateLimit()` throws when Redis is down. If not wrapped in try/catch, the uncaught throw returns HTTP 500.
-
-**Fix:** The rate limiter now fails OPEN (allows request, logs warning) via try/catch. If you see this issue, ensure the `/api/articles` route has the fail-open try/catch around `checkRateLimit()`.
-
-### Symptom: `pnpm build` fails: "AUTH_SECRET appears to be a known-weak/placeholder value" (Phase 21)
-
-**Cause:** In production (`NODE_ENV=production`), the Zod env schema rejects `AUTH_SECRET` values matching weak patterns (`dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`, etc.).
-
-**Fix:** Generate a strong random secret: `openssl rand -base64 33`. Update your production `.env` or hosting platform's environment variables. Dev/test environments accept weak secrets for convenience.
-
-### Symptom: `.env.local` with real secrets accidentally committed (Phase 21)
-
-**Cause:** `.gitignore` previously didn't exclude `.env*` files. Real VAPID keys, API keys, or encryption keys may be in git history.
-
-**Fix:** 1) `.gitignore` now excludes `.env*` (only `.env.example` tracked). 2) `git rm --cached .env .env.docker .env.local` to untrack. 3) **Rotate all exposed secrets** — git history is forever. 4) Consider `git filter-repo` or BFG to purge `.env*` from history.
-
 ---
 
 ## 11. Pre-Ship Checklist
@@ -1553,13 +1497,13 @@ pnpm check          # tsc --noEmit && pnpm lint (0 errors, 0 warnings)
 ### Tests
 
 ```bash
-pnpm test                          # 472 tests / 67 suites
+pnpm test                          # 452 tests / 66 suites
 pnpm test -- --coverage            # CI-enforced coverage gate
 pnpm test:integration              # 4 tests (3 Docker-gated, 1 always-pass)
 pnpm test:e2e                      # 10 smoke + 4 axe-core a11y scans (requires dev server)
 ```
 
-- [ ] All 472 unit tests pass
+- [ ] All 452 unit tests pass
 - [ ] Coverage meets thresholds: 80% lines / 80% functions / 70% branches / 80% statements
 - [ ] Integration tests pass (or skip cleanly if no Docker)
 - [ ] E2E smoke tests pass on Chromium
@@ -1593,16 +1537,9 @@ pnpm build           # Production build with Turbopack
 - [ ] All Server Actions call `verifySession()` or `verifyAdminSession()` first
 - [ ] No `process.env.*` reads outside `src/lib/env/index.ts` (and `src/test/setup.ts`)
 - [ ] Push subscription keys encrypted with AES-256-GCM before storage
-- [ ] HSTS + CSP headers present in `next.config.ts` (CSP has NO `unsafe-eval` — Phase 21)
-- [ ] Rate limiting on `/api/articles` (20 req/s, fail-open on Redis outage — Phase 21) and `/api/summarize` (5 req/min/user)
+- [ ] HSTS + CSP headers present in `next.config.ts`
+- [ ] Rate limiting on `/api/articles` (20 req/s) and `/api/summarize` (5 req/min/user)
 - [ ] `proxy.ts` has ZERO DB calls and ZERO business logic
-- [ ] API routes use `auth()` directly (NOT `verifySession()`) for JSON 401 — Phase 21
-- [ ] Server Actions do NOT wrap `verifySession()` in try/catch — Phase 21
-- [ ] `.env*` files are gitignored (only `.env.example` tracked) — Phase 21
-- [ ] `AUTH_SECRET` is a strong random value (not a known-weak placeholder) — Phase 21
-- [ ] AES-256-GCM IV is 12 bytes (NIST SP 800-38D) — Phase 21
-- [ ] `pnpm audit --audit-level=high --prod` runs clean in CI — Phase 21
-- [ ] `deleteSource` uses hard delete (`db.delete`); `pauseSource` uses soft delete — Phase 21
 
 ### Performance
 
@@ -1671,28 +1608,6 @@ pnpm build           # Production build with Turbopack
 
 20. **Architectural rules must be enforced by tooling** — documented rules are intentions, not enforcement. Codify them as ESLint rules (`no-restricted-imports` with `allowTypeImports: true` for domain purity).
 
-### Phase 21 Lessons (Audit-Driven Remediation)
-
-21. **`.gitignore` must exclude `.env*` files** — only `.env.example` should be tracked. Use the negation pattern `!.env.example`. If real secrets were committed, they're in git history forever — rotate them and consider `git filter-repo`/BFG to purge.
-
-22. **Next.js route groups `(name)` do NOT affect URLs** — `(admin)/sources/page.tsx` resolves to `/sources`, NOT `/admin/sources`. To get a URL prefix AND a shared layout, use `(group)/actual-folder/page.tsx` (e.g., `(admin)/admin/sources/page.tsx` → `/admin/sources`).
-
-23. **`verifySession()` must NOT be wrapped in try/catch** — `redirect()` throws `NEXT_REDIRECT`, which standard try/catch catches, silently swallowing the redirect. Server Actions: let the redirect propagate. API Routes: use `auth()` directly (returns null → 401 JSON, no redirect).
-
-24. **`verifySession()` NEVER returns null** — it either returns `{ user, sessionId }` or throws via `redirect()`. The `if (!session)` check after `verifySession()` is dead code. Understand the throwing behavior of your auth functions.
-
-25. **CSP should not have `unsafe-eval` unless code uses `eval()`** — run `grep -rn "eval(\|new Function(" src/` before adding it. If no matches, remove it. `unsafe-inline` is harder to remove (Next.js inline scripts) — plan nonce-based CSP migration.
-
-26. **AES-GCM IV should be 12 bytes per NIST SP 800-38D** — 16-byte IV is technically valid but non-compliant with best practice. The IV is stored alongside the ciphertext (format: `iv:authTag:ciphertext`), so changing the IV length for new encryptions is backward-compatible with old data.
-
-27. **Rate limiters should fail OPEN, not CLOSED** — when Redis is down, `checkRateLimit()` throws. If uncaught, the API returns 500. Rate limiting is defense-in-depth, not critical path — fail open (allow traffic, log warning) is better than fail closed (block all traffic).
-
-28. **Env var validation should reject known-weak values in production** — `z.string().min(32)` accepts any 32+ char string, including publicly known dev secrets. Use `superRefine` (not `refine`) to access the parsed `NODE_ENV` value for production-only enforcement.
-
-29. **API naming must match behavior** — if a function is called `delete*`, it should delete. If you want soft delete, call it `archive*` or `deactivate*`. The schema's `onDelete: "cascade"` makes hard deletes safe — but document the cascade behavior.
-
-30. **CI should include `pnpm audit`** — use `--audit-level=high --prod` to scan only production deps for high/critical vulnerabilities. Start with `|| true` (non-blocking) and promote to a hard gate once clean.
-
 ---
 
 ## 13. Pitfalls to Avoid
@@ -1730,28 +1645,6 @@ pnpm build           # Production build with Turbopack
 14. **`experimental.clientSegmentCache` is not in Next.js 16.2.9** — produces `TS2353`. Remove from config.
 
 15. **`vi.resetModules()` doesn't re-apply `vi.mock()`** — for integration tests, don't mock the module; let the real module load with real env.
-
-### Phase 21 Pitfalls (Security & Architecture)
-
-16. **Never commit `.env*` files (except `.env.example`)** — `.gitignore` must exclude `.env`, `.env.*`, with `!.env.example` negation. Real VAPID/API/encryption keys in git history must be rotated immediately.
-
-17. **Never assume route groups produce URL prefixes** — `(admin)/sources/` resolves to `/sources`, NOT `/admin/sources`. To get `/admin/sources`, use `(admin)/admin/sources/` (folder inside the route group).
-
-18. **Never wrap `verifySession()` in try/catch** — `redirect()` throws `NEXT_REDIRECT`, which try/catch catches. Server Actions: let it propagate. API Routes: use `auth()` directly for JSON 401.
-
-19. **Never use `if (!session)` after `verifySession()`** — it's dead code. `verifySession()` returns a session or throws — never null. The check is unreachable.
-
-20. **Never keep `unsafe-eval` in CSP without verifying `eval()` usage** — run `grep -rn "eval(\|new Function(" src/`. If no matches, remove `unsafe-eval` immediately.
-
-21. **Never use a 16-byte IV for AES-256-GCM** — NIST SP 800-38D recommends 12 bytes (96 bits). Use `randomBytes(12)`. Old data with 16-byte IVs still decrypts (IV length is stored).
-
-22. **Never let rate limiter throw uncaught** — wrap `checkRateLimit()` in try/catch. Fail OPEN (200 + warning) on Redis outage, not CLOSED (500). Rate limiting is defense-in-depth.
-
-23. **Never accept known-weak `AUTH_SECRET` values in production** — use `superRefine` to reject patterns like `dev-secret`, `test-secret`, `ci-dummy`, `change-me`, `placeholder`. Use `superRefine` (not `refine`) to access parsed `NODE_ENV`.
-
-24. **Never make `deleteSource` identical to `pauseSource`** — `delete` should hard delete (`db.delete` with cascade). `pause` should soft deactivate (`db.update set isActive: false`). API naming must match behavior.
-
-25. **Never skip `pnpm audit` in CI** — add `pnpm audit --audit-level=high --prod` after install. Start non-blocking (`|| true`), promote to hard gate once clean.
 
 ---
 
@@ -2109,7 +2002,7 @@ export async function requestSummary(articleId: string) {
 
 ## 16. Coding Anti-Patterns
 
-See [§9 Anti-Patterns & Common Bugs](#9-anti-patterns--common-bugs) for the complete 99-entry table (89 original + 10 Phase 21). The most critical anti-patterns to avoid:
+See [§9 Anti-Patterns & Common Bugs](#9-anti-patterns--common-bugs) for the complete 89-entry table. The most critical anti-patterns to avoid:
 
 1. **`any` in TypeScript** → use `unknown` + type guards
 2. **`enum` / `namespace`** → use string unions + ES modules (violates `erasableSyntaxOnly`)
@@ -2126,15 +2019,6 @@ See [§9 Anti-Patterns & Common Bugs](#9-anti-patterns--common-bugs) for the com
 13. **`vi.hoisted()` factory referencing module-top `const`** → inline literal values
 14. **`vi.clearAllMocks()` on structural mock chains** → only reset leaf mocks
 15. **`cacheLife()` in tests without `next/cache` mock** → add `vi.mock("next/cache")`
-16. **`.env*` files committed to git** → gitignore `.env*` except `.env.example` (Phase 21)
-17. **Route group `(admin)/` expected to produce `/admin/` URLs** → add `admin/` subfolder (Phase 21)
-18. **`verifySession()` wrapped in try/catch** → remove try/catch; use `auth()` for API routes (Phase 21)
-19. **CSP with `unsafe-eval`** → remove if no `eval()` usage (Phase 21)
-20. **AES-256-GCM IV of 16 bytes** → use 12 bytes per NIST SP 800-38D (Phase 21)
-21. **Rate limiter fails-closed on Redis outage** → fail OPEN with try/catch (Phase 21)
-22. **`AUTH_SECRET` accepts known-weak values** → `superRefine` rejection in production (Phase 21)
-23. **`deleteSource` identical to `pauseSource`** → hard delete vs soft deactivate (Phase 21)
-24. **No `pnpm audit` in CI** → add `pnpm audit --audit-level=high --prod` (Phase 21)
 
 ---
 
@@ -2512,7 +2396,7 @@ Before considering this SKILL.md complete, verify against the actual codebase:
 5. ✅ **Hooks implementation matches** — `useDebounce` and `useReducedMotion` verified against `src/shared/hooks/*.ts`
 6. ✅ **Content ingestion patterns match** — `parseFeed.ts` (rss-parser + cheerio), `normalize.ts` (SHA-256), FlowProducer DAG all verified
 7. ✅ **Accessibility implementation matches** — skip link, focus rings, ARIA patterns, reduced motion all verified against `layout.tsx` + `globals.css`
-8. ✅ **Anti-patterns are documented correctly** — All 99 entries (89 original + 10 Phase 21) cross-referenced with `AGENTS.md` anti-patterns table
+8. ✅ **Anti-patterns are documented correctly** — All 89 entries cross-referenced with `AGENTS.md` anti-patterns table
 9. ✅ **Color references match** — All hex values verified against `@theme` block in `globals.css`
 10. ✅ **TypeScript interfaces match** — All types verified against `schema.ts`, `domain/articles/types.ts`, `domain/ranking/score.ts`, `features/feed/queries.ts`, `features/search/types.ts`, `app/account/actions.ts`, `lib/network/getClientIp.ts`, `lib/queue/flows.ts`, `lib/ai/provenance.ts`
 
@@ -2561,9 +2445,6 @@ Before considering this SKILL.md complete, verify against the actual codebase:
 | NutritionLabel                  | `src/features/summaries/components/NutritionLabel.tsx` |
 | Account page (Phase 20)         | `src/app/account/page.tsx`                             |
 | Account actions (Phase 20)      | `src/app/account/actions.ts`                           |
-| Admin sources (Phase 21 path)   | `src/app/(admin)/admin/sources/page.tsx`               |
-| Admin sources actions (Phase 21)| `src/app/(admin)/admin/sources/actions.ts`             |
-| Admin summaries (Phase 21 path) | `src/app/(admin)/admin/summaries/page.tsx`             |
 | Domain types                    | `src/domain/articles/types.ts`                         |
 | Domain normalize                | `src/domain/articles/normalize.ts`                     |
 | Importance scoring              | `src/domain/ranking/score.ts`                          |
@@ -2581,4 +2462,4 @@ Before considering this SKILL.md complete, verify against the actual codebase:
 
 ---
 
-_End of OneStopNews Complete Skill Reference. This document is the authoritative guide for replicating, extending, or debugging this codebase. Every claim is grounded in the actual source code at HEAD (post-Phase 21, June 23, 2026)._
+_End of OneStopNews Complete Skill Reference. This document is the authoritative guide for replicating, extending, or debugging this codebase. Every claim is grounded in the actual source code at HEAD (post-Phase 20, June 22, 2026)._

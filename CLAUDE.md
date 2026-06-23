@@ -34,9 +34,10 @@ A Next.js 16 + React 19 application backed by PostgreSQL 17, BullMQ v5 on Redis,
 | **Single Source of Truth** | The Drizzle schema is the only source of DB types. Types derive from schema via `(typeof enum.enumValues)[number]`.       |
 | **Opt-In Caching**         | Next.js 16 makes caching opt-in via `"use cache"`. Everything is dynamic by default. Don't cache without explicit intent. |
 | **Zero `any`**             | TypeScript strict mode, always. Prefer `unknown` over `any`. Use type inference; explicit types on public APIs only.      |
-| **Auth at the DAL**        | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()`.      |
+| **Auth at the DAL**        | `proxy.ts` is UX-only (optimistic redirect). Real authorization lives in `verifySession()` / `verifyAdminSession()` (Server Components/Actions) or `auth()` (API routes). |
 | **Content Guard**          | Never enqueue summarisation for `title_only` or `excerpt` articles. Prevents AI hallucination.                            |
 | **Fail Fast at Boot**      | Security-critical env vars validated at module load. Never lazily validate.                                               |
+| **Secret Hygiene**         | `.env*` files are gitignored (only `.env.example` tracked). `AUTH_SECRET` rejects known-weak values in production. Never commit real secrets. (Phase 21) |
 
 ---
 
@@ -53,6 +54,8 @@ A Next.js 16 + React 19 application backed by PostgreSQL 17, BullMQ v5 on Redis,
 - **`<Image>` component** for all images (optimization, lazy loading, CLS prevention). External domains must be in `next.config.ts` `remotePatterns`.
 - **`error.tsx`** and **`loading.tsx`** at every route segment for error boundaries and streaming UI.
 - **`proxy.ts`** (not `middleware.ts`) is the network boundary. Cookie check + redirect only. NO DB calls.
+- **Route groups `(name)` don't affect URLs.** To get `/admin/sources`, use `src/app/(admin)/admin/sources/` (folder inside the route group). (Phase 21)
+- **API routes use `auth()` directly** (returns session or null → 401 JSON). **Server Components/Actions use `verifySession()`** (returns session or redirects). Never wrap `verifySession()` in try/catch — it catches the redirect. (Phase 21)
 
 #### Critical Configuration (wrong placement = silent breakage)
 
@@ -288,15 +291,18 @@ export const verifyAdminSession = cache(async () => {
 - **`cache()`** memoizes per-request. Multiple components calling `verifySession()` execute one validation.
 - **Every Server Action** must call `verifySession()` or `verifyAdminSession()` as its first line.
 
-### Environment Variables (19 total: 12 required + 7 optional)
+### Environment Variables (17 total: 10 required + 6 optional + 1 with default)
 
 All validated by Zod at module load in `src/lib/env/index.ts`. The app fails fast with a descriptive error if any required var is missing.
 
+**Phase 21 Security:** `.env`, `.env.docker`, `.env.local` are gitignored. Only `.env.example` is tracked (placeholder values). `AUTH_SECRET` rejects known-weak values (containing `dev`, `test`, `ci-dummy`, `change-me`, `placeholder`, etc.) in production via `superRefine`.
+
 ```bash
-# Required (12)
+# Required (10)
 DATABASE_URL=postgresql://user:pass@localhost:5432/onestopnews
 REDIS_URL=redis://localhost:6379
 AUTH_SECRET=  # min 32 chars, generate: openssl rand -base64 33
+                 # Phase 21: rejects known-weak values in production
 AUTH_URL=http://localhost:3000
 ANTHROPIC_API_KEY=sk-ant-...  # must start with sk-ant-
 OPENAI_API_KEY=sk-...  # must start with sk-
@@ -304,22 +310,20 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=  # npx web-push generate-vapid-keys
 VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=mailto:admin@onestopnews.com
 PUSH_KEY_ENCRYPTION_KEY=  # 64 hex chars, openssl rand -hex 32
-GOOGLE_CLIENT_ID=  # optional but counted as required for OAuth
-GOOGLE_CLIENT_SECRET=
-GITHUB_CLIENT_ID=
-GITHUB_CLIENT_SECRET=
 
-# Optional (7)
-TRUSTED_PROXY=  # "true" | unset — use rightmost IP behind CDN
-TRUSTED_PROXY_CIDRS=  # comma-separated CIDRs for proxy-chain walking
+# Optional (6) — OAuth providers (both ID + SECRET required to enable)
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
+TRUSTED_PROXY=  # "true" | unset — use rightmost IP behind CDN
+TRUSTED_PROXY_CIDRS=  # comma-separated CIDRs for proxy-chain walking
+
+# With default
 NODE_ENV=development  # development | production | test (default: development)
 ```
 
-**CRITICAL:** Never read `process.env.*` directly in production code. Import `env` from `@/lib/env`.
+**CRITICAL:** Never read `process.env.*` directly in production code. Import `env` from `@/lib/env`. Never commit `.env*` files (only `.env.example` is tracked).
 
 ### Key File Paths
 
@@ -358,6 +362,8 @@ NODE_ENV=development  # development | production | test (default: development)
 | Summary actions             | `src/features/summaries/actions.ts`                    |
 | NutritionLabel              | `src/features/summaries/components/NutritionLabel.tsx` |
 | Account page                | `src/app/account/page.tsx`                             |
+| Admin sources actions      | `src/app/(admin)/admin/sources/actions.ts`              |
+| Admin summaries page       | `src/app/(admin)/admin/summaries/page.tsx`              |
 | Domain types                | `src/domain/articles/types.ts`                         |
 | Domain normalize            | `src/domain/articles/normalize.ts`                     |
 | Importance scoring          | `src/domain/ranking/score.ts`                          |
@@ -396,6 +402,14 @@ NODE_ENV=development  # development | production | test (default: development)
 | 18  | Discriminated union assertions without `if` narrowing       | Use `if (result.status === "linked") { ... }`                |
 | 19  | Missing `@tailwindcss/postcss` plugin                       | Install + create `postcss.config.mjs` + clear `.next/` cache |
 | 20  | Raw hex colors in Tailwind classes                          | Use design tokens (`bg-ink-900`, `text-paper-50`)            |
+| 21  | `.env*` files committed to git                              | Add `.env`, `.env.*`, `!.env.example` to `.gitignore` (Phase 21) |
+| 22  | Route group `(admin)/` expected to produce `/admin/` URLs  | Add `admin/` subfolder inside route group: `(admin)/admin/sources/` (Phase 21) |
+| 23  | `verifySession()` wrapped in try/catch (swallows redirect) | Remove try/catch — let `NEXT_REDIRECT` propagate; use `auth()` for API routes (Phase 21) |
+| 24  | CSP with `'unsafe-eval'`                                    | Remove `'unsafe-eval'` — no code uses `eval()` (Phase 21) |
+| 25  | AES-256-GCM IV of 16 bytes (non-NIST-compliant)            | Use 12-byte IV per NIST SP 800-38D (Phase 21) |
+| 26  | Rate limiter fails-closed (500) on Redis outage            | Wrap in try/catch, fail OPEN (200 + warning) (Phase 21) |
+| 27  | `AUTH_SECRET` accepts known-weak values in production      | `superRefine` rejecting weak patterns in production (Phase 21) |
+| 28  | `deleteSource` identical to `pauseSource` (both soft delete) | `deleteSource` = hard delete (`db.delete` with cascade); `pauseSource` = soft (Phase 21) |
 
 ---
 
@@ -429,6 +443,12 @@ NODE_ENV=development  # development | production | test (default: development)
 | `cacheLife is not a function` in tests  | No Next.js cache context                 | `vi.mock("next/cache", () => ({ cacheLife: vi.fn() }))`        |
 | `useSession` requires `SessionProvider` | Test doesn't go through layout           | Mock `next-auth/react`                                         |
 | Rate limit 429 behind CDN               | Leftmost XFF IP spoofable                | Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS`               |
+| Admin sidebar links 404                   | Route group `(admin)/` doesn't affect URLs | Add `admin/` subfolder: `(admin)/admin/sources/` (Phase 21)   |
+| `revalidatePath("/admin/sources")` no-op  | Same route group issue                    | Fixed by Phase 21 admin folder restructure                     |
+| API returns 500 instead of 401 (auth)     | `verifySession()` redirect caught by try/catch | Use `auth()` directly in API routes; remove try/catch (Phase 21) |
+| Redis outage takes down `/api/articles`   | Rate limiter throws uncaught              | Fail-open try/catch around `checkRateLimit()` (Phase 21)       |
+| `pnpm build` fails: weak AUTH_SECRET       | Production rejects placeholder values     | Generate strong secret: `openssl rand -base64 33` (Phase 21)   |
+| `.env.local` with real keys in git history | `.gitignore` didn't exclude `.env*`       | Untrack + rotate exposed secrets (Phase 21)                    |
 
 ---
 
@@ -442,11 +462,17 @@ NODE_ENV=development  # development | production | test (default: development)
 | Push keys         | AES-256-GCM encryption at rest. `PUSH_KEY_ENCRYPTION_KEY` 64-char hex.        |
 | DB connections    | Lazy Proxy connection. `max: 10` for dedicated runtimes.                      |
 | Access control    | DAL-layer enforcement. `verifyAdminSession()` redirects non-admins.           |
-| Rate limiting     | `GET /api/articles`: 20 req/s per IP. `POST /api/summarize`: 5 req/min/user.  |
+| Rate limiting     | `GET /api/articles`: 20 req/s per IP (fail-open on Redis outage, Phase 21). `POST /api/summarize`: 5 req/min/user.  |
 | Content hashing   | SHA-256 (`node:crypto`) of `title\|body\|publishedAt`.                        |
-| Env validation    | All required env vars validated by Zod at module load.                        |
+| Env validation    | All required env vars validated by Zod at module load. `AUTH_SECRET` rejects weak values in production (Phase 21). |
 | Cursor validation | `/api/articles` cursor param validated as ISO 8601; returns `400` on invalid. |
+| Secret hygiene    | `.env*` gitignored (only `.env.example` tracked). VAPID keys must be rotated if previously committed. (Phase 21) |
+| CSP               | `script-src 'self' 'unsafe-inline'` — `unsafe-eval` removed (Phase 21). Migrate to nonce-based CSP in future. |
+| Push key IV       | AES-256-GCM with 12-byte IV per NIST SP 800-38D (Phase 21). Backward-compatible with legacy 16-byte IV data. |
+| CI security audit | `pnpm audit --audit-level=high --prod` runs in CI after install (Phase 21).  |
 
 ---
 
 _This CLAUDE.md is derived from AGENTS.md (the canonical institutional knowledge base) and onestopnews_SKILL.md (the complete engineering reference). For exhaustive detail on any topic, consult those files directly._
+
+**Last Updated:** June 23, 2026 (Phase 21 — Security & Architecture Remediation: env file untracking, admin route fix, auth pattern correction, CSP hardening, AES-GCM IV, rate limiter fail-open, weak AUTH_SECRET rejection, CI audit, hard delete). **Tests:** 472 across 67 suites + 10 E2E + 4 a11y + 4 DB-integration (all green).
