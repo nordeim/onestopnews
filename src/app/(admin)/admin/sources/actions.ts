@@ -27,10 +27,7 @@ export async function addSource(data: unknown) {
   await verifyAdminSession();
 
   const parsed = sourceSchema.parse(data);
-  const [newSource] = await db
-    .insert(sources)
-    .values(parsed)
-    .returning();
+  const [newSource] = await db.insert(sources).values(parsed).returning();
 
   revalidatePath("/admin/sources");
   return newSource;
@@ -66,6 +63,9 @@ export async function pauseSource(id: string) {
 export async function deleteSource(id: string) {
   await verifyAdminSession();
 
+  // TODO: Wire to UI — admin sources page currently has no delete button.
+  // This action is tested (actions.test.ts) and ready for use once a
+  // delete button + confirmation dialog is added to SourcesData.tsx.
   // Q3 fix: HARD DELETE — permanently removes the source from the database.
   // The schema has onDelete: "cascade" on articles.sourceId, so this
   // cascade-deletes all associated articles too. Use pauseSource() instead

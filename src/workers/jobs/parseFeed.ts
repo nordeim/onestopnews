@@ -15,6 +15,7 @@
  */
 
 import Parser from "rss-parser";
+import type { FeedFormat } from "@/lib/db/schema";
 // Phase 19 (H9): cheerio replaces the regex-based HTML stripper.
 // cheerio uses a real HTML parser (parse5 under the hood), which correctly
 // handles:
@@ -39,8 +40,6 @@ export interface FeedItem {
   /** Publication date (parsed from feed date string) */
   publishedAt?: Date;
 }
-
-export type FeedFormat = "rss" | "atom" | "json_api";
 
 // ── RSS Parser instance ────────────────────────────────────────────────────
 // Configure rss-parser to extract content:encoded (RSS 2.0 full body extension).

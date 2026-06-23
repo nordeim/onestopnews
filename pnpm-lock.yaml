@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  cheerio>undici: ^8.5.0
+
 importers:
   .:
     dependencies:
@@ -85,6 +88,9 @@ importers:
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
+      undici:
+        specifier: ^8.5.0
+        version: 8.5.0
       web-push:
         specifier: ^3.6.7
         version: 3.6.7
@@ -7441,7 +7447,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 7.27.2
+      undici: 8.5.0
       whatwg-mimetype: 4.0.0
 
   chownr@1.1.4: {}
