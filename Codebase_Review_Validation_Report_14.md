@@ -182,9 +182,11 @@ if old_comment in content:
  p.write_text(content)  
  print("OK - comment updated")  
 else:  
- print("NOT FOUND - trying line by line")  
- # Show what's there  
- idx = content.find('Content-Security-Policy')  
+ print("NOT FOUND - trying line by line")
+
+# Show what's there
+
+idx = content.find('Content-Security-Policy')  
  if idx >= 0:  
  print(repr(content[idx:idx+400]))  
 PYEOF
@@ -495,3 +497,57 @@ Summary
 Root cause: The previous remediation (R6) introduced a trailing slash in the remotePatterns pathname ("/**/" instead of "/**"), which broke Next.js's glob matching for the <Image> component's picsum.photos URLs.
 
 Fix: One-character change — removed the trailing slash from pathname: "/**/" to pathname: "/**".
+
+---
+
+E2E Verification Results Summary
+
+┌────┬─────────────────────────┬─────────┬────────────────────────────────────────────────────────────────────────────────────────────────────┐  
+│ # │ Test │ Result │ Details │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 1 │ Homepage loads │ ✅ PASS │ HTTP 200, title "OneStopNews — Your Briefing Room", NewsTicker + Masthead render │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 2 │ LeadStory image renders │ ✅ PASS │ img "European Parliament building..." present in region "Lead story" — picsum.photos fix confirmed │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 3 │ Admin routes redirect │ ✅ PASS │ /admin/sources → /sign-in (AdminGuard working) │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 4a │ API /api/articles │ ✅ PASS │ Returns JSON with articles array │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 4b │ API /api/categories │ ✅ PASS │ Returns JSON with categories array │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 5 │ Sign-in page │ ✅ PASS │ Email/password fields + "Sign in with Credentials" button │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 6 │ Search page │ ✅ PASS │ Search input with placeholder + loading state │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 7 │ Article detail page │ ✅ PASS │ Title, source ("Bloomberg"), body text, AI Summary section, EU AI Act footer │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 8 │ Stub /api/admin removed │ ✅ PASS │ Returns 404 "Page not found" │  
+├────┼─────────────────────────┼─────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ — │ CSP header │ ✅ PASS │ script-src 'self' 'unsafe-inline' — no unsafe-eval │  
+└────┴─────────────────────────┴─────────┴────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+### Console Errors (non-blocking)
+
+┌─────────────────────────┬───────────────┬──────────┬──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐  
+│ Error │ Source │ Severity │ Notes │  
+├─────────────────────────┼───────────────┼──────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ eval() is not supported │ React DevMode │ ℹ Info │ Expected in dev mode — React uses eval() for debugging. Confirms CSP unsafe-eval removal is working. Production React never uses eval(). │  
+├─────────────────────────┼───────────────┼──────────┼──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤  
+│ 404 /favicon.ico │ Missing file │ 🟢 Low │ Missing favicon.ico — cosmetic only │  
+└─────────────────────────┴───────────────┴──────────┴──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+### Key Validations from Recent Fixes
+
+┌─────────────────────────────────────────────┬───────────────────────────────────────────────────────────────┐  
+│ Fix │ Validated │  
+├─────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤  
+│ R1 — CSP unsafe-eval removed │ ✅ CSP header confirms script-src 'self' 'unsafe-inline' only │  
+├─────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤  
+│ R4 — Stub /api/admin removed │ ✅ Returns 404 │  
+├─────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤  
+│ R6 — remotePatterns pathname fix │ ✅ picsum.photos image renders in LeadStory │  
+├─────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤  
+│ Previous — AUTH_SECRET strong value │ ✅ Build succeeds, dev server starts │  
+├─────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┤  
+│ Previous — Admin route paths (admin)/admin/ │ ✅ /admin/sources correctly redirects to sign-in │  
+└─────────────────────────────────────────────┴───────────────────────────────────────────────────────────────┘

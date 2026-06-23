@@ -54,6 +54,10 @@ awesome meticulouly job so far. please keep up the good work. now, please meticu
 
 ---
 
+please use the already installed and available 'agent-browser' and 'playwright-cli' CLI browsers to plan to do some E2E verification tests. refer to @use_system_installed_CLI_browser_tools_for_e2e.txt for more details on the tool usage.
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously create a tar archive of the entire (remediated) codebase, excluding the `node_modules` , `.next` and `.git` folders, so I can download and use it to refresh my GitHub repo.
 
 ---
