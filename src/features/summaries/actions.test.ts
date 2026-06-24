@@ -17,10 +17,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockFindFirst = vi.fn();
 const mockUpdateArticles = vi.fn().mockResolvedValue(undefined);
 const mockUpdateSummaries = vi.fn().mockResolvedValue(undefined);
+const mockFindSummary = vi.fn();
 vi.mock("@/lib/db", () => ({
   db: {
     query: {
       articles: { findFirst: mockFindFirst },
+      summaries: { findFirst: mockFindSummary },
     },
     update: vi.fn((table: unknown) => ({
       set: () => ({

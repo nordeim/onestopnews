@@ -34,6 +34,20 @@ const SUMMARIZE_RATE_LIMIT_MAX = 5;
 const SUMMARIZE_RATE_LIMIT_WINDOW_SEC = 60;
 
 /**
+ * Looks up the article ID associated with a given summary ID.
+ * Returns null if the summary does not exist.
+ */
+async function getArticleIdFromSummary(
+  summaryId: string,
+): Promise<string | null> {
+  const summary = await db.query.summaries.findFirst({
+    where: eq(summaries.id, summaryId),
+    columns: { articleId: true },
+  });
+  return summary?.articleId ?? null;
+}
+
+/**
  * Requests an AI summary for an article.
  *
  * Validates UUID, checks content availability guard, enqueues to BullMQ.
@@ -160,10 +174,13 @@ export async function flagSummary(
 
   // Reset article's hasSummary flag to prevent stale data from
   // affecting scoring and UI badges (C2 fix).
-  await db
-    .update(articles)
-    .set({ hasSummary: false })
-    .where(eq(articles.id, summaryId));
+  const articleId = await getArticleIdFromSummary(summaryId);
+  if (articleId) {
+    await db
+      .update(articles)
+      .set({ hasSummary: false })
+      .where(eq(articles.id, articleId));
+  }
 
   revalidatePath("/admin/summaries");
   return { success: true, error: null };
@@ -187,10 +204,13 @@ export async function disableSummary(
 
   // Reset article's hasSummary flag to prevent stale data from
   // affecting scoring and UI badges (C2 fix).
-  await db
-    .update(articles)
-    .set({ hasSummary: false })
-    .where(eq(articles.id, summaryId));
+  const articleId = await getArticleIdFromSummary(summaryId);
+  if (articleId) {
+    await db
+      .update(articles)
+      .set({ hasSummary: false })
+      .where(eq(articles.id, articleId));
+  }
 
   revalidatePath("/admin/summaries");
   return { success: true, error: null };
@@ -219,10 +239,13 @@ export async function approveSummary(
   // C2 fix: When a summary is approved (restored to 'ok'), ensure the
   // article's hasSummary flag is set to true so scoring and UI badges
   // reflect the restored summary.
-  await db
-    .update(articles)
-    .set({ hasSummary: true })
-    .where(eq(articles.id, summaryId));
+  const articleId = await getArticleIdFromSummary(summaryId);
+  if (articleId) {
+    await db
+      .update(articles)
+      .set({ hasSummary: true })
+      .where(eq(articles.id, articleId));
+  }
 
   revalidatePath("/admin/summaries");
   return { success: true, error: null };
