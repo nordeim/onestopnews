@@ -107,11 +107,22 @@ const nextConfig: NextConfig = {
           // sources.
           //
           // Phase 22 (H1 fix, audit Report 16): 'unsafe-eval' has been
-          // REMOVED from script-src. No code in src/ uses eval() or
-          // new Function() (verified by grep). The previous claim of
-          // removal in Phase 21 S4 was incorrect — only the comment was
+          // REMOVED from script-src in production. No code in src/ uses
+          // eval() or new Function() (verified by grep). The previous claim
+          // of removal in Phase 21 S4 was incorrect — only the comment was
           // updated while the CSP string still contained the directive.
           // A regression test in next.config.test.ts now locks this in.
+          //
+          // Phase 23 (BUG-1 fix): The CSP is now CONDITIONAL on NODE_ENV:
+          //   - development: 'unsafe-eval' is INCLUDED — React dev mode
+          //     requires eval() for callstack reconstruction. Without it,
+          //     `pnpm dev` shows console errors:
+          //     "eval() is not supported in this environment..."
+          //   - production / test: 'unsafe-eval' is REMOVED — security
+          //     hardening. React never uses eval() in production mode.
+          //
+          // This allows developers to use `pnpm dev` without CSP errors
+          // while maintaining the production security posture.
           //
           // 'unsafe-inline' remains as a transitional measure for Next.js
           // inline scripts + Tailwind runtime. Production should migrate
@@ -121,7 +132,9 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              `script-src 'self' 'unsafe-inline'${
+                process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
+              }`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' https: data:",
               "font-src 'self' data:",

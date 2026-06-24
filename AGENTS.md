@@ -2706,15 +2706,115 @@ A fresh systematic 7-pass code audit (using the project's own `skills/code-revie
 
 ---
 
+## Phase 23: Live Site E2E Audit Remediation — Lessons Learned
+
+### Phase 23 Overview
+
+A live site E2E audit of `https://onestopnews.jesspete.shop/` (using the `agent-browser` CLI) surfaced 3 code-fixable issues (BUG-2, BUG-3, F5) plus 3 deployment configuration issues (BUG-1, BUG-4, BUG-5). The 3 code fixes were remediated with TDD discipline. Test count grew from 498/69 to 500/69 (+2 regression tests for X-AI-Provenance header). The 3 deployment issues require ops action on the production server (documented as recommendations, not code-fixed).
+
+### Phase 23 Gotchas Discovered
+
+#### 1. `metadata.other` Does NOT Emit HTTP Headers (BUG-2 — HIGH)
+
+**Issue**: The `X-AI-Provenance` HTTP header was missing from article detail page responses. Live site E2E test confirmed: all other headers present (CSP, HSTS, XFO, XCTO) but `X-AI-Provenance` absent. EU AI Act Article 50 Layer 2 compliance was broken.
+
+**Root Cause**: `src/app/article/[id]/page.tsx:90` set `"X-AI-Provenance"` in `metadata.other`. But Next.js 16's `metadata.other` API ONLY emits `<meta>` tags, NEVER HTTP headers. The `"X-AI-Provenance"` key was creating a `<meta name="X-AI-Provenance">` tag (visible in the DOM) — not an HTTP header. This was confirmed by live site inspection: the meta tag existed but the HTTP header did not.
+
+**Fix**: Removed `"X-AI-Provenance"` from `metadata.other` in `page.tsx`. Added a static `X-AI-Provenance: eu-ai-act-art50-compliant; disclosure-in-meta-and-jsonld` header in `next.config.ts` `headers()` function for `/article/:id*` routes. Added 2 regression tests in `next.config.test.ts` asserting the header rule exists + contains `eu-ai-act-art50`. Updated JSDoc to accurately document the 3-layer architecture.
+
+**Lesson**: `metadata.other` in Next.js 16 is for `<meta>` tags ONLY. For HTTP headers, use `next.config.ts` `headers()` function. The per-article provenance data (model, coverage, sources) stays in the `<meta name="ai-provenance">` tag (Layer 3) + JSON-LD `<script>` (Layer 1); the HTTP header (Layer 2) is a static indicator that disclosure is present. (Anti-pattern #35.)
+
+#### 2. pnpm 9.15+ Ignores `pnpm.overrides` in `package.json` (BUG-3 — HIGH, 3 CVEs)
+
+**Issue**: `pnpm install` printed a warning: "The 'pnpm' field in package.json is no longer read by pnpm. The following keys were ignored: 'pnpm.overrides'." The cheerio→undici override (Phase 22 H2 mitigation) was silently not applied. `pnpm audit` showed 3 HIGH CVEs (TLS bypass, DoS, cross-origin routing via SOCKS5 proxy pool reuse).
+
+**Root Cause**: pnpm 9.15+ moved the `overrides` configuration from `package.json` `pnpm.overrides` to `pnpm-workspace.yaml`. The `package.json` `pnpm` field is no longer read. The lockfile still resolved cheerio's transitive undici dependency to 7.27.2 (vulnerable) instead of 7.28.0 (patched).
+
+**Fix**: Created `pnpm-workspace.yaml` with `packages: []` + `overrides: { undici: "^8.5.0" }`. Removed the `pnpm` field from `package.json`. Deleted `pnpm-lock.yaml` + `node_modules/` + ran `pnpm install` to regenerate from scratch. Verified: lockfile now resolves `undici@7.28.0` for cheerio. `pnpm audit --audit-level=high --prod` reports only 1 moderate (below threshold). CI hard gate (Phase 22 / F4) will now pass.
+
+**Lesson**: pnpm 9.15+ changed where `overrides` lives. Always use `pnpm-workspace.yaml` for overrides — even in non-workspace (single-package) projects. The `packages: []` field is required (empty array means "no workspace packages, just root"). After moving overrides, delete `pnpm-lock.yaml` + `node_modules/` + reinstall — `--force` alone doesn't re-resolve transitive deps. (Anti-pattern #36.)
+
+#### 3. Missing `data-scroll-behavior` Attribute (F5 — MEDIUM)
+
+**Issue**: Next.js 16 view transitions printed a warning: "Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your `<html>` element."
+
+**Root Cause**: `src/app/layout.tsx` had `html { scroll-behavior: smooth }` in CSS (via `globals.css`) but the `<html>` element didn't have the `data-scroll-behavior` attribute. Next.js 16 view transitions need this attribute to know whether to preserve or disable smooth scroll during transitions.
+
+**Fix**: Added `data-scroll-behavior="smooth"` to the `<html>` element in `layout.tsx`. One-line fix.
+
+**Lesson**: When using CSS `scroll-behavior: smooth` + Next.js 16 view transitions, always add `data-scroll-behavior="smooth"` to `<html>`. Without it, view transitions may interfere with smooth scroll. (Anti-pattern #37.)
+
+### Phase 23 Deployment Recommendations (NOT code-fixed — require ops action)
+
+#### BUG-1: Live site running `pnpm dev` instead of `pnpm start` (HIGH)
+
+**Evidence**: Live site E2E audit found: (a) console spam "Download the React DevTools" + "eval() is not supported" (React dev-mode only), (b) `app_start_log.txt:81` shows `$ pnpm dev` was run, (c) HMR cross-origin warning from production domain, (d) Server-Timing header present (dev feature).
+
+**Impact**: Performance 5-10× slower than production. Source maps exposed. Dev tooling accessible. The Phase 22 H1 CSP fix (removed `unsafe-eval`) correctly blocks React dev mode — which is why the eval() errors appear.
+
+**Fix**: Run `pnpm build && pnpm start` in production. Or use `Dockerfile.web` which correctly runs `node server.js` (the standalone build output). NEVER expose `pnpm dev` to public traffic.
+
+#### BUG-4: Redis is down on the production server (MEDIUM)
+
+**Evidence**: Live site `/api/health` returned `{"status":"degraded","deps":{"db":"connected","redis":"error"}}`.
+
+**Impact**: Rate limiting non-functional (failing open as designed — Phase 21 S7 + Phase 22 N1). BullMQ workers cannot process ingest/summarize/score/feed-slice jobs. No new articles will be ingested while Redis is down. AI summarization queue stalled.
+
+**Fix**: Start Redis on the production server. Check `docker-compose.prod.yml` or the deployment script.
+
+#### BUG-5: `TRUSTED_PROXY` not set despite being behind Cloudflare CDN (MEDIUM)
+
+**Evidence**: `app_start_log.txt:28-51` shows 5 `TRUSTED_PROXY` warnings during build. Live site response headers include `cf-ray` (confirming Cloudflare CDN). Without `TRUSTED_PROXY=true`, rate limiter uses spoofable leftmost X-Forwarded-For IP.
+
+**Impact**: Rate limiting can be bypassed by spoofing X-Forwarded-For headers. (Currently moot because Redis is down — but must be fixed before Redis is restored.)
+
+**Fix**: Set in production `.env`:
+
+```bash
+TRUSTED_PROXY=true
+TRUSTED_PROXY_CIDRS=173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/12,172.64.0.0/13,131.0.72.0/22
+```
+
+(These are Cloudflare's published CIDR ranges.)
+
+### Phase 23 Recommendations
+
+#### P0 — Immediate (production is broken)
+
+1. **Switch from `pnpm dev` to `pnpm start`** on the production server (BUG-1). Run `pnpm build` first. This fixes the eval() CSP errors, dev tooling exposure, and performance.
+2. **Start Redis** on the production server (BUG-4). Without Redis, BullMQ workers cannot ingest new articles or process AI summaries.
+3. **Fix `pnpm.overrides`** — ✅ RESOLVED in Phase 23 / BUG-3 (code fix applied: `pnpm-workspace.yaml` created).
+
+#### P1 — High (security/compliance)
+
+4. ~~**Investigate missing `X-AI-Provenance` header**~~ — ✅ RESOLVED in Phase 23 / BUG-2 (code fix applied: static header in `next.config.ts`).
+5. **Set `TRUSTED_PROXY=true` + `TRUSTED_PROXY_CIDRS`** for Cloudflare (BUG-5). Must be done before Redis is restored.
+6. ~~**Migrate to nonce-based CSP**~~ — Carried over from Phase 21 R2. Remove `'unsafe-inline'` from `script-src` via Next.js 16's `headers()` nonce API.
+
+#### P2 — Mid-term
+
+7. ~~**Wire `pnpm test:integration` into CI**~~ — Carried over from Phase 21 R3.
+8. **Adopt ADRs** — Carried over from Phase 21 R9.
+9. **Monitor Auth.js v5 stable release** — Carried over from Phase 21 R10.
+
+#### P3 — Backlog
+
+10. **Clarify `proxy.ts` DB rule** — Carried over from Phase 22 / N4.
+11. **Extend ESLint config** — Carried over from Phase 21 R6.
+12. **Remove remaining stale `.md` reports** — Carried over from Phase 22 / N7.
+
+---
+
 ## Contact & Maintenance
 
 - **Maintained by**: Senior Engineering, Tech Leads, DevOps
 - **Authoritative Sources**: `Project_Architecture_Document_v4.5.md` | `Project_Requirements_Document_v4.3.md` | `README.md`
-- **Last Updated**: June 24, 2026 (Phase 22 — Systematic Audit & TDD Remediation: CSP `'unsafe-eval'` regression actually fixed with `next.config.test.ts` guard [H1], `/api/summarize/[id]` fail-open symmetric with `/api/articles` [N1], `pnpm audit` promoted to hard CI gate [F4], `pauseSource` wired to admin UI button [N5], 119MB of stale `.tar.gz` archives removed [N2], MEP updated to v7.0 [N3], `.prettierignore` created [N6], AGENTS.md duplicate recommendations removed [N7])
-- **Total Tests**: 498 across 69 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass) (all green).
+- **Last Updated**: June 24, 2026 (Phase 23 — Live Site E2E Audit Remediation: `X-AI-Provenance` HTTP header fix [BUG-2], `pnpm-workspace.yaml` for pnpm 9.15+ overrides [BUG-3 — 3 HIGH CVEs eliminated], `data-scroll-behavior` attribute [F5]; Phase 22 — CSP `unsafe-eval` regression fixed [H1], `/api/summarize/[id]` fail-open [N1], `pnpm audit` hard gate [F4], `pauseSource` UI wiring [N5], 119MB archives removed [N2], MEP v7.0 [N3], `.prettierignore` [N6], AGENTS.md dedup [N7])
+- **Total Tests**: 500 across 69 suites + 10 Playwright E2E + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass) (all green).
 - **Quality Gate**: `pnpm check` (tsc --noEmit + ESLint --max-warnings 0) + `pnpm test` (vitest run) + `pnpm test -- --coverage` (enforced in CI at 80/80/70/80 thresholds) + `pnpm run format:check` + `pnpm audit --audit-level=high --prod` (HARD GATE as of Phase 22 / F4) — all green
 - **Pre-commit Hooks**: husky + lint-staged (Phase 19 / M10) — runs eslint + prettier on staged `.ts`/`.tsx` before every commit
-- **Coverage**: 85.96% lines / 78.10% branches / 82.58% functions / 86.87% statements (above the 80/70/80/80 thresholds — percentages dipped slightly from Phase 21's 88/80/85/89% because the 26 new tests cover previously-unmeasured code paths like `next.config.ts`'s `headers()` function, adding test-only branches to the denominator; absolute covered line count increased)
+- **Coverage**: 85.96% lines / 78.10% branches / 82.58% functions / 86.87% statements (above the 80/70/80/80 thresholds)
+- **Deployment Status**: 3 code fixes applied (BUG-2, BUG-3, F5). 3 deployment recommendations outstanding: switch `pnpm dev` → `pnpm start` [BUG-1], start Redis [BUG-4], set `TRUSTED_PROXY=true` + Cloudflare CIDRs [BUG-5].
 
 ---
 

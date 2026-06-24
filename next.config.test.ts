@@ -17,7 +17,7 @@
  * should migrate to nonce-based CSP to remove `'unsafe-inline'` too.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import nextConfig from "./next.config";
 
 describe("next.config.ts — security headers", () => {
@@ -85,12 +85,22 @@ describe("next.config.ts — security headers", () => {
       expect(csp).toContain("form-action 'self'");
     });
 
-    // ── H1 regression: 'unsafe-eval' MUST NOT be in script-src ─────────────
+    // ── H1 regression: 'unsafe-eval' MUST NOT be in script-src (production) ──
     // Per AGENTS.md anti-pattern #24: "CSP with 'unsafe-eval' → Remove
     // (no code in src/ uses eval())." The directive was supposed to be
     // removed in Phase 21 S4 but the comment was updated while the actual
     // CSP string still contained it. This test prevents that regression.
-    it("script-src MUST NOT contain 'unsafe-eval' (H1 regression)", async () => {
+    //
+    // Phase 23 / BUG-1 fix: The CSP is now CONDITIONAL on NODE_ENV:
+    //   - production / test: 'unsafe-eval' is REMOVED (security hardening)
+    //   - development: 'unsafe-eval' is INCLUDED (React dev mode requires eval()
+    //     for callstack reconstruction — without it, `pnpm dev` shows console
+    //     errors and React DevTools doesn't work)
+    //
+    // This test runs with NODE_ENV=test (vitest default), which matches the
+    // production posture: 'unsafe-eval' MUST be absent.
+    it("script-src MUST NOT contain 'unsafe-eval' in production/test mode (H1 regression)", async () => {
+      // NODE_ENV is "test" in vitest — matches production posture
       const csp = await getCspHeaderValue();
       // Extract the script-src directive value
       const scriptSrcMatch = csp.match(/script-src\s+([^;]+)/);
@@ -103,8 +113,48 @@ describe("next.config.ts — security headers", () => {
       const _ = scriptSrcValue; // for type narrowing in case of strict unused
       expect(
         csp,
-        `CSP must not contain 'unsafe-eval'. Got: ${csp}`,
+        `CSP must not contain 'unsafe-eval' in production/test mode. Got: ${csp}`,
       ).not.toContain("'unsafe-eval'");
+    });
+
+    // ── Phase 23 / BUG-1: 'unsafe-eval' MUST be present in development mode ──
+    // React dev mode requires eval() for callstack reconstruction. Without
+    // 'unsafe-eval' in the CSP, `pnpm dev` shows console errors:
+    //   "eval() is not supported in this environment. If this page was served
+    //    with a Content-Security-Policy header, make sure that `unsafe-eval`
+    //    is included. React requires eval() in development mode..."
+    //
+    // The fix: make the CSP conditional on NODE_ENV. In development, include
+    // 'unsafe-eval'. In production/test, exclude it (H1 regression guard above).
+    //
+    // This test stubs NODE_ENV=development and verifies the CSP includes
+    // 'unsafe-eval'. After the test, NODE_ENV is restored to "test".
+    it("script-src MUST contain 'unsafe-eval' in development mode (Phase 23 / BUG-1)", async () => {
+      // NODE_ENV is typed as read-only in @types/node — use vi.stubEnv
+      // which bypasses the type check at runtime.
+      vi.stubEnv("NODE_ENV", "development");
+
+      try {
+        // Re-import next.config.ts to pick up the new NODE_ENV
+        vi.resetModules();
+        const { default: devConfig } = await import("./next.config");
+        const headersFn = devConfig.headers;
+        if (!headersFn) throw new Error("no headers() in dev config");
+        const result = await headersFn();
+        const allHeaders = result[0]?.headers ?? [];
+        const cspHeader = allHeaders.find(
+          (h) => h.key === "Content-Security-Policy",
+        );
+        if (!cspHeader) throw new Error("CSP header not found");
+        expect(
+          cspHeader.value,
+          `CSP must contain 'unsafe-eval' in development mode. Got: ${cspHeader.value}`,
+        ).toContain("'unsafe-eval'");
+      } finally {
+        // Restore NODE_ENV to "test" (vitest default)
+        vi.unstubAllEnvs();
+        vi.resetModules();
+      }
     });
 
     // ── Transitional: 'unsafe-inline' is currently retained ────────────────

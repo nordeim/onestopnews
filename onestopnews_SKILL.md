@@ -1,9 +1,9 @@
 ---
 name: onestopnews
-description: "Complete engineering reference for the OneStopNews codebase — a topic-first news aggregation platform with source-cited AI summaries and EU AI Act Article 50 provenance disclosure. Use this skill when extending the codebase, debugging, onboarding, or replicating the architecture. Covers Next.js 16 + React 19 + Drizzle + BullMQ + Auth.js v5 + Editorial Dispatch design system + 5-layer architecture + 3-layer provenance + content availability guard + 498 tests across 69 suites."
+description: "Complete engineering reference for the OneStopNews codebase — a topic-first news aggregation platform with source-cited AI summaries and EU AI Act Article 50 provenance disclosure. Use this skill when extending the codebase, debugging, onboarding, or replicating the architecture. Covers Next.js 16 + React 19 + Drizzle + BullMQ + Auth.js v5 + Editorial Dispatch design system + 5-layer architecture + 3-layer provenance + content availability guard + 500 tests across 69 suites."
 version: 2.0.0
 last_updated: 2026-06-24
-project_state: "Phase 22 complete · 498 tests / 69 suites · 0 tsc errors · 0 ESLint warnings · 86/78/83/87% coverage"
+project_state: "Phase 23 complete · 500 tests / 69 suites · 0 tsc errors · 0 ESLint warnings · 86/78/83/87% coverage · 0 HIGH CVEs"
 ---
 
 # OneStopNews — Engineering Skill Reference
@@ -85,38 +85,38 @@ These choices are FORBIDDEN. If you see them in a PR, reject the PR.
 
 ### Exact Versions (verified against `package.json` + `pnpm-lock.yaml`)
 
-| Layer               | Package                                                           | Version                       | Notes                                                                                          |
-| :------------------ | :---------------------------------------------------------------- | :---------------------------- | :--------------------------------------------------------------------------------------------- |
-| **Runtime**         | Node.js                                                           | `>=24.0.0` (24 LTS "Krypton") | Pinned in `package.json` `engines.node` + Dockerfiles use `node:24-alpine`                     |
-| **Package Manager** | pnpm                                                              | `>=9.0.0` (9.15.9 installed)  | Pinned via `packageManager: "pnpm@9.15.0"`                                                     |
-| **Framework**       | next                                                              | `^16.2.9`                     | CVE-2025-55182 mitigated (≥16.0.7 minimum)                                                     |
-| **UI Library**      | react / react-dom                                                 | `^19.2.7`                     | React 19 stable                                                                                |
-| **Language**        | typescript                                                        | `^5.7.0`                      | Strict mode + `erasableSyntaxOnly`                                                             |
-| **Styling**         | tailwindcss                                                       | `^4.3.1`                      | CSS-first `@theme` config (no `tailwind.config.js`)                                            |
-| **PostCSS**         | `@tailwindcss/postcss`                                            | `^4.3.1`                      | MANDATORY — without it, zero utilities generate                                                |
-| **Database**        | PostgreSQL                                                        | 17                            | Run via Docker (`postgres:17` image)                                                           |
-| **ORM**             | drizzle-orm                                                       | `^0.45.2`                     | Lazy Proxy connection pattern                                                                  |
-| **Migrations**      | drizzle-kit                                                       | `^0.31.10`                    | `generate` + `migrate` only — NEVER `push` in prod                                             |
-| **DB Driver**       | postgres (postgres.js)                                            | `^3.4.9`                      | NOT `pg` — postgres.js is the driver                                                           |
-| **Queue**           | bullmq                                                            | `^5.78.0`                     | 4 workers: ingest(50), summarize(5), score(20), feedSlice(10)                                  |
-| **Redis Client**    | ioredis                                                           | `^5.11.1`                     | For BullMQ + rate limiting                                                                     |
-| **Auth**            | next-auth                                                         | `5.0.0-beta.31`               | Auth.js v5 beta — 4 known `as any` casts in `lib/auth/index.ts` (DrizzleAdapter type mismatch) |
-| **Auth Adapter**    | @auth/drizzle-adapter                                             | `^1.11.2`                     |                                                                                                |
-| **AI SDK**          | ai (Vercel AI SDK v6)                                             | `^6.0.201`                    | `generateObject()` returns `result.object` directly                                            |
-| **AI Providers**    | @ai-sdk/anthropic / @ai-sdk/openai                                | `^3.0.85` / `^3.0.73`         | Primary: Claude Haiku 4.5; Fallback: GPT-5 Mini                                                |
-| **Validation**      | zod                                                               | `^4.4.3`                      | Used for env vars + AI output schema                                                           |
-| **HTML Parsing**    | cheerio                                                           | `^1.2.0`                      | Real HTML parser (replaces regex stripping) — Phase 19 / H9                                    |
-| **RSS Parsing**     | rss-parser                                                        | `^3.13.0`                     | RSS 2.0 + Atom 1.0                                                                             |
-| **Date**            | luxon                                                             | `^3.7.2`                      | DST-safe quiet hours for push notifications                                                    |
-| **Web Push**        | web-push                                                          | `^3.6.7`                      | VAPID keys + AES-256-GCM encrypted subscription keys                                           |
-| **Crypto**          | bcryptjs                                                          | `^3.0.3`                      | Password hashing for Credentials provider                                                      |
-| **UI Primitives**   | @radix-ui/react-accordion, react-dialog, react-slot               | `^1.2.x`                      | Shadcn-style wrapping                                                                          |
-| **Class Utils**     | class-variance-authority, clsx, tailwind-merge                    | `^0.7.1`, `^2.1.1`, `^3.6.0`  | `cn()` utility                                                                                 |
-| **HTTP**            | undici                                                            | `^8.5.0`                      | Direct dep + pnpm override on cheerio>undici (Phase 22 / H2 mitigation)                        |
-| **Icons**           | lucide-react                                                      | `^1.18.0`                     |                                                                                                |
-| **Testing**         | vitest, @vitest/coverage-v8                                       | `^4.1.9`                      | jsdom env + 80/70/80/80 thresholds                                                             |
-| **E2E**             | @playwright/test, @axe-core/playwright                            | `^1.61.0`, `^4.11.3`          | 10 E2E + 4 a11y scans                                                                          |
-| **Integration**     | testcontainers, @testcontainers/postgresql, @testcontainers/redis | `^12.0.3`                     | Docker-gapped DB integration tests                                                             |
+| Layer               | Package                                                           | Version                       | Notes                                                                                                                                   |
+| :------------------ | :---------------------------------------------------------------- | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| **Runtime**         | Node.js                                                           | `>=24.0.0` (24 LTS "Krypton") | Pinned in `package.json` `engines.node` + Dockerfiles use `node:24-alpine`                                                              |
+| **Package Manager** | pnpm                                                              | `>=9.0.0` (9.15.9 installed)  | Pinned via `packageManager: "pnpm@9.15.0"`                                                                                              |
+| **Framework**       | next                                                              | `^16.2.9`                     | CVE-2025-55182 mitigated (≥16.0.7 minimum)                                                                                              |
+| **UI Library**      | react / react-dom                                                 | `^19.2.7`                     | React 19 stable                                                                                                                         |
+| **Language**        | typescript                                                        | `^5.7.0`                      | Strict mode + `erasableSyntaxOnly`                                                                                                      |
+| **Styling**         | tailwindcss                                                       | `^4.3.1`                      | CSS-first `@theme` config (no `tailwind.config.js`)                                                                                     |
+| **PostCSS**         | `@tailwindcss/postcss`                                            | `^4.3.1`                      | MANDATORY — without it, zero utilities generate                                                                                         |
+| **Database**        | PostgreSQL                                                        | 17                            | Run via Docker (`postgres:17` image)                                                                                                    |
+| **ORM**             | drizzle-orm                                                       | `^0.45.2`                     | Lazy Proxy connection pattern                                                                                                           |
+| **Migrations**      | drizzle-kit                                                       | `^0.31.10`                    | `generate` + `migrate` only — NEVER `push` in prod                                                                                      |
+| **DB Driver**       | postgres (postgres.js)                                            | `^3.4.9`                      | NOT `pg` — postgres.js is the driver                                                                                                    |
+| **Queue**           | bullmq                                                            | `^5.78.0`                     | 4 workers: ingest(50), summarize(5), score(20), feedSlice(10)                                                                           |
+| **Redis Client**    | ioredis                                                           | `^5.11.1`                     | For BullMQ + rate limiting                                                                                                              |
+| **Auth**            | next-auth                                                         | `5.0.0-beta.31`               | Auth.js v5 beta — 4 known `as any` casts in `lib/auth/index.ts` (DrizzleAdapter type mismatch)                                          |
+| **Auth Adapter**    | @auth/drizzle-adapter                                             | `^1.11.2`                     |                                                                                                                                         |
+| **AI SDK**          | ai (Vercel AI SDK v6)                                             | `^6.0.201`                    | `generateObject()` returns `result.object` directly                                                                                     |
+| **AI Providers**    | @ai-sdk/anthropic / @ai-sdk/openai                                | `^3.0.85` / `^3.0.73`         | Primary: Claude Haiku 4.5; Fallback: GPT-5 Mini                                                                                         |
+| **Validation**      | zod                                                               | `^4.4.3`                      | Used for env vars + AI output schema                                                                                                    |
+| **HTML Parsing**    | cheerio                                                           | `^1.2.0`                      | Real HTML parser (replaces regex stripping) — Phase 19 / H9                                                                             |
+| **RSS Parsing**     | rss-parser                                                        | `^3.13.0`                     | RSS 2.0 + Atom 1.0                                                                                                                      |
+| **Date**            | luxon                                                             | `^3.7.2`                      | DST-safe quiet hours for push notifications                                                                                             |
+| **Web Push**        | web-push                                                          | `^3.6.7`                      | VAPID keys + AES-256-GCM encrypted subscription keys                                                                                    |
+| **Crypto**          | bcryptjs                                                          | `^3.0.3`                      | Password hashing for Credentials provider                                                                                               |
+| **UI Primitives**   | @radix-ui/react-accordion, react-dialog, react-slot               | `^1.2.x`                      | Shadcn-style wrapping                                                                                                                   |
+| **Class Utils**     | class-variance-authority, clsx, tailwind-merge                    | `^0.7.1`, `^2.1.1`, `^3.6.0`  | `cn()` utility                                                                                                                          |
+| **HTTP**            | undici                                                            | `^8.5.0`                      | Direct dep + pnpm override via `pnpm-workspace.yaml` (Phase 23 / BUG-3 — pnpm 9.15+ requires this, not `package.json` `pnpm.overrides`) |
+| **Icons**           | lucide-react                                                      | `^1.18.0`                     |                                                                                                                                         |
+| **Testing**         | vitest, @vitest/coverage-v8                                       | `^4.1.9`                      | jsdom env + 80/70/80/80 thresholds                                                                                                      |
+| **E2E**             | @playwright/test, @axe-core/playwright                            | `^1.61.0`, `^4.11.3`          | 10 E2E + 4 a11y scans                                                                                                                   |
+| **Integration**     | testcontainers, @testcontainers/postgresql, @testcontainers/redis | `^12.0.3`                     | Docker-gapped DB integration tests                                                                                                      |
 
 ### Critical TypeScript Flags (`tsconfig.json`)
 
@@ -233,9 +233,13 @@ pnpm add -D typescript@^5.7.0 typescript-eslint@^8.61.0
 pnpm add -D tsx@^4.22.4
 pnpm add -D @types/node@^25.9.3 @types/react@^19.2.17 @types/react-dom@^19.2.3
 
-# 4. Add pnpm overrides for the cheerio>undici CVE (Phase 22 / H2 mitigation)
-# Edit package.json to add:
-#   "pnpm": { "overrides": { "cheerio>undici": "^8.5.0" } }
+# 4. Create pnpm-workspace.yaml for the cheerio>undici CVE override (Phase 23 / BUG-3)
+#    pnpm 9.15+ no longer reads pnpm.overrides in package.json — MUST be in pnpm-workspace.yaml
+cat > pnpm-workspace.yaml << 'EOF'
+packages: []
+overrides:
+  undici: "^8.5.0"
+EOF
 ```
 
 ### Critical Configuration Files
@@ -919,7 +923,29 @@ return (
 
 **JSON-LD MUST be a `<script>` tag in the body** — NOT via `metadata.other`. Next.js 16 `metadata.other` only emits `<meta>` tags, never `<script>` tags. (Phase 17 fix.)
 
-The HTTP header (`X-AI-Provenance`) and HTML meta tag (`<meta name="ai-provenance">`) DO go via `metadata.other` in `generateMetadata()`:
+**CRITICAL — Phase 23 / BUG-2 fix:** The HTTP header (`X-AI-Provenance`) MUST be set in `next.config.ts` `headers()`, NOT via `metadata.other`. Next.js 16 `metadata.other` ONLY emits `<meta>` tags, NEVER HTTP headers. Setting `"X-AI-Provenance"` in `metadata.other` creates a useless `<meta name="X-AI-Provenance">` tag, not an HTTP header.
+
+**Layer 2 (HTTP header) — in `next.config.ts`:**
+
+```typescript
+// next.config.ts — static header for all article routes
+async headers() {
+  return [
+    // ... other headers (CSP, HSTS, XFO, XCTO) for "/(.*)" ...
+    {
+      source: "/article/:id*",
+      headers: [
+        {
+          key: "X-AI-Provenance",
+          value: "eu-ai-act-art50-compliant; disclosure-in-meta-and-jsonld",
+        },
+      ],
+    },
+  ];
+}
+```
+
+**Layer 3 (meta tag) — in `generateMetadata()`:**
 
 ```tsx
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -931,11 +957,14 @@ export async function generateMetadata({ params }): Promise<Metadata> {
   return {
     other: {
       "ai-provenance": provenance.metaTag,           // Layer 3: <meta name="ai-provenance">
-      "X-AI-Provenance": provenance.httpHeader,      // Layer 2: HTTP header (base64 JSON)
+      // DO NOT put "X-AI-Provenance" here — metadata.other only emits <meta> tags, not HTTP headers.
+      // The HTTP header is set statically in next.config.ts headers() for /article/:id* routes.
     },
   };
 }
 ```
+
+**Regression test** in `next.config.test.ts` (16 tests covering CSP/HSTS/XFO/XCTO + X-AI-Provenance header):
 
 ---
 
@@ -1433,12 +1462,15 @@ This is the complete catalog of 34 anti-patterns documented across Phases 1–22
 
 ### Repo Hygiene Anti-Patterns
 
-| #   | Anti-Pattern                                                    | Why Forbidden                                                                | Fix                                                                                                            |
-| :-- | :-------------------------------------------------------------- | :--------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
-| 52  | Vendored `skills/` not excluded from tsc/eslint                 | 64 tsc errors + 43 lint warnings from skills' own deps make `pnpm check` red | Add `"skills"` to `tsconfig.json` `exclude`; `"skills/**"` to eslint ignores (Phase 19).                       |
-| 53  | Tarball remediation archives in repo root                       | 119MB of bloat; confuses with live source tree                               | Add `*.tar.gz`, `*.tar.bz2`, `*.tgz` to `.gitignore` (Phase 22 / N2).                                          |
-| 54  | No `.prettierignore` — `format:check` scans 226+ markdown files | False-positive CI failures on vendored/historical docs                       | Create `.prettierignore` excluding `skills/`, `docs/`, `*.archived`, lockfiles, binary assets (Phase 22 / N6). |
-| 55  | `pnpm audit \|\| true` never promoted to hard gate              | "Non-blocking initially" without scheduled promotion is compounding debt     | After mitigation, immediately verify gate can be promoted; remove `\|\| true` (Phase 22 / F4).                 |
+| #   | Anti-Pattern                                                       | Why Forbidden                                                                                                                               | Fix                                                                                                                                      |
+| :-- | :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| 52  | Vendored `skills/` not excluded from tsc/eslint                    | 64 tsc errors + 43 lint warnings from skills' own deps make `pnpm check` red                                                                | Add `"skills"` to `tsconfig.json` `exclude`; `"skills/**"` to eslint ignores (Phase 19).                                                 |
+| 53  | Tarball remediation archives in repo root                          | 119MB of bloat; confuses with live source tree                                                                                              | Add `*.tar.gz`, `*.tar.bz2`, `*.tgz` to `.gitignore` (Phase 22 / N2).                                                                    |
+| 54  | No `.prettierignore` — `format:check` scans 226+ markdown files    | False-positive CI failures on vendored/historical docs                                                                                      | Create `.prettierignore` excluding `skills/`, `docs/`, `*.archived`, lockfiles, binary assets (Phase 22 / N6).                           |
+| 55  | `pnpm audit \|\| true` never promoted to hard gate                 | "Non-blocking initially" without scheduled promotion is compounding debt                                                                    | After mitigation, immediately verify gate can be promoted; remove `\|\| true` (Phase 22 / F4).                                           |
+| 56  | `metadata.other` used for HTTP headers (Phase 23 / BUG-2)          | Next.js 16 `metadata.other` ONLY emits `<meta>` tags, NEVER HTTP headers. Setting `"X-AI-Provenance"` creates a `<meta>` tag, not a header. | Use `next.config.ts` `headers()` function for HTTP headers. Use `metadata.other` only for `<meta>` tags.                                 |
+| 57  | `pnpm.overrides` in `package.json` (pnpm 9.15+) (Phase 23 / BUG-3) | pnpm 9.15+ no longer reads the `pnpm` field — overrides silently ignored, CVEs remain unmitigated.                                          | Move overrides to `pnpm-workspace.yaml` with `packages: []` + `overrides:` block. Delete `pnpm-lock.yaml` + `node_modules/` + reinstall. |
+| 58  | Missing `data-scroll-behavior` on `<html>` (Phase 23 / F5)         | Next.js 16 view transitions warn: "Detected `scroll-behavior: smooth`". Transitions may interfere with smooth scroll.                       | Add `data-scroll-behavior="smooth"` to `<html>` in `layout.tsx`.                                                                         |
 
 ---
 
@@ -1497,7 +1529,7 @@ pnpm check
 
 # 2. All tests pass
 pnpm test
-# Expected: 498 tests / 69 suites pass
+# Expected: 500 tests / 69 suites pass
 
 # 3. Coverage above thresholds (80/70/80/80)
 pnpm test -- --coverage
@@ -1799,8 +1831,13 @@ const provenance = generateProvenanceMetadata({
 // Layer 1: JSON-LD <script> in body (NOT via metadata.other)
 <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: provenance.jsonLd }} />
 
-// Layer 2 + 3: HTTP header + meta tag via metadata.other in generateMetadata()
-return { other: { "ai-provenance": provenance.metaTag, "X-AI-Provenance": provenance.httpHeader } };
+// Layer 2: HTTP header via next.config.ts headers() (NOT via metadata.other — Phase 23 / BUG-2)
+// next.config.ts:
+//   { source: "/article/:id*", headers: [{ key: "X-AI-Provenance", value: "eu-ai-act-art50-compliant; disclosure-in-meta-and-jsonld" }] }
+
+// Layer 3: meta tag via metadata.other in generateMetadata()
+return { other: { "ai-provenance": provenance.metaTag } };
+// DO NOT put "X-AI-Provenance" in metadata.other — it only emits <meta> tags, not HTTP headers.
 ```
 
 ### The "Belt-and-Suspenders Validation" Pattern
@@ -2364,4 +2401,4 @@ All work on this codebase follows this workflow. **Non-negotiable.**
 
 _This skill file is derived from `AGENTS.md` (canonical institutional knowledge), `MASTER_EXECUTION_PLAN.md` v7.0, `CLAUDE.md`, `README.md`, and the actual source tree. For exhaustive per-phase gotchas, consult `AGENTS.md` §Phase N directly. For the engineering blueprint, consult `MASTER_EXECUTION_PLAN.md` v7.0._
 
-**Last Updated:** June 24, 2026 (Phase 22 — Systematic Audit & TDD Remediation complete. 498 tests / 69 suites. All quality gates green.)
+**Last Updated:** June 24, 2026 (Phase 23 — Live Site E2E Audit Remediation complete. 500 tests / 69 suites. All quality gates green. 3 deployment recommendations outstanding: switch `pnpm dev` → `pnpm start`, start Redis, set `TRUSTED_PROXY=true`.)
