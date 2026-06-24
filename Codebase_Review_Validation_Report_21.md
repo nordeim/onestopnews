@@ -284,6 +284,7 @@ Let me fix this: </think> I see the issue视线:46 — className is malformed: c
 ← Edit src/shared/components/layout/UserMenu.tsx
 if (!session) {if (!session) {
 return ( return (
+
 <Link <Link
 href="/sign-in" href="/sign-in"
 className [<MASKED>inline-flex items-center justify-center h-9 px-3 rounded-sm text-sm font-medium text-ink-600 hover:text-ink-900 hover:bg-paper-100 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50" className="inline-flex items-center justify-center h-9 px-3 rounded-sm text-sm font-medium text-ink-600 hover:text-ink-900 hover:bg-paper-100 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dispatch-ember focus-visible:ring-offset-2 focus-visible:ring-offset-paper-50"
@@ -314,3 +315,42 @@ $ git add src/shared/components/layout/UserMenu.tsx && git status —short
 On branch main
 Your branch is up to date with 'origin/main'.
 nothing to commit, working tree clean
+
+I have completed all necessary documentation updates and confirmed they are consistent. Here's a summary of what was accomplished:
+
+1. AGENTS.md:
+
+- Added Phase 24 row to the Phase Status Tracker
+- Added a comprehensive "Phase 24: Runtime Hydration Fix & Pre-Commit Hook Recovery — Lessons Learned" section
+- Updated the Contact & Maintenance footer with new stats and last updated date
+
+2. CLAUDE.md:
+
+- Added anti-patterns #38 and #39
+- Updated test counts to 504
+
+3. README.md:
+
+- Updated all test count references from 500 to 504
+- Updated tables and the "Test Suite Growth" section
+  All three files are now in sync and reflect the latest code changes, issues fixed, gotchas, troubleshooting tips, and lessons learned from Phase 24.
+  AGENTS.md
+- Phase Status Tracker: Added Phase 24 row documenting the UserMenu.tsx hydration fix (mounted guard + skeleton), C1 (query-level status guard), and C2 (hasSummary sync via getArticleIdFromSummary).
+- Phase 24 Lessons Learned: New section with three detailed subsections covering C1, C2, and the hydration fix, including root causes and key takeaways.
+- Contact & Maintenance: Updated Last Updated to June 24, 2026; Total Tests to 504/69.
+  CLAUDE.md
+- Anti-Patterns: Added #38 (useSession() without mounted guard) and #39 (confusing PK with FK in cross-table updates).
+- Test Counts: Updated to 504 across 69 suites.
+  README.md
+- Test Counts: All references updated from 500 to 504 (lines 451, 583, 613, 1537).
+  I also ran pnpm check (tsc + lint), which passed cleanly with no errors. The project is in a healthy state with all documentation aligned. All documentation has been meticulously updated and is now fully aligned. Here's the summary:
+  Document Changes Made
+  AGENTS.md Added Phase 24 row to Phase Status Tracker; new "Phase 24: Runtime Hydration Fix & Pre-Commit Hook Recovery — Lessons Learned" section with C1/C2/hydration fix details; updated Contact & Maintenance footer (504/69, June 24 2026)
+  CLAUDE.md Added anti-patterns #38 (useSession() without mounted guard) and #39 (confusing PK with FK in cross-table updates); updated test counts to 504 across 69 suites
+  README.md Updated all test count references from 500 to 504 (4 locations: pnpm test table, test script comment, test infrastructure table, Test Suite Growth paragraph)
+  Key additions captured:
+- C1 Fix: getArticleWithSummary query-level status guard — and(eq(summaries.status, "ok")) in the leftJoin condition
+- C2 Fix: getArticleIdFromSummary() helper ensuring cross-table hasSummary updates use the correct articleId FK, not the summary's UUID
+- Hydration Fix: UserMenu.tsx mounted guard (useState(false) + useEffect(() => setMounted(true))) + pulsing skeleton placeholder, preventing SSR/client useSession() mismatch
+- pre-commit hook recovery: vspaceError → proper Tailwind classes, restoring clean commits
+  Verification: pnpm check (tsc + ESLint) passes cleanly.

@@ -448,7 +448,7 @@ pnpm worker
 | `curl -H "x-forwarded-for: 1.2.3.4" "http://localhost:3000/api/articles?cursor=invalid"` | `400` with `{ error: "Invalid cursor format..." }`                |
 | BullMQ dashboard at `http://localhost:3001`                                              | Active queues: `ingest`, `summarize`, `score`, `feed-slice`       |
 | `pnpm tsc --noEmit`                                                                      | Zero type errors                                                  |
-| `pnpm test`                                                                              | All 500 tests pass across 69 suites                               |
+| `pnpm test`                                                                              | All 504 tests pass across 69 suites                               |
 
 ---
 
@@ -580,7 +580,7 @@ GITHUB_CLIENT_SECRET=
 ## Testing
 
 ```bash
-# Run all unit tests (500 tests across 69 suites, ~33s)
+# Run all unit tests (504 tests across 69 suites, ~33s)
 pnpm test
 
 # Run tests for a specific package
@@ -610,7 +610,7 @@ pnpm check
 
 | Tier        | Command                 | Purpose                                                  | Count                          | Duration                         |
 | :---------- | :---------------------- | :------------------------------------------------------- | :----------------------------- | :------------------------------- |
-| Unit        | `pnpm test`             | Pure logic + mocked deps (vitest, jsdom env)             | 500 tests / 69 suites          | ~33s                             |
+| Unit        | `pnpm test`             | Pure logic + mocked deps (vitest, jsdom env)             | 504 tests / 69 suites          | ~33s                             |
 | Integration | `pnpm test:integration` | Real DB round-trips via testcontainers (requires Docker) | 3 Docker-gated + 1 always-pass | ~10-30s (with container startup) |
 | E2E         | `pnpm test:e2e`         | Browser-level smoke + a11y scans (Playwright)            | 10 smoke + 4 a11y              | ~60s                             |
 
@@ -1534,7 +1534,7 @@ export type SummaryStatus = (typeof summaryStatusEnum.enumValues)[number];
 
 7. **Provenance Verification**: Periodically verify all three provenance layers (JSON-LD, HTTP header, meta tag) are correctly generated and conform to EU AI Act Art. 50 requirements. Consider automating this in CI. The article detail page (`/article/[id]`) emits all 3 layers when a summary exists: Layer 1 (JSON-LD `<script>`) is rendered directly in `ArticleData.tsx` body (Phase 17 fix — `metadata.other` renders `<meta>` tags, not `<script>` tags); Layers 2 (HTTP header) + 3 (`<meta>` tag) are emitted via `generateMetadata()` `metadata.other` in `page.tsx`. Verify via live DOM inspection: `document.querySelector('script[type="application/ld+json"]')` and `document.querySelector('meta[name="ai-provenance"]')`.
 
-8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests; Phase 14 added 39 tests; Phase 15 added 28 tests; Phase 16 added 13 tests; Phase 17 added 10 tests; Phase 19 added 80 tests; Phase 20 added 60 tests; Phase 21 added 20 tests (env weak-secret rejection: 14, IV length + backward compat: 2, rate limiter fail-open: 1, deleteSource hard delete: 3); Phase 22 added 26 tests (CSP/HSTS/XFO/XCTO regression guards: 14, `/api/summarize/[id]` fail-open: 2, `SourcesData` Pause button wiring: 10); Phase 23 added 2 tests (X-AI-Provenance HTTP header regression guards). Current total: **500 tests across 69 suites** + 10 Playwright E2E smoke tests + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass). Monitor test duration — currently ~33s; if it exceeds 40s, investigate slow tests.
+8. **Test Suite Growth**: Phase 5 added 47 tests; Phase 6 added 4 tests; Phase 7 added 21 tests; Phase 13 added 39 tests; Phase 14 added 39 tests; Phase 15 added 28 tests; Phase 16 added 13 tests; Phase 17 added 10 tests; Phase 19 added 80 tests; Phase 20 added 60 tests; Phase 21 added 20 tests (env weak-secret rejection: 14, IV length + backward compat: 2, rate limiter fail-open: 1, deleteSource hard delete: 3); Phase 22 added 26 tests (CSP/HSTS/XFO/XCTO regression guards: 14, `/api/summarize/[id]` fail-open: 2, `SourcesData` Pause button wiring: 10); Phase 23 added 2 tests (X-AI-Provenance HTTP header regression guards). Current total: **504 tests across 69 suites** + 10 Playwright E2E smoke tests + 4 axe-core a11y scans + 4 DB integration tests (3 Docker-gated, 1 always-pass). Monitor test duration — currently ~33s; if it exceeds 40s, investigate slow tests.
 
 9. **BM25 Search Tuning**: The `ts_rank_cd('{0.1, 0.2, 0.4, 1.0}', ...)` weights may need adjustment based on real user queries. Consider A/B testing different weight configurations.
 
