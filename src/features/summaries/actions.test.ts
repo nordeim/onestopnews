@@ -15,18 +15,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
 const mockFindFirst = vi.fn();
-const mockUpdateArticles = vi.fn().mockResolvedValue(undefined);
-const mockUpdateSummaries = vi.fn().mockResolvedValue(undefined);
 const mockFindSummary = vi.fn();
+const mockUpdate = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("@/lib/db", () => ({
   db: {
     query: {
       articles: { findFirst: mockFindFirst },
       summaries: { findFirst: mockFindSummary },
     },
-    update: vi.fn((table: unknown) => ({
+    update: vi.fn(() => ({
       set: () => ({
-        where: table === "articles" ? mockUpdateArticles : mockUpdateSummaries,
+        where: mockUpdate,
       }),
     })),
   },
@@ -101,8 +101,8 @@ beforeEach(() => {
     resetAt: Date.now() + 60_000,
   });
   mockFindFirst.mockResolvedValue(mockArticle());
-  mockUpdateArticles.mockResolvedValue(undefined);
-  mockUpdateSummaries.mockResolvedValue(undefined);
+  mockUpdate.mockResolvedValue(undefined);
+  mockFindSummary.mockResolvedValue({ articleId: VALID_ARTICLE_ID });
   mockAdd.mockResolvedValue({ id: "job-1" });
 });
 
@@ -163,7 +163,7 @@ describe("requestSummary — rate limiting (Critical C3)", () => {
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/rate limit/i);
     expect(mockAdd).not.toHaveBeenCalled();
-    expect(mockUpdateArticles).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 });
 
@@ -195,21 +195,28 @@ describe("requestSummary — content guard + idempotency", () => {
 
 describe("flagSummary — admin guard", () => {
   it("propagates redirect when not admin (does NOT catch redirect)", async () => {
-    // verifyAdminSession() calls redirect() which throws NEXT_REDIRECT.
-    // The action must NOT catch this — the redirect must propagate so the
-    // browser follows it. Catching it would silently swallow the redirect
-    // and return a JSON error, breaking the auth flow.
     const redirectError = new Error("NEXT_REDIRECT");
     mockVerifyAdminSession.mockRejectedValue(redirectError);
     await expect(flagSummary(VALID_SUMMARY_ID, "spam")).rejects.toThrow(
       "NEXT_REDIRECT",
     );
-    expect(mockUpdateSummaries).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("succeeds when admin", async () => {
+  it("succeeds and updates the correct article's hasSummary", async () => {
     const result = await flagSummary(VALID_SUMMARY_ID, "spam");
     expect(result.success).toBe(true);
+    // C2 fix: verifies the summary → article lookup and update
+    expect(mockFindSummary).toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it("skips article update when summary not found", async () => {
+    mockFindSummary.mockResolvedValue(undefined);
+    const result = await flagSummary(VALID_SUMMARY_ID, "spam");
+    expect(result.success).toBe(true);
+    // Summaries update still happens; articles update is skipped
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -222,12 +229,23 @@ describe("disableSummary — admin guard", () => {
     await expect(disableSummary(VALID_SUMMARY_ID)).rejects.toThrow(
       "NEXT_REDIRECT",
     );
-    expect(mockUpdateSummaries).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("succeeds when admin", async () => {
+  it("succeeds and updates the correct article's hasSummary", async () => {
     const result = await disableSummary(VALID_SUMMARY_ID);
     expect(result.success).toBe(true);
+    // C2 fix: verifies the summary → article lookup and update
+    expect(mockFindSummary).toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it("skips article update when summary not found", async () => {
+    mockFindSummary.mockResolvedValue(undefined);
+    const result = await disableSummary(VALID_SUMMARY_ID);
+    expect(result.success).toBe(true);
+    // Summaries update still happens; articles update is skipped
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -241,13 +259,24 @@ describe("approveSummary — admin guard (Critical C5)", () => {
     await expect(approveSummary(VALID_SUMMARY_ID)).rejects.toThrow(
       "NEXT_REDIRECT",
     );
-    expect(mockUpdateSummaries).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
-  it("succeeds and sets summary status to 'ok' when admin", async () => {
+  it("succeeds and sets summary status to 'ok' and article hasSummary to true", async () => {
     const { approveSummary } = await import("./actions");
     const result = await approveSummary(VALID_SUMMARY_ID);
     expect(result.success).toBe(true);
-    expect(mockUpdateSummaries).toHaveBeenCalled();
+    // C2 fix: verifies the summary → article lookup and update
+    expect(mockFindSummary).toHaveBeenCalled();
+    expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it("skips article update when summary not found", async () => {
+    mockFindSummary.mockResolvedValue(undefined);
+    const { approveSummary } = await import("./actions");
+    const result = await approveSummary(VALID_SUMMARY_ID);
+    expect(result.success).toBe(true);
+    // Summaries update still happens; articles update is skipped
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
 });

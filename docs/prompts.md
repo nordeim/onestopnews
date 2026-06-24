@@ -91,7 +91,9 @@ please meticulously review the build error below and validate it against the cod
 
 ---
 
-your last tool call failed. please check the tool call syntax and then try again and continue meticulously
+your last tool call failed. please check the tool call syntax and then try again and continue meticulously.
+
+your last tool call failed. please check tool call syntax, then meticulously continue.
 
 ---
 
