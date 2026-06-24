@@ -527,3 +527,38 @@ await expect(approveSummary(VALID_SUMMARY_ID)).rejects.toThrow(
 * expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
   });
+
+---
+
+Analysis of the Hydration Mismatch Error
+The error is a classic React hydration mismatch in the UserMenu component. The server-rendered HTML doesn't match the client-side rendered HTML.
+Root Cause
+Looking at the stack trace:
+at UserMenu (src/shared/components/layout/UserMenu.tsx:33:7)
+Line 33 of UserMenu.tsx is a <Link> component that renders differently on the server vs client. The most likely cause is that the UserMenu component is a Client Component that uses useSession() from next-auth/react, which returns null on the server (during SSR) and then the actual session on the client (after hydration).
+The diff shows:
+
+- Server renders: <a className="...">Sign in</a> (no session → show sign-in link)
+- Client expects: potentially different content if the session has loaded
+  This is a well-known pattern when using next-auth without SSR support. The server has no access to the browser's session (stored in cookies), so useSession() returns null on the server. After hydration, the client fetches the session and the component re-renders, causing a mismatch.
+  The Fix
+  The standard fix is one of:
+
+1. Use useSession({ required: false }) with a loading state
+2. Wrap the session-dependent UI in a component that suppresses hydration warnings
+3. Pass the session from a Server Component via props
+4. Use suppressHydrationWarning on the element
+   The most robust and Next.js-idiomatic fix is to use pattern 3: pass the session from a Server Component that uses auth(), or to use a loading state that renders the same on both server and client until the client-side data is loaded.
+   However, looking at the actual error, useSession() is in a Client Component (UserMenu.tsx). The server renders the component during SSR, and useSession() has no session data on the server. After hydration, the client useSession() fetches the session data and re-renders, causing the mismatch.
+   The fix is to delay rendering the session-dependent UI until after hydration by using a state that indicates the component has mounted (after:
+5. Track whether the component has mounted
+6. Show a loading/placeholder state during SSR and initial hydration
+7. Once mounted, show the actual content
+   This ensures server and client render the same HTML initially.
+   Let me examine the actual code: </think> ## Runtime Error Analysis: Hydration Mismatch in UserMenu.tsx
+   Root Cause
+   The error is a React hydration mismatch in UserMenu at src/shared/components/layout/UserMenu.tsx:33. The component uses useSession() from next-auth/react, which returns null during SSR (server has no access to the browser's session cookie). After hydration, the client fetches the session, causing a re-render and mismatch.
+   The diff shows the server rendered <a> (Sign in) but the client expects different content once the session loads.
+   Optimal Fix
+   Use a mounted guard to show the same content during SSR and initial hydration, then switch to the actual content after mount:
+   →Read src/shared/components/layout/UserMenu.tsx

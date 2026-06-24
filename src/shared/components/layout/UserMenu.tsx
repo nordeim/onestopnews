@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 
@@ -20,12 +21,22 @@ import { useSession, signOut } from "next-auth/react";
 
 export function UserMenu() {
   const { data: session, status } = useSession();
+  const [mounted, setMounted] = useState(false);
 
-  // While the session is being fetched, render nothing — avoids a flash
-  // of the wrong state (e.g., showing "Sign In" briefly to an authenticated
-  // user before the cookie is parsed).
-  if (status === "loading") {
-    return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Render a skeleton placeholder during SSR and initial hydration to
+  // prevent hydration mismatch: useSession() returns null on the server
+  // and the authenticated content on the client after load.
+  if (!mounted || status === "loading") {
+    return (
+      <div
+        className="h-9 w-20 rounded-sm bg-paper-100 animate-pulse"
+        aria-hidden="true"
+      />
+    );
   }
 
   if (!session) {
