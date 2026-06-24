@@ -58,6 +58,10 @@ please use the already installed and available 'agent-browser' and 'playwright-c
 
 ---
 
+Awesome meticulous job so far. Please keep up the good work. Now, please meticulously validate the critical and high to medium issues/bugs and gaps identified in your code review against the codebase to identify the root causes and the optimal fixes. then meticulously plan to create a comprehensive remediation plan with a detailed ToDo list to apply the optimal fix. Review and validate the remediation plan against the codebase to ensure alignment before proceeding to execute it meticulously. Remember to use TDD approach to make code changes.
+
+---
+
 Awesome meticulous job so far. Please keep up the good work. Now, please meticulously create a tar archive of the entire (remediated) codebase, excluding the `node_modules` , `.next` and `.git` folders, so I can download and use it to refresh my GitHub repo.
 
 ---

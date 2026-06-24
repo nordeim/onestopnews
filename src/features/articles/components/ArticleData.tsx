@@ -10,8 +10,9 @@
  *     as <meta> tags (NOT <script> tags), so JSON-LD MUST be a direct
  *     <script> element in the body. React 19 supports this in Server
  *     Components; the `key` prop deduplicates across renders.
- *   - Layer 2 (HTTP header X-AI-Provenance): Emitted via metadata.other
- *     in page.tsx generateMetadata().
+ *   - Layer 2 (HTTP header X-AI-Provenance): Set statically in next.config.ts
+ *     headers() for /article/:id* routes (Phase 23 / BUG-2 fix). Previously
+ *     incorrectly documented as emitted via metadata.other.
  *   - Layer 3 (<meta name="ai-provenance">): Emitted via metadata.other
  *     in page.tsx generateMetadata().
  *

@@ -158,6 +158,13 @@ export async function flagSummary(
     })
     .where(eq(summaries.id, summaryId));
 
+  // Reset article's hasSummary flag to prevent stale data from
+  // affecting scoring and UI badges (C2 fix).
+  await db
+    .update(articles)
+    .set({ hasSummary: false })
+    .where(eq(articles.id, summaryId));
+
   revalidatePath("/admin/summaries");
   return { success: true, error: null };
 }
@@ -177,6 +184,13 @@ export async function disableSummary(
     .update(summaries)
     .set({ status: "disabled" })
     .where(eq(summaries.id, summaryId));
+
+  // Reset article's hasSummary flag to prevent stale data from
+  // affecting scoring and UI badges (C2 fix).
+  await db
+    .update(articles)
+    .set({ hasSummary: false })
+    .where(eq(articles.id, summaryId));
 
   revalidatePath("/admin/summaries");
   return { success: true, error: null };
@@ -201,6 +215,14 @@ export async function approveSummary(
     .update(summaries)
     .set({ status: "ok", flagReason: null })
     .where(eq(summaries.id, summaryId));
+
+  // C2 fix: When a summary is approved (restored to 'ok'), ensure the
+  // article's hasSummary flag is set to true so scoring and UI badges
+  // reflect the restored summary.
+  await db
+    .update(articles)
+    .set({ hasSummary: true })
+    .where(eq(articles.id, summaryId));
 
   revalidatePath("/admin/summaries");
   return { success: true, error: null };

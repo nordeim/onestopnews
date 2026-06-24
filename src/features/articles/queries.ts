@@ -9,7 +9,7 @@
 
 import { db } from "@/lib/db";
 import { articles, sources, categories, summaries } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { ArticleWithSummary } from "@/domain/articles/types";
 
 /**
@@ -79,7 +79,10 @@ export async function getArticleWithSummary(
     .from(articles)
     .innerJoin(sources, eq(articles.sourceId, sources.id))
     .leftJoin(categories, eq(articles.categoryId, categories.id))
-    .leftJoin(summaries, eq(articles.id, summaries.articleId))
+    .leftJoin(
+      summaries,
+      and(eq(articles.id, summaries.articleId), eq(summaries.status, "ok")),
+    )
     .where(eq(articles.id, id))
     .limit(1);
 
